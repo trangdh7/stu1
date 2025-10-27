@@ -1,0 +1,179 @@
+﻿body {
+    font-family: Arial, sans-serif;
+}
+
+.bodyyeucau {
+    margin: 10px 5px;
+    background: white;
+    border-radius: 10px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.bodyyeucau-thietbi {
+    margin: 10px 5px;
+    background: white;
+    border-radius: 10px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.formtableyeucau {
+    margin: 10px 5px;
+    background: white;
+    border-radius: 5px;
+    padding: 10px;
+    box-sizing: border-box;
+    overflow: auto;
+    max-width: 100%;
+}
+
+.formyeucau {
+    margin: 10px 5px;
+    background: white;
+    border-radius: 5px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.tieude {
+    background-color: #660099;
+    margin-bottom: 10px;
+}
+
+.tieude p {
+    font-size: 0.8em;
+    color:white;
+    padding: 3px 5px;
+}
+
+.field label {
+    background-color: #DDDDDD;
+    font-size: 13px;
+    font-weight: bold;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    width: 40%;
+}
+
+.field input {
+    font-size: 15px;
+    text-align: center;
+    border: none;
+    width: 60%;
+}
+
+.field select {
+    font-size: 15px;
+    text-align: center;
+    border: none;
+    width: 60%;
+}
+
+.field {
+    display: flex;
+    border: 1px solid #003399;
+    margin:0;
+    height: 25px;
+    width: 32%;
+}
+
+.field-hidden {
+    visibility: hidden;
+    display: flex;
+    border: 1px solid #003399;
+    border-radius: 5px;
+    margin: 0;
+    height: 20px;
+    width: 32%;
+}
+
+.row {
+    display:flex;
+    padding-top: 5px;
+    justify-content: space-between;
+}
+
+.themyeucau-form-table {
+    width: 100%;
+    max-height: 75vh;
+    overflow-y: auto;
+    border: 1px solid black;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.form-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8em;
+    font-family: sans-serif;
+}
+
+.form-table thead tr {
+  background-color: #d8cff3;
+  color: black;
+  text-align: left;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+.form-table th,
+.form-table td {
+  padding: 5px 12px;
+}
+
+.form-table input {
+    width: 100%;
+    border:none;
+    font-size: 15px;
+    padding: 3px 0;
+}
+
+.form-table tbody tr {
+  border-bottom: 1px solid #ddd;
+  background-color: #f4f4f4;
+}
+
+.form-table tbody tr:nth-of-type(even) {
+  background-color: #EEEEEE		;
+}
+
+.form-table tbody tr:last-of-type {
+  border-bottom: 2px solid #EEEEEE		;
+}
+
+.form-table tbody tr.active-row {
+  font-weight: bold;
+  color: var(--body-color);
+}
+
+.table tbody tr.highlight {
+    background-color: #00CC00 !important; /* Hoặc màu bạn muốn */
+}
+
+#suggestions {
+    list-style-type: none;
+    margin: 0;
+    padding: 5px;
+    border: 1px solid #ddd;
+    background-color: white;
+    position: absolute;
+    z-index: 1000; /* Đảm bảo nó ở trên các phần tử khác */
+}
+
+#suggestions li {
+    padding: 5px;
+    cursor: pointer;
+}
+
+#suggestions li:hover {
+    background-color: #f0f0f0;
+}
+
+.search-row:hover {
+    background-color: #90EE90 !important; /* Màu xanh lá nhạt */
+    cursor: pointer !important;
+}

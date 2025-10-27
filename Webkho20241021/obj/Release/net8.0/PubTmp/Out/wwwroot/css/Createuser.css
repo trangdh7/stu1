@@ -1,0 +1,104 @@
+/* Reset CSS */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+/* Body styling */
+body {
+  height: 100vh;
+  background: linear-gradient(135deg, #2196f3, #1e88e5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Login/Signup container */
+.login-container {
+  background-color: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 30%;
+  text-align: center;
+}
+
+/* Form title */
+.login-form h2 {
+  margin-bottom: 20px;
+  color: #1e88e5;
+  font-weight: bold;
+}
+
+/* Input fields */
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 13px;
+  margin-top: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  outline: none;
+  transition: border 0.3s;
+  font-size: 17px;
+}
+
+.input-group input:focus {
+  border-color: #1e88e5;
+}
+
+/* Submit button */
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #1e88e5;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #1565c0;
+}
+
+.input-group select {
+    width: 100%;
+    padding: 13px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+    transition: border 0.3s;
+    font-size: 17px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.input-group select:focus {
+    border-color: #1e88e5;
+}
+
+
+/* Links */
+.links {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.links a {
+  color: #1e88e5;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.links a:hover {
+  color: #1565c0;
+}

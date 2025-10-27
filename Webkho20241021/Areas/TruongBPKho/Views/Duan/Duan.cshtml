@@ -1,0 +1,148 @@
+﻿@model Webkho_20241021.Areas.TruongBPKho.Data.Duanviewmodel
+@{
+    ViewData["Title"] = "Duan";
+    Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/CSS/Action.css" rel="stylesheet" />
+    <link href="~/CSS/Kho.css" rel="stylesheet" />
+    <link href="~/CSS/style.css" rel="stylesheet" />
+    <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet" />
+
+    <title>Document</title>
+</head>
+<body>
+    <nav class="bodykho">
+        <div class="menu-kho">
+            <ul>
+                <li><a href="">Danh sách dự án</a></li>
+            </ul>
+            <ul>
+                <li><i class="bx bx-search"></i></li>
+            </ul>
+        </div>
+        <div class="Tableyeucau">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <td>STT</td>
+                        <td>Tên dự án</td>
+                        <td>Mã dự án</td>
+                        <td>Người quản lí</td>
+                        <td>Khách hàng</td>
+                        <td>Ngày bắt đầu</td>
+                        <td>Ngày kết thúc</td>
+                        <td>Trạng thái</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int STT = 1;
+                    }
+                    @foreach (var item in Model.Duan)
+                    {
+                        <tr>
+                            <td>@STT</td>
+                            <td>@item.TenDuan</td>
+                            <td>
+                                <a href="javascript:void(0);" onclick="showVTDuan('@item.MaDuan')">
+                                    @item.MaDuan
+                                </a>
+                            </td>
+                            <td>@item.NguoiQLDA</td>
+                            <td>@item.KhachHang</td>
+                            <td>@item.NgayBatdau</td>
+                            <td>@item.NgayKetthuc</td>
+                            <td>
+                                @if (item.TrangThai == "Chờ")
+                                {
+                                    @using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKho" }, FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="MaDuan" value="@item.MaDuan" />
+                                        <button type="submit" name="action" value="start" class="btn-icon start-btn">
+                                            <i class="bx bx-play-circle"></i> Bắt đầu
+                                        </button>
+                                    }
+                                }
+                                else if (item.TrangThai == "Đang triển khai")
+                                {
+                                    @using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKho" }, FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="MaDuan" value="@item.MaDuan" />
+                                        <button type="submit" name="action" value="end" class="btn-icon end-btn">
+                                            <i class="bx bxs-x-circle"></i> Kết thúc
+                                        </button>
+                                    }
+                                }
+                                else if (item.TrangThai == "Đã hoàn thành")
+                                {
+                                    <span>Đã hoàn thành</span>
+                                }
+                            </td>
+
+                        </tr>
+                        STT++;
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="action">
+            <ul class="hanhdong">
+                <li>
+                    <a href="/TruongBPKho/Duan/ThemDuan">Thêm dự án</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <nav class="bodyyeucau-thietbi">
+        <div class="Tableyeucau-thietbi-box">
+            <table class="tablethietbi">
+                <thead>
+                    <tr>
+                        <td>Tên vật tư</td>
+                        <td>Mã vật tư</td>
+                        <td>Mã kho</td>
+                        <td>Hãng sx</td>
+                        <td>Nhà cung cấp</td>
+                        <td>Số lượng</td>
+                        <td>Đơn vị</td>
+                        <td>Trạng thái</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.KhoDuan)
+                    {
+                        <tr>
+                            <td>@item.TenSanpham</td>
+                            <td>@item.MaSanpham</td>
+                            <td>@item.DAMakho</td>
+                            <td>@item.HangSX</td>
+                            <td>@item.NhaCC</td>
+                            <td>@item.SL</td>
+                            <td>@item.DonVi</td>
+                            <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                            <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                            <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
+                            <td>@item.TrangThai</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </nav>
+    <script src="~/js/duan.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+

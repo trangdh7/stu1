@@ -1,0 +1,399 @@
+is_global = true
+build_property.TargetFramework = net8.0
+build_property.TargetFramework = net8.0
+build_property.TargetPlatformMinVersion = 
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = Webkho_20241021
+build_property.RootNamespace = Webkho_20241021
+build_property.ProjectDir = D:\0-STU PC09\1-Project\10.Quan_li_kho\Webkho20241021\Webkho20241021\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 8.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = D:\0-STU PC09\1-Project\10.Quan_li_kho\Webkho20241021\Webkho20241021
+build_property._RazorSourceGeneratorDebug = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Duan/Duan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xEdWFuXER1YW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Duan/ThemDuan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xEdWFuXFRoZW1EdWFuLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Home/Import.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xIb21lXEltcG9ydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Home/Themthietbi.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xIb21lXFRoZW10aGlldGJpLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Home/Tongkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xIb21lXFRvbmdraG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Home/Trangchu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xIb21lXFRyYW5nY2h1LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Layout/Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xMYXlvdXRcTGF5b3V0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Thongtincanhan/Thongtincanhan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xUaG9uZ3RpbmNhbmhhblxUaG9uZ3RpbmNhbmhhbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Yeucau/Phieumuahang.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xZZXVjYXVcUGhpZXVtdWFoYW5nLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Yeucau/Phieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xZZXVjYXVcUGhpZXVuaGFwa2hvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Yeucau/Phieuxuatkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xZZXVjYXVcUGhpZXV4dWF0a2hvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Yeucau/ThemPhieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xZZXVjYXVcVGhlbVBoaWV1bmhhcGtoby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Yeucau/ThemYeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xZZXVjYXVcVGhlbVlldWNhdS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Yeucau/Yeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xZZXVjYXVcWWV1Y2F1LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Duan/Duan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXER1YW5cRHVhbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Duan/ThemDuan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXER1YW5cVGhlbUR1YW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Home/Import.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXEhvbWVcSW1wb3J0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Home/Themthietbi.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXEhvbWVcVGhlbXRoaWV0YmkuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Home/Tongkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXEhvbWVcVG9uZ2toby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Home/Trangchu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXEhvbWVcVHJhbmdjaHUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Layout/Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXExheW91dFxMYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Thongtincanhan/Thongtincanhan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXFRob25ndGluY2FuaGFuXFRob25ndGluY2FuaGFuLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Yeucau/Phieumuahang.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXFlldWNhdVxQaGlldW11YWhhbmcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Yeucau/Phieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXFlldWNhdVxQaGlldW5oYXBraG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Yeucau/Phieuxuatkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXFlldWNhdVxQaGlldXh1YXRraG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Yeucau/ThemPhieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXFlldWNhdVxUaGVtUGhpZXVuaGFwa2hvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Yeucau/ThemYeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXFlldWNhdVxUaGVtWWV1Y2F1LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Yeucau/Yeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXFlldWNhdVxZZXVjYXUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Duan/Duan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcRHVhblxEdWFuLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Duan/ThemDuan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcRHVhblxUaGVtRHVhbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Home/Import.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcSG9tZVxJbXBvcnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Home/Themthietbi.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcSG9tZVxUaGVtdGhpZXRiaS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Home/Tongkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcSG9tZVxUb25na2hvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Home/Trangchu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcSG9tZVxUcmFuZ2NodS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Layout/Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcTGF5b3V0XExheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Thongtincanhan/Thongtincanhan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcVGhvbmd0aW5jYW5oYW5cVGhvbmd0aW5jYW5oYW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Yeucau/Phieumuahang.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcWWV1Y2F1XFBoaWV1bXVhaGFuZy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Yeucau/Phieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcWWV1Y2F1XFBoaWV1bmhhcGtoby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Yeucau/Phieuxuatkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcWWV1Y2F1XFBoaWV1eHVhdGtoby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Yeucau/ThemPhieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcWWV1Y2F1XFRoZW1QaGlldW5oYXBraG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Yeucau/ThemYeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcWWV1Y2F1XFRoZW1ZZXVjYXUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Yeucau/Yeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcWWV1Y2F1XFlldWNhdS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Duan/Duan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcRHVhblxEdWFuLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Duan/ThemDuan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcRHVhblxUaGVtRHVhbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Home/Import.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcSG9tZVxJbXBvcnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Home/Themthietbi.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcSG9tZVxUaGVtdGhpZXRiaS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Home/Tongkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcSG9tZVxUb25na2hvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Home/Trangchu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcSG9tZVxUcmFuZ2NodS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Layout/Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcTGF5b3V0XExheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Thongtincanhan/Thongtincanhan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcVGhvbmd0aW5jYW5oYW5cVGhvbmd0aW5jYW5oYW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Yeucau/Phieumuahang.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcWWV1Y2F1XFBoaWV1bXVhaGFuZy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Yeucau/Phieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcWWV1Y2F1XFBoaWV1bmhhcGtoby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Yeucau/Phieuxuatkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcWWV1Y2F1XFBoaWV1eHVhdGtoby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Yeucau/ThemPhieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcWWV1Y2F1XFRoZW1QaGlldW5oYXBraG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Yeucau/ThemYeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcWWV1Y2F1XFRoZW1ZZXVjYXUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Yeucau/Yeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcWWV1Y2F1XFlldWNhdS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Duan/Duan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXER1YW5cRHVhbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Duan/ThemDuan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXER1YW5cVGhlbUR1YW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Home/Import.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXEhvbWVcSW1wb3J0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Home/Themthietbi.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXEhvbWVcVGhlbXRoaWV0YmkuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Home/Tongkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXEhvbWVcVG9uZ2toby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Home/Trangchu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXEhvbWVcVHJhbmdjaHUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Layout/Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXExheW91dFxMYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Thongtincanhan/Thongtincanhan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXFRob25ndGluY2FuaGFuXFRob25ndGluY2FuaGFuLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Yeucau/Phieumuahang.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXFlldWNhdVxQaGlldW11YWhhbmcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Yeucau/Phieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXFlldWNhdVxQaGlldW5oYXBraG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Yeucau/Phieuxuatkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXFlldWNhdVxQaGlldXh1YXRraG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Yeucau/ThemPhieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXFlldWNhdVxUaGVtUGhpZXVuaGFwa2hvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Yeucau/ThemYeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXFlldWNhdVxUaGVtWWV1Y2F1LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Yeucau/Yeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXFlldWNhdVxZZXVjYXUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Duan/Duan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXER1YW5cRHVhbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Duan/ThemDuan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXER1YW5cVGhlbUR1YW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Home/Import.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXEhvbWVcSW1wb3J0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Home/Themthietbi.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXEhvbWVcVGhlbXRoaWV0YmkuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Home/Tongkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXEhvbWVcVG9uZ2toby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Home/Trangchu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXEhvbWVcVHJhbmdjaHUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXExheW91dFxMYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Thongtincanhan/Thongtincanhan.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXFRob25ndGluY2FuaGFuXFRob25ndGluY2FuaGFuLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Yeucau/Phieumuahang.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXFlldWNhdVxQaGlldW11YWhhbmcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Yeucau/Phieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXFlldWNhdVxQaGlldW5oYXBraG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Yeucau/Phieuxuatkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXFlldWNhdVxQaGlldXh1YXRraG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Yeucau/ThemPhieunhapkho.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXFlldWNhdVxUaGVtUGhpZXVuaGFwa2hvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Yeucau/ThemYeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXFlldWNhdVxUaGVtWWV1Y2F1LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Yeucau/Yeucau.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXFlldWNhdVxZZXVjYXUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Views/Home/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Views/Home/Dangnhap.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxEYW5nbmhhcC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Views/Home/Trangchu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxUcmFuZ2NodS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Views/Layout/Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGF5b3V0XExheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/0-STU PC09/1-Project/10.Quan_li_kho/Webkho20241021/Webkho20241021/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = b-1k0lcymvui

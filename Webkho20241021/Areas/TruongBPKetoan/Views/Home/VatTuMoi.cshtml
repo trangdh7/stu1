@@ -1,0 +1,141 @@
+@{
+    ViewData["Title"] = "VatTuMoi";
+    Layout = "~/Areas/TruongBPKetoan/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/CSS/Action.css" rel="stylesheet" />
+    <link href="~/CSS/Kho.css" rel="stylesheet" />
+    <link href="~/CSS/style.css" rel="stylesheet" />
+    <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Vật tư mới</title>
+</head>
+<body>
+    <nav class="bodykho">
+        <div class="menu-kho">
+            <ul>
+                <li><a href="">Vật tư mới</a></li>
+            </ul>
+            <ul>
+                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
+            </ul>
+        </div>
+        <div class="Tablekhotong-box">
+            <table class="tablekhotong">
+                <thead>
+                    <tr>
+                        <td>STT</td>
+                        <td>Tên vật tư</td>
+                        <td>Mã vật tư</td>
+                        <td>Mã kho</td>
+                        <td>Hãng SX</td>
+                        <td>Nhà cung cấp</td>
+                        <td>Số lượng</td>
+                        <td>Đơn vị</td>
+                        <td>Ngày nhập kho</td>
+                        <td>Ngày bảo hành</td>
+                        <td>Trạng thái</td>
+                        <td>Ghi chú</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Laptop Dell Inspiron 15</td>
+                        <td>LT001</td>
+                        <td>KHO001</td>
+                        <td>Dell</td>
+                        <td>Công ty ABC</td>
+                        <td>5</td>
+                        <td>Cái</td>
+                        <td>01/11/2024</td>
+                        <td>01/11/2025</td>
+                        <td>Mới</td>
+                        <td>Vật tư mới nhập</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Máy in Canon LBP</td>
+                        <td>MI002</td>
+                        <td>KHO001</td>
+                        <td>Canon</td>
+                        <td>Công ty XYZ</td>
+                        <td>3</td>
+                        <td>Cái</td>
+                        <td>02/11/2024</td>
+                        <td>02/11/2025</td>
+                        <td>Mới</td>
+                        <td>Vật tư mới nhập</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Bàn phím cơ Logitech</td>
+                        <td>BP003</td>
+                        <td>KHO002</td>
+                        <td>Logitech</td>
+                        <td>Công ty DEF</td>
+                        <td>10</td>
+                        <td>Cái</td>
+                        <td>03/11/2024</td>
+                        <td>03/11/2025</td>
+                        <td>Mới</td>
+                        <td>Vật tư mới nhập</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Chuột không dây Microsoft</td>
+                        <td>CH004</td>
+                        <td>KHO002</td>
+                        <td>Microsoft</td>
+                        <td>Công ty GHI</td>
+                        <td>8</td>
+                        <td>Cái</td>
+                        <td>04/11/2024</td>
+                        <td>04/11/2025</td>
+                        <td>Mới</td>
+                        <td>Vật tư mới nhập</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>Màn hình Samsung 24 inch</td>
+                        <td>MN005</td>
+                        <td>KHO001</td>
+                        <td>Samsung</td>
+                        <td>Công ty JKL</td>
+                        <td>4</td>
+                        <td>Cái</td>
+                        <td>05/11/2024</td>
+                        <td>05/11/2025</td>
+                        <td>Mới</td>
+                        <td>Vật tư mới nhập</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="yeucau-action">
+            <div class="action">
+                <ul class="hanhdong">
+                    <li>
+                        <a href="">Thêm vật tư</a>
+                    </li>
+                    <li>
+                        <a href="">Cập nhật</a>
+                    </li>
+                </ul>
+                <ul class="excel">
+                    <li>
+                        <a href="">Import</a>
+                    </li>
+                    <li>
+                        <a href="">Export</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</body>
+</html>

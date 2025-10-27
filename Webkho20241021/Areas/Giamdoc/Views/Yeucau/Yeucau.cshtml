@@ -1,0 +1,194 @@
+﻿@model Webkho_20241021.Areas.Giamdoc.Data.Yeucauviewmodel
+
+
+@{
+    ViewData["Title"] = "Yeucau";
+    Layout = "~/Areas/Giamdoc/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>yeucau</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+    <nav class="bodyyeucau">
+        <div class="menu-kho">
+            <ul class="timkiem">
+                <li class="menu-yeucau">
+                    <a href="/Giamdoc/Yeucau/Yeucau">Phiếu yêu cầu</a>
+                    <span class="badge">
+                        <span class="notification"></span> 
+                    </span>
+                </li>
+                <li class="menu-xuatkho">
+                    <a href="/Giamdoc/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-nhapkho">
+                    <a href="/Giamdoc/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-muahang">
+                    <a href="/Giamdoc/Yeucau/Phieumuahang">Phiếu mua hàng</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+            </ul>
+            <ul>
+                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
+            </ul>
+        </div>
+
+
+        <div class="Tableyeucau">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <td>STT</td>
+                        <td>Tên yêu cầu</td>
+                        <td>Mã yêu cầu</td>
+                        <td>Người yêu cầu</td>
+                        <td>Bộ phận</td>
+                        <td>Mã người YC</td>
+                        <td>Mã dự án</td>
+                        <td>Ngày yêu cầu</td>
+                        <td>Trạng thái</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int STT = 1;
+                    }
+                    @foreach (var item in Model.Yeucau)
+                    {
+                        var duan = Model.Duans.FirstOrDefault(d => d.MaDuan == item.YCMaDuan);
+                        string maNguoiQLDA = duan?.MaNguoiQLDA;
+                        string maNguoidungSession = Context.Session.GetString("MaNguoidung");
+                        <tr>
+                            <td>@STT</td>
+                            <td>@item.TenYeucau</td>
+                            <td>
+                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau')">
+                                    @item.MaYeucau
+                                </a>
+                            </td>
+                            <td>@item.NguoiYeucau</td>
+                            <td>@item.Bophan</td>
+                            <td>@item.YCMaNguoidung</td>
+                            <td>@item.YCMaDuan</td>
+                            <td>@item.NgayYeucau?.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                @if (item.TrangThai == "Quản lí dự án" && maNguoiQLDA == maNguoidungSession)
+                                {
+                                    @using (Html.BeginForm("XuLyYeucau", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="MaYeucau" value="@item.MaYeucau" />
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                            <i class="bx bxs-check-circle"></i>
+                                        </button>
+                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn">
+                                            <i class="bx bxs-x-circle"></i>
+                                        </button>
+                                    }
+                                }
+                                else if (item.TrangThai == $"{Context.Session.GetString("Chucvu")}-{Context.Session.GetString("Bophan")}")
+                                {
+                                    @using (Html.BeginForm("XuLyYeucau", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="MaYeucau" value="@item.MaYeucau" />
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                            <i class="bx bxs-check-circle"></i>
+                                        </button>
+                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn">
+                                            <i class="bx bxs-x-circle"></i>
+                                        </button>
+                                    }
+                                }
+                                else if (item.TrangThai == Context.Session.GetString("Chucvu") && Context.Session.GetString("Chucvu") == "Giám đốc")
+                                {
+                                    @using (Html.BeginForm("XuLyYeucau", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="MaYeucau" value="@item.MaYeucau" />
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                            <i class="bx bxs-check-circle"></i>
+                                        </button>
+                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn">
+                                            <i class="bx bxs-x-circle"></i>
+                                        </button>
+                                    }
+                                }
+                                else
+                                {
+                                    @item.TrangThai
+                                    ;
+                                }
+                            </td>
+                        </tr>
+                        STT++;
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="action">
+            <ul class="hanhdong">
+                <li>
+                    <a href="/Giamdoc/Yeucau/ThemYeucau">Thêm yêu cầu</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <nav class="bodyyeucau-thietbi">
+        <div class="Tableyeucau-thietbi-box">
+            <table class="tablethietbi">
+                <thead>
+                    <tr>
+                        <td>STT</td>
+                        <td>Tên vật tư</td>
+                        <td>Mã vật tư</td>
+                        <td>Mã kho</td>
+                        <td>Hãng sx</td>
+                        <td>Nhà cung cấp</td>
+                        <td>Số lượng</td>
+                        <td>Đơn vị</td>
+                        <td>Trạng thái</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int STT2 = 1;
+                    }
+                    @foreach (var item in Model.VTyeucau)
+                    {
+                        <tr>
+                            <td>@STT2</td>
+                            <td>@item.TenSanpham</td>
+                            <td>@item.MaSanpham</td>
+                            <td>@item.YCMakho</td>
+                            <td>@item.HangSX</td>
+                            <td>@item.NhaCC</td>
+                            <td>@item.SL</td>
+                            <td>@item.DonVi</td>
+                        </tr>
+                        STT2++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </nav>
+    <script src="~/js/yeucau.js"></script>
+</body>
+</html>
+
+
+
+
+

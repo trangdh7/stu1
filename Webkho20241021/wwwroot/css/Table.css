@@ -1,0 +1,106 @@
+.Tableyeucau {
+    width: 100%;
+    max-height: 33vh;
+    overflow-y: auto;
+    border: 1px solid black;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.Tableyeucau button i {
+    padding: 0px 3px;
+    color: green;
+    text-align: center;
+    font-size: 1.2em;
+}
+
+button {
+    align-items: center;
+}
+
+.Tableyeucau-thietbi-box {
+    width: 100%;
+    max-height: 40vh;
+    overflow-y: auto;
+    border: 1px solid black;
+    box-sizing: border-box;
+    margin: 0;
+}
+ 
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8em;
+  font-family: sans-serif;
+}
+
+.table thead tr {
+  background-color: #4a26ab;
+  color: white;
+  text-align: left;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+.table th,
+.table td {
+  padding: 5px 12px;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #ddd;
+  background-color: #f4f4f4;
+}
+
+.table tbody tr:nth-of-type(even) {
+  background-color: #EEEEEE;
+}
+
+.table tbody tr:last-of-type {
+  border-bottom: 2px solid var(--body-color);
+}
+
+.table tbody tr.active-row {
+  font-weight: bold;
+  color: var(--body-color);
+}
+
+.tablethietbi {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8em;
+  font-family: sans-serif;
+}
+
+.tablethietbi thead tr {
+  background-color: #4a26ab;
+  color: white;
+  text-align: left;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+.tablethietbi th,
+.tablethietbi td {
+  padding: 5px 12px;
+}
+
+.tablethietbi tbody tr {
+  border-bottom: 1px solid #ddd;
+  background-color: #f4f4f4;
+}
+
+.tablethietbi tbody tr:nth-of-type(even) {
+  background-color: #EEEEEE;
+}
+
+.tablethietbi tbody tr:last-of-type {
+  border-bottom: 2px solid var(--body-color);
+}
+
+.tablethietbi tbody tr.active-row {
+  font-weight: bold;
+  color: var(--body-color);
+}

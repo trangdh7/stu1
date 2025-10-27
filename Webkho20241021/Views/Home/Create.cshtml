@@ -1,0 +1,216 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STU - Đăng ký tài khoản</title>
+    <link href="/css/createuser.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="page-wrap">
+        <div class="form-container">
+            <!-- Header -->
+            <div class="logo-section">
+                <img src="https://cdn.nhanlucnganhluat.vn/uploads/images/B937CC5F/logo/2019-11/logo2.jpg" alt="STU Logo" />
+                <div class="company-name">
+                    <span class="s-text">S</span>
+                    <span class="t-text">T</span>
+                    <span class="u-text">U</span>
+                </div>
+                <div class="company-tagline">
+                    <span>Sáng tạo</span><span> - Tận tâm</span><span> - Uy tín</span>
+                </div>
+            </div>
+
+            <!-- Multi-step form -->
+            <form id="signupForm" method="post" asp-action="CreateUser" novalidate>
+                <!-- Step 1 -->
+                <div class="form-step active">
+                    <h2>Thông tin cá nhân</h2>
+                    <div class="input-group">
+                        <label>Họ và tên</label>
+                        <input type="text" name="Name" placeholder="Nhập họ và tên" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Mã nhân viên</label>
+                        <input type="text" name="MaNV" placeholder="Mã NV" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Chức vụ</label>
+                        <select name="Chucvu" required>
+                            <option value="" disabled selected>Chọn chức vụ</option>
+                            <option value="Giám đốc">Giám đốc</option>
+                            <option value="Nhân viên">Nhân viên</option>
+                            <option value="Trưởng BP">Trưởng bộ phận</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Bộ phận</label>
+                        <select name="Bophan" required>
+                            <option value="" disabled selected>Chọn bộ phận</option>
+                            <option value="BP kỹ thuật">BP kỹ thuật</option>
+                            <option value="BP kho">BP kho</option>
+                            <option value="BP mua hàng">BP mua hàng</option>
+                            <option value="BP kế toán">BP kế toán</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn-next">Tiếp tục</button>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="form-step">
+                    <h2>Thông tin tài khoản</h2>
+                    <div class="input-group">
+                        <label>Tên đăng nhập</label>
+                        <input type="text" name="Username" placeholder="Tên đăng nhập" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" name="Email" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Số điện thoại</label>
+                        <input type="text" name="PhoneNumber" placeholder="Số điện thoại" required>
+                    </div>
+                    <button type="button" class="btn-prev">Quay lại</button>
+                    <button type="button" class="btn-next">Tiếp tục</button>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="form-step">
+                    <h2>Bảo mật</h2>
+                    <div class="input-group">
+                        <label>Mật khẩu</label>
+                        <input type="password" name="Password" placeholder="Mật khẩu" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Xác nhận mật khẩu</label>
+                        <input type="password" name="ConfirmPassword" placeholder="Nhập lại mật khẩu" required>
+                    </div>
+                    <button type="button" class="btn-prev">Quay lại</button>
+                    <button type="submit" class="btn-submit">Đăng ký</button>
+                </div>
+            </form>
+
+            <!-- Link -->
+            <div class="links">
+                <p class="text-black-50 me-5">Đã có tài khoản? </p>
+                
+                <a href="/Home/Dangnhap"> Đăng nhập</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const steps = document.querySelectorAll('.form-step');
+        const nextBtns = document.querySelectorAll('.btn-next');
+        const prevBtns = document.querySelectorAll('.btn-prev');
+        const form = document.getElementById('signupForm');
+        let currentStep = 0;
+
+        nextBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!validateStep(currentStep)) {
+                    return;
+                }
+                steps[currentStep].classList.remove('active');
+                currentStep = Math.min(currentStep + 1, steps.length - 1);
+                steps[currentStep].classList.add('active');
+            });
+        });
+
+        prevBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                steps[currentStep].classList.remove('active');
+                currentStep = Math.max(currentStep - 1, 0);
+                steps[currentStep].classList.add('active');
+            });
+        });
+
+        // Validate fields for a given step
+        function validateStep(stepIndex) {
+            let isValid = true;
+            const inputs = steps[stepIndex].querySelectorAll('input, select');
+
+            inputs.forEach(input => {
+                // remove previous error message
+                const sibling = input.nextElementSibling;
+                if (sibling && sibling.classList && sibling.classList.contains('error-msg')) {
+                    sibling.remove();
+                }
+
+                const value = (input.value || '').trim();
+
+                // required check
+                if (!value) {
+                    showError(input, 'Vui lòng nhập thông tin');
+                    isValid = false;
+                    return;
+                }
+
+                // per-field rules
+                
+
+                if (input.name === 'PhoneNumber' && !/^0\d{9}$/.test(value)) {
+                    showError(input, 'Số điện thoại 10 số, bắt đầu bằng 0');
+                    isValid = false;
+                }
+
+                if (input.name === 'Username' && value.length < 4) {
+                    showError(input, 'Tên đăng nhập tối thiểu 4 ký tự');
+                    isValid = false;
+                }
+
+                if (input.name === 'Password' && value.length < 6) {
+                    showError(input, 'Mật khẩu tối thiểu 6 ký tự');
+                    isValid = false;
+                }
+
+                if (input.name === 'ConfirmPassword') {
+                    const pass = form.querySelector('input[name="Password"]').value;
+                    if (value !== pass) {
+                        showError(input, 'Mật khẩu xác nhận không khớp');
+                        isValid = false;
+                    }
+                }
+            });
+
+            // focus first error
+            if (!isValid) {
+                const firstError = steps[stepIndex].querySelector('.error-msg');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            return isValid;
+        }
+
+        // Prevent submit if current step invalid
+        form.addEventListener('submit', function (e) {
+            if (!validateStep(currentStep)) {
+                e.preventDefault();
+            }
+        });
+
+        // Helpers
+        function showError(input, message) {
+            const error = document.createElement('div');
+            error.className = 'error-msg';
+            error.textContent = message;
+            input.classList.add('error');
+            input.insertAdjacentElement('afterend', error);
+
+            setTimeout(() => input.classList.remove('error'), 1500);
+        }
+
+        
+    </script>
+</body>
+</html>

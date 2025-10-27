@@ -1,0 +1,69 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "H:\\Webkho20241021\\Webkho20241021\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A0945632-52C9-4174-9062-AD3747ECAE56}|Webkho20241021\\Webkho20241021.csproj|h:\\webkho20241021\\webkho20241021\\webkho20241021\\controllers\\databasecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A0945632-52C9-4174-9062-AD3747ECAE56}|Webkho20241021\\Webkho20241021.csproj|solutionrelative:webkho20241021\\controllers\\databasecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A0945632-52C9-4174-9062-AD3747ECAE56}|Webkho20241021\\Webkho20241021.csproj|h:\\webkho20241021\\webkho20241021\\webkho20241021\\areas\\truongbpkho\\views\\yeucau\\phieunhapkho.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A0945632-52C9-4174-9062-AD3747ECAE56}|Webkho20241021\\Webkho20241021.csproj|solutionrelative:webkho20241021\\areas\\truongbpkho\\views\\yeucau\\phieunhapkho.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A0945632-52C9-4174-9062-AD3747ECAE56}|Webkho20241021\\Webkho20241021.csproj|h:\\webkho20241021\\webkho20241021\\webkho20241021\\areas\\truongbpkho\\controllers\\yeucaucontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A0945632-52C9-4174-9062-AD3747ECAE56}|Webkho20241021\\Webkho20241021.csproj|solutionrelative:webkho20241021\\areas\\truongbpkho\\controllers\\yeucaucontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "DatabaseController.cs",
+              "DocumentMoniker": "H:\\Webkho20241021\\Webkho20241021\\Webkho20241021\\Controllers\\DatabaseController.cs",
+              "RelativeDocumentMoniker": "Webkho20241021\\Controllers\\DatabaseController.cs",
+              "ToolTip": "H:\\Webkho20241021\\Webkho20241021\\Webkho20241021\\Controllers\\DatabaseController.cs",
+              "RelativeToolTip": "Webkho20241021\\Controllers\\DatabaseController.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-27T02:18:42.509Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "YeucauController.cs",
+              "DocumentMoniker": "H:\\Webkho20241021\\Webkho20241021\\Webkho20241021\\Areas\\TruongBPKho\\Controllers\\YeucauController.cs",
+              "RelativeDocumentMoniker": "Webkho20241021\\Areas\\TruongBPKho\\Controllers\\YeucauController.cs",
+              "ToolTip": "H:\\Webkho20241021\\Webkho20241021\\Webkho20241021\\Areas\\TruongBPKho\\Controllers\\YeucauController.cs",
+              "RelativeToolTip": "Webkho20241021\\Areas\\TruongBPKho\\Controllers\\YeucauController.cs",
+              "ViewState": "AgIAAN8EAAAAAAAAAAAvwOwEAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-27T01:27:42.238Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Phieunhapkho.cshtml",
+              "DocumentMoniker": "H:\\Webkho20241021\\Webkho20241021\\Webkho20241021\\Areas\\TruongBPKho\\Views\\Yeucau\\Phieunhapkho.cshtml",
+              "RelativeDocumentMoniker": "Webkho20241021\\Areas\\TruongBPKho\\Views\\Yeucau\\Phieunhapkho.cshtml",
+              "ToolTip": "H:\\Webkho20241021\\Webkho20241021\\Webkho20241021\\Areas\\TruongBPKho\\Views\\Yeucau\\Phieunhapkho.cshtml",
+              "RelativeToolTip": "Webkho20241021\\Areas\\TruongBPKho\\Views\\Yeucau\\Phieunhapkho.cshtml",
+              "ViewState": "AgIAABIAAAAAAAAAAAAAAAQAAABDAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-10-27T01:26:09.882Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

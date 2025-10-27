@@ -1,0 +1,190 @@
+﻿* {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-decoration: none;
+}
+
+
+:root {
+    --body-color: #fafafa;
+    --sidebar-color: #21244D;
+    --primary-color: #695cfe;
+    --primary-color-light: #f6f5ff;
+    --toggle-color: white;
+    --text-color: #B8E7EA;
+    --tran-03: all 0.3s;
+    --tran-04: all 0.4s;
+    --tran-05: all 0.5s;
+}
+
+body {
+    height: 100vh;
+    background: #fafafa;
+    /*    background-image: url('../icon/backgrou.jpg');
+    background-size: cover; 
+    background-position: center; 
+    background-repeat: no-repeat;  */
+}
+
+
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 85px;
+    background: var(--sidebar-color);
+    z-index: 1;
+    justify-content: center;
+    text-align: center;
+    transition: var(--tran-03);
+}
+
+.bodymenu {
+    position: relative;
+    margin-left: 85px;
+    transition: var(--tran-03);
+}
+
+.bodylayout {
+    position: relative;
+    margin-left: 85px;
+    transition: var(--tran-03);
+}
+
+.sidebar .text {
+    font-size: 16px;
+    font-weight: 500;
+    color: white;
+}
+
+.sidebar span,i{
+    color:var(--toggle-color)
+}
+
+.sidebar .image {
+    min-width: 60px;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .image-text .image img {
+    width: 50px;
+    border-radius: 6px;
+}
+
+.sidebar header .image-text {
+    display: flex;
+    align-items: center;
+}
+
+header .image-text .header-text {
+    display: none;
+}
+
+.header-text .name {
+    font-weight: 600;
+}
+
+.header-text .profession {
+    margin-top: -2px;
+}
+
+.sidebar ul a {
+    height: 100%;
+    width: 100%;
+    line-height: 65px;
+    font-size: 20px;
+    box-sizing: border-box;
+}
+
+header {
+    margin-top: 10px;
+    margin-left: 14px;
+}
+
+.sidebar ul {
+    padding-top: 30px;
+    margin-left: 14px;
+    transition: var(--tran-02);
+}
+
+    .sidebar ul li {
+        align-items: center;
+        position: relative;
+    }
+
+        .sidebar ul li:hover {
+            padding-left: 10px;
+            transition: var(--tran-03);
+        }
+
+        .sidebar ul li a i {
+            margin-right: 16px;
+            transition: transform 0.2s ease; /* Thêm hiệu ứng chuyển động mượt mà */
+        }
+
+        .sidebar ul li:hover a i {
+            transform: translateX(10px); /* Icon di chuyển sang phải khi hover */
+        }
+
+        .sidebar ul li a span {
+            transition: var(--tran-03);
+            display: none;
+        }
+
+.sidebar:hover {
+    width: 250px;
+    text-align: left;
+}
+
+    .sidebar:hover ul li a span {
+        display: inline;
+    }
+
+    .sidebar:hover + .bodymenu + .bodylayout {
+        margin-left: 250px;
+    }
+
+    .sidebar:hover .image-text .image img {
+        width: 50px;
+        border-radius: 6px;
+    }
+
+    .sidebar:hover header .image-text {
+        display: flex;
+        align-items: center;
+    }
+
+        .sidebar:hover header .image-text .header-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+.menu {
+    display: flex;
+    padding: 0px 0;
+    height: 34px;
+    width: 100%;
+    align-items: center;
+    text-align: right;
+    background-color: var(--sidebar-color);
+    justify-content: right;
+}
+
+    .menu a {
+        font-size: 30px;
+        padding: 3px 30px;
+    }
+
+    .menu #name,#chuvu {
+        padding-right: 15px;
+    }
+
+    .menu #chucvu {
+        padding-right: 15px;
+    }
+

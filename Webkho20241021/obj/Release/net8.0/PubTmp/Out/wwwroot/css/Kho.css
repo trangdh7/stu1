@@ -1,0 +1,96 @@
+.bodykho {
+    margin: 10px 5px;
+    background: white;
+    border-radius: 5px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.menu-kho {
+    display: flex;
+    height: 25px;
+    width: 100%;
+    max-height: 80vh;
+    margin: 0px auto;
+    overflow-y: auto;
+    border-radius: 5px;
+    justify-content: space-between;
+    background-color: aliceblue;
+}
+.menu-kho li {
+  background-color: aliceblue;
+  border-color: black;
+  height: 25px;
+  width: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.menu-kho ul {
+    display: flex;
+}
+
+.menu-kho li i,a {
+    color: black;
+}
+
+.menu-kho li:hover {
+  background-color: #695cfe;
+}
+.Tablekhotong-box {
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid black;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.tablekhotong {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8em;
+  font-family: sans-serif;
+}
+
+.tablekhotong thead tr {
+  background-color: #4a26ab;
+  color: white;
+  text-align: left;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+#hangsx-filter {
+    border: none;
+    background: none;
+    color: white;
+    font-weight: bold;
+    background-color: #4a26ab;
+}
+
+.tablekhotong th,
+.tablekhotong td {
+  padding: 5px 12px;
+}
+
+.tablekhotong tbody tr {
+  border-bottom: 1px solid #ddd;
+  background-color: #f4f4f4;
+}
+
+.tablekhotong tbody tr:nth-of-type(even) {
+  background-color: #EEEEEE;
+}
+
+.tablekhotong tbody tr:last-of-type {
+  border-bottom: 2px solid var(--body-color);
+}
+
+.tablekhotong tbody tr.active-row {
+  font-weight: bold;
+  color: var(--body-color);
+}
+

@@ -1,0 +1,239 @@
+﻿
+@{
+    ViewData["Title"] = "Thongtincanhan";
+    Layout = "~/Areas/Giamdoc/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thêm Yêu Cầu</title>
+</head>
+@using (Html.BeginForm("ThemYeucauSQL", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
+{
+    <body>
+        <div class="formyeucau">
+            <div class="tieude">
+                <p>Thông tin yêu cầu</p>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="ten">Tên</label>
+                    <input type="text" id="ten" name="NguoiYeucau" placeholder="Tên"
+                           value="@Context.Session.GetString("TenNguoidung")" />
+                </div>
+                <div class="field">
+                    <label for="manv">Mã NV</label>
+                    <input type="text" id="manv" name="YCMaNguoidung" placeholder="Mã nhân viên"
+                           value="@Context.Session.GetString("MaNguoidung")" />
+                </div>
+                <div class="field">
+                    <label for="bophan">Bộ phận</label>
+                    <input type="text" id="bophan" name="Bophan" placeholder="Bộ phận"
+                           value="@Context.Session.GetString("Bophan")"  />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="chucvu">Chức vụ</label>
+                    <input type="text" id="chucvu" name="ChucVu" placeholder="Chức vụ"
+                           value="@Context.Session.GetString("Chucvu")" />
+                </div>
+                <div class="field">
+                    <label for="Email">Email</label>
+                    <input type="email" id="Email" name="Email" placeholder="Email"
+                           value="@Context.Session.GetString("Email")" />
+                </div>
+                <div class="field">
+                    <label for="dienthoai">Số điện thoại</label>
+                    <input type="number" id="dienthoai" name="Phone" placeholder="Số điện thoại"
+                           value="@Context.Session.GetString("Phone")" />
+                </div>
+            </div>
+        </div>
+        <div class="formtableyeucau">
+            <div class="tieude">
+                <p>Danh sách vật tư cá nhân</p>
+            </div>
+            
+            <!-- Tìm kiếm và xuất báo cáo -->
+            <div class="search-export-section" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="search-box">
+                    <form method="get" style="display: flex; gap: 10px;">
+                        <input type="text" name="searchString" placeholder="Tìm kiếm theo tên hoặc mã vật tư..." 
+                               value="@ViewBag.SearchString" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 300px;">
+                        <button type="submit" style="padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Tìm kiếm
+                        </button>
+                        @if (!string.IsNullOrEmpty(ViewBag.SearchString))
+                        {
+                            <a href="@Url.Action("Thongtincanhan")" style="padding: 8px 16px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">
+                                Xóa bộ lọc
+                            </a>
+                        }
+                    </form>
+                </div>
+                <div class="export-section">
+                    <a href="@Url.Action("ExportPersonalMaterials")" style="padding: 8px 16px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px;">
+                        📊 Xuất báo cáo
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Thông tin phân trang -->
+            <div class="pagination-info" style="margin-bottom: 10px; font-size: 14px; color: #666;">
+                Hiển thị @((ViewBag.CurrentPage - 1) * ViewBag.PageSize + 1) - @Math.Min(ViewBag.CurrentPage * ViewBag.PageSize, ViewBag.TotalItems) 
+                trong tổng số @ViewBag.TotalItems vật tư
+            </div>
+            
+            <div class="themyeucau-table">
+                <table class="form-table">
+                    <thead>
+                        <tr>
+                            <td>STT</td>
+                            <td>Tên vật tư</td>
+                            <td>Mã vật tư</td>
+                            <td>Mã kho</td>
+                            <td>Hãng SX</td>
+                            <td>Nhà cung cấp</td>
+                            <td>Số lượng</td>
+                            <td>Đơn vị</td>
+                            <td>Ngày nhập kho</td>
+                            <td>Ngày bảo hành</td>
+                            <td>Thời gian BH</td>
+                            <td>Trạng thái</td>
+                            <td>Thao tác</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int STT = (ViewBag.CurrentPage - 1) * ViewBag.PageSize + 1;
+                        }
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@STT</td>
+                                <td>@item.TenSanpham</td>
+                                <td>@item.MaSanpham</td>
+                                <td>@item.NDMakho</td>
+                                <td>@item.HangSX</td>
+                                <td>@item.NhaCC</td>
+                                <td>@item.SL</td>
+                                <td>@item.DonVi</td>
+                                <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                                <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                                <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <select class="status-select" data-masanpham="@item.MaSanpham" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <option value="Đang sử dụng" @(item.TrangThai == "Đang sử dụng" ? "selected" : "")>Đang sử dụng</option>
+                                        <option value="Hỏng" @(item.TrangThai == "Hỏng" ? "selected" : "")>Hỏng</option>
+                                        <option value="Mất" @(item.TrangThai == "Mất" ? "selected" : "")>Mất</option>
+                                        <option value="Trả lại" @(item.TrangThai == "Trả lại" ? "selected" : "")>Trả lại</option>
+                                        <option value="Bảo hành" @(item.TrangThai == "Bảo hành" ? "selected" : "")>Bảo hành</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button class="update-status-btn" data-masanpham="@item.MaSanpham" 
+                                            style="padding: 4px 8px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                        Cập nhật
+                                    </button>
+                                </td>
+                            </tr>
+                            STT++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Phân trang -->
+            @if (ViewBag.TotalPages > 1)
+            {
+                <div class="pagination" style="margin-top: 20px; text-align: center;">
+                    @{
+                        int currentPage = ViewBag.CurrentPage;
+                        int totalPages = ViewBag.TotalPages;
+                        string searchString = ViewBag.SearchString ?? "";
+                    }
+                    
+                    @if (currentPage > 1)
+                    {
+                        <a href="@Url.Action("Thongtincanhan", new { page = 1, searchString = searchString })" 
+                           style="padding: 8px 12px; margin: 0 2px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">
+                            « Đầu
+                        </a>
+                        <a href="@Url.Action("Thongtincanhan", new { page = currentPage - 1, searchString = searchString })" 
+                           style="padding: 8px 12px; margin: 0 2px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">
+                            ‹ Trước
+                        </a>
+                    }
+                    
+                    @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                    {
+                        <a href="@Url.Action("Thongtincanhan", new { page = i, searchString = searchString })" 
+                           style="padding: 8px 12px; margin: 0 2px; background-color: @(i == currentPage ? "#6c757d" : "#007bff"); color: white; text-decoration: none; border-radius: 4px;">
+                            @i
+                        </a>
+                    }
+                    
+                    @if (currentPage < totalPages)
+                    {
+                        <a href="@Url.Action("Thongtincanhan", new { page = currentPage + 1, searchString = searchString })" 
+                           style="padding: 8px 12px; margin: 0 2px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">
+                            Sau ›
+                        </a>
+                        <a href="@Url.Action("Thongtincanhan", new { page = totalPages, searchString = searchString })" 
+                           style="padding: 8px 12px; margin: 0 2px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">
+                            Cuối »
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </body>
+}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Xử lý cập nhật trạng thái
+    document.querySelectorAll('.update-status-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const maSanpham = this.getAttribute('data-masanpham');
+            const selectElement = this.closest('tr').querySelector('.status-select');
+            const trangThai = selectElement.value;
+            
+            if (confirm('Bạn có chắc chắn muốn cập nhật trạng thái vật tư này?')) {
+                updateMaterialStatus(maSanpham, trangThai);
+            }
+        });
+    });
+    
+    // Hàm cập nhật trạng thái qua AJAX
+    function updateMaterialStatus(maSanpham, trangThai) {
+        fetch('@Url.Action("UpdateMaterialStatus")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `maSanpham=${encodeURIComponent(maSanpham)}&trangThai=${encodeURIComponent(trangThai)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                // Có thể reload trang hoặc cập nhật UI
+                location.reload();
+            } else {
+                alert('Lỗi: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi cập nhật trạng thái!');
+        });
+    }
+});
+</script>
+</html>
+

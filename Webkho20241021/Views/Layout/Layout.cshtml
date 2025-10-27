@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/css/style.css" rel="stylesheet" />
+    <link href="~/css/trangchu.css" rel="stylesheet" />
+    <link href="~/css/table.css" rel="stylesheet" />
+    <link href="~/css/kho.css" rel="stylesheet" />
+    <link href="~/css/action.css" rel="stylesheet" />
+    <link href="~/css/form.css" rel="stylesheet" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet" />
+
+    <title>@ViewBag.Title</title>
+</head>
+<body>
+    <nav class="sidebar">
+        <header>
+            <div class="image-text">
+                <span class="image">
+                    <img src="~/Icon/logo2.jpg" />
+                </span>
+                <div class="header-text">
+                    <span class="name">STU</span>
+                    <span class="profession">Warehouse</span>
+                </div>
+            </div>
+        </header>
+        <ul>
+            <li>
+                <a href="">
+                    <i class="bx bx-search"></i>
+                    <span class="nav-item">Tìm kiếm</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Home/Trangchu">
+                    <i class="bx bxs-grid-alt"></i>
+                    <span class="nav-item">Trang chủ</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Home/Trangchu">
+                    <i class='bx bxs-user'></i>
+                    <span class="nav-item">Thông tin cá nhân</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Home/Trangchu">
+                    <i class='bx bxs-calendar-alt'></i>
+                    <span class="nav-item">Dự án</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Home/Tongkho">
+                    <i class='bx bxs-home-alt-2'></i>
+                    <span class="nav-item">Kho</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Home/Yeucau">
+                    <i class='bx bxs-bar-chart-square'></i>
+                    <span class="nav-item">Yêu cầu</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <nav class="bodymenu">
+        <ul class="menu">
+            <li id="name"><i>Nguyễn Tiến Hiệp</i></li>
+            <li class="notification-dropdown">
+                <a href="#" id="notification-bell">
+                    <i class="bx bxs-bell"></i>
+                </a>
+                <div id="notification-list" class="hidden">
+                    <ul>
+                        <!-- Danh sách thông báo sẽ được load tại đây -->
+                    </ul>
+                </div>
+            </li>
+            <li>
+                <a href=""><i class="bx bx-user-circle"></i></a>
+            </li>
+        </ul>
+        <div>
+            @RenderBody()
+        </div>
+
+    </nav>
+</body>
+</html>

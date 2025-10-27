@@ -1,0 +1,84 @@
+﻿
+@{
+    ViewData["Title"] = "ThemDuan";
+    Layout = "~/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thêm Yêu Cầu</title>
+</head>
+@using (Html.BeginForm("ThemDuanSQL", "Duan", new { area = "TruongBPMuahang" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
+{
+    <body>
+        <div class="formyeucau">
+            <div class="tieude">
+                <p>Thông tin yêu cầu</p>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="tenduan">Tên dự án</label>
+                    <input type="text" id="tenduan" name="TenDuan" placeholder="Tên dự án" />
+                </div>
+                <div class="field">
+                    <label for="maduan">Mã dự án</label>
+                    <input type="text" id="maduan" name="MaDuan" placeholder="Mã dự án" />
+                </div>
+                <div class="field">
+                    <label for="khachhang">Khách hàng</label>
+                    <input type="text" id="khachhang" name="KhachHang" placeholder="Khách hàng" />
+                </div>
+            </div>
+            <div class="row">
+                    <div class="field">
+                        <label for="nguoiquanli">Người QLDA</label>
+                    <select id="nguoiquanli" name="NguoiQLDA" onchange="updateMaNguoiQuanLi()">
+                            <option value="">Chọn người quản lý</option>
+                            @foreach (var n in ViewBag.Tennguoidunglist)
+                            {
+                                <option value="@n.TenNguoidung" data-manguoiquanli="@n.MaNguoidung">@n.TenNguoidung</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="manguoiquanli">Mã người QLDA</label>
+                        <select id="manguoiquanli" name="MaNguoiQLDA" readonly>
+                            <option value="">Chọn mã người quản lý</option>
+                        </select>
+                    </div>
+                <div class="field-hidden">
+                    <label for="">Bộ phận</label>
+
+                </div>
+
+            </div>
+            <div class="action">
+                <button type="submit">Xác nhận</button>
+            </div>
+        </div>
+        <script>
+            function updateMaNguoiQuanLi() {
+                const nguoiQuanLiSelect = document.getElementById("nguoiquanli");
+                const maNguoiQuanLiSelect = document.getElementById("manguoiquanli");
+
+                const selectedOption = nguoiQuanLiSelect.options[nguoiQuanLiSelect.selectedIndex];
+                const maNguoiQuanLi = selectedOption.getAttribute("data-manguoiquanli");
+
+                // Xóa các option hiện tại trong mã người quản lý
+                maNguoiQuanLiSelect.innerHTML = "";
+
+                if (maNguoiQuanLi) {
+                    // Thêm option mới với mã người quản lý tương ứng
+                    const option = document.createElement("option");
+                    option.value = maNguoiQuanLi;
+                    option.text = maNguoiQuanLi;
+                    maNguoiQuanLiSelect.appendChild(option);
+                }
+            }
+        </script>
+    </body>
+}
+</html>
+

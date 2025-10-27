@@ -1,0 +1,101 @@
+﻿
+@{
+    ViewData["Title"] = "Trangchu";
+    Layout = "~/Areas/TruongBPKythuat/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet" />
+    <title>Trang chu</title>
+</head>
+<body>
+    <nav class="trangchu">
+        <nav class="trangchu1">
+            <nav class="chucnang">
+                <span>Thông tin cá nhân</span>
+                <ul class="canhan-icon">
+                    <li>
+                        <a href="/TruongBPKythuat/Thongtincanhan/Thongtincanhan"><i class='bx bxs-user' style='color:#8843b1'></i></a>
+                        <a href="/TruongBPKythuat/Thongtincanhan/Thongtincanhan">Thông tin</a>
+                    </li>
+                </ul>
+            </nav>
+            <nav class="chucnang">
+                <span>Quản lí kho</span>
+                <ul class="canhan-icon">
+                    <li>
+                        <a href="/TruongBPKythuat/Home/Tongkho"><i class='bx bx-grid' style='color:#0d1348'></i></a>
+                        <a href="/TruongBPKythuat/Home/Tongkho">Tổng kho</a>
+                    </li>
+                    <li>
+                        <a href="/TruongBPKythuat/Home/Import"><i class='bx bx-import' style='color:#0c6212'></i></a>
+                        <a href="/TruongBPKythuat/Home/Import">Import</a>
+                    </li>
+                    <li>
+                        <a href=""><i class='bx bx-export' style='color:#712a0e'></i></a>
+                        <a href="">Export</a>
+                    </li>
+                </ul>
+            </nav>
+        </nav>
+        <nav class="trangchu2">
+            <nav class="chucnang">
+                <span>Quản lí dự án</span>
+                <ul class="canhan-icon">
+                    <li>
+                        <a href="/TruongBPKythuat/Duan/Duan"><i class='bx bxs-calendar-alt' style='color:#0e1171'></i></a>
+                        <a href="/TruongBPKythuat/Duan/Duan">Danh sách dự án</a>
+                    </li>
+                    <li>
+                        <a href="/TruongBPKythuat/Duan/ThemDuan"><i class='bx bxs-calendar-plus' style='color:#0c6215'></i></a>
+                        <a href="/TruongBPKythuat/Duan/ThemDuan">Thêm dự án</a>
+                    </li>
+                    <li>
+                        <a href=""> <i class="bx bxs-calendar-minus" style='color:#712a0e'></i></a>
+                        <a href="">Xóa dự án</a>
+                    </li>
+                </ul>
+                </ul>
+            </nav>
+            <nav class="chucnang">
+                <span>Quản lí yêu cầu</span>
+                <ul class="canhan-icon">
+                    <li class="Danhsachyeucau">
+                        <a href="/TruongBPKythuat/Yeucau/Yeucau"><i class='bx bxs-report' style='color:#0f1271'></i></a>
+                        <a href="">Danh sách yêu cầu</a>
+                        <span class="badge-trangchu">
+                            <span class="notification"></span>
+                        </span>
+                    </li>
+                    <li>
+                        <a href="/TruongBPKythuat/Yeucau/ThemYeucau"><i class='bx bx-folder-plus' style='color:#0c6215'></i></a>
+                        <a href="">Thêm yêu cầu</a>
+                    </li>
+                    <li>
+                        <a href="/TruongBPKythuat/Home/VatTuMoi"><i class='bx bx-package' style='color:#8b5cf6'></i></a>
+                        <a href="/TruongBPKythuat/Home/VatTuMoi">Vật tư mới</a>
+                    </li>
+                </ul>
+            </nav>
+        </nav>
+    </nav>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="~/js/trangchu.js"></script>
+    <script>
+        $(document).ready(function () {
+            getThongbaoDatatrangchu();
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+

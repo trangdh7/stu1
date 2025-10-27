@@ -1,0 +1,100 @@
+@model List<Webkho_20241021.Models.vtphieuxuatkho>
+@{
+    ViewData["Title"] = "VatTuMoi";
+    Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/CSS/Action.css" rel="stylesheet" />
+    <link href="~/CSS/Kho.css" rel="stylesheet" />
+    <link href="~/CSS/style.css" rel="stylesheet" />
+    <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Vật tư mới</title>
+</head>
+<body>
+    <nav class="bodykho">
+        <div class="menu-kho">
+            <ul>
+                <li><a href="">Vật tư mới</a></li>
+            </ul>
+            <ul>
+                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
+            </ul>
+        </div>
+        <div class="Tablekhotong-box">
+            <table class="tablekhotong">
+                <thead>
+                    <tr>
+                        <td>STT</td>
+                        <td>Tên vật tư</td>
+                        <td>Mã vật tư</td>
+                        <td>Mã kho</td>
+                        <td>Hãng SX</td>
+                        <td>Nhà cung cấp</td>
+                        <td>Số lượng</td>
+                        <td>Đơn vị</td>
+                        <td>Ngày nhập kho</td>
+                        <td>Ngày bảo hành</td>
+                        <td>Trạng thái</td>
+                        <td>Loại cấp phát</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        var index = 1;
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@index</td>
+                                <td>@item.TenSanpham</td>
+                                <td>@item.MaSanpham</td>
+                                <td>@item.Makho</td>
+                                <td>@item.HangSX</td>
+                                <td>@item.NhaCC</td>
+                                <td>@item.SL</td>
+                                <td>@item.DonVi</td>
+                                <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                                <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                                <td>@item.TrangThai</td>
+                                <td>@item.LoaiCapPhat</td>
+                            </tr>
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="12">Không có dữ liệu.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div id="yeucau-action">
+            <div class="action">
+                <ul class="hanhdong">
+                    <li>
+                        <a href="">Thêm vật tư</a>
+                    </li>
+                    <li>
+                        <a href="">Cập nhật</a>
+                    </li>
+                </ul>
+                <ul class="excel">
+                    <li>
+                        <a href="">Import</a>
+                    </li>
+                    <li>
+                        <a href="">Export</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</body>
+</html>

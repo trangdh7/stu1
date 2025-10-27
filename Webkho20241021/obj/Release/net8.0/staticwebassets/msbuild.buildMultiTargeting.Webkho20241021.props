@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\Webkho20241021.props" />
+</Project>

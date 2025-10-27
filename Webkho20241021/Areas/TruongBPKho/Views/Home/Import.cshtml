@@ -1,0 +1,120 @@
+﻿@{
+    ViewData["Title"] = "Import";
+    Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Import Vật Tư</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script>
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    populateTable(jsonData);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function formatExcelDateToDatetimeLocal(dateString) {
+            // Kiểm tra nếu chuỗi ngày không hợp lệ hoặc rỗng
+            if (!dateString) return '';
+
+            // Giả sử chuỗi ngày có định dạng dd/MM/yyyy
+            const [day, month, year] = dateString.split('/');
+
+            if (day && month && year && day.length <= 2 && month.length <= 2) {
+                // Định dạng lại theo `yyyy-MM-dd` để dùng trong thẻ input
+                return `${year}-${day.padStart(2, '0')}-${month.padStart(2, '0')}`;
+            }
+
+            return ''; // Trả về chuỗi rỗng nếu không thể định dạng đúng
+        }
+
+        function populateTable(data) {
+            const tbody = document.querySelector('.form-table tbody');
+            tbody.innerHTML = ''; // Clear existing rows
+
+            for (let i = 1; i < data.length; i++) { // Skip header row
+                if (data[i].length <= 1) continue; // Skip rows with 1 or fewer columns
+
+                const formattedNgayBaohanh = formatExcelDateToDatetimeLocal(data[i][7]);
+                const formattedThoiGianBH = formatExcelDateToDatetimeLocal(data[i][8]);
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i}</td>
+                    <td style="width: 20%;"><input type="text" name="TenSanpham" value="${data[i][1] || ''}" placeholder="Tên vật tư" required /></td>
+                    <td><input type="text" name="MaSanpham" value="${data[i][2] || ''}" placeholder="Mã vật tư" required /></td>
+                    <td><input type="text" name="HangSX" value="${data[i][3] || ''}" placeholder="Hãng SX" /></td>
+                    <td><input type="text" name="NhaCC" value="${data[i][4] || ''}" placeholder="Nhà cung cấp" /></td>
+                    <td><input type="number" name="SL" value="${data[i][5] || ''}" placeholder="Số lượng" required /></td>
+                    <td><input type="text" name="DonVi" value="${data[i][6] || ''}" placeholder="Đơn vị" required /></td>
+                    <td><input type="date" name="NgayBaohanh" value="${formattedNgayBaohanh}" placeholder="Ngày bảo hành" /></td>
+                    <td><input type="date" name="ThoiGianBH" value="${formattedThoiGianBH}" placeholder="Thời gian BH" /></td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+    </script>
+</head>
+<body>
+    @using (Html.BeginForm("ImportSQL", "Home", new { area = "TruongBPKho" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
+    {
+        <div class="formyeucau">
+            <div class="tieude">
+                <p>Chọn file Excel để import</p>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="file">File import</label>
+                    <input type="file" id="file" name="file" onchange="handleFileUpload(event)" />
+                </div>
+            </div>
+            <div class="action">
+                <button type="button" onclick="handleFileUpload(event)">Import</button>
+            </div>
+        </div>
+        <div class="formtableyeucau">
+            <div class="tieude">
+                <p>Danh sách vật tư import</p>
+            </div>
+            <div class="themyeucau-table">
+                <table class="form-table">
+                    <thead>
+                        <tr>
+                            <td>STT</td>
+                            <td>Tên vật tư</td>
+                            <td>Mã vật tư</td>
+                            <td>Hãng SX</td>
+                            <td>Nhà cung cấp</td>
+                            <td>Số lượng</td>
+                            <td>Đơn vị</td>
+                            <td>Ngày bảo hành</td>
+                            <td>Thời gian BH</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="action">
+                <button type="submit">Thêm vật tư</button>
+            </div>
+        </div>
+    }
+</body>
+</html>

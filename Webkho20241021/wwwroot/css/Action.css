@@ -1,0 +1,56 @@
+.action {
+    display: flex;
+    height: 25px;
+    width: 100%;
+    max-height: 75vh;
+    margin: 0px auto;
+    overflow-y: auto;
+    border-radius: 5px;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+.action ul {
+  display: flex;
+}
+.action .hanhdong li {
+  background-color: #336600	;
+  border-color: black;
+  height: 25px;
+  width: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  border-radius:4px;
+}
+
+.action .excel li {
+  background-color: #336600	;
+  border-color: black;
+  height: 25px;
+  width: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  border-radius:4px;
+  margin-left: 10px;
+}
+
+.action li a {
+    color:white;
+}
+
+.action li:hover {
+    background-color: #695cfe;
+}
+
+.action button {
+    width: 200px;
+    height: 25px;
+    border-radius: 4px;
+    background-color:#336600;
+    border: none;
+    font-size: 18px;
+    color:white;
+}

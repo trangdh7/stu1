@@ -1,0 +1,525 @@
+{
+  "Files": [
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\Webkho20241021.bundle.scp.css",
+      "PackagePath": "staticwebassets\\Webkho20241021.bundle.scp.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\Canhan.png",
+      "PackagePath": "staticwebassets\\Icon\\Canhan.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\Remove-bg.ai_1724057281689.png",
+      "PackagePath": "staticwebassets\\Icon\\Remove-bg.ai_1724057281689.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\android-icon-144x144.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\android-icon-144x144.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\android-icon-192x192.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\android-icon-192x192.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\android-icon-36x36.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\android-icon-36x36.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\android-icon-48x48.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\android-icon-48x48.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\android-icon-72x72.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\android-icon-72x72.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\android-icon-96x96.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\android-icon-96x96.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-114x114.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-114x114.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-120x120.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-120x120.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-144x144.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-144x144.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-152x152.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-152x152.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-180x180.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-180x180.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-57x57.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-57x57.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-60x60.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-60x60.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-72x72.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-72x72.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-76x76.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-76x76.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon-precomposed.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon-precomposed.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\apple-icon.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\apple-icon.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\favicon-16x16.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\favicon-16x16.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\favicon-32x32.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\favicon-32x32.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\favicon-96x96.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\favicon-96x96.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\favicon.ico",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\favicon.ico"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\manifest.json",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\manifest.json"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\ms-icon-144x144.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\ms-icon-144x144.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\ms-icon-150x150.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\ms-icon-150x150.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\ms-icon-310x310.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\ms-icon-310x310.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\STUicon\\ms-icon-70x70.png",
+      "PackagePath": "staticwebassets\\Icon\\STUicon\\ms-icon-70x70.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\accept.png",
+      "PackagePath": "staticwebassets\\Icon\\accept.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\backgrou.jpg",
+      "PackagePath": "staticwebassets\\Icon\\backgrou.jpg"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\checklist.png",
+      "PackagePath": "staticwebassets\\Icon\\checklist.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\export.png",
+      "PackagePath": "staticwebassets\\Icon\\export.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\hinh anh bao cao.jpg",
+      "PackagePath": "staticwebassets\\Icon\\hinh anh bao cao.jpg"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\home-regular-24.png",
+      "PackagePath": "staticwebassets\\Icon\\home-regular-24.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\icons8-search-50.png",
+      "PackagePath": "staticwebassets\\Icon\\icons8-search-50.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\import.png",
+      "PackagePath": "staticwebassets\\Icon\\import.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\logo2.jpg",
+      "PackagePath": "staticwebassets\\Icon\\logo2.jpg"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\minus.png",
+      "PackagePath": "staticwebassets\\Icon\\minus.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\muiten.png",
+      "PackagePath": "staticwebassets\\Icon\\muiten.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\plus.png",
+      "PackagePath": "staticwebassets\\Icon\\plus.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\rejected.png",
+      "PackagePath": "staticwebassets\\Icon\\rejected.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\report-solid-24.png",
+      "PackagePath": "staticwebassets\\Icon\\report-solid-24.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\screwdriver (1).png",
+      "PackagePath": "staticwebassets\\Icon\\screwdriver (1).png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\search-regular-24.png",
+      "PackagePath": "staticwebassets\\Icon\\search-regular-24.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\warehouse.png",
+      "PackagePath": "staticwebassets\\Icon\\warehouse.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\Icon\\xemthem.png",
+      "PackagePath": "staticwebassets\\Icon\\xemthem.png"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\css\\Action.css",
+      "PackagePath": "staticwebassets\\css\\Action.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\css\\Createuser.css",
+      "PackagePath": "staticwebassets\\css\\Createuser.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\css\\Dangnhap.css",
+      "PackagePath": "staticwebassets\\css\\Dangnhap.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\css\\Form.css",
+      "PackagePath": "staticwebassets\\css\\Form.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\css\\Kho.css",
+      "PackagePath": "staticwebassets\\css\\Kho.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\css\\Table.css",
+      "PackagePath": "staticwebassets\\css\\Table.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\css\\site.css",
+      "PackagePath": "staticwebassets\\css\\site.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\css\\style.css",
+      "PackagePath": "staticwebassets\\css\\style.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\css\\trangchu.css",
+      "PackagePath": "staticwebassets\\css\\trangchu.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\favicon.ico",
+      "PackagePath": "staticwebassets\\favicon.ico"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\duan.js",
+      "PackagePath": "staticwebassets\\js\\duan.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\khotong.js",
+      "PackagePath": "staticwebassets\\js\\khotong.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\layout.js",
+      "PackagePath": "staticwebassets\\js\\layout.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\phieumuahang.js",
+      "PackagePath": "staticwebassets\\js\\phieumuahang.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\phieunhapkho.js",
+      "PackagePath": "staticwebassets\\js\\phieunhapkho.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\phieuxuatkho.js",
+      "PackagePath": "staticwebassets\\js\\phieuxuatkho.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\site.js",
+      "PackagePath": "staticwebassets\\js\\site.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\themphieunhapkho.js",
+      "PackagePath": "staticwebassets\\js\\themphieunhapkho.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\themvattu.js",
+      "PackagePath": "staticwebassets\\js\\themvattu.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\themyeucau.js",
+      "PackagePath": "staticwebassets\\js\\themyeucau.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\trangchu.js",
+      "PackagePath": "staticwebassets\\js\\trangchu.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\js\\yeucau.js",
+      "PackagePath": "staticwebassets\\js\\yeucau.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\LICENSE",
+      "PackagePath": "staticwebassets\\lib\\bootstrap"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.js.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.min.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.min.js.map"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery-validation-unobtrusive\\LICENSE.txt",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\LICENSE.txt"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.min.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery-validation\\LICENSE.md",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\LICENSE.md"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\additional-methods.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\additional-methods.min.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\jquery.validate.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\jquery.validate.min.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery\\LICENSE.txt",
+      "PackagePath": "staticwebassets\\lib\\jquery\\LICENSE.txt"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery\\dist\\jquery.js",
+      "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery\\dist\\jquery.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.js"
+    },
+    {
+      "Id": "D:\\0-STU PC09\\1-Project\\10.Quan_li_kho\\Webkho20241021\\Webkho20241021\\wwwroot\\lib\\jquery\\dist\\jquery.min.map",
+      "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.map"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Webkho20241021.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.Webkho20241021.props",
+      "PackagePath": "build\\Webkho20241021.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.Webkho20241021.props",
+      "PackagePath": "buildMultiTargeting\\Webkho20241021.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.Webkho20241021.props",
+      "PackagePath": "buildTransitive\\Webkho20241021.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

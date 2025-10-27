@@ -1,0 +1,97 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STU - Đăng nhập</title>
+    <link href="/css/Dangnhap.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="container">
+        <!-- Logo -->
+        <div class="logo-section">
+            <img src="https://cdn.nhanlucnganhluat.vn/uploads/images/B937CC5F/logo/2019-11/logo2.jpg" alt="STU Logo" />
+            <div class="company-name">
+                <div class="s-text">S</div>
+                <div class="t-text">T</div>
+                <div class="u-text">U</div>
+            </div>
+            <div class="company-tagline">
+                <div class="company-tagline-s">Sáng tạo</div>
+                <div class="company-tagline-t"> - Tận tâm</div>
+                <div class="company-tagline-u"> - Uy tín</div>
+            </div>
+        </div>
+
+        <h1>Đăng Nhập</h1>
+
+        <form class="login-form" asp-action="Login" method="post" id="loginForm">
+            <div class="form-group">
+                <label for="Username">Tên đăng nhập</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="Username" name="Username" placeholder="Nhập tên đăng nhập" />
+                </div>
+                <p class="field-error" id="usernameError"></p>
+            </div>
+
+            <div class="form-group">
+                <label for="Password">Mật khẩu</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="Password" name="Password" placeholder="Nhập mật khẩu" />
+                </div>
+                <p class="field-error" id="passwordError"></p>
+            </div>
+
+            <button type="submit" class="btn-login">Đăng Nhập</button>
+
+            <div class="signup-link">
+                Chưa có tài khoản? <a href="/Home/Create">Đăng ký ngay</a>
+            </div>
+
+            @if (ViewData["ErrorMessage"] != null)
+            {
+                <p class="error-message show">@ViewData["ErrorMessage"]</p>
+            }
+        </form>
+    </div>
+
+    <script>
+        // Khi submit form
+        document.getElementById("loginForm").addEventListener("submit", function (e) {
+            let valid = true;
+
+            const username = document.getElementById("Username");
+            const password = document.getElementById("Password");
+            const usernameError = document.getElementById("usernameError");
+            const passwordError = document.getElementById("passwordError");
+
+            // Reset lỗi
+            usernameError.textContent = "";
+            passwordError.textContent = "";
+
+            // Kiểm tra tên đăng nhập
+            if (username.value.trim() === "") {
+                usernameError.textContent = "Tên tài khoản không được bỏ trống";
+                valid = false;
+            }
+
+            // Kiểm tra mật khẩu
+            if (password.value.trim() === "") {
+                passwordError.textContent = "Mật khẩu không được bỏ trống";
+                valid = false;
+            }
+
+            // Nếu có lỗi, chặn submit
+            if (!valid) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

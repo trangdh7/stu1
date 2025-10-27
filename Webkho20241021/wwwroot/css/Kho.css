@@ -1,0 +1,190 @@
+﻿.bodykho {
+    margin: 10px 5px;
+    background: white;
+    border-radius: 5px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.menu-kho {
+    display: flex;
+    height: 25px;
+    width: 100%;
+    max-height: 80vh;
+    margin: 0px auto;
+    overflow-y: auto;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    justify-content: space-between;
+    background-color: aliceblue;
+    position: relative;
+}
+
+    .menu-kho li {
+        background-color: aliceblue;
+        border-color: black;
+        height: 25px;
+        width: 125px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        position: relative;
+        padding: 0;
+    }
+
+    .menu-kho li a {
+     display: block;
+     width: 100%;
+     height: 100%;
+     color: black;
+     font-size: 15px;
+     text-decoration: none;
+     line-height: 25px;
+     }
+
+    .menu-kho ul {
+        display: flex;
+    }
+    .menu-kho li:hover a {
+        color: white;
+    }
+    .menu-kho li i, a {
+        color: black;
+        font-size: 15px;
+    }
+    .menu-kho li a.active {
+        background-color: #4a26ab;
+        color: white;
+        font-weight: bold;
+    }
+    .menu-kho a:hover {
+        color: white;
+    }
+
+    .menu-kho li:hover {
+        background-color: #695cfe;
+    }
+
+.Tablekhotong-box {
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid black;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.tablekhotong {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8em;
+    font-family: sans-serif;
+}
+
+    .tablekhotong thead tr {
+        background-color: #4a26ab;
+        color: white;
+        text-align: left;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+    }
+
+#hangsx-filter {
+    border: none;
+    background: none;
+    color: white;
+    font-weight: bold;
+    background-color: #4a26ab;
+}
+
+.tablekhotong th,
+.tablekhotong td {
+    padding: 5px 12px;
+}
+
+.tablekhotong tbody tr {
+    border-bottom: 1px solid #ddd;
+    background-color: #f4f4f4;
+}
+
+    .tablekhotong tbody tr:nth-of-type(even) {
+        background-color: #EEEEEE;
+    }
+
+    .tablekhotong tbody tr:last-of-type {
+        border-bottom: 2px solid var(--body-color);
+    }
+
+    .tablekhotong tbody tr.active-row {
+        font-weight: bold;
+        color: var(--body-color);
+    }
+
+.badge {
+    display: none;
+    background-color: red;
+    color: white;
+    font-size: 12px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+    .badge.show {
+        display: inline-block;
+        opacity: 1;
+    }
+
+.notification {
+    display: block;
+    font-size: 14px !important;
+    color: white !important;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.menu-kho .active {
+    color: white;
+    font-weight: bold;
+}
+
+.menu-kho .active-bg {
+    background-color: #4a26ab;
+}
+
+.badge-trangchu {
+    display: none;
+    background-color: red;
+    color: white;
+    font-size: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+    .badge-trangchu.show {
+        display: inline-block;
+        opacity: 1;
+    }

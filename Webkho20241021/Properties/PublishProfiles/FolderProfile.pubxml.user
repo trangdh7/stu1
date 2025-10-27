@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>D:\0-STU PC09\1-Project\10.Quan_li_kho\public\Public</_PublishTargetUrl>
+    <History>True|2025-01-13T07:46:20.2752282Z||;True|2025-01-13T14:00:07.1514634+07:00||;True|2025-01-13T13:28:43.2891671+07:00||;True|2025-01-13T13:25:04.0939939+07:00||;</History>
+    <LastFailureDetails />
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+  </PropertyGroup>
+  <ItemGroup>
+    <DestinationConnectionStrings Include="MySQLConnection">
+      <Value>Server=localhost%3bDatabase=stu%3buser=root%3bPassword=stu.com.vn%3b</Value>
+    </DestinationConnectionStrings>
+  </ItemGroup>
+</Project>

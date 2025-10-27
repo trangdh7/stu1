@@ -1,0 +1,59 @@
+﻿
+@{
+    ViewData["Title"] = "Themthietbi";
+    Layout = "~/Areas/TruongBPKythuat/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thêm Yêu Cầu</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    @using (Html.BeginForm("ThemvattuSQL", "Home", new { area = "TruongBPKythuat" }, FormMethod.Post,false, new { @enctype = "multipart/form-data" }))
+    {
+        <div class="formtableyeucau">
+            <div class="tieude">
+                <p>Danh sách vật tư yêu cầu</p>
+            </div>
+            <div class="themyeucau-table">
+                <table class="form-table">
+                    <thead>
+                        <tr>
+                            <td>STT</td>
+                            <td>Tên vật tư</td>
+                            <td>Mã vật tư</td>
+                            <td>Hãng SX</td>
+                            <td>Nhà cung cấp</td>
+                            <td>Số lượng</td>
+                            <td>Đơn vị</td>
+                            <td>Ngày bảo hành</td>
+                            <td>Thời gian BH</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><input type="text" name="TenSanpham[]" placeholder="Tên vật tư" /></td>
+                            <td><input type="text" name="MaSanpham[]" placeholder="Mã vật tư" /></td>
+                            <td><input type="text" name="HangSX[]" placeholder="Hãng SX" /></td>
+                            <td><input type="text" name="NhaCC[]" placeholder="Nhà cung cấp" /></td>
+                            <td><input type="number" name="SL[]" placeholder="Số lượng" /></td>
+                            <td><input type="text" name="DonVi[]" placeholder="Đơn vị" /></td>
+                            <td><input type="date" name="NgayBaohanh[]" placeholder="Ngày bảo hành" /></td>
+                            <td><input type="date" name="ThoiGianBH[]" placeholder="Thời gian BH" /></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="action">
+                <button type="submit">Thêm vật tư</button>
+            </div>
+        </div>
+    }
+    <script src="~/js/themvattu.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,110 @@
+﻿
+@{
+    ViewData["Title"] = "Thongtincanhan";
+    Layout = "~/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thêm Yêu Cầu</title>
+</head>
+@using (Html.BeginForm("ThemYeucauSQL", "Yeucau", new { area = "TruongBPMuahang" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
+{
+    <body>
+        <div class="formyeucau">
+            <div class="tieude">
+                <p>Thông tin yêu cầu</p>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="ten">Tên</label>
+                    <input type="text" id="ten" name="NguoiYeucau" placeholder="Tên"
+                           value="@Context.Session.GetString("TenNguoidung")" />
+                </div>
+                <div class="field">
+                    <label for="manv">Mã NV</label>
+                    <input type="text" id="manv" name="YCMaNguoidung" placeholder="Mã nhân viên"
+                           value="@Context.Session.GetString("MaNguoidung")" />
+                </div>
+                <div class="field">
+                    <label for="bophan">Bộ phận</label>
+                    <input type="text" id="bophan" name="Bophan" placeholder="Bộ phận"
+                           value="@Context.Session.GetString("Bophan")"  />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="chucvu">Chức vụ</label>
+                    <input type="text" id="chucvu" name="ChucVu" placeholder="Chức vụ"
+                           value="@Context.Session.GetString("Chucvu")" />
+                </div>
+                <div class="field">
+                    <label for="Email">Email</label>
+                    <input type="email" id="Email" name="Email" placeholder="Email"
+                           value="@Context.Session.GetString("Email")" />
+                </div>
+                <div class="field">
+                    <label for="dienthoai">Số điện thoại</label>
+                    <input type="number" id="dienthoai" name="Phone" placeholder="Số điện thoại"
+                           value="@Context.Session.GetString("Phone")" />
+                </div>
+            </div>
+        </div>
+        <div class="formtableyeucau">
+            <div class="tieude">
+                <p>Danh sách vật tư cá nhân</p>
+            </div>
+            <div class="themyeucau-table">
+                <table class="form-table">
+                    <thead>
+                        <tr>
+                            <td>STT</td>
+                            <td>Tên vật tư</td>
+                            <td>Mã vật tư</td>
+                            <td>Mã kho</td>
+                            <td>Hãng SX</td>
+                            <td>Nhà cung cấp</td>
+                            <td>Số lượng</td>
+                            <td>Đơn vị</td>
+                            <td>Ngày nhập kho</td>
+                            <td>Ngày bảo hành</td>
+                            <td>Thời gian BH</td>
+                            <td>Trạng thái</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int STT = 1;
+                        }
+                        @foreach (var item in Model)
+                        {
+                            if (item.NDMaNguoidung == @Context.Session.GetString("MaNguoidung"))
+                            {
+                                <tr>
+                                    <td>@STT</td>
+                                    <td>@item.TenSanpham</td>
+                                    <td>@item.MaSanpham</td>
+                                    <td>@item.NDMakho</td>
+                                    <td>@item.HangSX</td>
+                                    <td>@item.NhaCC</td>
+                                    <td>@item.SL</td>
+                                    <td>@item.DonVi</td>
+                                    <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.TrangThai</td>
+                                </tr>
+                                STT++;
+                            }                          
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </body>
+}
+</html>
+

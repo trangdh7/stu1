@@ -1,0 +1,291 @@
+﻿/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* BODY BACKGROUND + EFFECT */
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #2196f3, #1e88e5);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+    /* Floating background orbs */
+    body::before,
+    body::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(50px);
+        opacity: 0.6;
+    }
+
+    body::before {
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255, 0, 0, 0.15), transparent 70%);
+        top: -100px;
+        left: -100px;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    body::after {
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(0, 255, 0, 0.15), transparent 70%);
+        bottom: -80px;
+        right: -80px;
+        animation: float 8s ease-in-out infinite reverse;
+    }
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(30px);
+    }
+}
+
+/* MAIN CONTAINER */
+.container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 50px 40px;
+    width: 100%;
+    max-width: 420px;
+    z-index: 10;
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* LOGO SECTION */
+.logo-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+    .logo-section img {
+        width: 90px;
+        height: auto;
+        margin-bottom: 10px;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    }
+
+.company-name {
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+}
+
+.s-text {
+    color: red;
+}
+
+.t-text {
+    color: green;
+}
+
+.u-text {
+    color: blue;
+}
+
+.company-tagline {
+    font-size: 12px;
+    display: flex;
+    justify-content: center;
+    color: #555;
+    font-style: italic;
+}
+
+/* TITLE */
+h1 {
+    text-align: center;
+    color: #1a1a2e;
+    margin-bottom: 30px;
+    font-size: 26px;
+    font-weight: 600;
+}
+
+/* INPUT FIELDS */
+.form-group {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    font-size: 18px;
+    color: #0f3460;
+    pointer-events: none;
+}
+
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #f9f9f9;
+}
+
+input:focus {
+    outline: none;
+    border-color: #0f3460;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.1);
+}
+
+/* BUTTON */
+.btn-login {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(90deg, #ff0000, #00ff00, #0000ff);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+    .btn-login::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        transition: left 0.3s ease;
+    }
+
+    .btn-login:hover::before {
+        left: 100%;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+/* ERROR MESSAGE */
+.error-message {
+    color: #d32f2f;
+    font-size: 13px;
+    margin-top: 10px;
+    text-align: center;
+    animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+/* SIGNUP LINK */
+.signup-link {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+    font-size: 14px;
+}
+
+    .signup-link a {
+        color: #0f3460;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.3s ease;
+    }
+
+        .signup-link a:hover {
+            color: #ff0000;
+        }
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+    .container {
+        padding: 30px 20px;
+        margin: 20px;
+    }
+
+    .company-name {
+        font-size: 20px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+}
+/* Lỗi dưới mỗi input */
+.field-error {
+    color: #d32f2f;
+    font-size: 13px;
+    margin-top: 5px;
+    text-align: left;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

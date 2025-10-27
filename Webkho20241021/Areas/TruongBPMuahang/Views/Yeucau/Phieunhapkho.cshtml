@@ -1,0 +1,163 @@
+﻿
+@{
+    ViewData["Title"] = "Phieunhapkho";
+    Layout = "~/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml";
+}
+@model Webkho_20241021.Areas.TruongBPMuahang.Data.Phieunhapkhoviewmodel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>yeucau</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+    <nav class="bodyyeucau">
+        <div class="menu-kho">
+            <ul class="timkiem">
+                <li><a href="/TruongBPMuahang/Yeucau/Yeucau">Chưa duyệt</a></li>
+                <li><a href="/TruongBPMuahang/Yeucau/Phieuxuatkho">Phiếu xuất kho</a></li>
+                <li><a href="/TruongBPMuahang/Yeucau/Phieunhapkho">Phiếu nhập kho</a></li>
+                <li><a href="/TruongBPMuahang/Yeucau/Phieumuahang">Phiếu mua hàng</a></li>
+            </ul>
+            <ul>
+                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
+            </ul>
+        </div>
+
+        <div class="Tableyeucau">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <td>STT</td>
+                        <td>Mã xuất kho</td>
+                        <td>Mã yêu cầu</td>
+                        <td>Mã dự án</td>
+                        <td>Người yêu cầu</td>
+                        <td>Ngày nhập kho</td>
+                        <td>Trạng thái</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int STT = 1;
+                    }
+                    @foreach (var item in Model.Phieunhapkho)
+                    {
+                        string ChucvuSession = Context.Session.GetString("Chucvu");
+                        string BophanSession = Context.Session.GetString("Bophan");
+                        <tr>
+                            <td>@STT</td>
+                            <td>
+                                <a href="javascript:void(0);" onclick="showVTnhapkho('@item.MaNhapkho')">
+                                    @item.MaNhapkho
+                                </a>
+                            </td>
+                            <td>@item.MaYeucau</td>
+                            <td>@item.MaDuan</td>
+                            <td>@item.MaNguoidung</td>
+                            <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                @if (item.TrangThai == "Chờ nhập kho" && BophanSession == "BP kho")
+                                {
+                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                            <i class="bx bxs-check-circle"></i>
+                                        </button>
+                                    }
+                                }
+                                else if (item.TrangThai == "Sẵn sàng nhập kho" && BophanSession == "BP kho")
+                                {
+                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                            <i class="bx bxs-check-circle"></i>
+                                        </button>
+                                    }
+                                }
+                                else if (item.TrangThai == "Đã nhập kho" && BophanSession == "BP kho")
+                                {
+                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                            <i class="bx bxs-check-circle"></i>
+                                        </button>
+                                    }
+                                }
+                                else
+                                {
+                                    @item.TrangThai
+                                    ;
+                                }
+                            </td>
+                        </tr>
+                        STT++;
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="action">
+            <ul class="hanhdong">
+                <li>
+                    <a href="/TruongBPMuahang/Yeucau/ThemPhieunhapkho">Thêm phiếu nhập kho</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <nav class="bodyyeucau-thietbi">
+        <div class="Tableyeucau-thietbi-box">
+            <table class="tablethietbi">
+                <thead>
+                    <tr>
+                        <td>STT</td>
+                        <td>Tên vật tư</td>
+                        <td>Mã vật tư</td>
+                        <td>Mã kho</td>
+                        <td>Hãng sx</td>
+                        <td>Nhà cung cấp</td>
+                        <td>Số lượng</td>
+                        <td>Đơn vị</td>
+                        <td>Trạng thái</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int ST = 1;
+                    }
+                    @foreach (var item in Model.VTphieunhapkho)
+                    {
+                        <tr>
+                            <td>@ST</td>
+                            <td>@item.TenSanpham</td>
+                            <td>@item.MaSanpham</td>    
+                            <td>@item.Makho</td>
+                            <td>@item.HangSX</td>
+                            <td>@item.NhaCC</td>
+                            <td>@item.SL</td>
+                            <td>@item.DonVi</td>
+                        </tr>
+                        ST++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </nav>
+    <script src="~/js/Phieunhapkho.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

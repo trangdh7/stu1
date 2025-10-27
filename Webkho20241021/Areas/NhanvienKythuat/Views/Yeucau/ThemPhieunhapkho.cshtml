@@ -1,0 +1,89 @@
+﻿@model Webkho_20241021.Models.yeucau
+@{
+    ViewData["Title"] = "ThemYeucau";
+    Layout = "~/Areas/NhanvienKythuat/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thêm Yêu Cầu</title>
+</head>
+@using (Html.BeginForm("ThemPhieunhapkhoSQL", "Yeucau", new { area = "NhanvienKythuat" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
+{
+    <body>
+        <div class="formyeucau">
+            <div class="tieude">    
+                <p>Thông tin yêu cầu</p>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="mayeucau">Mã yêu cầu</label>
+                    <select id="mayeucau" name="MaYeucau" required>
+                        <option value="">Chọn mã yêu cầu</option>                       
+                        @foreach (var n in ViewBag.Yeucaulist)
+                        {
+                            <option value="@n.MaYeucau">@n.MaYeucau</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="ycmanguoidung">NV yêu cầu</label>
+                    <input type="text" id="ycmanguoidung" name="MaNguoidung" placeholder="Mã nhân viên" required readonly />
+                </div>
+                <div class="field">
+                    <label for="maduan">Mã dự án</label>
+                    <select id="maduan" name="MaDuan" required readonly>
+                        <option value="">Chọn mã dự án</option>
+                        <option value="">Không</option>
+                        @foreach (var y in ViewBag.Duanlist)
+                        {
+                            <option value="@y.MaDuan">@y.MaDuan</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="formtableyeucau">
+            <div class="tieude">
+                <p>Danh sách vật tư yêu cầu</p>
+            </div>
+            <div class="themyeucau-table">
+                <table class="form-table">
+                    <thead> 
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên vật tư</th>
+                            <th>Mã vật tư</th>
+                            <th>Mã kho</th>
+                            <th>Hãng SX</th>
+                            <th>Nhà cung cấp</th>
+                            <th>Số lượng</th>
+                            <th>Đơn vị</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr>
+                            <td>1</td>
+                            <td><input type="text" class="TenSanpham[]" name="TenSanpham" placeholder="Tên vật tư" oninput="searchProducts()" required /></td>
+                            <td><input type="text" name="MaSanpham[]" placeholder="Mã sản phẩm" /></td>
+                            <td><input type="text" name="Makho[]" placeholder="Mã kho" readonly /></td>
+                            <td><input type="text" name="HangSX[]" placeholder="Hãng SX" /></td>
+                            <td><input type="text" name="NhaCC[]" placeholder="Nhà cung cấp" /></td>
+                            <td><input type="number" name="SL[]" placeholder="Số lượng" required /></td>
+                            <td><input type="text" name="DonVi[]" placeholder="Đơn vị" required /></td>
+                        </tr>
+                    </tbody>
+                    <tbody id="searchResults" style="display: none;"></tbody>
+                </table>
+            </div>
+            <div class="action">
+                <button type="submit">Gửi</button>
+            </div>
+        </div>
+        <script src="~/js/themphieunhapkho.js"></script>
+    </body>
+}
+</html>
