@@ -517,3 +517,12 @@ H:\Webkho20241021\Webkho20241021\Webkho20241021\obj\Debug\net8.0\Webkho20241021.
 H:\Webkho20241021\Webkho20241021\Webkho20241021\obj\Debug\net8.0\Webkho20241021.genruntimeconfig.cache
 H:\Webkho20241021\Webkho20241021\Webkho20241021\obj\Debug\net8.0\ref\Webkho20241021.dll
 H:\Webkho20241021\Webkho20241021\Webkho20241021\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+H:\Webkho20241021\Webkho20241021\Webkho20241021\obj\Debug\net8.0\Webkho20241021.sourcelink.json
+H:\Webkho20241021\Webkho20241021\Webkho20241021\bin\Debug\net8.0\EPPlus.dll
+H:\Webkho20241021\Webkho20241021\Webkho20241021\bin\Debug\net8.0\EPPlus.Interfaces.dll
+H:\Webkho20241021\Webkho20241021\Webkho20241021\bin\Debug\net8.0\Microsoft.Extensions.Configuration.FileExtensions.dll
+H:\Webkho20241021\Webkho20241021\Webkho20241021\bin\Debug\net8.0\Microsoft.Extensions.Configuration.Json.dll
+H:\Webkho20241021\Webkho20241021\Webkho20241021\bin\Debug\net8.0\Microsoft.IO.RecyclableMemoryStream.dll
+H:\Webkho20241021\Webkho20241021\Webkho20241021\bin\Debug\net8.0\System.Security.Cryptography.Pkcs.dll
+H:\Webkho20241021\Webkho20241021\Webkho20241021\bin\Debug\net8.0\System.Security.Cryptography.Xml.dll
+H:\Webkho20241021\Webkho20241021\Webkho20241021\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll

@@ -1,260 +1,140 @@
 @{
-    ViewData["Title"] = "Xác nhận nhận hàng";
+    ViewData["Title"] = "Xác nhận xuất kho";
     Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
 }
+
 @model Webkho_20241021.Areas.TruongBPKho.Data.Phieuxuatkhoviewmodel
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Xác nhận nhận hàng</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>📦 Xác nhận nhận hàng</h2>
-            <p>Vui lòng xác nhận bạn đã nhận được vật tư từ bộ phận kho</p>
-        </div>
-
-        <div class="notification-section" style="margin-bottom: 20px; padding: 15px; background-color: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">
-            <h4 style="margin: 0; color: #1976d2;">🔔 Thông báo</h4>
-            <p style="margin: 5px 0 0 0; color: #424242;">
-                Bộ phận kho đã chuẩn bị xong vật tư cho bạn. Vui lòng đến kho để nhận hàng và xác nhận tại đây.
-            </p>
-        </div>
-
-        @if (Model.Phieuxuatkho.Any())
-        {
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <td>STT</td>
-                            <td>Mã xuất kho</td>
-                            <td>Mã yêu cầu</td>
-                            <td>Mã dự án</td>
-                            <td>Ngày xuất kho</td>
-                            <td>Trạng thái</td>
-                            <td>Thao tác</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @{
-                            int STT = 1;
-                        }
-                        @foreach (var item in Model.Phieuxuatkho)
-                        {
-                            <tr>
-                                <td>@STT</td>
-                                <td>
-                                    <a href="javascript:void(0);" onclick="showVTxuatkho('@item.MaXuatkho')" style="color: #1976d2; text-decoration: none;">
-                                        @item.MaXuatkho
-                                    </a>
-                                </td>
-                                <td>@item.MaYeucau</td>
-                                <td>@item.MaDuan</td>
-                                <td>@item.NgayXuatkho?.ToString("dd/MM/yyyy HH:mm")</td>
-                                <td>
-                                    <span class="status-badge" style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
-                                        @item.TrangThai
-                                    </span>
-                                </td>
-                                <td>
-                                    <button class="confirm-btn" onclick="confirmReceive('@item.MaXuatkho')" 
-                                            style="background-color: #4caf50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
-                                        ✅ Xác nhận nhận hàng
-                                    </button>
-                                </td>
-                            </tr>
-                            STT++;
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Chi tiết vật tư -->
-            <div class="material-details" style="margin-top: 30px;">
-                <h3>📋 Chi tiết vật tư</h3>
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <td>STT</td>
-                                <td>Tên vật tư</td>
-                                <td>Mã vật tư</td>
-                                <td>Mã kho</td>
-                                <td>Hãng SX</td>
-                                <td>Nhà cung cấp</td>
-                                <td>Số lượng</td>
-                                <td>Đơn vị</td>
-                                <td>Trạng thái</td>
-                            </tr>
-                        </thead>
-                        <tbody id="materialDetails">
-                            <tr>
-                                <td colspan="9" style="text-align: center; color: #666;">
-                                    Chọn một phiếu xuất kho để xem chi tiết vật tư
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="no-data" style="text-align: center; padding: 40px; color: #666;">
-                <div style="font-size: 48px; margin-bottom: 20px;">📦</div>
-                <h3>Không có hàng chờ xác nhận</h3>
-                <p>Hiện tại không có phiếu xuất kho nào chờ bạn xác nhận nhận hàng.</p>
-            </div>
-        }
+<div class="container">
+    <div class="alert alert-info my-3">
+        <i class="bx bx-bell"></i>
+        Danh sách phiếu xuất kho đang chờ xác nhận hoặc đang chuẩn bị hàng.
     </div>
 
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Mã xuất kho</th>
+                <th>Mã yêu cầu</th>
+                <th>Mã dự án</th>
+                <th>Ngày xuất kho</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model?.Phieuxuatkho != null && Model.Phieuxuatkho.Any())
+            {
+                int stt = 1;
+                foreach (var item in Model.Phieuxuatkho)
+                {
+                    <tr>
+                        <td>@(stt++)</td>
+                        <td>
+                            <a href="javascript:void(0)" onclick="showVTxuatkho('@item.MaXuatkho')" style="color:#1976d2;">
+                                @item.MaXuatkho
+                            </a>
+                        </td>
+                        <td>@item.MaYeucau</td>
+                        <td>@item.MaDuan</td>
+                        <td>@item.NgayXuatkho?.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@item.TrangThai</td>
+                        <td>
+                            @if (item.TrangThai == "Chờ xác nhận")
+                            {
+                                <form asp-action="Xuliphieuxuatkho" method="post" style="display:inline-block;">
+                                    <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
+                                    <button type="submit" class="btn btn-success btn-sm">Xác nhận chuẩn bị hàng</button>
+                                </form>
+                            }
+                            else if (item.TrangThai == "Đang chuẩn bị hàng")
+                            {
+                                <form asp-action="Xuliphieuxuatkho" method="post" style="display:inline-block;">
+                                    <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
+                                    <button type="submit" class="btn btn-warning btn-sm">Chuyển sang chờ người yêu cầu xác nhận</button>
+                                </form>
+                            }
+                            else if (item.TrangThai == "Chờ người yêu cầu xác nhận")
+                            {
+                                <button class="btn btn-secondary btn-sm" disabled>Đang chờ người yêu cầu</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">Không có phiếu xuất kho nào.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Bảng chi tiết vật tư -->
+    <div class="mt-4">
+        <h4>📋 Chi tiết vật tư</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Tên vật tư</th>
+                    <th>Mã vật tư</th>
+                    <th>Mã kho</th>
+                    <th>Hãng SX</th>
+                    <th>Nhà CC</th>
+                    <th>Số lượng</th>
+                    <th>Đơn vị</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody id="materialDetails">
+                <tr>
+                    <td colspan="9" class="text-center text-muted">
+                        Chọn một phiếu xuất kho để xem chi tiết vật tư.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         function showVTxuatkho(MaXuatkho) {
-            console.log("Mã xuất kho được chọn:", MaXuatkho);
-            
-            const pathSegments = window.location.pathname.split('/');
-            const area = pathSegments.length > 1 ? pathSegments[1] : '';
-            const url = `/${area}/Yeucau/GetVTPhieuxuatkho`;
-            
             $.ajax({
-                url: url,
+                url: '@Url.Action("GetVTPhieuxuatkho", "Yeucau", new { area = "TruongBPKho" })',
                 method: 'GET',
-                data: { MaXuatkho: MaXuatkho },
+                data: { MaXuatkho },
                 success: function (data) {
-                    console.log(data);
-                    
                     $('#materialDetails').empty();
-                    
                     if (data && data.length > 0) {
-                        let STT = 1;
-                        data.forEach(function (item) {
-                            let row = `<tr>
-                                <td>${STT++}</td>
-                                <td>${item.tenSanpham || 'Không xác định'}</td>
-                                <td>${item.maSanpham || 'Không xác định'}</td>
-                                <td>${item.makho || 'Không xác định'}</td>
-                                <td>${item.hangSX || 'Không xác định'}</td>
-                                <td>${item.nhaCC || 'Không xác định'}</td>
-                                <td>${item.sl}</td>
-                                <td>${item.donVi || 'Không xác định'}</td>
-                                <td>
-                                    <span style="background-color: #4caf50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px;">
-                                        ${item.trangThai}
-                                    </span>
-                                </td>
-                            </tr>`;
-                            $('#materialDetails').append(row);
+                        let stt = 1;
+                        data.forEach(item => {
+                            $('#materialDetails').append(`
+                                <tr>
+                                    <td>${stt++}</td>
+                                    <td>${item.tenSanpham || '-'}</td>
+                                    <td>${item.maSanpham || '-'}</td>
+                                    <td>${item.makho || '-'}</td>
+                                    <td>${item.hangSX || '-'}</td>
+                                    <td>${item.nhaCC || '-'}</td>
+                                    <td>${item.sl || 0}</td>
+                                    <td>${item.donVi || '-'}</td>
+                                    <td>${item.trangThai || '-'}</td>
+                                </tr>
+                            `);
                         });
                     } else {
-                        $('#materialDetails').append(
-                            `<tr>
-                                <td colspan="9" style="text-align:center;">Không có dữ liệu vật tư.</td>
-                            </tr>`
-                        );
+                        $('#materialDetails').append(`<tr><td colspan="9" class="text-center text-muted">Không có dữ liệu vật tư.</td></tr>`);
                     }
                 },
                 error: function (xhr, status, error) {
-                    console.error("Lỗi:", error);
-                    alert("Không thể lấy dữ liệu vật tư. Lỗi: " + error);
+                    alert("Không thể lấy dữ liệu vật tư: " + error);
                 }
             });
         }
-
-        function confirmReceive(MaXuatkho) {
-            if (confirm('Bạn có chắc chắn đã nhận được hàng từ bộ phận kho?')) {
-                const pathSegments = window.location.pathname.split('/');
-                const area = pathSegments.length > 1 ? pathSegments[1] : '';
-                const url = `/${area}/Yeucau/XacnhanNhanHang`;
-                
-                $.ajax({
-                    url: url,
-                    method: 'POST',
-                    data: { MaXuatkho: MaXuatkho },
-                    success: function (data) {
-                        if (data.success) {
-                            alert(data.message);
-                            location.reload();
-                        } else {
-                            alert('Lỗi: ' + data.message);
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Lỗi:", error);
-                        alert("Có lỗi xảy ra khi xác nhận nhận hàng!");
-                    }
-                });
-            }
-        }
-
-        // Tự động load chi tiết phiếu đầu tiên
-        $(document).ready(function () {
-            const firstRow = $('.table tbody tr').first();
-            if (firstRow.length > 0) {
-                const MaXuatkho = firstRow.find('td').eq(1).text().trim();
-                showVTxuatkho(MaXuatkho);
-            }
-        });
     </script>
-
-    <style>
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            margin-bottom: 30px;
-        }
-        
-        .header h2 {
-            color: #1976d2;
-            margin-bottom: 10px;
-        }
-        
-        .table-container {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .table th,
-        .table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .table th {
-            background-color: #f5f5f5;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .confirm-btn:hover {
-            background-color: #45a049 !important;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            font-weight: 500;
-        }
-    </style>
-</body>
-</html>
+}

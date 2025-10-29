@@ -4,6 +4,8 @@ using Webkho_20241021.Models;
 using System.Linq;
 using System.Collections.Generic;
 using System;
+using OfficeOpenXml;
+using Microsoft.AspNetCore.Http;
 
 namespace Webkho_20241021.Areas.TruongBPKho.Controllers
 {
@@ -38,12 +40,15 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
         {
             return View();
         }
+        //import excel
+		
+		
+
 
         [HttpPost]
         public IActionResult ThemvattuSQL(string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, DateTime?[] NgayBaohanh, DateTime?[] ThoiGianBH)
         {
             int count = TenSanpham.Length;
-            var MakhoPrefix = "STU";
 
             for (int i = 0; i < count; i++)
             {
@@ -53,30 +58,33 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     continue;
                 }
 
-                // Kiểm tra nếu tồn tại thiết bị với các thuộc tính giống nhau
                 var existingItem = _context.khotongs
                     .FirstOrDefault(k => k.TenSanpham == TenSanpham[i] && k.MaSanpham == MaSanpham[i] && k.HangSX == HangSX[i]);
 
                 if (existingItem != null)
                 {
-                    // Nếu tồn tại, cộng số lượng
                     existingItem.SL += SL[i];
                     _context.khotongs.Update(existingItem);
                 }
                 else
                 {
-                    // Nếu không tồn tại, tạo mã kho mới
-                    string Makho;
-                    int index = _context.khotongs.Count() + i + 1;
+                    // === Sinh mã kho mới theo format: MãSP-HãngSX-Ngày ===
+                    string safeHangSX = HangSX[i]?.Replace(" ", "").Replace("/", "-") ?? "NA";
+                    string Makho = $"{MaSanpham[i]}-{safeHangSX}-{DateTime.Now:yyyyMMdd}";
 
-                    do
+                    int suffix = 1;
+                    while (_context.khotongs.Any(k => k.Makho == Makho))
                     {
-                        Makho = $"{MakhoPrefix}{index}";
-                        index++;
+                        Makho = $"{MaSanpham[i]}-{safeHangSX}-{DateTime.Now:yyyyMMdd}-{suffix}";
+                        suffix++;
                     }
-                    while (_context.khotongs.Any(k => k.Makho == Makho));
 
-                    // Tạo thiết bị mới
+                    // Giới hạn độ dài tối đa 50 ký tự
+                    if (Makho.Length > 50)
+                    {
+                        Makho = Makho.Substring(0, 50);
+                    }
+
                     var khotongs = new khotongs
                     {
                         TenSanpham = TenSanpham[i],
@@ -96,11 +104,10 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 }
             }
 
-            // Lưu thay đổi vào database
             _context.SaveChanges();
-
             return RedirectToAction("Tongkho", "Home", new { area = "TruongBPKho" });
         }
+
 
         [HttpGet]
         public IActionResult TimKiem(string timkiem)
@@ -115,17 +122,15 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
         public IActionResult ImportSQL(string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, DateTime?[] NgayBaohanh, DateTime?[] ThoiGianBH)
         {
             int count = TenSanpham.Length;
-            var MakhoPrefix = "STU";
 
             for (int i = 0; i < count; i++)
             {
                 if (string.IsNullOrWhiteSpace(TenSanpham[i]) || string.IsNullOrWhiteSpace(MaSanpham[i]) ||
                     SL[i] <= 0 || string.IsNullOrWhiteSpace(DonVi[i]))
                 {
-                    continue; // Bỏ qua mục không hợp lệ
+                    continue;
                 }
 
-                // Kiểm tra xem đã có mục nào trùng trong database chưa
                 var existingItem = _context.khotongs.FirstOrDefault(k =>
                     k.TenSanpham == TenSanpham[i] &&
                     k.MaSanpham == MaSanpham[i] &&
@@ -133,24 +138,28 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
 
                 if (existingItem != null)
                 {
-                    // Nếu đã tồn tại, cộng thêm số lượng
                     existingItem.SL += SL[i];
                     _context.khotongs.Update(existingItem);
                 }
                 else
                 {
-                    // Nếu chưa tồn tại, tạo mã kho mới
-                    string Makho;
-                    int index = _context.khotongs.Count() + i + 1;
+                    // === Sinh mã kho mới theo format: MãSP-HãngSX-Ngày ===
+                    string safeHangSX = HangSX[i]?.Replace(" ", "").Replace("/", "-") ?? "NA";
+                    string Makho = $"{MaSanpham[i]}-{safeHangSX}-{DateTime.Now:yyyyMMdd}";
 
-                    do
+                    int suffix = 1;
+                    while (_context.khotongs.Any(k => k.Makho == Makho))
                     {
-                        Makho = $"{MakhoPrefix}{index}";
-                        index++;
+                        Makho = $"{MaSanpham[i]}-{safeHangSX}-{DateTime.Now:yyyyMMdd}-{suffix}";
+                        suffix++;
                     }
-                    while (_context.khotongs.Any(k => k.Makho == Makho));
 
-                    // Tạo mục mới
+                    // Giới hạn độ dài tối đa 50 ký tự
+                    if (Makho.Length > 50)
+                    {
+                        Makho = Makho.Substring(0, 50);
+                    }
+
                     var newKhotong = new khotongs
                     {
                         TenSanpham = TenSanpham[i],
@@ -170,10 +179,26 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 }
             }
 
-            // Lưu thay đổi vào database
             _context.SaveChanges();
-
             return RedirectToAction("Tongkho", "Home", new { area = "TruongBPKho" });
+        }
+
+        // In tem
+        public IActionResult InTem(string makho)
+        {
+            var item = _context.khotongs.FirstOrDefault(k => k.Makho == makho);
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.Makho = item.Makho;
+            ViewBag.TenSanpham = item.TenSanpham;
+            ViewBag.MaSanpham = item.MaSanpham;
+            ViewBag.HangSX = item.HangSX;
+            ViewBag.NgayNhapkho = item.NgayNhapkho?.ToString("dd/MM/yyyy");
+
+            return View("InTem");
         }
 
         public IActionResult VatTuMoi()

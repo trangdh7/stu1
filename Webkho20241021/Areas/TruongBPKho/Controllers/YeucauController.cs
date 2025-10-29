@@ -1499,6 +1499,27 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
 
             return RedirectToAction("Phieunhapkho", "Yeucau", new { area = "TruongBPKho" });
         }
+        // Xac nhan xuat kho
+        public IActionResult XacnhanXuatkho()
+        {
+            // Lấy danh sách các phiếu xuất kho mà bộ phận kho cần xử lý
+            var PhieuxuatkhoList = _context.phieuxuatkho
+                .Where(p => p.TrangThai == "Chờ xác nhận"
+                         || p.TrangThai == "Đang chuẩn bị hàng"
+                         || p.TrangThai == "Chờ người yêu cầu xác nhận")
+                .OrderByDescending(p => p.NgayXuatkho)
+                .ToList();
+
+            var VTphieuxuatkhoList = _context.vtphieuxuatkho.ToList();
+
+            var model = new Phieuxuatkhoviewmodel
+            {
+                Phieuxuatkho = PhieuxuatkhoList,
+                VTphieuxuatkho = VTphieuxuatkhoList,
+            };
+
+            return View(model);
+        }
 
         [HttpPost]
         public IActionResult Xulituchoiyeucau(

@@ -66,6 +66,7 @@
                         <td>Thời gian BH</td>
                         <td>Trạng thái</td>
                         <td>Loại cấp phát</td>
+                        <td>In mã</td> <!-- 🆕 Cột mới thêm -->
                     </tr>
                 </thead>
                 <tbody>
@@ -87,12 +88,22 @@
                             <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
                             <td>@item.TrangThai</td>
                             <td>@item.LoaiCapPhat</td>
+
+                            <!-- 🆕 Nút In -->
+                            <td>
+                                <a href="@Url.Action("InTem", "Home", new { area = "TruongBPKho", makho = item.Makho })"
+                                   class="btn-in-ma"
+                                   target="_blank">
+                                    <i class='bx bx-printer'></i> In
+                                </a>
+                            </td>
                         </tr>
                         STT++;
                     }
                 </tbody>
             </table>
         </div>
+
         <div id="yeucau-action">
             <div class="action">
                 <ul class="hanhdong">
@@ -113,6 +124,21 @@
     </nav>
     <script src="~/js/khotong.js"></script>
     <style>
+        .btn-in-ma {
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+            .btn-in-ma:hover {
+                background-color: #0056b3;
+                color: #fff;
+            }
+
         .menu-kho ul {
             display: flex;
             list-style: none;

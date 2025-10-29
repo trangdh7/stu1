@@ -1353,5 +1353,95 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
             return RedirectToAction("Yeucau", "Yeucau", new { area = "NhanvienKythuat" });
         }
 
+        public IActionResult XacnhanNhanHang()
+        {
+            var currentUserId = HttpContext.Session.GetString("MaNguoidung");
+
+            // Lấy các yêu cầu mà kỹ thuật viên này đã tạo
+            var yeuCauList = _context.yeucau
+                .Where(y => y.YCMaNguoidung == currentUserId)
+                .Select(y => y.MaYeucau)
+                .ToList();
+
+            // Lấy phiếu xuất kho liên quan tới các yêu cầu đó
+            var PhieuxuatkhoList = _context.phieuxuatkho
+                .Where(p => yeuCauList.Contains(p.MaYeucau)
+                         && p.TrangThai == "Chờ người yêu cầu xác nhận")
+                .OrderByDescending(p => p.NgayXuatkho)
+                .ToList();
+
+            var VTphieuxuatkhoList = _context.vtphieuxuatkho.ToList();
+
+            var model = new Phieuxuatkhoviewmodel
+            {
+                Phieuxuatkho = PhieuxuatkhoList,
+                VTphieuxuatkho = VTphieuxuatkhoList,
+            };
+
+            return View(model);
+        }
+        // XÁC NHẬN HÀNG
+        [HttpPost]
+        public IActionResult XacnhanNhanHang(string MaXuatkho)
+        {
+            var phieu = _context.phieuxuatkho.FirstOrDefault(p => p.MaXuatkho == MaXuatkho);
+
+            if (phieu != null && phieu.TrangThai == "Chờ người yêu cầu xác nhận")
+            {
+                phieu.TrangThai = "Đã xác nhận nhận hàng";
+                phieu.NgayXacNhanNhan = DateTime.Now;
+                _context.phieuxuatkho.Update(phieu);
+                _context.SaveChanges();
+
+                // ✅ THÊM PHẦN NÀY:
+                var VTphieuxuatkhoList = _context.vtphieuxuatkho
+                    .Where(vt => vt.MaXuatkho == MaXuatkho)
+                    .ToList();
+
+                foreach (var vt in VTphieuxuatkhoList)
+                {
+                    // chỉ xử lý nếu phiếu này không có dự án
+                    if (string.IsNullOrEmpty(phieu.MaDuan))
+                    {
+                        var existingItem = _context.khonguoidungs
+                            .FirstOrDefault(k => k.NDMaNguoidung == phieu.MaNguoidung && k.MaSanpham == vt.MaSanpham);
+
+                        if (existingItem != null)
+                        {
+                            existingItem.SL += vt.SL;
+                            _context.khonguoidungs.Update(existingItem);
+                        }
+                        else
+                        {
+                            var newItem = new khonguoidungs
+                            {
+                                NDMaNguoidung = phieu.MaNguoidung,
+                                TenSanpham = vt.TenSanpham,
+                                MaSanpham = vt.MaSanpham,
+                                NDMakho = vt.Makho,
+                                HangSX = vt.HangSX,
+                                NhaCC = vt.NhaCC,
+                                DonVi = vt.DonVi,
+                                SL = vt.SL,
+                                NgayBaohanh = vt.NgayBaohanh,
+                                ThoiGianBH = vt.ThoiGianBH,
+                                TrangThai = "Đang mượn",
+                                NgayNhapkho = DateTime.Now
+                            };
+                            _context.khonguoidungs.Add(newItem);
+                        }
+                    }
+                }
+
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = "Xác nhận nhận hàng thành công!" });
+            }
+
+            return Json(new { success = false, message = "Phiếu không hợp lệ hoặc đã được xác nhận!" });
+        }
+
+
+
     }
 }
