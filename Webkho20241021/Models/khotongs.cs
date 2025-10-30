@@ -10,6 +10,7 @@ namespace Webkho_20241021.Models
         public string? Makho { get; set; }
         public string? HangSX { get; set; }
         public string? NhaCC { get; set; }
+        public string? DuAn { get; set; }
         public int? SL { get; set; }
         public string? DonVi { get; set; }
         public DateTime? NgayNhapkho { get; set; }

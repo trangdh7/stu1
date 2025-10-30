@@ -22,7 +22,7 @@
             <ul>
                 <li><a href="/TruongBPKetoan/Home/Tongkho" class="tab-link active" data-tab="tongkho">Tổng kho</a></li>
                 <li><a href="/TruongBPKetoan/Home/CapPhatNvMoi" class="tab-link" data-tab="capphatnvmoi">Kho nv mới</a></li>
-                <li><a href="">Kho dự án</a></li>
+                <li><a href="/TruongBPKetoan/Home/KhoDuAn" class="tab-link" data-tab="khoduan">Kho dự án</a></li>
             </ul>
             <ul>
                 <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
@@ -32,8 +32,8 @@
             <table class="tablekhotong">
                 <thead>
                     <tr>
-                        <td>Tên vật tư</td>
                         <td>Mã vật tư</td>
+                        <td>Tên vật tư</td>
                         <td>Mã kho</td>
                         <td>
                             <select id="hangsx-filter">
@@ -61,8 +61,8 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td>@item.TenSanpham</td>
                             <td>@item.MaSanpham</td>
+                            <td>@item.TenSanpham</td>
                             <td>@item.Makho</td>
                             <td>@item.HangSX</td>
                             <td>@item.NhaCC</td>
@@ -71,7 +71,7 @@
                             <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
                             <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
                             <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.TrangThai</td>
+                            <td>@(item.SL > 0 ? "Tồn Kho" : "Hết Hàng")</td>
                             <td>@item.LoaiCapPhat</td>
                         </tr>
                         STT++;

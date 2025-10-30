@@ -1,0 +1,106 @@
+@model List<Webkho_20241021.Models.vtphieuxuatkho>
+@{
+    ViewData["Title"] = "VatTuMoi";
+    Layout = "~/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/CSS/Action.css" rel="stylesheet" />
+    <link href="~/CSS/Kho.css" rel="stylesheet" />
+    <link href="~/CSS/style.css" rel="stylesheet" />
+    <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="~/CSS/Tongkho.css" rel="stylesheet" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Kho dự án</title>
+</head>
+<body>
+    <div class="warehouse-container">
+        <div class="warehouse-header">
+            <div class="header-content">
+                <h1 class="header-title"><i class='bx bx-briefcase'></i> Kho dự án</h1>
+                <p class="header-subtitle">Danh sách quản lý vật tư theo dự án</p>
+            </div>
+        </div>
+        <div class="warehouse-nav">
+            <div class="nav-tabs">
+                <a href="/NhanvienKythuat/Home/Tongkho" class="nav-tab"><i class='bx bx-store'></i> Tổng kho</a>
+                <a href="/NhanvienKythuat/Home/CapPhatNvMoi" class="nav-tab"><i class='bx bx-package'></i> Kho nv mới</a>
+                <a href="/NhanvienKythuat/Home/KhoDuAn" class="nav-tab active"><i class='bx bx-briefcase'></i> Kho dự án</a>
+            </div>
+            <div class="nav-search">
+                <i class='bx bx-search'></i>
+                <input type="text" id="timkiem" placeholder="Tìm kiếm vật tư..." />
+            </div>
+        </div>
+        <div class="warehouse-content">
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>Danh sách vật tư dự án</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã sản phẩm</th>
+                                <th>Tên vật tư</th>
+                                <th>Mã kho</th>
+                                <th>Hãng SX</th>
+                                <th>Nhà cung cấp</th>
+                                <th>Dự án</th>
+                                <th>Số lượng</th>
+                                <th>Đơn vị</th>
+                                <th>Ngày nhập kho</th>
+                                <th>Ngày bảo hành</th>
+                                <th>Thời gian BH</th>
+                                <th>Trạng thái</th>
+                                <th>Loại cấp phát</th>
+                                <th>In mã</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ var stt = 1; }
+                            @foreach (var item in Model.Skip(((int?)ViewBag.Page ?? 1 - 1) * 20).Take(20))
+                            {
+                                <tr>
+                                    <td>@stt</td>
+                                    <td><span class="badge badge-code">@item.MaSanpham</span></td>
+                                    <td class="text-bold">@item.TenSanpham</td>
+                                    <td><strong>@item.Makho</strong></td>
+                                    <td>@item.HangSX</td>
+                                    <td>@item.NhaCC</td>
+                                    <td>@item.DuAn</td>
+                                    <td><span class="quantity">@item.SL</span></td>
+                                    <td>@item.DonVi</td>
+                                    <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
+                                    <td>@(item.SL > 0 ? "Tồn Kho" : "Hết Hàng")</td>
+                                    <td>@item.LoaiCapPhat</td>
+                                    <td><a href="@Url.Action("InTem", "Home", new { area = "NhanvienKythuat", makho = item.Makho })" class="btn-action btn-print" target="_blank"><i class='bx bx-printer'></i> In</a></td>
+                                </tr>
+                                stt++;
+                            }
+                        </tbody>
+                    </table>
+                    <!-- Phân trang -->
+                    <div class="pagination">
+                        @{ int totalPage = (int)Math.Ceiling(Model.Count / 20.0); int curr = (int?)ViewBag.Page ?? 1; }
+                        @if (totalPage > 1)
+                        {
+                            for(int i = 1; i <= totalPage; i++){
+                                if(i == curr){ <span class="active">@i</span> } else {
+                                    <a href="?page=@i">@i</a>
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

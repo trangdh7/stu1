@@ -6,6 +6,8 @@ wwwroot\css\Kho.css
 wwwroot\css\site.css
 wwwroot\css\style.css
 wwwroot\css\Table.css
+wwwroot\css\TemKho.css
+wwwroot\css\Tongkho.css
 wwwroot\css\trangchu.css
 wwwroot\favicon.ico
 wwwroot\Icon\accept.png
@@ -123,4 +125,3 @@ wwwroot\lib\jquery\dist\jquery.js
 wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
-wwwroot\css\TemKho.css

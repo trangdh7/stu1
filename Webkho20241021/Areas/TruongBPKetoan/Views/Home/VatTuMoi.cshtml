@@ -1,5 +1,6 @@
+@model List<Webkho_20241021.Models.khotongs>
 @{
-    ViewData["Title"] = "VatTuMoi";
+    ViewData["Title"] = "Kho NV mới";
     Layout = "~/Areas/TruongBPKetoan/Views/Layout/Layout.cshtml";
 }
 <!DOCTYPE html>
@@ -12,13 +13,15 @@
     <link href="~/CSS/style.css" rel="stylesheet" />
     <link href="~/CSS/Table.css" rel="stylesheet" />
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <title>Vật tư mới</title>
+    <title>Kho NV mới</title>
 </head>
 <body>
     <nav class="bodykho">
         <div class="menu-kho">
             <ul>
-                <li><a href="">Vật tư mới</a></li>
+                <li><a href="/TruongBPKetoan/Home/Tongkho" class="tab-link" data-tab="tongkho">Tổng kho</a></li>
+                <li><a href="/TruongBPKetoan/Home/CapPhatNvMoi" class="tab-link active" data-tab="capphatnvmoi">Kho nv mới</a></li>
+                <li><a href="/TruongBPKetoan/Home/KhoDuAn" class="tab-link" data-tab="khoduan">Kho dự án</a></li>
             </ul>
             <ul>
                 <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
@@ -28,9 +31,8 @@
             <table class="tablekhotong">
                 <thead>
                     <tr>
-                        <td>STT</td>
-                        <td>Tên vật tư</td>
                         <td>Mã vật tư</td>
+                        <td>Tên vật tư</td>
                         <td>Mã kho</td>
                         <td>Hãng SX</td>
                         <td>Nhà cung cấp</td>
@@ -38,81 +40,29 @@
                         <td>Đơn vị</td>
                         <td>Ngày nhập kho</td>
                         <td>Ngày bảo hành</td>
+                        <td>Thời gian BH</td>
                         <td>Trạng thái</td>
-                        <td>Ghi chú</td>
+                        <td>Loại cấp phát</td>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Laptop Dell Inspiron 15</td>
-                        <td>LT001</td>
-                        <td>KHO001</td>
-                        <td>Dell</td>
-                        <td>Công ty ABC</td>
-                        <td>5</td>
-                        <td>Cái</td>
-                        <td>01/11/2024</td>
-                        <td>01/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Máy in Canon LBP</td>
-                        <td>MI002</td>
-                        <td>KHO001</td>
-                        <td>Canon</td>
-                        <td>Công ty XYZ</td>
-                        <td>3</td>
-                        <td>Cái</td>
-                        <td>02/11/2024</td>
-                        <td>02/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>Bàn phím cơ Logitech</td>
-                        <td>BP003</td>
-                        <td>KHO002</td>
-                        <td>Logitech</td>
-                        <td>Công ty DEF</td>
-                        <td>10</td>
-                        <td>Cái</td>
-                        <td>03/11/2024</td>
-                        <td>03/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
-                    <tr>
-                        <td>4</td>
-                        <td>Chuột không dây Microsoft</td>
-                        <td>CH004</td>
-                        <td>KHO002</td>
-                        <td>Microsoft</td>
-                        <td>Công ty GHI</td>
-                        <td>8</td>
-                        <td>Cái</td>
-                        <td>04/11/2024</td>
-                        <td>04/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
-                    <tr>
-                        <td>5</td>
-                        <td>Màn hình Samsung 24 inch</td>
-                        <td>MN005</td>
-                        <td>KHO001</td>
-                        <td>Samsung</td>
-                        <td>Công ty JKL</td>
-                        <td>4</td>
-                        <td>Cái</td>
-                        <td>05/11/2024</td>
-                        <td>05/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.MaSanpham</td>
+                            <td>@item.TenSanpham</td>
+                            <td>@item.Makho</td>
+                            <td>@item.HangSX</td>
+                            <td>@item.NhaCC</td>
+                            <td>@item.SL</td>
+                            <td>@item.DonVi</td>
+                            <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                            <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                            <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
+                            <td>@(item.SL > 0 ? "Tồn Kho" : "Hết Hàng")</td>
+                            <td>@item.LoaiCapPhat</td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
@@ -120,15 +70,12 @@
             <div class="action">
                 <ul class="hanhdong">
                     <li>
-                        <a href="">Thêm vật tư</a>
-                    </li>
-                    <li>
-                        <a href="">Cập nhật</a>
+                        <a href="/TruongBPKetoan/Home/Themthietbi">Thêm</a>
                     </li>
                 </ul>
                 <ul class="excel">
                     <li>
-                        <a href="">Import</a>
+                        <a href="/TruongBPKetoan/Home/Import">Import</a>
                     </li>
                     <li>
                         <a href="">Export</a>
@@ -137,5 +84,60 @@
             </div>
         </div>
     </nav>
+    <script src="~/js/khotong.js"></script>
+    <style>
+        .menu-kho ul {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .menu-kho ul li {
+            margin-right: 10px;
+        }
+        .menu-kho ul li a.tab-link {
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 5px 5px 0 0;
+            transition: all 0.3s ease;
+            display: block;
+            border: 1px solid #dee2e6;
+        }
+        .menu-kho ul li a.tab-link.active {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border-color: #007bff;
+        }
+        .menu-kho ul li a.tab-link:hover {
+            color: white;
+        }
+        .menu-kho ul li a.tab-link.active:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabLinks = document.querySelectorAll('.tab-link');
+            const currentPath = window.location.pathname;
+            tabLinks.forEach(link => {
+                if (link.href.includes(currentPath)) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+            tabLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    tabLinks.forEach(tab => tab.classList.remove('active'));
+                    this.classList.add('active');
+                    window.location.href = this.href;
+                });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -20,6 +20,9 @@
 <body>
     <div class="container">
         <div class="header">
+            <button type="button" class="back-btn" onclick="goBack()" title="Quay lại" aria-label="Quay lại">
+                <i class="fas fa-arrow-left"></i>
+            </button>
             <h1>
                 <i class="fas fa-barcode" style="color: black;"></i>
                 In Tem Mã Kho
@@ -101,8 +104,8 @@
                     <button class="btn btn-secondary" onclick="previewLabel()">
                         <i class="fas fa-eye" style="color: black;"></i> Xem Trước
                     </button>
-                    <button class="btn btn-danger" onclick="goBack()">
-                        <i class="fas fa-arrow-left"></i> Quay Lại
+                    <button class="btn btn-danger" onclick="goBack()" title="Quay lại" aria-label="Quay lại">
+                        <i class="fas fa-arrow-left"></i>
                     </button>
                 </div>
 
@@ -118,13 +121,13 @@
         function initializeLabel() {
             const warehouseCode = document.getElementById('warehouseCode').value || '@code';
 
-            // Generate Barcode
+            // Generate Barcode - responsive to fit label width
             JsBarcode("#barcode", warehouseCode, {
                 format: "CODE128",
-                width: 2,
-                height: 50,
-                displayValue: true,
-                fontSize: 12
+                width: 1,           // narrower bars to prevent overflow
+                height: 60,
+                margin: 0,
+                displayValue: false // hide text under barcode; text is shown below label
             });
 
             // Generate QR Code
@@ -139,7 +142,31 @@
         }
 
         function printLabel() {
-            window.print();
+            const content = document.querySelector('.label-preview').outerHTML;
+            // Tạo iframe ẩn để in, không mở tab mới
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write('<html><head><title>Print</title>');
+            doc.write('<style>body{font-family:Arial;margin:0;} .label-preview{border:1px dashed #ccc;padding:20px;width:280px;margin:0 auto;}</style>');
+            doc.write('</head><body>');
+            doc.write(content);
+            doc.write('</body></html>');
+            doc.close();
+
+            iframe.onload = function () {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                setTimeout(function(){ document.body.removeChild(iframe); }, 500);
+            };
         }
 
         function previewLabel() {

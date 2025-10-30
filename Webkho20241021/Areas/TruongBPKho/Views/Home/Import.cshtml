@@ -1,1 +1,296 @@
-﻿
+﻿@{
+    ViewData["Title"] = "Import kho từ Excel";
+    Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Import kho từ Excel</title>
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/CSS/style.css" rel="stylesheet" />
+    <link href="~/CSS/Form.css" rel="stylesheet" />
+    <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Làm rõ tiêu đề và tránh link nav bị gạch chân khi nạp Bootstrap cục bộ */
+        h4 { color: #1e293b; }
+        .sidebar a, .bodymenu a { text-decoration: none !important; color: inherit; }
+        /* Ngăn Bootstrap ghi đè badge của sidebar (tránh ô vuông đỏ) */
+        .sidebar .badge { background: transparent !important; padding: 0 !important; border: none !important; color: inherit !important; }
+        .sidebar .badge .notification { display: none !important; }
+        /* Bảng xem trước rõ ràng hơn */
+        #previewTable thead th { background: #f1f5f9; color: #0f172a; }
+        #previewTable tbody tr:nth-child(even) { background: #fafafa; }
+    </style>
+</head>
+<body>
+<div class="container mt-3">
+    <h4 class="mb-3 text-dark">Import kho từ Excel</h4>
+
+    <div class="mb-3">
+        <label for="excelFile" class="form-label">Chọn file Excel (.xlsx)</label>
+        <input class="form-control" type="file" id="excelFile" accept=".xlsx,.xls" />
+    </div>
+
+    <div class="d-flex gap-2 mb-3">
+        <button id="btnPreview" type="button" class="btn btn-primary">Xem trước</button>
+        <button id="btnClear" type="button" class="btn btn-outline-secondary">Xóa dữ liệu xem trước</button>
+    </div>
+
+    <div id="previewWrap" class="table-responsive" style="display:none;">
+        <table id="previewTable" class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>NgayNhapkho</th>
+                    <th>TenSanpham</th>
+                    <th>MaSanpham</th>
+                    <th>HangSX</th>
+                    <th>NhaCC</th>
+                    <th>SL (Thực nhập)</th>
+                    <th>DonVi</th>
+                    <th>DuAn</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <form id="saveForm" method="post" action="@Url.Action("ImportSQL", "Home", new { area = "TruongBPKho" })">
+            @Html.AntiForgeryToken()
+            <div id="hiddenInputs"></div>
+            <button type="submit" class="btn btn-success">Lưu vào kho</button>
+        </form>
+    </div>
+
+    <div id="note" class="text-muted mt-3">
+        Cột bắt buộc: TenSanpham, MaSanpham, SL, DonVi. Ngày: dùng định dạng dd/MM/yyyy hoặc yyyy-MM-dd.
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+    (function () {
+        const fileInput = document.getElementById('excelFile');
+        const btnPreview = document.getElementById('btnPreview');
+        const btnClear = document.getElementById('btnClear');
+        const previewWrap = document.getElementById('previewWrap');
+        const previewBody = document.querySelector('#previewTable tbody');
+        const hiddenInputs = document.getElementById('hiddenInputs');
+
+        function clearPreview() {
+            previewBody.innerHTML = '';
+            hiddenInputs.innerHTML = '';
+            previewWrap.style.display = 'none';
+        }
+
+        function toDateString(v) {
+            if (!v) return '';
+            if (v instanceof Date) {
+                const year = v.getFullYear();
+                const month = (v.getMonth() + 1).toString().padStart(2, '0');
+                const day = v.getDate().toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            // Excel serial date number
+            if (typeof v === 'number') {
+                try {
+                    const parsed = XLSX.SSF.parse_date_code(v);
+                    if (parsed) {
+                        const year = parsed.y.toString().padStart(4, '0');
+                        const month = parsed.m.toString().padStart(2, '0');
+                        const day = parsed.d.toString().padStart(2, '0');
+                        return `${year}-${month}-${day}`;
+                    }
+                } catch (_) { /* ignore */ }
+            }
+            // Try parse string like dd/MM/yyyy or yyyy-MM-dd
+            const partsSlash = /^([0-3]?\d)\/(0?\d|1[0-2])\/(\d{4})$/.exec(v);
+            if (partsSlash) {
+                const day = partsSlash[1].padStart(2, '0');
+                const month = partsSlash[2].padStart(2, '0');
+                const year = partsSlash[3];
+                return `${year}-${month}-${day}`;
+            }
+            const partsDash = /^(\d{4})-(0?\d|1[0-2])-(0?\d|[12]\d|3[01])$/.exec(v);
+            if (partsDash) {
+                const year = partsDash[1];
+                const month = partsDash[2].padStart(2, '0');
+                const day = partsDash[3].padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            return '';
+        }
+
+        function addHidden(name, value) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name; // arrays use same name multiple times
+            input.value = value ?? '';
+            hiddenInputs.appendChild(input);
+        }
+
+        function renderPreview(rows) {
+            previewBody.innerHTML = '';
+            hiddenInputs.innerHTML = '';
+
+            rows.forEach(r => {
+                const tr = document.createElement('tr');
+
+                const NgayNhapkho = toDateString(r.NgayNhapkho ?? r.Ngày ?? r.Ngay ?? r.NgayNhap ?? r.NgàyNhập ?? '');
+                const TenSanpham = (r.TenSanpham ?? r.TênSảnPhẩm ?? r.TenSP ?? r.TenSanPham ?? '').toString().trim();
+                const MaSanpham = (r.MaSanpham ?? r.MãSảnPhẩm ?? r.MaSP ?? r.MaSanPham ?? '').toString().trim();
+                const HangSX = (r.HangSX ?? r.HãngSX ?? r.HangSanXuat ?? '').toString().trim();
+                const NhaCC = (r.NhaCC ?? r.NhàCC ?? r.NhaCungCap ?? '').toString().trim();
+                const SL = r.SL ?? r.SoLuong ?? r.Soluong ?? '';
+                const DonVi = (r.DonVi ?? r.ĐơnVị ?? r.Donvitinh ?? r.DVT ?? '').toString().trim();
+                const DuAn = (r.DuAn ?? r.DựÁn ?? r.Dự_án ?? r.Dự\u00e1n ?? r['Dự án'] ?? '').toString().trim();
+
+                // Row UI
+                [NgayNhapkho, TenSanpham, MaSanpham, HangSX, NhaCC, SL, DonVi, DuAn].forEach(val => {
+                    const td = document.createElement('td');
+                    td.textContent = val ?? '';
+                    tr.appendChild(td);
+                });
+                previewBody.appendChild(tr);
+
+                // Hidden fields to submit
+                addHidden('NgayNhapkho', NgayNhapkho);
+                addHidden('TenSanpham', TenSanpham);
+                addHidden('MaSanpham', MaSanpham);
+                addHidden('HangSX', HangSX);
+                addHidden('NhaCC', NhaCC);
+                addHidden('SL', SL);
+                addHidden('DonVi', DonVi);
+                addHidden('DuAn', DuAn);
+            });
+
+            previewWrap.style.display = rows.length ? 'block' : 'none';
+        }
+
+        btnPreview.addEventListener('click', function () {
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Vui lòng chọn file Excel');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                // Đọc dạng mảng để tự tìm dòng tiêu đề thực sự (phù hợp file kho)
+                const rowsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                if (!rowsArray || !rowsArray.length) {
+                    alert('File rỗng hoặc không đọc được dữ liệu.');
+                    clearPreview();
+                    return;
+                }
+
+                // Tìm dòng header có chứa các cột đặc trưng như "Tên hàng" và "Mã hàng"
+                const headerIndex = rowsArray.findIndex(r => {
+                    const joined = r.join(' ').toLowerCase();
+                    return /tên\s*hàng/.test(joined) && /mã\s*hàng/.test(joined);
+                });
+
+                if (headerIndex === -1) {
+                    // Fallback: dùng cách cũ theo key nếu file đã chuẩn key kỹ thuật
+                    const jsonFallback = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                    const rowsFallback = jsonFallback.filter(r =>
+                        (r.TenSanpham || r.TênSảnPhẩm || r.TenSP || r.TenSanPham) ||
+                        (r.MaSanpham || r.MãSảnPhẩm || r.MaSP || r.MaSanPham)
+                    );
+                    if (!rowsFallback.length) {
+                        alert('Không tìm thấy dòng tiêu đề phù hợp ("Tên hàng", "Mã hàng").');
+                        clearPreview();
+                        return;
+                    }
+                    renderPreview(rowsFallback);
+                    return;
+                }
+
+                const headerRow1 = rowsArray[headerIndex].map(h => (h || '').toString().trim());
+                const headerRow2 = (rowsArray[headerIndex + 1] || []).map(h => (h || '').toString().trim());
+                const maxLen = Math.max(headerRow1.length, headerRow2.length);
+                const header = [];
+                for (let i = 0; i < maxLen; i++) {
+                    const h1 = (headerRow1[i] || '').trim();
+                    const h2 = (headerRow2[i] || '').trim();
+                    // Gộp tiêu đề đa hàng: ví dụ "Nhập kho" + "Thực nhập" => "Nhập kho Thực nhập"
+                    const merged = (h1 && h2) ? (h1 + ' ' + h2) : (h1 || h2);
+                    header.push(merged);
+                }
+                // Nếu dòng tiếp theo rõ ràng là tiêu đề con (chứa "yêu cầu" hoặc "thực nhập"), bỏ nó khỏi data
+                const isSubHeader = headerRow2.some(c => /yêu\s*cầu|yeu\s*cau|thực\s*nhập|thuc\s*nhap/i.test((c || '').toString()));
+                const dataRows = rowsArray.slice(headerIndex + (isSubHeader ? 2 : 1));
+
+                // Map tên cột -> index
+                function idx(regex) {
+                    const i = header.findIndex(h => regex.test(h.toLowerCase()));
+                    return i >= 0 ? i : -1;
+                }
+
+                const idxTen = idx(/tên\s*hàng/);
+                const idxMa = idx(/mã\s*hàng/);
+                const idxHangSX = idx(/hãng\s*sx|hang\s*sx|hãng\s*sản\s*xuất/);
+                const idxDonVi = idx(/đvt|dvt|đơn\s*vị/);
+                // Số lượng ưu tiên Thực nhập, fallback Yêu cầu nếu trống
+                const idxThucNhap = idx(/(nhập\s*kho\s*)?thực\s*nhập|(nhap\s*kho\s*)?thuc\s*nhap/);
+                const idxYeuCau = idx(/yêu\s*cầu|yeu\s*cau/);
+                const idxNCC = idx(/ncc|nhà\s*cung\s*cấp|nha\s*cung\s*cap/);
+                // Header gộp có thể thành "Chứng từ Ngày" -> tìm chứa từ "ngày"
+                const idxNgay = idx(/ngày|ngay/);
+                const idxDuAn = idx(/dự\s*án|du\s*an/);
+
+                const rows = [];
+                for (const r of dataRows) {
+                    // Bỏ qua dòng trống hoàn toàn
+                    if (!r || r.every(c => (c + '').trim() === '')) continue;
+
+                    const NgayNhapkho = idxNgay !== -1 ? toDateString(r[idxNgay]) : '';
+                    const TenSanpham = idxTen !== -1 ? (r[idxTen] + '').trim() : '';
+                    const MaSanpham = idxMa !== -1 ? (r[idxMa] + '').trim() : '';
+                    const HangSX = idxHangSX !== -1 ? (r[idxHangSX] + '').trim() : '';
+                    const DonVi = idxDonVi !== -1 ? (r[idxDonVi] + '').trim() : '';
+                    const NhaCC = idxNCC !== -1 ? (r[idxNCC] + '').trim() : '';
+                    // SL: lấy thực nhập, nếu rỗng lấy yêu cầu; chuẩn hóa số có dấu phẩy
+                    const rawThuc = idxThucNhap !== -1 ? r[idxThucNhap] : '';
+                    const rawYC = idxYeuCau !== -1 ? r[idxYeuCau] : '';
+                    const pick = (rawThuc !== '' && rawThuc != null) ? rawThuc : rawYC;
+                    const SL = (pick === '' || pick == null) ? '' : Number(String(pick).toString().replace(/\./g,'').replace(/,/g,''));
+                    const DuAn = idxDuAn !== -1 ? (r[idxDuAn] + '').trim() : '';
+
+                    if (!TenSanpham && !MaSanpham) continue; // lọc dòng vô nghĩa
+
+                    rows.push({
+                        NgayNhapkho,
+                        TenSanpham,
+                        MaSanpham,
+                        HangSX,
+                        NhaCC,
+                        SL,
+                        DonVi,
+                        DuAn
+                    });
+                }
+
+                if (!rows.length) {
+                    alert('Không có dòng dữ liệu hợp lệ sau khi phân tích.');
+                    clearPreview();
+                    return;
+                }
+                renderPreview(rows);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        btnClear.addEventListener('click', clearPreview);
+    })();
+</script>
+</body>
+</html>
+

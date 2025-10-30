@@ -40,6 +40,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xIb21lXEltcG9ydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Home/KhoDuAn.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xIb21lXEtob0R1QW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/Giamdoc/Views/Home/Themthietbi.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcR2lhbWRvY1xWaWV3c1xIb21lXFRoZW10aGlldGJpLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -98,6 +102,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Home/Import.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXEhvbWVcSW1wb3J0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Home/KhoDuAn.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcTmhhbnZpZW5LeXRodWF0XFZpZXdzXEhvbWVcS2hvRHVBbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/NhanvienKythuat/Views/Home/Themthietbi.cshtml]
@@ -164,6 +172,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcSG9tZVxJbXBvcnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Home/KhoDuAn.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcSG9tZVxLaG9EdUFuLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/TruongBPKetoan/Views/Home/Themthietbi.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLZXRvYW5cVmlld3NcSG9tZVxUaGVtdGhpZXRiaS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -226,6 +238,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Home/InTem.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcSG9tZVxJblRlbS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Home/KhoDuAn.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLaG9cVmlld3NcSG9tZVxLaG9EdUFuLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/TruongBPKho/Views/Home/Themthietbi.cshtml]
@@ -292,6 +308,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXEhvbWVcSW1wb3J0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Home/KhoDuAn.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXEhvbWVcS2hvRHVBbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/TruongBPKythuat/Views/Home/Themthietbi.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBLeXRodWF0XFZpZXdzXEhvbWVcVGhlbXRoaWV0YmkuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -352,6 +372,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXEhvbWVcSW1wb3J0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Home/KhoDuAn.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXEhvbWVcS2hvRHVBbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Areas/TruongBPMuahang/Views/Home/Themthietbi.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcVHJ1b25nQlBNdWFoYW5nXFZpZXdzXEhvbWVcVGhlbXRoaWV0YmkuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -406,6 +430,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Views/Home/Dangnhap.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxEYW5nbmhhcC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[H:/Webkho20241021/Webkho20241021/Webkho20241021/Views/Home/KhoDuAn.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxLaG9EdUFuLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [H:/Webkho20241021/Webkho20241021/Webkho20241021/Views/Home/Trangchu.cshtml]

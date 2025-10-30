@@ -23,6 +23,7 @@ body {
 .header {
     text-align: center;
     margin-bottom: 40px;
+    position: relative;
 }
 
     .header h1 {
@@ -40,6 +41,23 @@ body {
         color: #64748b;
         font-size: 15px;
     }
+
+/* Nút back icon ở góc trái header */
+.back-btn {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.back-btn:hover {
+    background: #e2e8f0;
+}
 
 /* ----- Bố cục 2 cột ----- */
 .content-wrapper {
@@ -130,6 +148,12 @@ body {
     padding: 10px 0;
     border-top: 1px solid #e2e8f0;
     border-bottom: 1px solid #e2e8f0;
+}
+
+/* Make the barcode SVG scale to the preview width */
+.barcode-container svg {
+    width: 100% !important;
+    height: 60px !important;
 }
 
 .qrcode-container {

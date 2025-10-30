@@ -189,5 +189,13 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             return View("Tongkho", capPhatNvMoi);
         }
 
+        public IActionResult KhoDuAn(int page = 1)
+        {
+            int pageSize = 20;
+            var items = _context.khotongs.Where(k => !string.IsNullOrEmpty(k.DuAn)).ToList();
+            ViewBag.Page = page;
+            return View("KhoDuAn", items);
+        }
+
     }
 }

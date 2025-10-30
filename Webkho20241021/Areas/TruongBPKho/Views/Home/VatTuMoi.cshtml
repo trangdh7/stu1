@@ -1,6 +1,6 @@
 @model List<Webkho_20241021.Models.vtphieuxuatkho>
 @{
-    ViewData["Title"] = "VatTuMoi";
+    ViewData["Title"] = "Vật tư mới";
     Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
 }
 <!DOCTYPE html>
@@ -12,89 +12,117 @@
     <link href="~/CSS/Kho.css" rel="stylesheet" />
     <link href="~/CSS/style.css" rel="stylesheet" />
     <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="~/CSS/Tongkho.css" rel="stylesheet" />
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
     <title>Vật tư mới</title>
 </head>
 <body>
-    <nav class="bodykho">
-        <div class="menu-kho">
-            <ul>
-                <li><a href="">Vật tư mới</a></li>
-            </ul>
-            <ul>
-                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
-            </ul>
-        </div>
-        <div class="Tablekhotong-box">
-            <table class="tablekhotong">
-                <thead>
-                    <tr>
-                        <td>STT</td>
-                        <td>Tên vật tư</td>
-                        <td>Mã vật tư</td>
-                        <td>Mã kho</td>
-                        <td>Hãng SX</td>
-                        <td>Nhà cung cấp</td>
-                        <td>Số lượng</td>
-                        <td>Đơn vị</td>
-                        <td>Ngày nhập kho</td>
-                        <td>Ngày bảo hành</td>
-                        <td>Trạng thái</td>
-                        <td>Loại cấp phát</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model != null && Model.Any())
-                    {
-                        var index = 1;
-                        foreach (var item in Model)
-                        {
-                            <tr>
-                                <td>@index</td>
-                                <td>@item.TenSanpham</td>
-                                <td>@item.MaSanpham</td>
-                                <td>@item.Makho</td>
-                                <td>@item.HangSX</td>
-                                <td>@item.NhaCC</td>
-                                <td>@item.SL</td>
-                                <td>@item.DonVi</td>
-                                <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
-                                <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
-                                <td>@item.TrangThai</td>
-                                <td>@item.LoaiCapPhat</td>
-                            </tr>
-                            index++;
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="12">Không có dữ liệu.</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        <div id="yeucau-action">
-            <div class="action">
-                <ul class="hanhdong">
-                    <li>
-                        <a href="">Thêm vật tư</a>
-                    </li>
-                    <li>
-                        <a href="">Cập nhật</a>
-                    </li>
-                </ul>
-                <ul class="excel">
-                    <li>
-                        <a href="">Import</a>
-                    </li>
-                    <li>
-                        <a href="">Export</a>
-                    </li>
-                </ul>
+    <div class="warehouse-container">
+        <!-- Header -->
+        <div class="warehouse-header">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <i class='bx bx-package'></i> Vật tư mới
+                </h1>
+                <p class="header-subtitle">Danh sách vật tư mới nhập kho</p>
             </div>
         </div>
-    </nav>
+        <!-- Navigation Tabs -->
+        <div class="warehouse-nav">
+            <div class="nav-tabs">
+                <a href="/TruongBPKho/Home/Tongkho" class="nav-tab">
+                    <i class='bx bx-store'></i> Tổng kho
+                </a>
+                <a href="/TruongBPKho/Home/CapPhatNvMoi" class="nav-tab active">
+                    <i class='bx bx-package'></i> Kho nv mới
+                </a>
+                <a href="/TruongBPKho/Home/KhoDuAn" class="nav-tab">
+                    <i class='bx bx-briefcase'></i> Kho dự án
+                </a>
+            </div>
+            <div class="nav-search">
+                <i class='bx bx-search'></i>
+                <input type="text" id="timkiem" placeholder="Tìm kiếm vật tư..." />
+            </div>
+        </div>
+        <!-- Main Content (table) -->
+        <div class="warehouse-content">
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>Danh sách vật tư mới nhập kho</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Tên vật tư</th>
+                                <th>Mã vật tư</th>
+                                <th>Mã kho</th>
+                                <th>Hãng SX</th>
+                                <th>Nhà cung cấp</th>
+                                <th>Số lượng</th>
+                                <th>Đơn vị</th>
+                                <th>Ngày nhập kho</th>
+                                <th>Ngày bảo hành</th>
+                                <th>Trạng thái</th>
+                                <th>Loại cấp phát</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                var index = 1;
+                                foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>@index</td>
+                                        <td>@item.TenSanpham</td>
+                                        <td>@item.MaSanpham</td>
+                                        <td>@item.Makho</td>
+                                        <td>@item.HangSX</td>
+                                        <td>@item.NhaCC</td>
+                                        <td>@item.SL</td>
+                                        <td>@item.DonVi</td>
+                                        <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.TrangThai</td>
+                                        <td>@item.LoaiCapPhat</td>
+                                    </tr>
+                                    index++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="12">Không có dữ liệu.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="yeucau-action">
+                <div class="action">
+                    <ul class="hanhdong">
+                        <li>
+                            <a href="">Thêm vật tư</a>
+                        </li>
+                        <li>
+                            <a href="">Cập nhật</a>
+                        </li>
+                    </ul>
+                    <ul class="excel">
+                        <li>
+                            <a href="">Import</a>
+                        </li>
+                        <li>
+                            <a href="">Export</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

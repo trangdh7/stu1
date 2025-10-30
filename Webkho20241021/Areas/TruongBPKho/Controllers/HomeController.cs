@@ -41,8 +41,8 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             return View();
         }
         //import excel
-		
-		
+
+
 
 
         [HttpPost]
@@ -122,6 +122,8 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
         public IActionResult ImportSQL(string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, DateTime?[] NgayBaohanh, DateTime?[] ThoiGianBH)
         {
             int count = TenSanpham.Length;
+            int added = 0;
+            int updated = 0;
 
             for (int i = 0; i < count; i++)
             {
@@ -140,6 +142,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 {
                     existingItem.SL += SL[i];
                     _context.khotongs.Update(existingItem);
+                    updated++;
                 }
                 else
                 {
@@ -176,10 +179,12 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     };
 
                     _context.khotongs.Add(newKhotong);
+                    added++;
                 }
             }
 
             _context.SaveChanges();
+            TempData["Success"] = $"Import thành công: thêm {added} dòng, cập nhật {updated} dòng.";
             return RedirectToAction("Tongkho", "Home", new { area = "TruongBPKho" });
         }
 
@@ -215,7 +220,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             var capPhatNvMoi = _context.khotongs
                 .Where(k => k.LoaiCapPhat == "ChoNhanVienMoi")
                 .ToList();
-            
+
             return View("Tongkho", capPhatNvMoi);
         }
 
@@ -224,17 +229,17 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
         {
             var allKhotongs = _context.khotongs.ToList();
             var allVtphieuxuatkho = _context.vtphieuxuatkho.ToList();
-            
+
             var capPhatNvMoiFromKhotongs = allKhotongs.Where(k => k.LoaiCapPhat == "ChoNhanVienMoi").ToList();
             var capPhatNvMoiFromVtphieuxuatkho = allVtphieuxuatkho.Where(k => k.LoaiCapPhat == "ChoNhanVienMoi").ToList();
-            
+
             ViewBag.TotalKhotongsRecords = allKhotongs.Count;
             ViewBag.TotalVtphieuxuatkhoRecords = allVtphieuxuatkho.Count;
             ViewBag.CapPhatNvMoiFromKhotongs = capPhatNvMoiFromKhotongs.Count;
             ViewBag.CapPhatNvMoiFromVtphieuxuatkho = capPhatNvMoiFromVtphieuxuatkho.Count;
             ViewBag.AllLoaiCapPhatKhotongs = allKhotongs.Select(k => k.LoaiCapPhat).Distinct().ToList();
             ViewBag.AllLoaiCapPhatVtphieuxuatkho = allVtphieuxuatkho.Select(k => k.LoaiCapPhat).Distinct().ToList();
-            
+
             return View("Tongkho", capPhatNvMoiFromVtphieuxuatkho);
         }
 

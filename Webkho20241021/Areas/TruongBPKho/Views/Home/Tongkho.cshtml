@@ -12,200 +12,144 @@
     <link href="~/CSS/Kho.css" rel="stylesheet" />
     <link href="~/CSS/style.css" rel="stylesheet" />
     <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="~/CSS/Tongkho.css" rel="stylesheet" /> <!-- CSS tách riêng -->
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-
-    <title>Document</title>
+    <title>Quản Lý Kho</title>
 </head>
 <body>
-    <nav class="bodykho">
-        <div class="menu-kho">
-            <ul>
-                <li><a href="/TruongBPKho/Home/Tongkho" class="tab-link active" data-tab="tongkho">Tổng kho</a></li>
-                <li><a href="/TruongBPKho/Home/CapPhatNvMoi" class="tab-link" data-tab="capphatnvmoi">Kho nv mới</a></li>
-                <li><a href="">Kho dự án</a></li>
-            </ul>
-            <ul>
-                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
-            </ul>
+    <div class="warehouse-container">
+        <!-- Header -->
+        <div class="warehouse-header">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <i class='bx bx-package'></i> Quản Lý Kho
+                </h1>
+                <p class="header-subtitle">Quản lý tồn kho và cấp phát vật tư</p>
+            </div>
         </div>
-        @if (ViewBag.TotalKhotongsRecords != null)
+
+        <!-- Navigation Tabs -->
+        <div class="warehouse-nav">
+            <div class="nav-tabs">
+                <a href="/TruongBPKho/Home/Tongkho" class="nav-tab active">
+                    <i class='bx bx-store'></i> Tổng kho
+                </a>
+                <a href="/TruongBPKho/Home/CapPhatNvMoi" class="nav-tab">
+                    <i class='bx bx-package'></i> Kho nv mới
+                </a>
+                <a href="/TruongBPKho/Home/KhoDuAn" class="nav-tab">
+                    <i class='bx bx-briefcase'></i> Kho dự án
+                </a>
+            </div>
+            <div class="nav-search">
+                <i class='bx bx-search'></i>
+                <input type="text" id="timkiem" placeholder="Tìm kiếm vật tư..." />
+            </div>
+        </div>
+
+        <!-- Success Alert -->
+        @if (TempData["Success"] != null)
         {
-            <div style="background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px;">
-                <strong>Debug Info:</strong><br/>
-                <strong>Bảng khotongs:</strong><br/>
-                - Tổng số records: @ViewBag.TotalKhotongsRecords<br/>
-                - Records với LoaiCapPhat = 'ChoNhanVienMoi': @ViewBag.CapPhatNvMoiFromKhotongs<br/>
-                - Tất cả giá trị LoaiCapPhat: @string.Join(", ", ViewBag.AllLoaiCapPhatKhotongs)<br/><br/>
-                <strong>Bảng vtphieuxuatkho:</strong><br/>
-                - Tổng số records: @ViewBag.TotalVtphieuxuatkhoRecords<br/>
-                - Records với LoaiCapPhat = 'ChoNhanVienMoi': @ViewBag.CapPhatNvMoiFromVtphieuxuatkho<br/>
-                - Tất cả giá trị LoaiCapPhat: @string.Join(", ", ViewBag.AllLoaiCapPhatVtphieuxuatkho)
+            <div id="success-alert" class="alert alert-success">
+                <div class="alert-content">
+                    <i class='bx bx-check-circle'></i>
+                    <div>
+                        <strong>Thành công!</strong>
+                        <p>@TempData["Success"]</p>
+                    </div>
+                </div>
+                <button class="alert-close" onclick="this.parentElement.style.display='none';">
+                    <i class='bx bx-x'></i>
+                </button>
             </div>
         }
-        <div class="Tablekhotong-box">
-            <table class="tablekhotong">
-                <thead>
-                    <tr>
-                        <td>Tên vật tư</td>
-                        <td>Mã vật tư</td>
-                        <td>Mã kho</td>
-                        <td>
-                            <select id="hangsx-filter">
-                                <option value="">Hãng SX</option>
-                                @foreach (var item in Model.Select(m => m.HangSX).Distinct())
+
+        <!-- Action Buttons (moved up here) -->
+        <div class="action-section top-action">
+            <div class="action-group">
+                <h3>Hành động</h3>
+                <div class="button-group">
+                    <a href="/TruongBPKho/Home/Themthietbi" class="btn btn-primary">
+                        <i class='bx bx-plus'></i> Thêm vật tư
+                    </a>
+                    <a href="/TruongBPKho/Home/Import" class="btn btn-secondary">
+                        <i class='bx bx-upload'></i> Import
+                    </a>
+                    <a href="" class="btn btn-secondary">
+                        <i class='bx bx-download'></i> Export
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="warehouse-content">
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>Danh sách vật tư dự án</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Mã vật tư</th>
+                                <th>Tên vật tư</th>
+                                <th>Mã kho</th>
+                                <th>Hãng SX</th>
+                                <th>Nhà cung cấp</th>
+                                <th>Dự án</th>
+                                <th>Số lượng</th>
+                                <th>Đơn vị</th>
+                                <th>Ngày nhập kho</th>
+                                <th>Ngày bảo hành</th>
+                                <th>Thời gian BH</th>
+                                <th>Trạng thái</th>
+                                <th>Loại cấp phát</th>
+                                <th>In mã</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var item in Model)
                                 {
-                                    <option value="@item">@item</option>
+                                    <tr>
+                                        <td>@item.MaSanpham</td>
+                                        <td>@item.TenSanpham</td>
+                                        <td>@item.Makho</td>
+                                        <td>@item.HangSX</td>
+                                        <td>@item.NhaCC</td>
+                                        <td>@item.DuAn</td>
+                                        <td>@item.SL</td>
+                                        <td>@item.DonVi</td>
+                                        <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
+                                        <td>@(item.SL > 0 ? "Tồn Kho" : "Hết Hàng")</td>
+                                        <td>@item.LoaiCapPhat</td>
+                                        <td>
+                                            <a href="@Url.Action("InTem", "Home", new { area = "TruongBPKho", makho = item.Makho })"
+                                               class="btn-action btn-print"
+                                               target="_blank">
+                                                <i class='bx bx-printer'></i> In
+                                            </a>
+                                        </td>
+                                    </tr>
                                 }
-                            </select>
-                        </td>
-                        <td>Nhà cung cấp</td>
-                        <td>Số lượng</td>
-                        <td>Đơn vị</td>
-                        <td>Ngày nhập kho</td>
-                        <td>Ngày bảo hành</td>
-                        <td>Thời gian BH</td>
-                        <td>Trạng thái</td>
-                        <td>Loại cấp phát</td>
-                        <td>In mã</td> <!-- 🆕 Cột mới thêm -->
-                    </tr>
-                </thead>
-                <tbody>
-                    @{
-                        int STT = 1;
-                    }
-                    @foreach (var item in Model)
-                    {
-                        <tr>
-                            <td>@item.TenSanpham</td>
-                            <td>@item.MaSanpham</td>
-                            <td>@item.Makho</td>
-                            <td>@item.HangSX</td>
-                            <td>@item.NhaCC</td>
-                            <td>@item.SL</td>
-                            <td>@item.DonVi</td>
-                            <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.TrangThai</td>
-                            <td>@item.LoaiCapPhat</td>
-
-                            <!-- 🆕 Nút In -->
-                            <td>
-                                <a href="@Url.Action("InTem", "Home", new { area = "TruongBPKho", makho = item.Makho })"
-                                   class="btn-in-ma"
-                                   target="_blank">
-                                    <i class='bx bx-printer'></i> In
-                                </a>
-                            </td>
-                        </tr>
-                        STT++;
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <div id="yeucau-action">
-            <div class="action">
-                <ul class="hanhdong">
-                    <li>
-                        <a href="/TruongBPKho/Home/Themthietbi">Thêm</a>
-                    </li>
-                </ul>
-                <ul class="excel">
-                    <li>
-                        <a href="/TruongBPKho/Home/Import">Import</a>
-                    </li>
-                    <li>
-                        <a href="">Export</a>
-                    </li>
-                </ul>
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="14">Không có dữ liệu.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </nav>
+    </div>
+
     <script src="~/js/khotong.js"></script>
-    <style>
-        .btn-in-ma {
-            display: inline-block;
-            padding: 4px 8px;
-            background-color: #007bff;
-            color: #fff;
-            border-radius: 4px;
-            text-decoration: none;
-            transition: background-color 0.3s;
-        }
-
-            .btn-in-ma:hover {
-                background-color: #0056b3;
-                color: #fff;
-            }
-
-        .menu-kho ul {
-            display: flex;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-            .menu-kho ul li {
-                margin-right: 10px;
-            }
-
-                .menu-kho ul li a.tab-link {
-                    padding: 10px 20px;
-                    text-decoration: none;
-                    color: #333;
-                    border-radius: 5px 5px 0 0;
-                    transition: all 0.3s ease;
-                    display: block;
-                    /* background-color: #f8f9fa; */
-                    border: 1px solid #dee2e6;
-                }
-
-                    .menu-kho ul li a.tab-link.active {
-                        background-color: #007bff;
-                        color: white;
-                        font-weight: bold;
-                        border-color: #007bff;
-                    }
-
-                    .menu-kho ul li a.tab-link:hover {
-                        color: white;
-                    }
-
-                    .menu-kho ul li a.tab-link.active:hover {
-                        background-color: #0056b3;
-                        color: white;
-                    }
-    </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const tabLinks = document.querySelectorAll('.tab-link');
-            const currentPath = window.location.pathname;
-            
-            // Set active tab based on current URL
-            tabLinks.forEach(link => {
-                if (link.href.includes(currentPath)) {
-                    link.classList.add('active');
-                } else {
-                    link.classList.remove('active');
-                }
-            });
-            
-            tabLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Remove active class from all tabs
-                    tabLinks.forEach(tab => tab.classList.remove('active'));
-                    
-                    // Add active class to clicked tab
-                    this.classList.add('active');
-                    
-                    // Navigate to the URL
-                    window.location.href = this.href;
-                });
-            });
-        });
-    </script>
 </body>
 </html>
