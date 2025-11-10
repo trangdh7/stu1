@@ -42,6 +42,4 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            Import-Module WebAdministration
-            Restart-WebAppPool webkho
-            Write-Host "✅ IIS AppPool webkho restarted"
+            powershell -Command "Import-Module WebAdministration; Restart-WebAppPool webkho; Write-Host '✅ IIS AppPool webkho restarted'"
