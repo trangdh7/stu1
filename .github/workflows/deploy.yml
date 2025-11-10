@@ -27,10 +27,11 @@ jobs:
         run: dotnet publish -c Release -o ./publish
 
       - name: Deploy to IIS
-        uses: amalshaji/scp-deploy@v1.1
-        with:
-          local: "./publish"
-          remote: "C:\\inetpub\\wwwroot\\Webkho20241021\\publish"
-          host: ${{ secrets.SERVER_HOST }}
-          user: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
+        uses: easingthemes/ssh-deploy@v5.0.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+          REMOTE_USER: ${{ secrets.SERVER_USER }}
+          REMOTE_PORT: 22
+          SOURCE: "publish/"
+          TARGET: "C:/inetpub/wwwroot/Webkho20241021/publish"
