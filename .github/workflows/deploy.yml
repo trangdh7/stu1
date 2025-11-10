@@ -1,12 +1,12 @@
-name: Deploy .NET 8 to IIS
+name: Deploy khostu .NET 8 to IIS
 
 on:
   push:
     branches: ["main"]
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repo
