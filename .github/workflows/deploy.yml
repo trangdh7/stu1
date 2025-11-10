@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
@@ -17,13 +17,13 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Restore
+      - name: Restore dependencies
         run: dotnet restore
 
-      - name: Build
+      - name: Build project
         run: dotnet build --configuration Release
 
-      - name: Publish
+      - name: Publish project
         run: dotnet publish -c Release -o ./publish
 
       - name: Upload to Windows VPS
