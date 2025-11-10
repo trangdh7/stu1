@@ -34,12 +34,8 @@
                         <a href="/Giamdoc/Home/Tongkho">Tổng kho</a>
                     </li>
                     <li>
-                        <a href="/Giamdoc/Home/Import"><i class='bx bx-import' style='color:#0c6212'></i></a>
-                        <a href="/Giamdoc/Home/Import">Import</a>
-                    </li>
-                    <li>
-                        <a href=""><i class='bx bx-export' style='color:#712a0e'></i></a>
-                        <a href="">Export</a>
+                        <a href="@Url.Action("ExportTongkho", "Home", new { area = "Giamdoc" })"><i class='bx bx-export' style='color:#712a0e'></i></a>
+                        <a href="@Url.Action("ExportTongkho", "Home", new { area = "Giamdoc" })">Export</a>
                     </li>
                 </ul>
             </nav>
@@ -67,11 +63,13 @@
                 <span>Quản lí yêu cầu</span>
                 <ul class="canhan-icon">
                     <li class="Danhsachyeucau">
-                        <a href="/Giamdoc/Yeucau/Yeucau"><i class='bx bxs-report' style='color:#0f1271'></i></a>
-                        <a href="">Danh sách yêu cầu</a>
-                        <span class="badge-trangchu">
-                            <span class="notification"></span>
-                        </span>
+                        <a href="/Giamdoc/Yeucau/Yeucau" style="position: relative;">
+                            <i class='bx bxs-report' style='color:#0f1271'></i>
+                            <span class="badge-trangchu">
+                                <span class="notification"></span>
+                            </span>
+                        </a>
+                        <a href="/Giamdoc/Yeucau/Yeucau">Danh sách yêu cầu</a>
                     </li>
                     <li>
                         <a href="/Giamdoc/Yeucau/ThemYeucau"><i class='bx bx-folder-plus' style='color:#0c6215'></i></a>
@@ -87,7 +85,13 @@
     </nav>
     <script>
         $(document).ready(function () {
+            // Gọi hàm thông báo ngay khi trang load
             getThongbaoDatatrangchu();
+            
+            // Gọi lại sau 1 giây để đảm bảo DOM đã sẵn sàng
+            setTimeout(function() {
+                getThongbaoDatatrangchu();
+            }, 1000);
         });
     </script>
 </body>

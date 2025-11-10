@@ -17,10 +17,30 @@
     <nav class="bodyyeucau">
         <div class="menu-kho">
             <ul class="timkiem">
-                <li><a href="/TruongBPKetoan/Yeucau/Yeucau">Chưa duyệt</a></li>
-                <li><a href="/TruongBPKetoan/Yeucau/Phieuxuatkho">Phiếu xuất kho</a></li>
-                <li><a href="/TruongBPKetoan/Yeucau/Phieunhapkho">Phiếu nhập kho</a></li>
-                <li><a href="/TruongBPKetoan/Yeucau/Phieumuahang">Phiếu mua hàng</a></li>
+                <li class="menu-yeucau">
+                    <a href="/TruongBPKetoan/Yeucau/Yeucau">Chưa duyệt</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-xuatkho">
+                    <a href="/TruongBPKetoan/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-nhapkho">
+                    <a href="/TruongBPKetoan/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-muahang">
+                    <a href="/TruongBPKetoan/Yeucau/Phieumuahang">Phiếu mua hàng</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
             </ul>
             <ul>
                 <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
@@ -141,6 +161,11 @@
         </div>
     </nav>
     <script src="~/js/phieuxuatkho.js"></script>
+    <script>
+        $(document).ready(function () {
+            getThongbaoData();
+        });
+    </script>
 </body>
 </html>
 

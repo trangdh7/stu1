@@ -1,0 +1,124 @@
+﻿@model List<Webkho_20241021.Models.khotongs>
+@{
+    ViewData["Title"] = "Tongkho";
+    Layout = "~/Areas/NhanvienKythuat/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/CSS/Action.css" rel="stylesheet" />
+    <link href="~/CSS/Kho.css" rel="stylesheet" />
+    <link href="~/CSS/style.css" rel="stylesheet" />
+    <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="~/CSS/Tongkho.css" rel="stylesheet" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Quản Lý Kho</title>
+</head>
+<body>
+    <div class="warehouse-container">
+        <div class="warehouse-header">
+            <div class="header-content">
+                <h1 class="header-title"><i class='bx bx-package'></i> Quản Lý Kho</h1>
+                <p class="header-subtitle">Quản lý tồn kho và cấp phát vật tư</p>
+            </div>
+        </div>
+        <div class="warehouse-nav">
+            <div class="nav-tabs">
+                @{ var action = (string)ViewContext.RouteData.Values["action"]; }
+                <a href="/NhanvienKythuat/Home/Tongkho" class="nav-tab @(action=="Tongkho"?"active":"")"><i class='bx bx-store'></i> Tổng kho</a>
+                <a href="/NhanvienKythuat/Home/VatTuMoi" class="nav-tab @(action=="VatTuMoi"?"active":"")"><i class='bx bx-package'></i> Kho nv mới</a>
+                <a href="/NhanvienKythuat/Home/KhoDuAn" class="nav-tab @(action=="KhoDuAn"?"active":"")"><i class='bx bx-briefcase'></i> Kho dự án</a>
+            </div>
+            <div class="nav-search">
+                <i class='bx bx-search'></i>
+                <input type="text" id="timkiem" placeholder="Tìm kiếm vật tư..." />
+            </div>
+        </div>
+        <div class="action-section top-action">
+            <div class="action-group">
+                <h3>Hành động</h3>
+                <div class="button-group">
+                    <a href="/NhanvienKythuat/Home/Themthietbi" class="btn btn-primary"><i class='bx bx-plus'></i> Thêm vật tư</a>                   
+                    <a href="" class="btn btn-info"><i class='bx bx-download'></i> Export</a>
+                </div>
+            </div>
+        </div>
+        <div class="warehouse-content">
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>Danh sách vật tư</h2>
+                    <div class="table-filter">
+                        <select id="hangsx-filter" class="filter-select">
+                            <option value="">Tất cả hãng SX</option>
+                            @foreach (var item in Model.Select(m => m.HangSX).Distinct())
+                            {
+                                <option value="@item">@item</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã sản phẩm</th>
+                                <th>Tên vật tư</th>
+                                <th>Mã kho</th>
+                                <th>Hãng SX</th>
+                                <th>Nhà cung cấp</th>
+                                <th>Số lượng</th>
+                                <th>Đơn vị</th>
+                                <th>Ngày nhập</th>
+                                <th>Ngày BH</th>
+                                <th>Thời gian BH</th>
+                                <th>Trạng thái</th>
+                                <th>Loại cấp phát</th>
+                                
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ var stt = 1 + ((((int?)ViewBag.Page ?? 1) - 1) * 20); }
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@stt</td>
+                                    <td>@item.MaSanpham</td>
+                                    <td class="text-bold">@item.TenSanpham</td>
+                                    <td><strong>@item.Makho</strong></td>
+                                    <td>@item.HangSX</td>
+                                    <td>@item.NhaCC</td>
+                                    <td><span class="quantity">@item.SL</span></td>
+                                    <td>@item.DonVi</td>
+                                    <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
+                                    <td>@(item.SL > 0 ? "Tồn kho" : "Hết hàng")</td>
+                                    <td>@item.LoaiCapPhat</td>
+                                   
+                                </tr>
+                                stt++;
+                            }
+                        </tbody>
+                    </table>
+                    <!-- Phân trang -->
+                    <div class="pagination">
+                        @{ int totalPages = (int)(ViewBag.TotalPages ?? 1); int curr = (int?)ViewBag.Page ?? 1; }
+                        @if (totalPages > 1)
+                        {
+                            for(int i = 1; i <= totalPages; i++){
+                                if(i == curr){ <span class="active">@i</span> } else {
+                                    <a href="?page=@i">@i</a>
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/js/khotong.js"></script>
+</body>
+</html>

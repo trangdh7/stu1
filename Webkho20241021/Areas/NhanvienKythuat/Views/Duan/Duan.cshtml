@@ -112,26 +112,18 @@
                         <td>Nhà cung cấp</td>
                         <td>Số lượng</td>
                         <td>Đơn vị</td>
+                        <td>Ngày nhập kho</td>
+                        <td>Ngày bảo hành</td>
+                        <td>Thời gian BH</td>
                         <td>Trạng thái</td>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model.KhoDuan)
-                    {
-                        <tr>
-                            <td>@item.TenSanpham</td>
-                            <td>@item.MaSanpham</td>
-                            <td>@item.DAMakho</td>
-                            <td>@item.HangSX</td>
-                            <td>@item.NhaCC</td>
-                            <td>@item.SL</td>
-                            <td>@item.DonVi</td>
-                            <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.TrangThai</td>
-                        </tr>
-                    }
+                    <tr>
+                        <td colspan="11" style="text-align:center; color:#666; padding:20px;">
+                            Vui lòng chọn một dự án để xem vật tư đã được xuất kho.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>

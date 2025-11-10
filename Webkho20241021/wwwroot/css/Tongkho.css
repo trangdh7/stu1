@@ -226,14 +226,7 @@ body {
         background-color: #f9fafb;
     }
 
-.badge-code {
-    background-color: #f3f4f6;
-    color: #374151;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-}
+
 
 .quantity {
     font-weight: 600;
@@ -278,8 +271,8 @@ td strong {
     width: 70px;
     height: 32px;
     border-radius: 6px;
-    background-color: #dbeafe;
-    color: #1e40af;
+    background-color: #0eacf9;
+    color: white;
     text-decoration: none;
     transition: all 0.3s ease;
     font-size: 14px;
@@ -287,6 +280,205 @@ td strong {
 }
 
     .btn-action:hover {
-        background-color: #bfdbfe;
-        color: #000;
+        background-color: #0066cc;
+        color: #fff;
     }
+/* ====== Pagination ====== */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 24px 0;
+    flex-wrap: wrap;
+}
+
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        color: #374151;
+        background-color: #f3f4f6;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+
+        .pagination a:hover {
+            background-color: #e0e7ff;
+            color: #1e3c72;
+            border-color: #c7d2fe;
+        }
+
+        .pagination span.active {
+            background-color: #2a5298;
+            color: white;
+            border-color: #2a5298;
+            cursor: default;
+        }
+/* ====== Success Alert ====== */
+.alert {
+    position: relative;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 16px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    animation: fadeIn 0.5s ease;
+}
+
+.alert-success {
+    background-color: #ecfdf5;
+    border-left: 6px solid #10b981;
+    color: #065f46;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+    .alert-content i {
+        font-size: 22px;
+        color: #10b981;
+    }
+
+.alert-close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #065f46;
+    font-size: 18px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+.btn-success {
+    background-color: #16a34a;
+    color: white;
+}
+
+    .btn-success:hover {
+        background-color: #15803d;
+    }
+
+.btn-info {
+    background-color: #0ea5e9;
+    color: white;
+}
+
+    .btn-info:hover {
+        background-color: #0369a1;
+    }
+/* ====== Search Form (Nav Search) ====== */
+.nav-search {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 10px 16px;
+    gap: 12px;
+    max-width: 100%;
+    flex-wrap: wrap;
+}
+
+    /* Label “Dự án:” */
+    .nav-search label {
+        font-weight: 600;
+        color: #1f2937;
+        font-size: 14px;
+    }
+
+    /* Dropdown chọn dự án */
+    .nav-search select {
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #374151;
+        background-color: #f9fafb;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+
+        .nav-search select:hover,
+        .nav-search select:focus {
+            border-color: #2a5298;
+        }
+
+    /* Icon tìm kiếm */
+    .nav-search i {
+        font-size: 18px;
+        color: #6b7280;
+    }
+
+    /* Ô nhập text tìm kiếm */
+    .nav-search input[type="text"] {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 8px 12px;
+        width: 220px;
+        font-size: 14px;
+        background-color: #f9fafb;
+        color: #1f2937;
+        outline: none;
+        transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+        .nav-search input[type="text"]:focus {
+            border-color: #2a5298;
+            background-color: #fff;
+        }
+
+    /* Nút lọc */
+    .nav-search .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .nav-search .btn-primary {
+        background-color: #2a5298;
+        color: white;
+    }
+
+        .nav-search .btn-primary:hover {
+            background-color: #1e3c72;
+        }

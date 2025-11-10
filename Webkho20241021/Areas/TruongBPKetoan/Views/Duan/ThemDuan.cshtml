@@ -20,21 +20,21 @@
             <div class="row">
                 <div class="field">
                     <label for="tenduan">Tên dự án</label>
-                    <input type="text" id="tenduan" name="TenDuan" placeholder="Tên dự án" />
+                    <input type="text" id="tenduan" name="TenDuan" placeholder="Tên dự án" required />
                 </div>
                 <div class="field">
                     <label for="maduan">Mã dự án</label>
-                    <input type="text" id="maduan" name="MaDuan" placeholder="Mã dự án" />
+                    <input type="text" id="maduan" name="MaDuan" placeholder="Mã dự án" required />
                 </div>
                 <div class="field">
                     <label for="khachhang">Khách hàng</label>
-                    <input type="text" id="khachhang" name="KhachHang" placeholder="Khách hàng" />
+                    <input type="text" id="khachhang" name="KhachHang" placeholder="Khách hàng" required />
                 </div>
             </div>
             <div class="row">
                     <div class="field">
                         <label for="nguoiquanli">Người QLDA</label>
-                    <select id="nguoiquanli" name="NguoiQLDA" onchange="updateMaNguoiQuanLi()">
+                    <select id="nguoiquanli" name="NguoiQLDA" onchange="updateMaNguoiQuanLi()" required>
                             <option value="">Chọn người quản lý</option>
                             @foreach (var n in ViewBag.Tennguoidunglist)
                             {
@@ -44,7 +44,7 @@
                     </div>
                     <div class="field">
                         <label for="manguoiquanli">Mã người QLDA</label>
-                        <select id="manguoiquanli" name="MaNguoiQLDA" readonly>
+                        <select id="manguoiquanli" name="MaNguoiQLDA" required>
                             <option value="">Chọn mã người quản lý</option>
                         </select>
                     </div>

@@ -1,0 +1,36 @@
+name: Deploy khostu .NET 8 to IIS
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Publish
+        run: dotnet publish -c Release -o ./publish
+
+      - name: Deploy to IIS
+        uses: amalshaji/scp-deploy@v1.1
+        with:
+          local: "./publish"
+          remote: "C:\\inetpub\\wwwroot\\Webkho20241021\\publish"
+          host: ${{ secrets.SERVER_HOST }}
+          user: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}

@@ -16,11 +16,25 @@ function getThongbaoDatatrangchu() {
                 (data.thongbaonhapkhocount || 0) +
                 (data.thongbaoxuatkhocount || 0);
 
+            console.log("Tổng thông báo:", tongthongbao);
+            
+            var badgeElement = $('.Danhsachyeucau .badge-trangchu');
+            var notificationElement = $('.Danhsachyeucau .notification');
+            
+            console.log("Badge element found:", badgeElement.length);
+            console.log("Notification element found:", notificationElement.length);
+
             if (tongthongbao > 0) {
-                $('.Danhsachyeucau .badge-trangchu').addClass('show');
-                $('.Danhsachyeucau .notification').text(tongthongbao);
+                if (badgeElement.length > 0) {
+                    badgeElement.addClass('show');
+                    notificationElement.text(tongthongbao);
+                    console.log("Đã hiển thị badge với số:", tongthongbao);
+                } else {
+                    console.error("Không tìm thấy badge element!");
+                }
             } else {
-                $('.Danhsachyeucau .badge-trangchu').removeClass('show');
+                badgeElement.removeClass('show');
+                console.log("Đã ẩn badge");
             }
         },
         error: function (xhr, status, error) {

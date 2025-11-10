@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using Webkho_20241021.Areas.NhanvienKythuat.Data;
 using Webkho_20241021.Models;
 
@@ -19,11 +20,11 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
         public IActionResult Duan()
         {
             var Duanlist = _context.duans.ToList();
-            var Khoduanlist = _context.khoduans.ToList();
+            // Không cần load KhoDuan từ khoduans nữa vì sẽ load từ vtphieuxuatkho qua AJAX khi click vào mã dự án
             var model = new Duanviewmodel
             {
                 Duan = Duanlist,
-                KhoDuan = Khoduanlist
+                KhoDuan = new List<khoduans>() // Trả về list rỗng, sẽ được load qua GetVTDuan
             };
             return View(model);
         }
@@ -38,23 +39,35 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
         }
         public IActionResult GetVTDuan(string MaDuan)
         {
-            var vatTuList = _context.khoduans
-                                 .Where(v => v.DAMaDuan == MaDuan)
-                                 .Select(v => new {
-                                     v.TenSanpham,
-                                     v.MaSanpham,
-                                     v.DAMakho,
-                                     v.HangSX,
-                                     v.NhaCC,
-                                     v.SL,
-                                     v.DonVi,
-                                     v.NgayNhapkho,
-                                     v.NgayBaohanh,
-                                     v.ThoiGianBH,
-                                     v.TrangThai
-                                 }).ToList();
+            // Đọc từ vtphieuxuatkho - vật tư đã được xuất kho cho dự án
+            // Join với phieuxuatkho để lấy vật tư của dự án này
+            var vatTuList = from vt in _context.vtphieuxuatkho
+                           join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
+                           where px.MaDuan == MaDuan
+                                 && (vt.TrangThai == "Đã xác nhận nhận hàng" 
+                                     || vt.TrangThai == "Đã xuất kho" 
+                                     || px.TrangThai == "Đã xác nhận nhận hàng" 
+                                     || px.TrangThai == "Hoàn thành")
+                           select new {
+                               TenSanpham = vt.TenSanpham,
+                               MaSanpham = vt.MaSanpham,
+                               DAMakho = vt.Makho,
+                               HangSX = vt.HangSX,
+                               NhaCC = vt.NhaCC,
+                               SL = vt.SL,
+                               DonVi = vt.DonVi,
+                               NgayNhapkho = vt.NgayNhapkho,
+                               NgayBaohanh = vt.NgayBaohanh,
+                               ThoiGianBH = vt.ThoiGianBH,
+                               TrangThai = vt.TrangThai ?? "Đã xác nhận nhận hàng"
+                           };
 
-            return Json(vatTuList); // Trả về JSON
+            // Remove duplicates nếu có (cùng vật tư từ nhiều phiếu)
+            var result = vatTuList.GroupBy(v => new { v.MaSanpham, v.DAMakho })
+                                 .Select(g => g.First())
+                                 .ToList();
+
+            return Json(result); // Trả về JSON
         }
 
         [HttpPost]

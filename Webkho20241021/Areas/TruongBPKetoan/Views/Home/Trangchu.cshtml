@@ -33,12 +33,8 @@
                         <a href="/TruongBPKetoan/Home/Tongkho">Tổng kho</a>
                     </li>
                     <li>
-                        <a href="/TruongBPKetoan/Home/Import"><i class='bx bx-import' style='color:#0c6212'></i></a>
-                        <a href="/TruongBPKetoan/Home/Import">Import</a>
-                    </li>
-                    <li>
-                        <a href=""><i class='bx bx-export' style='color:#712a0e'></i></a>
-                        <a href="">Export</a>
+                        <a href="@Url.Action("ExportTongkho", "Home", new { area = "TruongBPKetoan" })"><i class='bx bx-export' style='color:#712a0e'></i></a>
+                        <a href="@Url.Action("ExportTongkho", "Home", new { area = "TruongBPKetoan" })">Export</a>
                     </li>
                 </ul>
             </nav>

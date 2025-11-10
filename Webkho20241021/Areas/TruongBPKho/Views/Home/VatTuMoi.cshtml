@@ -1,4 +1,4 @@
-@model List<Webkho_20241021.Models.vtphieuxuatkho>
+@model List<Webkho_20241021.Models.khotongs>
 @{
     ViewData["Title"] = "Vật tư mới";
     Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
@@ -24,25 +24,29 @@
                 <h1 class="header-title">
                     <i class='bx bx-package'></i> Vật tư mới
                 </h1>
-                <p class="header-subtitle">Danh sách vật tư mới nhập kho</p>
+                <p class="header-subtitle">Danh sách vật tư cho nhân viên mới</p>
             </div>
         </div>
         <!-- Navigation Tabs -->
         <div class="warehouse-nav">
             <div class="nav-tabs">
-                <a href="/TruongBPKho/Home/Tongkho" class="nav-tab">
+                @{ var action = (string)ViewContext.RouteData.Values["action"]; }
+                <a href="/TruongBPKho/Home/Tongkho" class="nav-tab @(action=="Tongkho"?"active":"")">
                     <i class='bx bx-store'></i> Tổng kho
                 </a>
-                <a href="/TruongBPKho/Home/CapPhatNvMoi" class="nav-tab active">
+                <a href="/TruongBPKho/Home/VatTuMoi" class="nav-tab @(action=="VatTuMoi"?"active":"")">
                     <i class='bx bx-package'></i> Kho nv mới
                 </a>
-                <a href="/TruongBPKho/Home/KhoDuAn" class="nav-tab">
+                <a href="/TruongBPKho/Home/KhoDuAn" class="nav-tab @(action=="KhoDuAn"?"active":"")">
                     <i class='bx bx-briefcase'></i> Kho dự án
                 </a>
             </div>
             <div class="nav-search">
-                <i class='bx bx-search'></i>
-                <input type="text" id="timkiem" placeholder="Tìm kiếm vật tư..." />
+                <form method="get" action="/TruongBPKho/Home/VatTuMoi" style="display:flex; align-items:center; gap:8px;">
+                    <i class='bx bx-search'></i>
+                    <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm vật tư..." />
+                    <button type="submit" class="btn btn-primary">Tìm</button>
+                </form>
             </div>
         </div>
         <!-- Main Content (table) -->
@@ -56,8 +60,8 @@
                         <thead>
                             <tr>
                                 <th>STT</th>
-                                <th>Tên vật tư</th>
                                 <th>Mã vật tư</th>
+                                <th>Tên vật tư</th>                           
                                 <th>Mã kho</th>
                                 <th>Hãng SX</th>
                                 <th>Nhà cung cấp</th>
@@ -77,9 +81,9 @@
                                 {
                                     <tr>
                                         <td>@index</td>
-                                        <td>@item.TenSanpham</td>
-                                        <td>@item.MaSanpham</td>
-                                        <td>@item.Makho</td>
+                                        <td>@(item.MaSanpham ?? "-")</td>
+                                        <td>@item.TenSanpham</td>                                       
+                                        <td><strong>@item.Makho</strong></td>
                                         <td>@item.HangSX</td>
                                         <td>@item.NhaCC</td>
                                         <td>@item.SL</td>
@@ -100,9 +104,22 @@
                             }
                         </tbody>
                     </table>
+                    <div class="pagination">
+                        @{ int totalPage = (int)(ViewBag.TotalPages ?? 1); int curr = (int)(ViewBag.Page ?? 1); var _q = (string)(ViewBag.Q ?? ""); var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q); }
+                        @if (totalPage > 1)
+                        {
+                            for (int i = 1; i <= totalPage; i++)
+                            {
+                                if (i == curr)
+                                { <span class="active">@i</span> }
+                                else
+                                { <a href="?page=@i@Html.Raw(_qParam)">@i</a> }
+                            }
+                        }
+                    </div>
                 </div>
             </div>
-            <div id="yeucau-action">
+            @* <div id="yeucau-action">
                 <div class="action">
                     <ul class="hanhdong">
                         <li>
@@ -121,7 +138,7 @@
                         </li>
                     </ul>
                 </div>
-            </div>
+            </div> *@
         </div>
     </div>
 </body>

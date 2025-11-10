@@ -32,6 +32,7 @@
         position: relative;
         padding: 0;
     }
+    
 
     .menu-kho li a {
      display: block;
@@ -146,7 +147,6 @@
     }
 
 .notification {
-    display: block;
     font-size: 14px !important;
     color: white !important;
     width: 100%;

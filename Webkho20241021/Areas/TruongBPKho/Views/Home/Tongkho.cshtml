@@ -12,7 +12,7 @@
     <link href="~/CSS/Kho.css" rel="stylesheet" />
     <link href="~/CSS/style.css" rel="stylesheet" />
     <link href="~/CSS/Table.css" rel="stylesheet" />
-    <link href="~/CSS/Tongkho.css" rel="stylesheet" /> <!-- CSS tách riêng -->
+    <link href="~/CSS/Tongkho.css" rel="stylesheet" /> 
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
     <title>Quản Lý Kho</title>
 </head>
@@ -31,19 +31,23 @@
         <!-- Navigation Tabs -->
         <div class="warehouse-nav">
             <div class="nav-tabs">
-                <a href="/TruongBPKho/Home/Tongkho" class="nav-tab active">
+                @{ var action = (string)ViewContext.RouteData.Values["action"]; }
+                <a href="/TruongBPKho/Home/Tongkho" class="nav-tab @(action=="Tongkho"?"active":"")">
                     <i class='bx bx-store'></i> Tổng kho
                 </a>
-                <a href="/TruongBPKho/Home/CapPhatNvMoi" class="nav-tab">
+                <a href="/TruongBPKho/Home/VatTuMoi" class="nav-tab @(action=="VatTuMoi"?"active":"")">
                     <i class='bx bx-package'></i> Kho nv mới
                 </a>
-                <a href="/TruongBPKho/Home/KhoDuAn" class="nav-tab">
+                <a href="/TruongBPKho/Home/KhoDuAn" class="nav-tab @(action=="KhoDuAn"?"active":"")">
                     <i class='bx bx-briefcase'></i> Kho dự án
                 </a>
             </div>
             <div class="nav-search">
-                <i class='bx bx-search'></i>
-                <input type="text" id="timkiem" placeholder="Tìm kiếm vật tư..." />
+                <form method="get" action="/TruongBPKho/Home/Tongkho" style="display:flex; align-items:center; gap:8px;">
+                    <i class='bx bx-search'></i>
+                    <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm vật tư..." />
+                    <button type="submit" class="btn btn-primary">Tìm</button>
+                </form>
             </div>
         </div>
 
@@ -64,18 +68,18 @@
             </div>
         }
 
-        <!-- Action Buttons (moved up here) -->
+        <!-- Action Buttons -->
         <div class="action-section top-action">
             <div class="action-group">
                 <h3>Hành động</h3>
                 <div class="button-group">
-                    <a href="/TruongBPKho/Home/Themthietbi" class="btn btn-primary">
+                    <a href="~/TruongBPKho/Home/Themthietbi" class="btn btn-primary">
                         <i class='bx bx-plus'></i> Thêm vật tư
                     </a>
-                    <a href="/TruongBPKho/Home/Import" class="btn btn-secondary">
+                    <a href="~/TruongBPKho/Home/Import" class="btn btn-success">
                         <i class='bx bx-upload'></i> Import
                     </a>
-                    <a href="" class="btn btn-secondary">
+                    <a href="@Url.Action("ExportTongkho", "Home", new { area = "TruongBPKho", q = ViewBag.Q })" class="btn btn-info">
                         <i class='bx bx-download'></i> Export
                     </a>
                 </div>
@@ -86,7 +90,7 @@
         <div class="warehouse-content">
             <div class="table-section">
                 <div class="table-header">
-                    <h2>Danh sách vật tư dự án</h2>
+                    <h2>Danh sách vật tư tổng kho</h2>
                 </div>
                 <div class="table-wrapper">
                     <table class="data-table">
@@ -114,7 +118,7 @@
                                 foreach (var item in Model)
                                 {
                                     <tr>
-                                        <td>@item.MaSanpham</td>
+                                        <td>@(item.MaSanpham ?? "-")</td>
                                         <td>@item.TenSanpham</td>
                                         <td>@item.Makho</td>
                                         <td>@item.HangSX</td>
@@ -125,7 +129,7 @@
                                         <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
                                         <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
                                         <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
-                                        <td>@(item.SL > 0 ? "Tồn Kho" : "Hết Hàng")</td>
+                                        <td>@item.TrangThai</td>
                                         <td>@item.LoaiCapPhat</td>
                                         <td>
                                             <a href="@Url.Action("InTem", "Home", new { area = "TruongBPKho", makho = item.Makho })"
@@ -145,11 +149,36 @@
                             }
                         </tbody>
                     </table>
+                    <div class="pagination">
+                        @{ int totalPage = (int)(ViewBag.TotalPages ?? 1); int curr = (int)(ViewBag.Page ?? 1); var _q = (string)(ViewBag.Q ?? ""); var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q); }
+                        @if (totalPage > 1)
+                        {
+                            for (int i = 1; i <= totalPage; i++)
+                            {
+                                if (i == curr)
+                                { <span class="active">@i</span> }
+                                else
+                                { <a href="?page=@i@Html.Raw(_qParam)">@i</a> }
+                            }
+                        }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="~/js/khotong.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const alert = document.getElementById("success-alert");
+            if (alert) {
+                setTimeout(() => {
+                    alert.style.animation = "fadeOut 0.5s ease forwards";
+                    setTimeout(() => alert.style.display = "none", 500);
+                }, 5000); // 5 giây
+            }
+        });
+    </script>
+
 </body>
 </html>

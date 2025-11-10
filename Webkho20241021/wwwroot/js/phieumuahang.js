@@ -1,8 +1,18 @@
 $(document).ready(function () {
+    const pathSegments = window.location.pathname.split('/');
+    const area = pathSegments.length > 1 ? pathSegments[1] : '';
+    
+    // Ẩn nút "Gửi báo giá" nếu không phải area TruongBPMuahang
+    if (area !== 'TruongBPMuahang') {
+        $('#submitPhieumuahang').hide();
+    }
+
     const firstRow = $('.table tbody tr').first();
     if (firstRow.length > 0) {
-        const Mamuahang = firstRow.find('td').eq(1).text().trim();
-        showVTmuahang(Mamuahang);
+        const link = firstRow.find('td').eq(1).find('a');
+        const Mamuahang = link.text().trim();
+        const trangThai = link.data('trangthai') || '';
+        showVTmuahang(Mamuahang, trangThai);
     }
     getThongbaoData();
     setActiveMenu();
@@ -64,12 +74,30 @@ $('#submitPhieumuahang').click(function () {
 let selectedMamuahang = "";
 
 // Hiển thị vật tư theo mã mua hàng
-function showVTmuahang(Mamuahang) {
+function showVTmuahang(Mamuahang, trangThaiPhieu) {
     selectedMamuahang = Mamuahang;
 
     const pathSegments = window.location.pathname.split('/');
     const area = pathSegments.length > 1 ? pathSegments[1] : '';
     const url = `/${area}/Yeucau/GetVTPhieumuahang`;
+
+    // Nếu không có trạng thái được truyền vào, lấy từ data attribute của link
+    if (!trangThaiPhieu) {
+        $('.table tbody tr').each(function() {
+            const link = $(this).find('td').eq(1).find('a');
+            if (link.text().trim() === Mamuahang) {
+                trangThaiPhieu = link.data('trangthai') || '';
+                if (!trangThaiPhieu) {
+                    // Nếu không có data attribute, thử lấy từ cột trạng thái
+                    const trangThaiCell = $(this).find('td').last();
+                    const buttons = trangThaiCell.find('button');
+                    if (buttons.length === 0) {
+                        trangThaiPhieu = trangThaiCell.text().trim();
+                    }
+                }
+            }
+        });
+    }
 
     $.ajax({
         url: url,
@@ -80,8 +108,31 @@ function showVTmuahang(Mamuahang) {
             $('.table tbody tr').removeClass('highlight');
 
             if (data && data.length > 0) {
+                // Kiểm tra xem có thể nhập đơn giá không
+                // Chỉ cho phép nhập khi: area = TruongBPMuahang và trạng thái phiếu = "Đang chờ báo giá"
+                const canInputPrice = area === 'TruongBPMuahang' && trangThaiPhieu === 'Đang chờ báo giá';
+
                 let STT = 1;
                 data.forEach(function (item) {
+                    // Chỉ cho phép nhập khi điều kiện đúng, ngược lại hiển thị số hoặc disabled
+                    // canInputPrice đã kiểm tra area và trạng thái phiếu, nên chỉ cần kiểm tra canInputPrice
+                    let donGiaCell = '';
+                    if (canInputPrice) {
+                        // Cho phép nhập đơn giá khi area = TruongBPMuahang và trạng thái phiếu = "Đang chờ báo giá"
+                        if (item.donGia != null) {
+                            donGiaCell = `<span class="DonGia"><input type="text" value="${item.donGia.toLocaleString('vi-VN')}" placeholder="Nhập giá" class="form-control" data-sl="${item.sl}" /></span>`;
+                        } else {
+                            donGiaCell = `<span class="DonGia"><input type="text" placeholder="Nhập giá" class="form-control" data-sl="${item.sl}" /></span>`;
+                        }
+                    } else {
+                        // Hiển thị số (read-only) khi không phải area TruongBPMuahang hoặc không phải trạng thái "Đang chờ báo giá"
+                        if (item.donGia != null) {
+                            donGiaCell = `<span class="DonGia">${item.donGia.toLocaleString('vi-VN')}</span>`;
+                        } else {
+                            donGiaCell = `<span class="DonGia">-</span>`;
+                        }
+                    }
+
                     let row = `
                     <tr>
                         <td>${STT++}</td>
@@ -92,11 +143,7 @@ function showVTmuahang(Mamuahang) {
                         <td>${item.nhaCC || 'Không xác định'}</td>
                         <td>${item.sl}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
-                        <td>
-                            ${(item.donGia != null && !item.trangThai.includes('Đã từ chối') && item.trangThai !== 'Đang chờ báo giá')
-                            ? `<span class="DonGia">${item.donGia.toLocaleString('vi-VN')}</span>`
-                            : `<span class="DonGia"><input type="text" placeholder="Nhập giá" class="form-control" data-sl="${item.sl}" /></span>`}
-                        </td>
+                        <td>${donGiaCell}</td>
                         <td>
                             ${item.thanhTien != null
                             ? `<span class="ThanhTien">${item.thanhTien.toLocaleString('vi-VN')}</span>`
@@ -204,6 +251,14 @@ function getThongbaoData() {
                 $('.menu-yeucau .notification').text(data.thongbaoyeucaucount);
             } else {
                 $('.menu-yeucau .badge').removeClass('show');
+            }
+
+            // Thông báo xác nhận nhận hàng
+            if (data.thongbaoxacnhannhanhangcount > 0) {
+                $('.menu-xacnhannhanhang .badge').addClass('show');
+                $('.menu-xacnhannhanhang .notification').text(data.thongbaoxacnhannhanhangcount);
+            } else {
+                $('.menu-xacnhannhanhang .badge').removeClass('show');
             }
         },
         error: function (xhr, status, error) {

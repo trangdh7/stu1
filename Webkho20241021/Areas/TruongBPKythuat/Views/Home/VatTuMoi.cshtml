@@ -1,3 +1,4 @@
+@model List<Webkho_20241021.Models.khotongs>
 @{
     ViewData["Title"] = "VatTuMoi";
     Layout = "~/Areas/TruongBPKythuat/Views/Layout/Layout.cshtml";
@@ -11,131 +12,124 @@
     <link href="~/CSS/Kho.css" rel="stylesheet" />
     <link href="~/CSS/style.css" rel="stylesheet" />
     <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="~/CSS/Tongkho.css" rel="stylesheet" />
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
     <title>Vật tư mới</title>
 </head>
 <body>
-    <nav class="bodykho">
-        <div class="menu-kho">
-            <ul>
-                <li><a href="">Vật tư mới</a></li>
-            </ul>
-            <ul>
-                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
-            </ul>
-        </div>
-        <div class="Tablekhotong-box">
-            <table class="tablekhotong">
-                <thead>
-                    <tr>
-                        <td>STT</td>
-                        <td>Tên vật tư</td>
-                        <td>Mã vật tư</td>
-                        <td>Mã kho</td>
-                        <td>Hãng SX</td>
-                        <td>Nhà cung cấp</td>
-                        <td>Số lượng</td>
-                        <td>Đơn vị</td>
-                        <td>Ngày nhập kho</td>
-                        <td>Ngày bảo hành</td>
-                        <td>Trạng thái</td>
-                        <td>Ghi chú</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Laptop Dell Inspiron 15</td>
-                        <td>LT001</td>
-                        <td>KHO001</td>
-                        <td>Dell</td>
-                        <td>Công ty ABC</td>
-                        <td>5</td>
-                        <td>Cái</td>
-                        <td>01/11/2024</td>
-                        <td>01/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Máy in Canon LBP</td>
-                        <td>MI002</td>
-                        <td>KHO001</td>
-                        <td>Canon</td>
-                        <td>Công ty XYZ</td>
-                        <td>3</td>
-                        <td>Cái</td>
-                        <td>02/11/2024</td>
-                        <td>02/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>Bàn phím cơ Logitech</td>
-                        <td>BP003</td>
-                        <td>KHO002</td>
-                        <td>Logitech</td>
-                        <td>Công ty DEF</td>
-                        <td>10</td>
-                        <td>Cái</td>
-                        <td>03/11/2024</td>
-                        <td>03/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
-                    <tr>
-                        <td>4</td>
-                        <td>Chuột không dây Microsoft</td>
-                        <td>CH004</td>
-                        <td>KHO002</td>
-                        <td>Microsoft</td>
-                        <td>Công ty GHI</td>
-                        <td>8</td>
-                        <td>Cái</td>
-                        <td>04/11/2024</td>
-                        <td>04/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
-                    <tr>
-                        <td>5</td>
-                        <td>Màn hình Samsung 24 inch</td>
-                        <td>MN005</td>
-                        <td>KHO001</td>
-                        <td>Samsung</td>
-                        <td>Công ty JKL</td>
-                        <td>4</td>
-                        <td>Cái</td>
-                        <td>05/11/2024</td>
-                        <td>05/11/2025</td>
-                        <td>Mới</td>
-                        <td>Vật tư mới nhập</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div id="yeucau-action">
-            <div class="action">
-                <ul class="hanhdong">
-                    <li>
-                        <a href="">Thêm vật tư</a>
-                    </li>
-                    <li>
-                        <a href="">Cập nhật</a>
-                    </li>
-                </ul>
-                <ul class="excel">
-                    <li>
-                        <a href="">Import</a>
-                    </li>
-                    <li>
-                        <a href="">Export</a>
-                    </li>
-                </ul>
+    <div class="warehouse-container">
+        <!-- Header -->
+        <div class="warehouse-header">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <i class='bx bx-package'></i> Vật tư mới
+                </h1>
+                <p class="header-subtitle">Danh sách vật tư cho nhân viên mới</p>
             </div>
         </div>
-    </nav>
+        <!-- Navigation Tabs -->
+        <div class="warehouse-nav">
+            <div class="nav-tabs">
+                @{
+                    var action = (string)ViewContext.RouteData.Values["action"];
+                }
+                <a href="/TruongBPKythuat/Home/Tongkho" class="nav-tab @(action == "Tongkho" ? "active" : "")">
+                    <i class='bx bx-store'></i> Tổng kho
+                </a>
+                <a href="/TruongBPKythuat/Home/VatTuMoi" class="nav-tab @(action == "VatTuMoi" ? "active" : "")">
+                    <i class='bx bx-package'></i> Kho nv mới
+                </a>
+                <a href="/TruongBPKythuat/Home/KhoDuAn" class="nav-tab @(action == "KhoDuAn" ? "active" : "")">
+                    <i class='bx bx-briefcase'></i> Kho dự án
+                </a>
+            </div>
+            <div class="nav-search">
+                <form method="get" action="/TruongBPKythuat/Home/VatTuMoi" style="display:flex; align-items:center; gap:8px;">
+                    <i class='bx bx-search'></i>
+                    <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm vật tư..." />
+                    <button type="submit" class="btn btn-primary">Tìm</button>
+                </form>
+            </div>
+        </div>
+        <!-- Main Content (table) -->
+        <div class="warehouse-content">
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>Danh sách vật tư mới nhập kho</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã vật tư</th>
+                                <th>Tên vật tư</th>
+                                <th>Mã kho</th>
+                                <th>Hãng SX</th>
+                                <th>Nhà cung cấp</th>
+                                <th>Số lượng</th>
+                                <th>Đơn vị</th>
+                                <th>Ngày nhập kho</th>
+                                <th>Ngày bảo hành</th>
+                                <th>Trạng thái</th>
+                                <th>Loại cấp phát</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                var index = 1;
+                                foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>@index</td>
+                                        <td>@(item.MaSanpham ?? "-")</td>
+                                        <td>@item.TenSanpham</td>
+                                        <td><strong>@item.Makho</strong></td>
+                                        <td>@item.HangSX</td>
+                                        <td>@item.NhaCC</td>
+                                        <td>@item.SL</td>
+                                        <td>@item.DonVi</td>
+                                        <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.TrangThai</td>
+                                        <td>@item.LoaiCapPhat</td>
+                                    </tr>
+                                    index++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="12">Không có dữ liệu.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="pagination">
+                        @{
+                            int totalPage = (int)(ViewBag.TotalPages ?? 1); int curr = (int)(ViewBag.Page ?? 1); var _q = (string)(ViewBag.Q ?? ""); var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q);
+                        }
+                        @if (totalPage > 1)
+                        {
+                            for (int i = 1; i <= totalPage; i++)
+                            {
+                                if (i == curr)
+                                {
+                                    <span class="active">@i</span>
+                                }
+                                else
+                                {
+
+                                    <a href="?page=@i@Html.Raw(_qParam)">@i</a>
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>

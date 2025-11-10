@@ -70,7 +70,7 @@
                             <tr>
                                 <td>@STT</td>
                                 <td>
-                                    <a href="javascript:void(0);" onclick="showVTmuahang('@item.MaMuahang')">
+                                    <a href="javascript:void(0);" onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
                                         @item.MaMuahang
                                     </a>
                                 </td>
@@ -138,6 +138,11 @@
             </div>
         </nav>
         <script src="~/js/phieumuahang.js"></script>
+        <script>
+            $(document).ready(function () {
+                getThongbaoData();
+            });
+        </script>
     </body>
 
 </html>

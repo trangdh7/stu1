@@ -1,4 +1,4 @@
-@model List<Webkho_20241021.Models.vtphieuxuatkho>
+@model List<Webkho_20241021.Models.khotongs>
 @{
     ViewData["Title"] = "VatTuMoi";
     Layout = "~/Views/Layout/Layout.cshtml";
@@ -18,23 +18,59 @@
 </head>
 <body>
     <div class="warehouse-container">
+        <!-- Header (có thể tái sử dụng nếu muốn đẹp) -->
         <div class="warehouse-header">
             <div class="header-content">
-                <h1 class="header-title"><i class='bx bx-briefcase'></i> Kho dự án</h1>
+                <h1 class="header-title">
+                    <i class='bx bx-briefcase'></i> Kho dự án
+                </h1>
                 <p class="header-subtitle">Danh sách quản lý vật tư theo dự án</p>
             </div>
         </div>
+        <!-- Navigation Tabs -->
         <div class="warehouse-nav">
             <div class="nav-tabs">
-                <a href="/NhanvienKythuat/Home/Tongkho" class="nav-tab"><i class='bx bx-store'></i> Tổng kho</a>
-                <a href="/NhanvienKythuat/Home/CapPhatNvMoi" class="nav-tab"><i class='bx bx-package'></i> Kho nv mới</a>
-                <a href="/NhanvienKythuat/Home/KhoDuAn" class="nav-tab active"><i class='bx bx-briefcase'></i> Kho dự án</a>
+                @{
+                    var action = (string)ViewContext.RouteData.Values["action"];
+                }
+                <a href="/TruongBPKythuat/Home/Tongkho" class="nav-tab @(action == "Tongkho" ? "active" : "")">
+                    <i class='bx bx-store'></i> Tổng kho
+                </a>
+                <a href="/TruongBPKythuat/Home/VatTuMoi" class="nav-tab @(action == "VatTuMoi" ? "active" : "")">
+                    <i class='bx bx-package'></i> Kho nv mới
+                </a>
+                <a href="/TruongBPKythuat/Home/KhoDuAn" class="nav-tab @(action == "KhoDuAn" ? "active" : "")">
+                    <i class='bx bx-briefcase'></i> Kho dự án
+                </a>
             </div>
             <div class="nav-search">
-                <i class='bx bx-search'></i>
-                <input type="text" id="timkiem" placeholder="Tìm kiếm vật tư..." />
+                <form method="get" action="/TruongBPKythuat/Home/KhoDuAn" style="display:flex; align-items:center; gap:8px;">
+                    <label for="duAn" style="font-weight:600;">Dự án:</label>
+                    <select id="duAn" name="duAn">
+                        <option value="">Tất cả</option>
+                        @if (ViewBag.DuAnList != null)
+                        {
+                            foreach (var da in (IEnumerable<string>)ViewBag.DuAnList)
+                            {
+                                var isSelected = ((string)ViewBag.DuAn == da);
+                                @if (isSelected)
+                                {
+                                    <option value="@da" selected="selected">@da</option>
+                                }
+                                else
+                                {
+                                    <option value="@da">@da</option>
+                                }
+                            }
+                        }
+                    </select>
+                    <i class='bx bx-search'></i>
+                    <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm vật tư..." />
+                    <button type="submit" class="btn btn-primary">Lọc</button>
+                </form>
             </div>
         </div>
+        <!-- Main Content (giữ nguyên bảng như cũ) -->
         <div class="warehouse-content">
             <div class="table-section">
                 <div class="table-header">
@@ -44,8 +80,7 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>STT</th>
-                                <th>Mã sản phẩm</th>
+                                <th>Mã vật tư</th>
                                 <th>Tên vật tư</th>
                                 <th>Mã kho</th>
                                 <th>Hãng SX</th>
@@ -58,42 +93,56 @@
                                 <th>Thời gian BH</th>
                                 <th>Trạng thái</th>
                                 <th>Loại cấp phát</th>
-                                <th>In mã</th>
+                               
                             </tr>
                         </thead>
                         <tbody>
-                            @{ var stt = 1; }
-                            @foreach (var item in Model.Skip(((int?)ViewBag.Page ?? 1 - 1) * 20).Take(20))
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>@item.MaSanpham</td>
+                                        <td>@item.TenSanpham</td>
+                                        <td><strong>@item.Makho</strong></td>
+                                        <td>@item.HangSX</td>
+                                        <td>@item.NhaCC</td>
+                                        <td>@item.DuAn</td>
+                                        <td>@item.SL</td>
+                                        <td>@item.DonVi</td>
+                                        <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
+                                        <td>@(item.SL > 0 ? "Tồn Kho" : "Hết Hàng")</td>
+                                        <td>@item.LoaiCapPhat</td>
+                                        
+                                    </tr>
+                                }
+                            }
+                            else
                             {
                                 <tr>
-                                    <td>@stt</td>
-                                    <td><span class="badge badge-code">@item.MaSanpham</span></td>
-                                    <td class="text-bold">@item.TenSanpham</td>
-                                    <td><strong>@item.Makho</strong></td>
-                                    <td>@item.HangSX</td>
-                                    <td>@item.NhaCC</td>
-                                    <td>@item.DuAn</td>
-                                    <td><span class="quantity">@item.SL</span></td>
-                                    <td>@item.DonVi</td>
-                                    <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
-                                    <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
-                                    <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
-                                    <td>@(item.SL > 0 ? "Tồn Kho" : "Hết Hàng")</td>
-                                    <td>@item.LoaiCapPhat</td>
-                                    <td><a href="@Url.Action("InTem", "Home", new { area = "NhanvienKythuat", makho = item.Makho })" class="btn-action btn-print" target="_blank"><i class='bx bx-printer'></i> In</a></td>
+                                    <td colspan="14">Không có dữ liệu.</td>
                                 </tr>
-                                stt++;
                             }
                         </tbody>
                     </table>
-                    <!-- Phân trang -->
                     <div class="pagination">
-                        @{ int totalPage = (int)Math.Ceiling(Model.Count / 20.0); int curr = (int?)ViewBag.Page ?? 1; }
+                        @{
+                            int totalPage = (int)(ViewBag.TotalPages ?? 1); int curr = (int)(ViewBag.Page ?? 1); var _q = (string)(ViewBag.Q ?? ""); var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q); var _du = (string)(ViewBag.DuAn ?? ""); var _duParam = string.IsNullOrEmpty(_du) ? "" : "&duAn=" + System.Net.WebUtility.UrlEncode(_du);
+                        }
                         @if (totalPage > 1)
                         {
-                            for(int i = 1; i <= totalPage; i++){
-                                if(i == curr){ <span class="active">@i</span> } else {
-                                    <a href="?page=@i">@i</a>
+                            for (int i = 1; i <= totalPage; i++)
+                            {
+                                if (i == curr)
+                                {
+                                    <span class="active">@i</span>
+                                }
+                                else
+                                {
+
+                                    <a href="?page=@i@Html.Raw(_qParam)@Html.Raw(_duParam)">@i</a>
                                 }
                             }
                         }
@@ -104,3 +153,4 @@
     </div>
 </body>
 </html>
+

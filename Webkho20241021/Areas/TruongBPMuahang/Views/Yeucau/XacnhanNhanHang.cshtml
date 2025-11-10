@@ -1,0 +1,320 @@
+@{
+    ViewData["Title"] = "Xác nhận nhận hàng";
+    Layout = "~/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml";
+}
+@model Webkho_20241021.Areas.TruongBPMuahang.Data.Phieuxuatkhoviewmodel
+
+<div class="container">
+    <div class="header">
+        <h2>✅ Xác nhận nhận hàng</h2>
+        <p>Danh sách phiếu xuất kho đang chờ bạn xác nhận nhận hàng.</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #c3e6cb;">
+            ✅ @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
+            ⚠️ @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (Model.Phieuxuatkho.Any())
+    {
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã xuất kho</th>
+                        <th>Mã yêu cầu</th>
+                        <th>Mã dự án</th>
+                        <th>Ngày xuất kho</th>
+                        <th>Trạng thái</th>
+                        <th>Ghi chú</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int stt = 1;
+                    }
+                    @foreach (var item in Model.Phieuxuatkho)
+                    {
+                        <tr>
+                            <td>@stt</td>
+                            <td>
+                                <a href="javascript:void(0);" 
+                                   onclick="showVTxuatkho('@item.MaXuatkho')" 
+                                   style="color: #1976d2; text-decoration: none;">
+                                   @item.MaXuatkho
+                                </a>
+                            </td>
+                            <td>@item.MaYeucau</td>
+                            <td>@item.MaDuan</td>
+                            <td>@item.NgayXuatkho?.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @{
+                                    string color = item.TrangThai switch
+                                    {
+                                        "Đã hoàn thành" => "#4caf50",
+                                        "Đã xác nhận nhận hàng" => "#4caf50",
+                                        "Chờ xác nhận" => "#ffc107",
+                                        "Chờ người yêu cầu xác nhận" => "#ff9800",
+                                        "Đang chuẩn bị hàng" => "#2196f3",
+                                        _ => "#9e9e9e"
+                                    };
+                                }
+                                <span class="status-badge" style="background-color:@color; color:white; padding:3px 8px; border-radius:4px;">
+                                    @item.TrangThai
+                                </span>
+                            </td>
+                            <td>@item.GhiChu</td>
+                            <td>
+                                @if (item.TrangThai == "Chờ người yêu cầu xác nhận")
+                                {
+                                    <form asp-action="XacnhanNhanHang" method="post" style="display:inline-block;">
+                                        <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
+                                        <button type="submit" class="btn-confirm" style="background-color:#4caf50; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:13px;">
+                                            ✅ Xác nhận nhận hàng
+                                        </button>
+                                    </form>
+                                }
+                                else if (item.TrangThai == "Đã xác nhận nhận hàng" || item.TrangThai == "Đã hoàn thành")
+                                {
+                                    <span style="color:#4caf50; font-size:12px; font-weight:500;">✅ Đã xác nhận</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#9e9e9e; font-size:12px;">-</span>
+                                }
+                            </td>
+                        </tr>
+                        stt++;
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Chi tiết vật tư -->
+        <div class="material-details" style="margin-top: 30px;">
+            <h3>📋 Chi tiết vật tư</h3>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên vật tư</th>
+                            <th>Mã vật tư</th>
+                            <th>Mã kho</th>
+                            <th>Hãng SX</th>
+                            <th>Nhà cung cấp</th>
+                            <th>Số lượng</th>
+                            <th>Đơn vị</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="materialDetails">
+                        <tr>
+                            <td colspan="9" style="text-align:center; color:#777;">
+                                Chọn một phiếu xuất kho để xem chi tiết vật tư.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="no-data" style="text-align:center; padding:40px; color:#666;">
+            <div style="font-size:48px; margin-bottom:20px;">📭</div>
+            <h3>Không có dữ liệu phiếu xuất kho</h3>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function showVTxuatkho(MaXuatkho) {
+            // Đồng bộ trạng thái vật tư trước khi hiển thị
+            $.ajax({
+                url: '@Url.Action("DongsBoTrangThaiVatTu", "Yeucau", new { area = "TruongBPMuahang" })',
+                method: 'POST',
+                data: { MaXuatkho: MaXuatkho },
+                success: function (syncResult) {
+                    // Sau khi đồng bộ, lấy dữ liệu vật tư
+                    $.ajax({
+                        url: '@Url.Action("GetVTPhieuxuatkho", "Yeucau", new { area = "TruongBPMuahang" })',
+                        method: 'GET',
+                        data: { MaXuatkho: MaXuatkho },
+                        success: function (data) {
+                            $('#materialDetails').empty();
+                            if (data && data.length > 0) {
+                                let STT = 1;
+                                data.forEach(item => {
+                                    // Xác định màu sắc theo trạng thái
+                                    let bgColor = '#4caf50'; // Mặc định xanh lá
+                                    if (item.trangThai === 'Đang chuẩn bị hàng') {
+                                        bgColor = '#2196f3'; // Xanh dương
+                                    } else if (item.trangThai === 'Đã xác nhận nhận hàng') {
+                                        bgColor = '#4caf50'; // Xanh lá
+                                    } else if (item.trangThai === 'Đã xuất kho') {
+                                        bgColor = '#4caf50'; // Xanh lá
+                                    }
+
+                                    $('#materialDetails').append(`
+                                        <tr>
+                                            <td>${STT++}</td>
+                                            <td>${item.tenSanpham || 'Không xác định'}</td>
+                                            <td>${item.maSanpham || '-'}</td>
+                                            <td>${item.makho || '-'}</td>
+                                            <td>${item.hangSX || '-'}</td>
+                                            <td>${item.nhaCC || '-'}</td>
+                                            <td>${item.sl || 0}</td>
+                                            <td>${item.donVi || '-'}</td>
+                                            <td>
+                                                <span style="background-color:${bgColor}; color:white; padding:2px 6px; border-radius:3px; font-size:11px;">
+                                                    ${item.trangThai || '-'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `);
+                                });
+                            } else {
+                                $('#materialDetails').append(
+                                    `<tr><td colspan="9" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                                );
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alert("Lỗi khi tải dữ liệu vật tư: " + error);
+                        }
+                    });
+                },
+                error: function () {
+                    // Nếu đồng bộ thất bại, vẫn tiếp tục hiển thị dữ liệu
+                    $.ajax({
+                        url: '@Url.Action("GetVTPhieuxuatkho", "Yeucau", new { area = "TruongBPMuahang" })',
+                        method: 'GET',
+                        data: { MaXuatkho: MaXuatkho },
+                        success: function (data) {
+                            $('#materialDetails').empty();
+                            if (data && data.length > 0) {
+                                let STT = 1;
+                                data.forEach(item => {
+                                    let bgColor = '#4caf50';
+                                    if (item.trangThai === 'Đang chuẩn bị hàng') {
+                                        bgColor = '#2196f3';
+                                    }
+
+                                    $('#materialDetails').append(`
+                                        <tr>
+                                            <td>${STT++}</td>
+                                            <td>${item.tenSanpham || 'Không xác định'}</td>
+                                            <td>${item.maSanpham || '-'}</td>
+                                            <td>${item.makho || '-'}</td>
+                                            <td>${item.hangSX || '-'}</td>
+                                            <td>${item.nhaCC || '-'}</td>
+                                            <td>${item.sl || 0}</td>
+                                            <td>${item.donVi || '-'}</td>
+                                            <td>
+                                                <span style="background-color:${bgColor}; color:white; padding:2px 6px; border-radius:3px; font-size:11px;">
+                                                    ${item.trangThai || '-'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `);
+                                });
+                            } else {
+                                $('#materialDetails').append(
+                                    `<tr><td colspan="9" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                                );
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alert("Lỗi khi tải dữ liệu vật tư: " + error);
+                        }
+                    });
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            const firstRow = $('.table tbody tr').first();
+            if (firstRow.length > 0) {
+                const MaXuatkho = firstRow.find('td').eq(1).text().trim();
+                showVTxuatkho(MaXuatkho);
+            }
+        });
+    </script>
+
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header h2 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .table-container {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th, .table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .table th {
+            background-color: #f5f5f5;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .btn-confirm:hover {
+            background-color: #45a049 !important;
+            opacity: 0.9;
+        }
+
+        .btn-confirm:active {
+            transform: scale(0.98);
+        }
+    </style>
+    <script>
+        // Auto-hide alerts after 5 seconds
+        $(document).ready(function() {
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+        });
+    </script>
+}

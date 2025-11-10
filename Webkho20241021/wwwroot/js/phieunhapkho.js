@@ -39,7 +39,7 @@ function showVTnhapkho(Manhapkho) {
                         <td>${item.nhaCC || 'Không xác định'}</td>
                         <td>${item.sl}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
-                        <td>${item.trangthai}</td>
+                        <td>${item.trangThai || item.TrangThai || 'Chưa xác định'}</td>
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
                 });
@@ -106,6 +106,14 @@ function getThongbaoData() {
                 $('.menu-yeucau .notification').text(data.thongbaoyeucaucount);
             } else {
                 $('.menu-yeucau .badge').removeClass('show');
+            }
+
+            // Thông báo xác nhận nhận hàng
+            if (data.thongbaoxacnhannhanhangcount > 0) {
+                $('.menu-xacnhannhanhang .badge').addClass('show');
+                $('.menu-xacnhannhanhang .notification').text(data.thongbaoxacnhannhanhangcount);
+            } else {
+                $('.menu-xacnhannhanhang .badge').removeClass('show');
             }
         },
         error: function (xhr, status, error) {

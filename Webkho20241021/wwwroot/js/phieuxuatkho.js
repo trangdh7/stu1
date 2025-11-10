@@ -15,12 +15,36 @@ function showVTxuatkho(Maxuatkho) {
     const pathSegments = window.location.pathname.split('/');
     const area = pathSegments.length > 1 ? pathSegments[1] : ''; // Giả sử area là segment đầu tiên sau dấu '/'
 
+    // Đồng bộ trạng thái vật tư trước khi hiển thị
+    const syncUrl = `/${area}/Yeucau/DongsBoTrangThaiVatTu`;
     const url = `/${area}/Yeucau/GetVTPhieuxuatkho`;
 
+    // Đồng bộ trạng thái vật tư trước khi hiển thị
     $.ajax({
-        url: url, // Sử dụng URL động
+        url: syncUrl,
+        method: 'POST',
+        data: { MaXuatkho: Maxuatkho },
+        success: function (syncResult) {
+            console.log("Đồng bộ trạng thái:", syncResult);
+            // Đợi một chút để đảm bảo database đã cập nhật
+            setTimeout(function() {
+                loadVTData(Maxuatkho, url, area);
+            }, 100);
+        },
+        error: function (xhr, status, error) {
+            console.error("Lỗi đồng bộ:", error);
+            // Nếu đồng bộ thất bại, vẫn tiếp tục hiển thị dữ liệu
+            loadVTData(Maxuatkho, url, area);
+        }
+    });
+}
+
+// Hàm load dữ liệu vật tư
+function loadVTData(Maxuatkho, url, area) {
+    $.ajax({
+        url: url,
         method: 'GET',
-        data: { Maxuatkho: Maxuatkho }, // Gửi mã yêu cầu
+        data: { MaXuatkho: Maxuatkho }, // Sử dụng đúng tên tham số
         success: function (data) {
             console.log(data); // Kiểm tra dữ liệu nhận được
 
@@ -31,6 +55,18 @@ function showVTxuatkho(Maxuatkho) {
             if (data && data.length > 0) {
                 let STT = 1;
                 data.forEach(function (item) {
+                    // Xác định màu sắc theo trạng thái
+                    let bgColor = '#4caf50'; // Mặc định xanh lá
+                    if (item.trangThai === 'Đang chuẩn bị hàng') {
+                        bgColor = '#2196f3'; // Xanh dương
+                    } else if (item.trangThai === 'Đã xác nhận nhận hàng') {
+                        bgColor = '#4caf50'; // Xanh lá
+                    } else if (item.trangThai === 'Đã xuất kho') {
+                        bgColor = '#4caf50'; // Xanh lá
+                    } else if (item.trangThai === 'Hoàn thành') {
+                        bgColor = '#4caf50'; // Xanh lá
+                    }
+
                     let row = `<tr>
                         <td>${STT++}</td>
                         <td>${item.tenSanpham || 'Không xác định'}</td>
@@ -40,7 +76,7 @@ function showVTxuatkho(Maxuatkho) {
                         <td>${item.nhaCC || 'Không xác định'}</td>
                         <td>${item.sl}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
-                        <td>${item.trangThai}</td>
+                        <td><span style="background-color:${bgColor}; color:white; padding:2px 6px; border-radius:3px; font-size:11px;">${item.trangThai || '-'}</span></td>
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
                 });
@@ -48,7 +84,7 @@ function showVTxuatkho(Maxuatkho) {
                 // Hiển thị thông báo nếu không có dữ liệu
                 $('.tablethietbi tbody').append(
                     `<tr>
-                        <td colspan="8" style="text-align:center;">Không có dữ liệu vật tư.</td>
+                        <td colspan="9" style="text-align:center;">Không có dữ liệu vật tư.</td>
                     </tr>`
                 );
             }
@@ -107,6 +143,14 @@ function getThongbaoData() {
                 $('.menu-yeucau .notification').text(data.thongbaoyeucaucount);
             } else {
                 $('.menu-yeucau .badge').removeClass('show');
+            }
+
+            // Thông báo xác nhận nhận hàng
+            if (data.thongbaoxacnhannhanhangcount > 0) {
+                $('.menu-xacnhannhanhang .badge').addClass('show');
+                $('.menu-xacnhannhanhang .notification').text(data.thongbaoxacnhannhanhangcount);
+            } else {
+                $('.menu-xacnhannhanhang .badge').removeClass('show');
             }
         },
         error: function (xhr, status, error) {

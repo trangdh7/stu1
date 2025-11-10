@@ -80,39 +80,54 @@
                             <td>@item.MaNguoidung</td>
                             <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
                             <td>
-                                @if (item.TrangThai == "Chờ nhập kho" && BophanSession == "BP kho")
+                                @{
+                                    // Hiển thị trạng thái và nút duyệt theo quyền
+                                    var duan = Model.Duans?.FirstOrDefault(d => d.MaDuan == item.MaDuan);
+                                    var maQLDA = duan?.MaNguoiQLDA;
+                                    var isQLDA = !string.IsNullOrEmpty(maQLDA) && maQLDA == Context.Session.GetString("MaNguoidung");
+                                    var isGiamDoc = ChucvuSession == "Giám đốc";
+                                    var isKho = BophanSession == "BP kho";
+                                }
+                                
+                                @if (item.TrangThai == "Quản lí dự án" && isQLDA && isGiamDoc)
                                 {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
                                             <i class="bx bxs-check-circle"></i>
+                                        </button>
+                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối">
+                                            <i class="bx bxs-x-circle"></i>
                                         </button>
                                     }
                                 }
-                                else if (item.TrangThai == "Sẵn sàng nhập kho" && BophanSession == "BP kho")
+                                else if (item.TrangThai == "Giám đốc" && isGiamDoc)
                                 {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
                                             <i class="bx bxs-check-circle"></i>
+                                        </button>
+                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối">
+                                            <i class="bx bxs-x-circle"></i>
                                         </button>
                                     }
                                 }
-                                else if (item.TrangThai == "Đã nhập kho" && BophanSession == "BP kho")
+                                else if (item.TrangThai == "Chờ nhập kho" && isKho)
                                 {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Xác nhận nhập kho">
                                             <i class="bx bxs-check-circle"></i>
                                         </button>
                                     }
                                 }
                                 else
                                 {
-                                    @item.TrangThai;
+                                    <span>@item.TrangThai</span>
                                 }
                             </td>
                         </tr>
@@ -167,7 +182,12 @@
             </table>
         </div>
     </nav>
-    <script src="~/js/Phieunhapkho.js"></script>
+    <script src="~/js/phieunhapkho.js"></script>
+    <script>
+        $(document).ready(function () {
+            getThongbaoData();
+        });
+    </script>
 </body>
 </html>
 

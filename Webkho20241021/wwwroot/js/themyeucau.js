@@ -14,8 +14,9 @@ document.addEventListener("DOMContentLoaded", function () {
         <td><input type="text" name="YCMakho" placeholder="Mã kho" readonly/></td>
         <td><input type="text" name="HangSX" placeholder="Hãng SX" /></td>
         <td><input type="text" name="NhaCC" placeholder="Nhà cung cấp" /></td>
-        <td><input type="number" name="SL" placeholder="Số lượng" /></td>
-        <td><input type="text" name="DonVi" placeholder="Đơn vị" /></td>
+        <td><input type="number" name="SL" placeholder="Số lượng" min="1" step="1" onkeypress="return (event.charCode >= 48 && event.charCode <= 57)" oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value && parseInt(this.value) < 1) this.value = 1;" required /></td>
+        <td><input type="text" name="DonVi" placeholder="Đơn vị" required /></td>
+        <td><button type="button" class="btn-remove-row" onclick="removeRow(this)">Xóa</button></td>
     `;
 
         // Gắn sự kiện tìm kiếm cho ô input mới trong hàng
@@ -25,25 +26,45 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         tableBody.appendChild(newRow);
-        getThongbaoData();
+        updateRowNumbers();
+        // Chỉ gọi getThongbaoData nếu hàm tồn tại (tránh lỗi nếu không load yeucau.js)
+        if (typeof getThongbaoData === 'function') {
+            getThongbaoData();
+        }
     }
 
+    // Cập nhật số thứ tự các hàng và hiển thị/ẩn nút xóa
+    function updateRowNumbers() {
+        const rows = tableBody.querySelectorAll('tr');
+        rows.forEach((row, index) => {
+            row.querySelector('td:first-child').textContent = index + 1;
+            // Hiển thị nút xóa cho các hàng từ hàng thứ 2 trở đi
+            const removeBtn = row.querySelector('.btn-remove-row');
+            if (removeBtn) {
+                if (rows.length > 1 && index > 0) {
+                    removeBtn.style.display = 'inline-block';
+                } else {
+                    removeBtn.style.display = 'none';
+                }
+            }
+        });
+    }
 
-    // Kiểm tra các ô input trong hàng cuối cùng
-    function checkLastRowInputs() {
-        const lastRow = tableBody.lastElementChild;
-        if (!lastRow) return;
-
-        // Lấy tất cả các input trong hàng cuối cùng (trừ ô "Mã kho")
-        const inputs = Array.from(lastRow.querySelectorAll("input")).filter(input => input.name !== 'YCMakho');
-
-        // Kiểm tra xem tất cả các ô ngoài "Mã kho" có đầy đủ thông tin không
-        const allFilled = inputs.every(input => input.value.trim() !== "");
-
-        // Nếu tất cả các ô đã đầy đủ thì thêm hàng mới
-        if (allFilled) {
-            addNewRow();
+    // Xóa hàng
+    window.removeRow = function(button) {
+        const row = button.closest('tr');
+        if (tableBody.rows.length > 1) {
+            row.remove();
+            updateRowNumbers();
+        } else {
+            alert('Phải có ít nhất 1 hàng vật tư!');
         }
+    };
+
+    // Gắn sự kiện cho nút thêm hàng
+    const btnAddRow = document.getElementById('btn-add-row');
+    if (btnAddRow) {
+        btnAddRow.addEventListener('click', addNewRow);
     }
 
     // Hàm tìm kiếm sản phẩm
@@ -91,9 +112,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                                 // Ẩn bảng kết quả tìm kiếm
                                 searchResultsContainer.style.display = "none";
-
-                                // Kiểm tra để thêm hàng mới nếu tất cả thông tin đã đầy đủ
-                                checkLastRowInputs();
                             });
 
                             searchResultsContainer.appendChild(row);
@@ -113,10 +131,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Lắng nghe sự kiện nhập liệu trong ô Tên sản phẩm để tìm kiếm khi người dùng nhập
     const tenSanphamInput = document.querySelector("input[name='TenSanpham']");
-    tenSanphamInput.addEventListener("input", searchProducts);
+    if (tenSanphamInput) {
+        tenSanphamInput.addEventListener("input", searchProducts);
+    }
 
-    // Lắng nghe sự kiện thay đổi input để kiểm tra các ô của hàng cuối cùng
-    tableBody.addEventListener("input", checkLastRowInputs);
+    // Xử lý chuyển hướng khi chọn "Yêu cầu nhập kho"
+    const tenyeucauSelect = document.getElementById("tenyeucau");
+    if (tenyeucauSelect) {
+        tenyeucauSelect.addEventListener("change", function() {
+            if (this.value === "Yêu cầu nhập kho") {
+                window.location.href = "/NhanvienKythuat/Yeucau/ThemPhieunhapkho";
+            }
+        });
+    }
 
-    // Không tự động thêm hàng đầu tiên khi trang vừa tải, chỉ thêm khi người dùng điền đủ thông tin
+    // Cập nhật số thứ tự và nút xóa khi trang load
+    updateRowNumbers();
 });

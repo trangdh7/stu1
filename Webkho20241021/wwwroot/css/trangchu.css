@@ -28,6 +28,15 @@
         width: 15vw;
         position: relative;
     }
+    
+    .canhan-icon li.Danhsachyeucau {
+        position: relative !important;
+        overflow: visible;
+    }
+    
+    .canhan-icon li.Danhsachyeucau a:first-child {
+        position: relative;
+    }
 
     .canhan-icon i {
         font-size: 5vw;

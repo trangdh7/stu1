@@ -6,6 +6,6 @@ namespace Webkho_20241021.Areas.TruongBPKho.Data
     {
         public List<phieunhapkho> Phieunhapkho { get; set; }
         public List<vtphieunhapkho> VTphieunhapkho { get; set; }
-
+        public List<duans> Duans { get; set; }
     }
 }

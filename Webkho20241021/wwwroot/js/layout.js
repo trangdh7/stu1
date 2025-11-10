@@ -22,6 +22,14 @@ function getThongbaoDatalayout() {
             } else {
                 $('.Yeucau .badge').removeClass('show');
             }
+
+            // Thông báo xác nhận nhận hàng
+            if (data.thongbaoxacnhannhanhangcount > 0) {
+                $('.menu-xacnhannhanhang .badge').addClass('show');
+                $('.menu-xacnhannhanhang .notification').text(data.thongbaoxacnhannhanhangcount);
+            } else {
+                $('.menu-xacnhannhanhang .badge').removeClass('show');
+            }
         },
         error: function (xhr, status, error) {
             console.error("Lỗi lấy thông báo:", error);

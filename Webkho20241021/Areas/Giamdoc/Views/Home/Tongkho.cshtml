@@ -26,9 +26,10 @@
         </div>
         <div class="warehouse-nav">
             <div class="nav-tabs">
-                <a href="/Giamdoc/Home/Tongkho" class="nav-tab active"><i class='bx bx-store'></i> Tổng kho</a>
-                <a href="/Giamdoc/Home/CapPhatNvMoi" class="nav-tab"><i class='bx bx-package'></i> Kho nv mới</a>
-                <a href="/Giamdoc/Home/KhoDuAn" class="nav-tab"><i class='bx bx-briefcase'></i> Kho dự án</a>
+                @{ var action = (string)ViewContext.RouteData.Values["action"]; }
+                <a href="/Giamdoc/Home/Tongkho" class="nav-tab @(action=="Tongkho"?"active":"")"><i class='bx bx-store'></i> Tổng kho</a>
+                <a href="/Giamdoc/Home/VatTuMoi" class="nav-tab @(action=="VatTuMoi"?"active":"")"><i class='bx bx-package'></i> Kho nv mới</a>
+                <a href="/Giamdoc/Home/KhoDuAn" class="nav-tab @(action=="KhoDuAn"?"active":"")"><i class='bx bx-briefcase'></i> Kho dự án</a>
             </div>
             <div class="nav-search">
                 <i class='bx bx-search'></i>
@@ -39,9 +40,8 @@
             <div class="action-group">
                 <h3>Hành động</h3>
                 <div class="button-group">
-                    <a href="/Giamdoc/Home/Themthietbi" class="btn btn-primary"><i class='bx bx-plus'></i> Thêm vật tư</a>
-                    <a href="/Giamdoc/Home/Import" class="btn btn-secondary"><i class='bx bx-upload'></i> Import</a>
-                    <a href="" class="btn btn-secondary"><i class='bx bx-download'></i> Export</a>
+                    <a href="/Giamdoc/Home/Themthietbi" class="btn btn-primary"><i class='bx bx-plus'></i> Thêm vật tư</a>                    
+                    <a href="@Url.Action("ExportTongkho", "Home", new { area = "Giamdoc", q = ViewBag.Q })" class="btn btn-secondary"><i class='bx bx-download'></i> Export</a>
                 </div>
             </div>
         </div>
@@ -76,16 +76,16 @@
                                 <th>Thời gian BH</th>
                                 <th>Trạng thái</th>
                                 <th>Loại cấp phát</th>
-                                <th>Hành động</th>
+                                
                             </tr>
                         </thead>
                         <tbody>
-                            @{ var stt = 1; }
-                            @foreach (var item in Model.Skip(((int?)ViewBag.Page ?? 1 - 1) * 20).Take(20))
+                            @{ var stt = 1 + ((((int?)ViewBag.Page ?? 1) - 1) * 20); }
+                            @foreach (var item in Model)
                             {
                                 <tr>
                                     <td>@stt</td>
-                                    <td><span class="badge badge-code">@item.MaSanpham</span></td>
+                                    <td>@item.MaSanpham</td>
                                     <td class="text-bold">@item.TenSanpham</td>
                                     <td><strong>@item.Makho</strong></td>
                                     <td>@item.HangSX</td>
@@ -97,9 +97,7 @@
                                     <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
                                     <td>@(item.SL > 0 ? "Tồn kho" : "Hết hàng")</td>
                                     <td>@item.LoaiCapPhat</td>
-                                    <td>
-                                        <a href="@Url.Action("InTem", "Home", new { area = "Giamdoc", makho = item.Makho })" class="btn-action btn-print" target="_blank" title="In mã"><i class='bx bx-printer'></i> <strong>In</strong></a>
-                                    </td>
+                                    
                                 </tr>
                                 stt++;
                             }
@@ -107,10 +105,10 @@
                     </table>
                     <!-- Phân trang -->
                     <div class="pagination">
-                        @{ int totalPage = (int)Math.Ceiling(Model.Count / 20.0); int curr = (int?)ViewBag.Page ?? 1; }
-                        @if (totalPage > 1)
+                        @{ int totalPages = (int)(ViewBag.TotalPages ?? 1); int curr = (int?)ViewBag.Page ?? 1; }
+                        @if (totalPages > 1)
                         {
-                            for(int i = 1; i <= totalPage; i++){
+                            for(int i = 1; i <= totalPages; i++){
                                 if(i == curr){ <span class="active">@i</span> } else {
                                     <a href="?page=@i">@i</a>
                                 }

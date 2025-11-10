@@ -6,7 +6,14 @@ $(document).ready(function () {
         showVTYeucau(MaYeucau); // Gọi hàm hiển thị thiết bị
     }
 
+    // Gọi hàm thông báo ngay khi trang load
     getThongbaoData();
+    
+    // Gọi lại sau 1 giây để đảm bảo DOM đã sẵn sàng
+    setTimeout(function() {
+        getThongbaoData();
+    }, 1000);
+    
     setActiveMenu();
 });
 
@@ -17,6 +24,10 @@ function showVTYeucau(MaYeucau) {
     const area = pathSegments.length > 1 ? pathSegments[1] : ''; 
 
     const url = `/${area}/Yeucau/GetVTYeucau`;
+
+    // Đảm bảo bảng chi tiết sản phẩm được hiển thị
+    $('.bodyyeucau-thietbi').show();
+    $('.tablethietbi').show();
 
     $.ajax({
         url: url, 
@@ -50,7 +61,7 @@ function showVTYeucau(MaYeucau) {
                 // Hiển thị thông báo nếu không có dữ liệu
                 $('.tablethietbi tbody').append(
                     `<tr>
-                        <td colspan="8" style="text-align:center;">Không có dữ liệu vật tư.</td>
+                        <td colspan="9" style="text-align:center;">Không có dữ liệu vật tư.</td>
                     </tr>`
                 );
             }
@@ -82,35 +93,61 @@ function getThongbaoData() {
             console.log("Dữ liệu thông báo yêu cầu là:", data);
 
             // Cập nhật thông báo mua hàng
+            console.log("Thông báo mua hàng count:", data.thongbaomuahangcount);
             if (data.thongbaomuahangcount > 0) {
                 $('.menu-muahang .badge').addClass('show');
                 $('.menu-muahang .notification').text(data.thongbaomuahangcount);
+                console.log("Đã hiển thị badge mua hàng với số:", data.thongbaomuahangcount);
             } else {
                 $('.menu-muahang .badge').removeClass('show');
             }
 
             // Cập nhật thông báo phiếu xuất kho
+            console.log("Thông báo xuất kho count:", data.thongbaoxuatkhocount);
             if (data.thongbaoxuatkhocount > 0) {
                 $('.menu-xuatkho .badge').addClass('show');
                 $('.menu-xuatkho .notification').text(data.thongbaoxuatkhocount);
+                console.log("Đã hiển thị badge xuất kho với số:", data.thongbaoxuatkhocount);
             } else {
                 $('.menu-xuatkho .badge').removeClass('show');
             }
 
             // Cập nhật thông báo phiếu nhập kho
+            console.log("Thông báo nhập kho count:", data.thongbaonhapkhocount);
             if (data.thongbaonhapkhocount > 0) {
                 $('.menu-nhapkho .badge').addClass('show');
                 $('.menu-nhapkho .notification').text(data.thongbaonhapkhocount);
+                console.log("Đã hiển thị badge nhập kho với số:", data.thongbaonhapkhocount);
             } else {
                 $('.menu-nhapkho .badge').removeClass('show');
             }
 
             // Cập nhật thông báo yêu cầu
+            console.log("Thông báo yêu cầu count:", data.thongbaoyeucaucount);
+            var badgeElement = $('.menu-yeucau .badge');
+            var notificationElement = $('.menu-yeucau .notification');
+            console.log("Badge element found:", badgeElement.length);
+            console.log("Notification element found:", notificationElement.length);
+            
             if (data.thongbaoyeucaucount > 0) {
-                $('.menu-yeucau .badge').addClass('show');
-                $('.menu-yeucau .notification').text(data.thongbaoyeucaucount);
+                if (badgeElement.length > 0) {
+                    badgeElement.addClass('show');
+                    notificationElement.text(data.thongbaoyeucaucount);
+                    console.log("Đã hiển thị badge yêu cầu với số:", data.thongbaoyeucaucount);
+                } else {
+                    console.error("Không tìm thấy badge element!");
+                }
             } else {
-                $('.menu-yeucau .badge').removeClass('show');
+                badgeElement.removeClass('show');
+                console.log("Đã ẩn badge yêu cầu");
+            }
+
+            // Thông báo xác nhận nhận hàng
+            if (data.thongbaoxacnhannhanhangcount > 0) {
+                $('.menu-xacnhannhanhang .badge').addClass('show');
+                $('.menu-xacnhannhanhang .notification').text(data.thongbaoxacnhannhanhangcount);
+            } else {
+                $('.menu-xacnhannhanhang .badge').removeClass('show');
             }
         },
         error: function (xhr, status, error) {

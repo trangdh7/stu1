@@ -3,8 +3,19 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Models;
+using OfficeOpenXml;
 
-var builder = WebApplication.CreateBuilder(args);
+// Cấu hình license cho EPPlus 8+
+ExcelPackage.License.SetNonCommercialPersonal("Webkho Management System");
+
+// Khởi tạo builder
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args
+});
+
+// Cấu hình URL trực tiếp (khuyến nghị để tránh lỗi Collection fixed-size)
+builder.WebHost.UseUrls("http://*:80");
 
 // Cấu hình kết nối đến cơ sở dữ liệu
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -42,7 +53,7 @@ builder.Services.AddSession(options =>
 // Xây dựng ứng dụng
 var app = builder.Build();
 
-// Cấu hình middleware để ngăn cache
+// Middleware để ngăn cache
 app.Use(async (context, next) =>
 {
     context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
@@ -57,13 +68,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.Urls.Add("http://*:80");
-//app.Urls.Add("https://*:7001");
-
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
-app.UseAuthentication(); // Kích hoạt Authentication
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Cấu hình route cho Areas
@@ -76,7 +84,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Dangnhap}/{id?}");
 
-// ✅ KIỂM TRA KẾT NỐI MYSQL NGAY KHI KHỞI ĐỘNG ỨNG DỤNG
+// ✅ Kiểm tra kết nối MySQL khi khởi động ứng dụng
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

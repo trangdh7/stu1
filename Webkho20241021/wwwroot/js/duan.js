@@ -7,15 +7,15 @@ $(document).ready(function () {
     }
 });
 
-// Hàm hiển thị thiết bị theo mã yêu cầu
+// Hàm hiển thị thiết bị theo mã dự án
 function showVTDuan(MaDuan) {
-    console.log("Mã yêu cầu được chọn:", MaDuan); // Kiểm tra mã yêu cầu
+    console.log("Mã dự án được chọn:", MaDuan); // Kiểm tra mã dự án
 
     const pathSegments = window.location.pathname.split('/');
     const area = pathSegments.length > 1 ? pathSegments[1] : ''; // Giả sử area là segment đầu tiên sau dấu '/'
 
-    // Xây dựng URL động dựa trên area hiện tại
-    const url = `/${area}/Yeucau/GetVTYeucau`;
+    // Xây dựng URL động dựa trên area hiện tại - gọi đúng endpoint GetVTDuan
+    const url = `/${area}/Duan/GetVTDuan`;
 
     // Gửi yêu cầu AJAX để lấy dữ liệu vật tư tương ứng
     $.ajax({
@@ -31,18 +31,33 @@ function showVTDuan(MaDuan) {
             if (data && data.length > 0) {
                 data.forEach(function (item) {
                     // Tạo một dòng mới
+                    // Format ngày tháng
+                    const formatDate = (dateStr) => {
+                        if (!dateStr) return 'Không xác định';
+                        try {
+                            const date = new Date(dateStr);
+                            if (isNaN(date.getTime())) return 'Không xác định';
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const year = date.getFullYear();
+                            return `${day}/${month}/${year}`;
+                        } catch {
+                            return dateStr;
+                        }
+                    };
+
                     let row = `<tr>
                         <td>${item.tenSanpham || 'Không xác định'}</td>
                         <td>${item.maSanpham || 'Không xác định'}</td>
                         <td>${item.daMakho || 'Không xác định'}</td>
                         <td>${item.hangSX || 'Không xác định'}</td>
                         <td>${item.nhaCC || 'Không xác định'}</td>
-                        <td>${item.sl}</td>
+                        <td>${item.sl || 0}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
-                        <td>${item.ngayNhapkho || 'Không xác định'}</td>
-                        <td>${item.ngayBaohanh || 'Không xác định'}</td>
-                        <td>${item.thoiGianBH || 'Không xác định'}</td>
-                        <td>${item.trangthai}</td>
+                        <td>${formatDate(item.ngayNhapkho)}</td>
+                        <td>${formatDate(item.ngayBaohanh)}</td>
+                        <td>${formatDate(item.thoiGianBH)}</td>
+                        <td>${item.trangThai || 'Đã xác nhận nhận hàng'}</td>
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
                 });
@@ -50,7 +65,7 @@ function showVTDuan(MaDuan) {
                 // Hiển thị thông báo nếu không có dữ liệu
                 $('.tablethietbi tbody').append(
                     `<tr>
-                        <td colspan="8" style="text-align:center;">Không có dữ liệu vật tư.</td>
+                        <td colspan="11" style="text-align:center;">Không có dữ liệu vật tư đã được xuất kho cho dự án này.</td>
                     </tr>`
                 );
             }
