@@ -31,11 +31,12 @@
                             <td>Đơn vị</td>
                             <td>Ngày bảo hành</td>
                             <td>Thời gian BH</td>
+                            <td>Hành động</td>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tbody-devices">
                         <tr>
-                            <td>1</td>
+                            <td class="stt">1</td>
                             <td><input type="text" name="TenSanpham[]" placeholder="Tên vật tư" /></td>
                             <td><input type="text" name="MaSanpham[]" placeholder="Mã vật tư" /></td>
                             <td><input type="text" name="HangSX[]" placeholder="Hãng SX" /></td>
@@ -44,16 +45,70 @@
                             <td><input type="text" name="DonVi[]" placeholder="Đơn vị" /></td>
                             <td><input type="date" name="NgayBaohanh[]" placeholder="Ngày bảo hành" /></td>
                             <td><input type="date" name="ThoiGianBH[]" placeholder="Thời gian BH" /></td>
+                            <td>
+                                <button type="button" class="btn-delete" onclick="deleteRow(this)">Xóa</button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
+                <div style="margin-top: 10px;">
+                    <button type="button" id="btn-add-row" class="btn-add-row" onclick="addNewRow()" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                        <span style="font-size: 18px; font-weight: bold;">+</span> Thêm thiết bị
+                    </button>
+                </div>
             </div>
             <div class="action">
                 <button type="submit">Thêm vật tư</button>
             </div>
         </div>
     }
-    <script src="~/js/themvattu.js"></script>
+    <script>
+        // Hàm thêm hàng mới vào bảng
+        function addNewRow() {
+            var tbody = document.getElementById('tbody-devices');
+            var lastRow = tbody.querySelector('tr:last-child');
+            var newRow = lastRow.cloneNode(true);
+            
+            // Xóa giá trị các input
+            var inputs = newRow.querySelectorAll('input');
+            inputs.forEach(function(input) {
+                input.value = '';
+            });
+            
+            // Cập nhật STT
+            var rowCount = tbody.querySelectorAll('tr').length;
+            newRow.querySelector('.stt').textContent = rowCount + 1;
+            
+            // Thêm hàng mới vào bảng
+            tbody.appendChild(newRow);
+        }
+        
+        // Hàm xóa hàng
+        function deleteRow(button) {
+            var tbody = document.getElementById('tbody-devices');
+            var rowCount = tbody.querySelectorAll('tr').length;
+            
+            // Chỉ cho phép xóa nếu còn nhiều hơn 1 hàng
+            if (rowCount > 1) {
+                var row = button.closest('tr');
+                row.remove();
+                
+                // Cập nhật lại STT cho tất cả các hàng
+                updateRowNumbers();
+            } else {
+                alert('Phải có ít nhất một dòng thiết bị!');
+            }
+        }
+        
+        // Hàm cập nhật số thứ tự
+        function updateRowNumbers() {
+            var tbody = document.getElementById('tbody-devices');
+            var rows = tbody.querySelectorAll('tr');
+            rows.forEach(function(row, index) {
+                row.querySelector('.stt').textContent = index + 1;
+            });
+        }
+    </script>
 </body>
 </html>
 

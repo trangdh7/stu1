@@ -153,7 +153,8 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 }
             }
 
-            _context.SaveChanges();
+            int totalAdded = _context.SaveChanges();
+            TempData["Success"] = "Thêm vật tư thành công!";
             return RedirectToAction("Tongkho", "Home", new { area = "TruongBPKho" });
         }
 
