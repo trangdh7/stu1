@@ -127,7 +127,8 @@
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = name; // arrays use same name multiple times
-            input.value = value ?? '';
+            // Đảm bảo giá trị 0 được gửi đúng (không bị chuyển thành chuỗi rỗng)
+            input.value = (value === null || value === undefined) ? '' : String(value);
             hiddenInputs.appendChild(input);
         }
 
@@ -258,10 +259,16 @@
                     const DonVi = idxDonVi !== -1 ? (r[idxDonVi] + '').trim() : '';
                     const NhaCC = idxNCC !== -1 ? (r[idxNCC] + '').trim() : '';
                     // SL: lấy thực nhập, nếu rỗng lấy yêu cầu; chuẩn hóa số có dấu phẩy
+                    // Lưu ý: giá trị 0 là hợp lệ và cần được xử lý đúng
                     const rawThuc = idxThucNhap !== -1 ? r[idxThucNhap] : '';
                     const rawYC = idxYeuCau !== -1 ? r[idxYeuCau] : '';
-                    const pick = (rawThuc !== '' && rawThuc != null) ? rawThuc : rawYC;
-                    const SL = (pick === '' || pick == null) ? '' : Number(String(pick).toString().replace(/\./g,'').replace(/,/g,''));
+                    // Ưu tiên thực nhập, nếu thực nhập là rỗng/null thì lấy yêu cầu
+                    // Kiểm tra cả số 0 (0 là giá trị hợp lệ, không phải rỗng)
+                    const pick = (rawThuc !== '' && rawThuc != null && rawThuc !== undefined) ? rawThuc : 
+                                 (rawYC !== '' && rawYC != null && rawYC !== undefined) ? rawYC : '';
+                    // Chuyển đổi sang số, giữ nguyên giá trị 0
+                    const SL = (pick === '' || pick == null || pick === undefined) ? '' : 
+                               Number(String(pick).replace(/\./g,'').replace(/,/g,''));
                     const DuAn = idxDuAn !== -1 ? (r[idxDuAn] + '').trim() : '';
 
                     if (!TenSanpham && !MaSanpham) continue; // lọc dòng vô nghĩa

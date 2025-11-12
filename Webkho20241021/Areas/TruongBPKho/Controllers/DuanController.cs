@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Areas.TruongBPKho.Data;
@@ -20,6 +22,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
         {
             var Duanlist = _context.duans.ToList();
             var Khoduanlist = _context.khoduans.ToList();
+            ViewBag.CurrentUserId = HttpContext.Session.GetString("MaNguoidung");
             var model = new Duanviewmodel
             {
                 Duan = Duanlist,
@@ -72,11 +75,19 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
         [HttpPost]
         public async Task<IActionResult> Xuliduan(string MaDuan, string action)
         {
-
             var duan = await _context.duans.FirstOrDefaultAsync(d => d.MaDuan == MaDuan);
             if (duan == null)
             {
                 return NotFound();
+            }
+
+            var currentUserId = HttpContext.Session.GetString("MaNguoidung");
+            if (string.IsNullOrWhiteSpace(currentUserId) ||
+                string.IsNullOrWhiteSpace(duan.MaNguoiQLDA) ||
+                !string.Equals(currentUserId.Trim(), duan.MaNguoiQLDA.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "Chỉ người quản lý dự án được phép cập nhật tiến trình dự án này.";
+                return RedirectToAction("Duan", "Duan", new { area = "TruongBPKho" });
             }
             // Xử lý các hành động dựa trên trạng thái hiện tại và giá trị action
             if (action == "start" && duan.TrangThai == "Chờ")

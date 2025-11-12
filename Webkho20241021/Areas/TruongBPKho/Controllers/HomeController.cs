@@ -91,7 +91,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             for (int i = 0; i < count; i++)
             {
                 if (string.IsNullOrWhiteSpace(TenSanpham[i]) || string.IsNullOrWhiteSpace(MaSanpham[i]) ||
-                    SL[i] <= 0 || string.IsNullOrWhiteSpace(DonVi[i]))
+                    SL[i] < 0 || string.IsNullOrWhiteSpace(DonVi[i]))
                 {
                     continue;
                 }
@@ -190,7 +190,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             for (int i = 0; i < count; i++)
             {
                 if (string.IsNullOrWhiteSpace(TenSanpham[i]) || string.IsNullOrWhiteSpace(MaSanpham[i]) ||
-                    SL[i] <= 0 || string.IsNullOrWhiteSpace(DonVi[i]))
+                    SL[i] < 0 || string.IsNullOrWhiteSpace(DonVi[i]))
                 {
                     continue;
                 }
