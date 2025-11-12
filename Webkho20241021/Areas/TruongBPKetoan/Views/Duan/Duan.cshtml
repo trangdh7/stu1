@@ -3,6 +3,9 @@
     ViewData["Title"] = "Duan";
     Layout = "~/Areas/TruongBPKetoan/Views/Layout/Layout.cshtml";
 }
+@{
+    var currentUserId = ViewBag.CurrentUserId as string;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,6 +21,10 @@
     <title>Document</title>
 </head>
 <body>
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
     <nav class="bodykho">
         <div class="menu-kho">
             <ul>
@@ -60,29 +67,41 @@
                             <td>@item.NgayBatdau</td>
                             <td>@item.NgayKetthuc</td>
                             <td>
-                                @if (item.TrangThai == "Chờ")
+                                @{
+                                    var canControl = !string.IsNullOrWhiteSpace(currentUserId) &&
+                                                     !string.IsNullOrWhiteSpace(item.MaNguoiQLDA) &&
+                                                     string.Equals(currentUserId.Trim(), item.MaNguoiQLDA.Trim(), System.StringComparison.OrdinalIgnoreCase);
+                                }
+                                @if (canControl)
                                 {
-                                    @using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKetoan" }, FormMethod.Post))
+                                    if (item.TrangThai == "Chờ")
                                     {
-                                        <input type="hidden" name="MaDuan" value="@item.MaDuan" />
-                                        <button type="submit" name="action" value="start" class="btn-icon start-btn">
-                                            <i class="bx bx-play-circle"></i> Bắt đầu
-                                        </button>
+                                        using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKetoan" }, FormMethod.Post))
+                                        {
+                                            <input type="hidden" name="MaDuan" value="@item.MaDuan" />
+                                            <button type="submit" name="action" value="start" class="btn-icon start-btn">
+                                                <i class="bx bx-play-circle"></i> Bắt đầu
+                                            </button>
+                                        }
+                                    }
+                                    else if (item.TrangThai == "Đang triển khai")
+                                    {
+                                        using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKetoan" }, FormMethod.Post))
+                                        {
+                                            <input type="hidden" name="MaDuan" value="@item.MaDuan" />
+                                            <button type="submit" name="action" value="end" class="btn-icon end-btn">
+                                                <i class="bx bxs-x-circle"></i> Kết thúc
+                                            </button>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span>@(item.TrangThai ?? string.Empty)</span>
                                     }
                                 }
-                                else if (item.TrangThai == "Đang triển khai")
+                                else
                                 {
-                                    @using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKetoan" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaDuan" value="@item.MaDuan" />
-                                        <button type="submit" name="action" value="end" class="btn-icon end-btn">
-                                            <i class="bx bxs-x-circle"></i> Kết thúc
-                                        </button>
-                                    }
-                                }
-                                else if (item.TrangThai == "Đã hoàn thành")
-                                {
-                                    <span>Đã hoàn thành</span>
+                                    <span>@(item.TrangThai ?? string.Empty)</span>
                                 }
                             </td>
 
