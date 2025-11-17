@@ -1,0 +1,393 @@
+﻿@model Webkho_20241021.Models.yeucau
+@{
+    ViewData["Title"] = "ThemYeucau";
+    Layout = "~/Areas/NhanvienKho/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thêm Yêu Cầu</title>
+</head>
+@using (Html.BeginForm("ThemPhieunhapkhoSQL", "Yeucau", new { area = "NhanvienKho" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
+{
+    <body>
+        @if (TempData["Error"] != null)
+        {
+            <div style="margin-bottom:15px;padding:12px 16px;border:1px solid #f5c6cb;background:#f8d7da;color:#721c24;border-radius:4px;white-space:pre-line;">
+                @TempData["Error"]
+            </div>
+        }
+        <div class="formyeucau">
+            <div class="tieude">    
+                <p>Thông tin yêu cầu</p>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="loainhapkho">Loại nhập kho</label>
+                    <select id="loainhapkho" name="LoaiNhapkho" required onchange="handleLoaiNhapkhoChange()">
+                        <option value="">Chọn loại</option>
+                        <option value="duan">Từ dự án</option>
+                        <option value="canhan">Từ cá nhân</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="maduan">Mã dự án</label>
+                    <select id="maduan" name="MaDuan" onchange="handleDuanChange()">
+                        <option value="">Chọn mã dự án</option>
+                        @foreach (var y in ViewBag.Duanlist)
+                        {
+                            <option value="@y.MaDuan">@y.MaDuan</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="ycmanguoidung">NV yêu cầu</label>
+                    <input type="text" id="ycmanguoidung" name="MaNguoidung" placeholder="Mã nhân viên" required readonly />
+                </div>
+            </div>
+        </div>
+        <div class="formtableyeucau">
+            <div class="tieude">
+                <p>Danh sách vật tư yêu cầu</p>
+            </div>
+            <!-- Section tìm kiếm vật tư từ dự án -->
+            <div id="searchSection" style="display: none; margin-bottom: 15px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: bold;">Tìm kiếm vật tư muốn trả lại:</label>
+                <input type="text" id="searchVatTuInput" placeholder="Nhập tên sản phẩm muốn trả lại..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" autocomplete="off" />
+            </div>
+            <div class="themyeucau-table">
+                <table class="form-table">
+                    <thead> 
+                        <tr>
+                            <th>Chọn</th>
+                            <th>STT</th>
+                            <th>Tên vật tư</th>
+                            <th>Mã vật tư</th>
+                            <th>Mã kho</th>
+                            <th>Hãng SX</th>
+                            <th>Nhà cung cấp</th>
+                            <th>Đã mượn</th>
+                            <th>Trả</th>
+                            <th>Đơn vị</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr>
+                            <td><input type="checkbox" class="select-item" checked /></td>
+                            <td>1</td>
+                            <td>
+                                <div style="position: relative;">
+                                    <input type="text" id="tenSanphamSearch" class="TenSanpham" name="TenSanpham" placeholder="Tên vật tư" autocomplete="off" readonly />
+                                    <div id="suggestionBox" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-top: none; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></div>
+                                </div>
+                            </td>
+                            <td><input type="text" id="maSanpham" name="MaSanpham" placeholder="Mã sản phẩm" readonly /></td>
+                            <td><input type="text" id="makho" name="Makho" placeholder="Mã kho" readonly /></td>
+                            <td><input type="text" id="hangSX" name="HangSX" placeholder="Hãng SX" readonly /></td>
+                            <td><input type="text" id="nhaCC" name="NhaCC" placeholder="Nhà cung cấp" readonly /></td>
+                            <td><span id="borrowedInfo">—</span></td>
+                            <td><input type="number" id="sl" name="SL" placeholder="Số lượng trả" min="1" /></td>
+                            <td><input type="text" id="donVi" name="DonVi" placeholder="Đơn vị" readonly /></td>
+                        </tr>
+                    </tbody>
+                    <tbody id="searchResults" style="display: none;"></tbody>
+                </table>
+            </div>
+            <div class="action">
+                <button type="button" onclick="submitSelectedItems()">Gửi</button>
+            </div>
+        </div>
+        <script src="~/js/themphieunhapkho.js"></script>
+        <script>
+            // Khóa mọi ô nhập trừ ô số lượng
+            (function lockReadonlyFields() {
+                try {
+                    const table = document.getElementById('table-body');
+                    if (!table) return;
+                    const inputs = table.querySelectorAll('input[type="text"]');
+                    inputs.forEach(input => {
+                        if (input.name !== 'SL') {
+                            input.readOnly = true;
+                        }
+                    });
+                } catch(e) { console.warn(e); }
+            })();
+
+            // Hàm submit chỉ những item được chọn - Sử dụng AJAX
+            function submitSelectedItems() {
+                try {
+                    const tableBody = document.getElementById('table-body');
+                    if (!tableBody) {
+                        alert('Không tìm thấy bảng dữ liệu!');
+                        return;
+                    }
+                    
+                    const rows = tableBody.querySelectorAll('tr');
+                    
+                    // Kiểm tra các field quan trọng
+                    const loaiNhapkho = document.getElementById('loainhapkho')?.value;
+                    const maDuan = document.getElementById('maduan')?.value || '';
+                    const maNguoidung = document.getElementById('ycmanguoidung')?.value;
+                    
+                    if (!loaiNhapkho) {
+                        alert('Vui lòng chọn loại nhập kho!');
+                        return;
+                    }
+                    
+                    if (!maNguoidung) {
+                        alert('Vui lòng kiểm tra mã nhân viên!');
+                        return;
+                    }
+                    
+                    // Thu thập dữ liệu từ các vật tư được chọn
+                    const selectedData = {
+                        TenSanpham: [],
+                        MaSanpham: [],
+                        Makho: [],
+                        HangSX: [],
+                        NhaCC: [],
+                        SL: [],
+                        DonVi: []
+                    };
+                    
+                    let hasSelected = false;
+                    let invalidMsgs = [];
+                    
+                    rows.forEach((row, index) => {
+                        const checkbox = row.querySelector('.select-item');
+                        if (checkbox && checkbox.checked) {
+                            const tenSanpham = row.querySelector('input[name="TenSanpham"]')?.value || '';
+                            const maSanpham = row.querySelector('input[name="MaSanpham"]')?.value || '';
+                            const slInput = row.querySelector('input[name="SL"]');
+                            const sl = slInput?.value || '';
+                            const max = Number(slInput?.getAttribute('max') || 0);
+                            const parsed = parseInt(sl);
+                            
+                            // Chỉ thêm nếu có tên sản phẩm và số lượng
+                            if (tenSanpham && sl && parsed > 0) {
+                                // Client-side validate: không cho trả quá số lượng mượn
+                                if (max > 0 && parsed > max) {
+                                    invalidMsgs.push(`- ${tenSanpham} (${maSanpham}): Nhập ${parsed} > tối đa ${max}`);
+                                    return; // skip add this row
+                                }
+                                selectedData.TenSanpham.push(tenSanpham);
+                                selectedData.MaSanpham.push(maSanpham || '');
+                                selectedData.Makho.push(row.querySelector('input[name="Makho"]')?.value || '');
+                                selectedData.HangSX.push(row.querySelector('input[name="HangSX"]')?.value || '');
+                                selectedData.NhaCC.push(row.querySelector('input[name="NhaCC"]')?.value || '');
+                                selectedData.SL.push(parsed);
+                                selectedData.DonVi.push(row.querySelector('input[name="DonVi"]')?.value || '');
+                                hasSelected = true;
+                            }
+                        }
+                    });
+                    
+                    if (invalidMsgs.length > 0) {
+                        alert('Bạn trả quá số lượng bạn mượn cho các vật tư:\n' + invalidMsgs.join('\n'));
+                        return;
+                    }
+                    
+                    if (!hasSelected) {
+                        alert('Vui lòng chọn ít nhất một vật tư và nhập số lượng để trả!');
+                        return;
+                    }
+                    
+                    // Chuẩn bị dữ liệu để gửi - Sử dụng FormData để hỗ trợ arrays
+                    const formData = new FormData();
+                    formData.append('LoaiNhapkho', loaiNhapkho);
+                    if (loaiNhapkho === 'duan' && maDuan) {
+                        formData.append('MaDuan', maDuan);
+                    }
+                    formData.append('MaNguoidung', maNguoidung);
+                    
+                    // Thêm arrays vào FormData
+                    selectedData.TenSanpham.forEach(v => formData.append('TenSanpham', v));
+                    selectedData.MaSanpham.forEach(v => formData.append('MaSanpham', v));
+                    selectedData.Makho.forEach(v => formData.append('Makho', v));
+                    selectedData.HangSX.forEach(v => formData.append('HangSX', v));
+                    selectedData.NhaCC.forEach(v => formData.append('NhaCC', v));
+                    selectedData.SL.forEach(v => formData.append('SL', v));
+                    selectedData.DonVi.forEach(v => formData.append('DonVi', v));
+                    
+                    console.log('Submitting data - Items count:', selectedData.TenSanpham.length);
+                    
+                    // Disable nút submit để tránh double submit
+                    const submitBtn = document.querySelector('button[onclick="submitSelectedItems()"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Đang gửi...';
+                    }
+                    
+                    // Gửi bằng AJAX
+                    const pathSegments = window.location.pathname.split('/');
+                    const area = pathSegments.length > 1 ? pathSegments[1] : '';
+                    const url = `/${area}/Yeucau/ThemPhieunhapkhoSQL`;
+                    
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin' // Quan trọng: gửi cookies/session
+                    })
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        if (response.redirected) {
+                            console.log('Redirected to:', response.url);
+                            // Nếu redirect về login, có thể session đã hết
+                            if (response.url.includes('Login') || response.url.includes('Dangnhap')) {
+                                alert('Session đã hết hạn. Vui lòng đăng nhập lại!');
+                                window.location.href = response.url;
+                            } else {
+                                window.location.href = response.url;
+                            }
+                        } else {
+                            return response.text().then(text => {
+                                console.log('Response text:', text.substring(0, 200));
+                                // Nếu response là HTML (có thể là error page), reload trang
+                                window.location.reload();
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error submitting:', error);
+                        alert('Có lỗi xảy ra khi gửi dữ liệu: ' + error.message);
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Gửi';
+                        }
+                    });
+                    
+                } catch (error) {
+                    console.error('Lỗi khi submit:', error);
+                    alert('Có lỗi xảy ra khi gửi dữ liệu: ' + error.message);
+                }
+            }
+            
+            // Autocomplete cho tên vật tư
+            let searchTimeout;
+            const tenSanphamInput = document.getElementById('tenSanphamSearch');
+            const suggestionBox = document.getElementById('suggestionBox');
+            
+            if (tenSanphamInput) {
+                tenSanphamInput.addEventListener('input', function() {
+                    const searchTerm = this.value.trim();
+                    
+                    // Clear timeout nếu có
+                    clearTimeout(searchTimeout);
+                    
+                    if (searchTerm.length < 1) {
+                        suggestionBox.style.display = 'none';
+                        return;
+                    }
+                    
+                    // Debounce: chờ 300ms sau khi người dùng ngừng gõ
+                    searchTimeout = setTimeout(() => {
+                        searchProducts(searchTerm);
+                    }, 300);
+                });
+                
+                // Ẩn suggestion box khi click ra ngoài
+                document.addEventListener('click', function(e) {
+                    if (!tenSanphamInput.contains(e.target) && !suggestionBox.contains(e.target)) {
+                        suggestionBox.style.display = 'none';
+                    }
+                });
+            }
+            
+            function searchProducts(searchTerm) {
+                const pathSegments = window.location.pathname.split('/');
+                const area = pathSegments.length > 1 ? pathSegments[1] : '';
+                
+                fetch(`/${area}/Yeucau/TimKiem?timkiem=${encodeURIComponent(searchTerm)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displaySuggestions(data);
+                    })
+                    .catch(error => {
+                        console.error('Lỗi khi tìm kiếm:', error);
+                        suggestionBox.style.display = 'none';
+                    });
+            }
+            
+            function displaySuggestions(items) {
+                if (!items || items.length === 0) {
+                    suggestionBox.innerHTML = '<div style="padding: 10px; color: #999;">Không tìm thấy kết quả</div>';
+                    suggestionBox.style.display = 'block';
+                    return;
+                }
+                
+                let html = '';
+                items.forEach((item, index) => {
+                    // Escape HTML và dấu nháy để tránh lỗi
+                    const escapeHtml = (str) => {
+                        if (!str) return '';
+                        return String(str)
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#39;');
+                    };
+                    
+                    const tenSanpham = escapeHtml(item.TenSanpham || '');
+                    const maSanpham = escapeHtml(item.MaSanpham || '');
+                    const makho = escapeHtml(item.Makho || '');
+                    const hangSX = escapeHtml(item.HangSX || '');
+                    const nhaCC = escapeHtml(item.NhaCC || '');
+                    const donVi = escapeHtml(item.DonVi || '');
+                    
+                    html += `
+                        <div class="suggestion-item" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                             onmouseover="this.style.backgroundColor='#f0f0f0'" 
+                             onmouseout="this.style.backgroundColor='white'"
+                             data-index="${index}">
+                            <strong>${tenSanpham}</strong><br>
+                            <small style="color: #666;">Mã: ${maSanpham} | SL: ${item.SL || 0} ${donVi}</small>
+                        </div>
+                    `;
+                });
+                
+                suggestionBox.innerHTML = html;
+                
+                // Thêm event listener cho mỗi suggestion item
+                suggestionBox.querySelectorAll('.suggestion-item').forEach((el, index) => {
+                    el.addEventListener('click', function() {
+                        const item = items[index];
+                        selectProduct(
+                            item.TenSanpham || '',
+                            item.MaSanpham || '',
+                            item.Makho || '',
+                            item.HangSX || '',
+                            item.NhaCC || '',
+                            item.DonVi || '',
+                            item.SL || 0
+                        );
+                    });
+                });
+                
+                suggestionBox.style.display = 'block';
+            }
+            
+            function selectProduct(tenSanpham, maSanpham, makho, hangSX, nhaCC, donVi, sl) {
+                document.getElementById('tenSanphamSearch').value = tenSanpham;
+                document.getElementById('maSanpham').value = maSanpham;
+                document.getElementById('makho').value = makho;
+                document.getElementById('hangSX').value = hangSX;
+                document.getElementById('nhaCC').value = nhaCC;
+                document.getElementById('donVi').value = donVi;
+                // Không set giá trị mặc định, để user tự nhập số lượng
+                document.getElementById('sl').value = '';
+                document.getElementById('sl').placeholder = `Nhập số lượng (tối đa: ${sl})`;
+                document.getElementById('sl').max = sl;
+                document.getElementById('sl').focus(); // Focus vào ô số lượng để user nhập ngay
+                
+                suggestionBox.style.display = 'none';
+            }
+        </script>
+    </body>
+}
+</html>
+
+

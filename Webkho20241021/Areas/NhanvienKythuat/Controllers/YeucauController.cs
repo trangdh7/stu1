@@ -6,6 +6,7 @@ using Webkho_20241021.Models;
 using Webkho_20241021.Areas.NhanvienKythuat.Data;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 
 namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
@@ -218,14 +219,22 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
 
         public IActionResult ThemPhieunhapkho()
         {
-            var Duanlist = _context.duans
-                          .Select(y => new { y.MaDuan, y.TrangThai })
-                          .ToList();
+            var maNv = HttpContext.Session.GetString("MaNguoidung");
+
+            var allowedProjectCodes = _context.phieuxuatkho
+                .Where(px => px.MaNguoidung == maNv && !string.IsNullOrEmpty(px.MaDuan))
+                .Select(px => px.MaDuan)
+                .Distinct()
+                .ToList();
+
+            var Duanlist = allowedProjectCodes.Count > 0
+                ? _context.duans
+                    .Where(y => allowedProjectCodes.Contains(y.MaDuan))
+                    .Select(y => (object)new { y.MaDuan, y.TrangThai })
+                    .ToList()
+                : new List<object>();
 
             ViewBag.Duanlist = Duanlist;
-            
-            // Lấy mã nhân viên từ session để điền vào form
-            var maNv = HttpContext.Session.GetString("MaNguoidung");
             ViewBag.MaNguoidung = maNv;
             
             return View();
@@ -285,13 +294,32 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
             // Lấy mã nhân viên từ session
             var maNv = HttpContext.Session.GetString("MaNguoidung");
 
+            var allowedProjectCodes = _context.phieuxuatkho
+                .Where(px => px.MaNguoidung == maNv && !string.IsNullOrEmpty(px.MaDuan))
+                .Select(px => px.MaDuan)
+                .Distinct()
+                .ToList();
+
+            if (!allowedProjectCodes.Contains(maduan))
+            {
+                return Json(new
+                {
+                    maNguoidung = maNv,
+                    maDuan = maduan,
+                    vtPhieuMuaHang = new List<object>(),
+                    error = "Bạn không có quyền trả kho cho dự án này."
+                });
+            }
+
             try
             {
                 // Lấy vật tư từ vtphieuxuatkho (đã xuất kho) kết hợp với phieuxuatkho theo MaDuan
                 // Các vật tư đã được xuất kho cho dự án này có thể được trả lại
                 var khoDuanItems = (from vt in _context.vtphieuxuatkho
                                    join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
+                                   join yc in _context.yeucau on vt.MaYeucau equals yc.MaYeucau
                                    where px.MaDuan == maduan 
+                                      && yc.YCMaNguoidung == maNv
                                       && (vt.TrangThai == "Đã xác nhận nhận hàng" 
                                           || vt.TrangThai == "Đã lấy hàng"
                                           || vt.TrangThai == "Đã xuất kho")
@@ -1260,6 +1288,57 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 // Tính toán số lượng các phần tử
                 int count = TenSanpham.Length;
 
+                // VALIDATION: Không cho trả vượt quá số lượng đã mượn
+                // Gom lỗi để hiển thị một lần
+                var validationErrors = new List<string>();
+                for (int i = 0; i < count; i++)
+                {
+                    var maSp = (MaSanpham != null && MaSanpham.Length > i) ? (MaSanpham[i] ?? "") : "";
+                    var maKho = (Makho != null && Makho.Length > i) ? (Makho[i] ?? "") : "";
+                    int soLuongTra = (SL != null && SL.Length > i) ? (SL[i]) : 0;
+                    if (soLuongTra <= 0) continue;
+
+                    int soLuongDaMuon = 0;
+
+                    if (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                    {
+                        // Tổng số lượng đã xuất cho dự án (các trạng thái hợp lệ) theo mã sản phẩm và mã kho
+                        soLuongDaMuon = (from vt in _context.vtphieuxuatkho
+                                         join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
+                                         where px.MaDuan == phieunhapkho.MaDuan
+                                               && (vt.TrangThai == "Đã xác nhận nhận hàng"
+                                                   || vt.TrangThai == "Đã lấy hàng"
+                                                   || vt.TrangThai == "Đã xuất kho")
+                                               && (vt.SL ?? 0) > 0
+                                               && (maSp == "" || vt.MaSanpham == maSp)
+                                               && (maKho == "" || vt.Makho == maKho)
+                                         select vt.SL ?? 0).Sum();
+                    }
+                    else if (LoaiNhapkho == "canhan")
+                    {
+                        // Tổng số lượng đang mượn ở kho cá nhân của người dùng theo mã SP
+                        soLuongDaMuon = _context.khonguoidungs
+                            .Where(k => k.NDMaNguoidung == phieunhapkho.MaNguoidung
+                                        && (k.TrangThai == "Đang mượn" || k.TrangThai == "Đang sử dụng")
+                                        && (maSp == "" || k.MaSanpham == maSp))
+                            .Select(k => k.SL ?? 0)
+                            .Sum();
+                    }
+
+                    if (soLuongTra > soLuongDaMuon)
+                    {
+                        var tenSp = (TenSanpham != null && TenSanpham.Length > i) ? (TenSanpham[i] ?? "") : "";
+                        var donVi = (DonVi != null && DonVi.Length > i) ? (DonVi[i] ?? "") : "";
+                        validationErrors.Add($"- {tenSp} ({maSp}): Trả {soLuongTra} {donVi}, nhưng chỉ mượn {soLuongDaMuon}.");
+                    }
+                }
+
+                if (validationErrors.Count > 0)
+                {
+                    TempData["Error"] = "Số lượng trả vượt quá số lượng đã mượn cho các vật tư sau:\n" + string.Join("\n", validationErrors);
+                    return RedirectToAction("ThemPhieunhapkho", "Yeucau", new { area = "NhanvienKythuat" });
+                }
+
                 int STT = 0;
                 string MaNhapkho;
 
@@ -1560,7 +1639,10 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     
                     // Tự động tạo phiếu xuất kho nếu có yêu cầu ban đầu và chưa có phiếu xuất kho
                     // Logic này áp dụng cho CẢ vật tư dự án VÀ vật tư cá nhân
-                    if (!string.IsNullOrEmpty(Phieunhapkho.MaYeucau))
+                    bool isNhapkhoReturnFlow = !string.IsNullOrEmpty(Phieunhapkho.MaYeucau) &&
+                        Phieunhapkho.MaYeucau.StartsWith("NHAPKHO_", StringComparison.OrdinalIgnoreCase);
+
+                    if (!string.IsNullOrEmpty(Phieunhapkho.MaYeucau) && !isNhapkhoReturnFlow)
                     {
                         // Kiểm tra xem đã có phiếu xuất kho cho yêu cầu này chưa
                         var existingPhieuxuatkho = _context.phieuxuatkho
@@ -1966,6 +2048,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 {
                     // Cập nhật trạng thái vật tư thành "Đã xác nhận nhận hàng"
                     vt.TrangThai = "Đã xác nhận nhận hàng";
+                    vt.NgayNhapkho = DateTime.Now;
                     _context.vtphieuxuatkho.Update(vt);
                     
                     // Trừ kho tổng khi xác nhận nhận hàng - KIỂM TRA CHẶT CHẼ SỐ LƯỢNG

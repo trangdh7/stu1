@@ -140,7 +140,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (tenyeucauSelect) {
         tenyeucauSelect.addEventListener("change", function() {
             if (this.value === "Yêu cầu nhập kho") {
-                window.location.href = "/NhanvienKythuat/Yeucau/ThemPhieunhapkho";
+                const pathSegments = window.location.pathname.split('/').filter(Boolean);
+                const currentArea = pathSegments.length > 0 ? pathSegments[0] : "NhanvienKythuat";
+                window.location.href = `/${currentArea}/Yeucau/ThemPhieunhapkho`;
             }
         });
     }

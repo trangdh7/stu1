@@ -1,7 +1,39 @@
 function getThongbaoDatatrangchu() {
-    const pathSegments = window.location.pathname.split('/');
-    const area = pathSegments.length > 1 ? pathSegments[1] : '';
-    const url = area ? `/${area}/Yeucau/GetDulieuThongbaotrangchu` : '/Yeucau/GetDulieuThongbaotrangchu';
+    // Danh sách các area hợp lệ
+    const validAreas = ['NhanvienKho', 'NhanvienKetoan', 'NhanvienMuahang', 'NhanvienKythuat', 
+                        'TruongBPKho', 'TruongBPKetoan', 'TruongBPMuahang', 'TruongBPKythuat',
+                        'Giamdoc', 'Admin'];
+    
+    // Lấy area từ data attribute của body
+    let area = $('body').data('area') || '';
+    
+    // Nếu area không hợp lệ, thử lấy từ URL
+    if (!area || !validAreas.includes(area)) {
+        const pathSegments = window.location.pathname.split('/').filter(s => s);
+        // Tìm segment đầu tiên là area hợp lệ
+        for (let segment of pathSegments) {
+            if (validAreas.includes(segment)) {
+                area = segment;
+                break;
+            }
+        }
+    }
+    
+    // Nếu vẫn không có, thử lấy từ các link trong trang
+    if (!area || !validAreas.includes(area)) {
+        $('a[href*="/"]').each(function() {
+            const href = $(this).attr('href');
+            if (href) {
+                const match = href.match(/\/([^\/]+)\//);
+                if (match && match[1] && validAreas.includes(match[1])) {
+                    area = match[1];
+                    return false; // break loop
+                }
+            }
+        });
+    }
+    
+    const url = area && validAreas.includes(area) ? `/${area}/Yeucau/GetDulieuThongbaotrangchu` : '/Yeucau/GetDulieuThongbaotrangchu';
 
     $.ajax({
         url: url,

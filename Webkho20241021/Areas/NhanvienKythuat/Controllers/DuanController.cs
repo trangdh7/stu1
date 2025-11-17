@@ -59,7 +59,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                                NhaCC = vt.NhaCC,
                                SL = vt.SL,
                                DonVi = vt.DonVi,
-                               NgayNhapkho = vt.NgayNhapkho,
+                               NgayNhapkho = vt.NgayNhapkho ?? px.NgayXacNhanNhan,
                                NgayBaohanh = vt.NgayBaohanh,
                                ThoiGianBH = vt.ThoiGianBH,
                                TrangThai = vt.TrangThai ?? "Đã xác nhận nhận hàng"

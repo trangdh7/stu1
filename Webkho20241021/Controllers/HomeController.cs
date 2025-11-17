@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Webkho_20241021.Models;
 using System.Threading.Tasks;
 using System.Linq;
@@ -67,6 +68,7 @@ namespace Webkho_20241021.Controllers
 
             if (result.Succeeded)
             {
+                // Xử lý các trường hợp đặc biệt: Giám đốc và Admin
                 if (Chucvu == "Giám đốc")
                 {
                     if (!await _roleManager.RoleExistsAsync(Chucvu))
@@ -87,8 +89,28 @@ namespace Webkho_20241021.Controllers
                     }
                     await _userManager.AddToRoleAsync(user, Chucvu);
                 }
+                else if (Chucvu == "Admin")
+                {
+                    // Admin role không có bộ phận, chỉ là "Admin"
+                    string adminRole = "Admin";
+                    if (!await _roleManager.RoleExistsAsync(adminRole))
+                    {
+                        var roleResult = await _roleManager.CreateAsync(new IdentityRole(adminRole));
+
+                        if (!roleResult.Succeeded)
+                        {
+                            foreach (var error in roleResult.Errors)
+                            {
+                                ModelState.AddModelError("", error.Description);
+                            }
+                            return View("Create");
+                        }
+                    }
+                    await _userManager.AddToRoleAsync(user, adminRole);
+                }
                 else
                 {
+                    // Các trường hợp khác: tạo role theo format "Chucvu-Bophan"
                     string combinedRole = $"{Chucvu}-{Bophan}";
 
                     if (!await _roleManager.RoleExistsAsync(combinedRole))
@@ -145,8 +167,6 @@ namespace Webkho_20241021.Controllers
             foreach (var role in roles)
             {
                 Console.WriteLine($"User {Username} has role: {role}");
-                // Gán thông tin vào ViewData để hiển thị trên giao diện nếu cần
-                ViewData["UserRoles"] = string.Join(", ", roles);
             }
 
             await _signInManager.SignInAsync(user, isPersistent: false);
@@ -158,36 +178,251 @@ namespace Webkho_20241021.Controllers
                 HttpContext.Session.SetString("MaNguoidung", nguoiDung.MaNguoidung);
                 HttpContext.Session.SetString("Bophan", nguoiDung.Bophan);
                 HttpContext.Session.SetString("Chucvu", nguoiDung.Chucvu);
-                HttpContext.Session.SetString("Email", user.Email);
-                HttpContext.Session.SetString("Phone", user.PhoneNumber);
+                HttpContext.Session.SetString("Email", user.Email ?? "");
+                HttpContext.Session.SetString("Phone", user.PhoneNumber ?? "");
             }
 
-            if (user.Chucvu == "Giám đốc")
+            // Lưu thông tin user vào session để dùng cho ChonRole
+            HttpContext.Session.SetString("UserId", user.Id);
+            HttpContext.Session.SetString("Username", user.UserName ?? "");
+
+            // Nếu user có nhiều roles, hiển thị màn hình chọn role
+            if (roles.Count > 1)
             {
+                ViewBag.Roles = roles;
+                ViewBag.Username = user.UserName;
+                return View("ChonRole");
+            }
+            // Nếu chỉ có 1 role, tự động chọn role đó
+            else if (roles.Count == 1)
+            {
+                return await SetRole(roles[0]);
+            }
+
+            // Nếu không có role, redirect về trang chủ
+            return RedirectToAction("Trangchu", "Home");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SetRole(string selectedRole)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("Dangnhap", "Home");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return RedirectToAction("Dangnhap", "Home");
+            }
+
+            // Kiểm tra role có hợp lệ không
+            var userRoles = await _userManager.GetRolesAsync(user);
+            if (!userRoles.Contains(selectedRole))
+            {
+                ViewData["ErrorMessage"] = "Role không hợp lệ";
+                ViewBag.Roles = userRoles;
+                ViewBag.Username = user.UserName;
+                return View("ChonRole");
+            }
+
+            // Lưu role được chọn vào session
+            HttpContext.Session.SetString("SelectedRole", selectedRole);
+
+            // Parse role để lấy thông tin Chucvu và Bophan
+            string chucvu = "";
+            string bophan = "";
+
+            if (selectedRole == "Giám đốc")
+            {
+                chucvu = "Giám đốc";
+            }
+            else if (selectedRole == "Admin")
+            {
+                chucvu = "Admin";
+            }
+            else
+            {
+                // Format: "Chucvu-Bophan" (ví dụ: "Trưởng BP-BP kho")
+                var parts = selectedRole.Split('-');
+                if (parts.Length >= 2)
+                {
+                    chucvu = parts[0];
+                    bophan = string.Join("-", parts.Skip(1)); // Xử lý trường hợp có nhiều dấu -
+                }
+            }
+
+            // Cập nhật session với thông tin role được chọn
+            if (!string.IsNullOrEmpty(chucvu))
+            {
+                HttpContext.Session.SetString("Chucvu", chucvu);
+            }
+            if (!string.IsNullOrEmpty(bophan))
+            {
+                HttpContext.Session.SetString("Bophan", bophan);
+            }
+
+            // Log để debug
+            Console.WriteLine($"=== SetRole START ===");
+            Console.WriteLine($"SetRole: User {user.UserName}, selectedRole: '{selectedRole}'");
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            Console.WriteLine($"SetRole: User {user.UserName} has roles: [{string.Join(", ", currentRoles)}]");
+            Console.WriteLine($"SetRole: Checking if user is in role '{selectedRole}': {await _userManager.IsInRoleAsync(user, selectedRole)}");
+            
+            // Kiểm tra role trong database có đúng format không
+            var roleInDb = await _roleManager.FindByNameAsync(selectedRole);
+            if (roleInDb != null)
+            {
+                Console.WriteLine($"SetRole: Role '{selectedRole}' found in database. NormalizedName: '{roleInDb.NormalizedName}'");
+            }
+            else
+            {
+                Console.WriteLine($"SetRole: WARNING - Role '{selectedRole}' NOT found in database!");
+            }
+
+            // Lưu lại session data trước khi sign out (để tránh mất dữ liệu)
+            var tenNguoidung = HttpContext.Session.GetString("TenNguoidung");
+            var maNguoidung = HttpContext.Session.GetString("MaNguoidung");
+            var bophanSession = HttpContext.Session.GetString("Bophan");
+            var chucvuSession = HttpContext.Session.GetString("Chucvu");
+            var email = HttpContext.Session.GetString("Email");
+            var phone = HttpContext.Session.GetString("Phone");
+            var username = HttpContext.Session.GetString("Username");
+
+            // Sign out và sign in lại để đảm bảo roles được load vào claims
+            // Điều này quan trọng để [Authorize(Roles = "...")] hoạt động đúng
+            Console.WriteLine($"SetRole: Signing out user...");
+            await _signInManager.SignOutAsync();
+            
+            Console.WriteLine($"SetRole: Signing in user again...");
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            
+            // Kiểm tra claims sau khi sign in
+            var claimsPrincipal = await _signInManager.CreateUserPrincipalAsync(user);
+            var roleClaims = claimsPrincipal.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).ToList();
+            Console.WriteLine($"SetRole: User claims after sign in - Roles: [{string.Join(", ", roleClaims.Select(c => c.Value))}]");
+            
+            // Khôi phục lại session data
+            if (!string.IsNullOrEmpty(tenNguoidung)) HttpContext.Session.SetString("TenNguoidung", tenNguoidung);
+            if (!string.IsNullOrEmpty(maNguoidung)) HttpContext.Session.SetString("MaNguoidung", maNguoidung);
+            if (!string.IsNullOrEmpty(bophanSession)) HttpContext.Session.SetString("Bophan", bophanSession);
+            if (!string.IsNullOrEmpty(chucvuSession)) HttpContext.Session.SetString("Chucvu", chucvuSession);
+            if (!string.IsNullOrEmpty(email)) HttpContext.Session.SetString("Email", email);
+            if (!string.IsNullOrEmpty(phone)) HttpContext.Session.SetString("Phone", phone);
+            if (!string.IsNullOrEmpty(username)) HttpContext.Session.SetString("Username", username);
+            HttpContext.Session.SetString("UserId", user.Id);
+            HttpContext.Session.SetString("SelectedRole", selectedRole);
+            
+            Console.WriteLine($"SetRole: User {user.UserName} signed in again, session restored, redirecting to area...");
+            Console.WriteLine($"=== SetRole END ===");
+
+            // Redirect dựa trên role được chọn
+            return RedirectToArea(selectedRole);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DoiRole()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("Dangnhap", "Home");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return RedirectToAction("Dangnhap", "Home");
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Count <= 1)
+            {
+                // Nếu chỉ có 1 role, không cần đổi
+                var currentRole = HttpContext.Session.GetString("SelectedRole");
+                if (!string.IsNullOrEmpty(currentRole))
+                {
+                    return RedirectToArea(currentRole);
+                }
+            }
+
+            ViewBag.Roles = roles;
+            ViewBag.Username = user.UserName;
+            ViewBag.CurrentRole = HttpContext.Session.GetString("SelectedRole");
+            return View("ChonRole");
+        }
+
+        private IActionResult RedirectToArea(string role)
+        {
+            // Log role để debug
+            Console.WriteLine($"RedirectToArea called with role: '{role}'");
+
+            // Normalize role: trim và loại bỏ khoảng trắng thừa
+            string normalizedRole = role?.Trim() ?? "";
+
+            // So sánh role (case-insensitive và trim)
+            if (string.Equals(normalizedRole, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"Redirecting to Admin area");
+                return RedirectToAction("Trangchu", "Home", new { area = "Admin" });
+            }
+            else if (string.Equals(normalizedRole, "Giám đốc", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"Redirecting to Giamdoc area");
                 return RedirectToAction("Trangchu", "Home", new { area = "Giamdoc" });
             }
-            else if (user.Chucvu == "Nhân viên" && user.Bophan == "BP kỹ thuật")
+            else if (normalizedRole.Contains("Nhân viên") && normalizedRole.Contains("BP kỹ thuật"))
             {
+                Console.WriteLine($"Redirecting to NhanvienKythuat area");
                 return RedirectToAction("Trangchu", "Home", new { area = "NhanvienKythuat" });
             }
-            else if (user.Chucvu == "Trưởng BP" && user.Bophan == "BP kỹ thuật")
+            else if (normalizedRole.Contains("Trưởng BP") && normalizedRole.Contains("BP kỹ thuật"))
             {
+                Console.WriteLine($"Redirecting to TruongBPKythuat area");
                 return RedirectToAction("Trangchu", "Home", new { area = "TruongBPKythuat" });
             }
-            else if (user.Chucvu == "Trưởng BP" && user.Bophan == "BP kho")
+            else if (normalizedRole.Contains("Trưởng BP") && normalizedRole.Contains("BP kho"))
             {
+                Console.WriteLine($"Redirecting to TruongBPKho area");
                 return RedirectToAction("Trangchu", "Home", new { area = "TruongBPKho" });
             }
-            else if (user.Chucvu == "Trưởng BP" && user.Bophan == "BP kế toán")
+            else if (normalizedRole.Contains("Trưởng BP") && normalizedRole.Contains("BP kế toán"))
             {
+                Console.WriteLine($"Redirecting to TruongBPKetoan area");
                 return RedirectToAction("Trangchu", "Home", new { area = "TruongBPKetoan" });
             }
-            else if (user.Chucvu == "Trưởng BP" && user.Bophan == "BP mua hàng")
+            else if (normalizedRole.Contains("Trưởng BP") && normalizedRole.Contains("BP mua hàng"))
             {
+                Console.WriteLine($"Redirecting to TruongBPMuahang area");
                 return RedirectToAction("Trangchu", "Home", new { area = "TruongBPMuahang" });
             }
+            else if (normalizedRole == "Nhân viên-BP kho" || 
+                     normalizedRole == "Nhân viên kho" ||
+                     (normalizedRole.Contains("Nhân viên") && normalizedRole.Contains("BP kho")) ||
+                     (normalizedRole.Contains("Nhân viên") && normalizedRole.Contains("kho") && !normalizedRole.Contains("kỹ thuật") && !normalizedRole.Contains("kế toán") && !normalizedRole.Contains("mua hàng")))
+            {
+                Console.WriteLine($"=== RedirectToArea: Nhân viên kho ===");
+                Console.WriteLine($"RedirectToArea: normalizedRole = '{normalizedRole}', original role = '{role}'");
+                Console.WriteLine($"RedirectToArea: About to redirect to /NhanvienKho/Home/Trangchu");
+                return RedirectToAction("Trangchu", "Home", new { area = "NhanvienKho" });
+            }
+            else if (normalizedRole.Contains("Nhân viên") && normalizedRole.Contains("BP kế toán"))
+            {
+                Console.WriteLine($"Redirecting to NhanvienKetoan area");
+                return RedirectToAction("Trangchu", "Home", new { area = "NhanvienKetoan" });
+            }
+            else if (normalizedRole.Contains("Nhân viên") && normalizedRole.Contains("BP mua hàng"))
+            {
+                Console.WriteLine($"Redirecting to NhanvienMuahang area");
+                return RedirectToAction("Trangchu", "Home", new { area = "NhanvienMuahang" });
+            }
 
-            return RedirectToAction("Trangchu", "Home");
+            // Nếu role không khớp, log và redirect về trang đăng nhập với thông báo lỗi
+            Console.WriteLine($"Warning: Unknown role '{role}' (normalized: '{normalizedRole}') - redirecting to login");
+            TempData["ErrorMessage"] = $"Không tìm thấy khu vực cho role: {role}. Vui lòng liên hệ quản trị viên.";
+            return RedirectToAction("Dangnhap", "Home");
         }
 
         [HttpPost]
@@ -199,9 +434,171 @@ namespace Webkho_20241021.Controllers
             return RedirectToAction("Dangnhap", "Home");
         }
 
+        // Action để admin thêm role cho user (có thể gọi từ database hoặc admin panel)
+        [HttpPost]
+        [Authorize(Roles = "Giám đốc,Admin")]
+        public async Task<IActionResult> AddRoleToUser(string userId, string roleName)
+        {
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(roleName))
+            {
+                return Json(new { success = false, message = "Thiếu thông tin userId hoặc roleName" });
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy user" });
+            }
+
+            // Kiểm tra role có tồn tại không
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
+                var roleResult = await _roleManager.CreateAsync(new IdentityRole(roleName));
+                if (!roleResult.Succeeded)
+                {
+                    return Json(new { success = false, message = "Không thể tạo role" });
+                }
+            }
+
+            // Kiểm tra user đã có role này chưa
+            if (await _userManager.IsInRoleAsync(user, roleName))
+            {
+                return Json(new { success = false, message = "User đã có role này" });
+            }
+
+            var result = await _userManager.AddToRoleAsync(user, roleName);
+            if (result.Succeeded)
+            {
+                return Json(new { success = true, message = "Đã thêm role thành công" });
+            }
+
+            return Json(new { success = false, message = "Không thể thêm role" });
+        }
+
+        // Action để admin xóa role khỏi user
+        [HttpPost]
+        [Authorize(Roles = "Giám đốc,Admin")]
+        public async Task<IActionResult> RemoveRoleFromUser(string userId, string roleName)
+        {
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(roleName))
+            {
+                return Json(new { success = false, message = "Thiếu thông tin userId hoặc roleName" });
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy user" });
+            }
+
+            if (!await _userManager.IsInRoleAsync(user, roleName))
+            {
+                return Json(new { success = false, message = "User không có role này" });
+            }
+
+            var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+            if (result.Succeeded)
+            {
+                return Json(new { success = true, message = "Đã xóa role thành công" });
+            }
+
+            return Json(new { success = false, message = "Không thể xóa role" });
+        }
+
         public IActionResult Trangchu()
         {
-            return View("Trangchu");
+            // Kiểm tra xem đang ở area nào (nếu có)
+            var currentArea = HttpContext.Request.RouteValues["area"]?.ToString();
+            
+            // Nếu đã ở trong một area rồi, không redirect nữa (tránh vòng lặp)
+            // Action này chỉ dành cho route không có area, nếu đã ở area thì không nên gọi action này
+            if (!string.IsNullOrEmpty(currentArea))
+            {
+                // Đã ở trong area, không làm gì cả (để area controller xử lý)
+                // Nhưng vì action này được gọi từ main controller, nên redirect về trang đăng nhập
+                return RedirectToAction("Dangnhap", "Home");
+            }
+            
+            // Nếu không ở area (đang ở /Home/Trangchu), kiểm tra xem user đã chọn role chưa
+            var selectedRole = HttpContext.Session.GetString("SelectedRole");
+            if (!string.IsNullOrEmpty(selectedRole))
+            {
+                // Redirect đến area tương ứng với role đã chọn (chỉ redirect một lần)
+                Console.WriteLine($"Redirecting from /Home/Trangchu to area for role: {selectedRole}");
+                return RedirectToArea(selectedRole);
+            }
+            
+            // Nếu chưa có role, kiểm tra xem user có đăng nhập không
+            var userId = HttpContext.Session.GetString("UserId");
+            if (!string.IsNullOrEmpty(userId))
+            {
+                // User đã đăng nhập nhưng chưa chọn role, redirect về trang đăng nhập
+                return RedirectToAction("Dangnhap", "Home");
+            }
+            
+            // Nếu chưa đăng nhập, redirect về trang đăng nhập
+            return RedirectToAction("Dangnhap", "Home");
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> DebugInfo()
+        {
+            var rolesInClaimsList = new List<string>();
+            var allClaimsList = new List<object>();
+            var rolesInDatabaseList = new List<string>();
+            
+            if (User?.Claims != null)
+            {
+                rolesInClaimsList = User.Claims
+                    .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
+                    .Select(c => c.Value)
+                    .ToList();
+                    
+                allClaimsList = User.Claims
+                    .Select(c => new { Type = c.Type, Value = c.Value })
+                    .Cast<object>()
+                    .ToList();
+            }
+
+            if (User?.Identity?.IsAuthenticated == true && !string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+            {
+                var userId = HttpContext.Session.GetString("UserId");
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user != null)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    rolesInDatabaseList = roles.ToList();
+                    
+                    if (User?.Claims != null)
+                    {
+                        rolesInClaimsList = User.Claims
+                            .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
+                            .Select(c => c.Value)
+                            .ToList();
+                            
+                        allClaimsList = User.Claims
+                            .Select(c => new { Type = c.Type, Value = c.Value })
+                            .Cast<object>()
+                            .ToList();
+                    }
+                }
+            }
+
+            var debugInfo = new
+            {
+                IsAuthenticated = User?.Identity?.IsAuthenticated ?? false,
+                UserName = User?.Identity?.Name ?? HttpContext.Session.GetString("Username") ?? "N/A",
+                UserId = HttpContext.Session.GetString("UserId") ?? "N/A",
+                SelectedRole = HttpContext.Session.GetString("SelectedRole") ?? "N/A",
+                Chucvu = HttpContext.Session.GetString("Chucvu") ?? "N/A",
+                Bophan = HttpContext.Session.GetString("Bophan") ?? "N/A",
+                TenNguoidung = HttpContext.Session.GetString("TenNguoidung") ?? "N/A",
+                RolesInClaims = rolesInClaimsList,
+                RolesInDatabase = rolesInDatabaseList,
+                AllClaims = allClaimsList
+            };
+
+            return Json(debugInfo, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         }
 
         public IActionResult DanhSachDoNhanVien()

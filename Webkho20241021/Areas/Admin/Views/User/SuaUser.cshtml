@@ -1,0 +1,132 @@
+@model Webkho_20241021.Models.User
+
+@{
+    ViewData["Title"] = "Sửa User";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sửa User</title>
+
+    <link href="~/css/taotaikhoan.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+
+<div class="page-wrapper">
+    <div class="form-card">
+
+        <!-- HEADER -->
+        <div class="form-header">
+            <h1>Sửa Thông Tin User</h1>
+            <p>Cập nhật thông tin người dùng trong hệ thống</p>
+        </div>
+
+        <!-- FORM CONTENT -->
+        <div class="form-content">
+            @using (Html.BeginForm("SuaUser", "User", new { area = "Admin", id = Model.Id }, FormMethod.Post))
+            {
+                <!-- THÔNG TIN CÁ NHÂN -->
+                <div class="form-section">
+                    <div class="section-title">👤 Thông tin cá nhân</div>
+
+                    <div class="form-group">
+                        <label>Username (không thể sửa)</label>
+                        <input type="text" class="form-control" value="@Model.UserName" readonly />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tên người dùng <span class="required">*</span></label>
+                        <input type="text" name="Name" value="@Model.Name" required class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="Email" value="@Model.Email" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <input type="text" name="PhoneNumber" value="@Model.PhoneNumber" class="form-control" />
+                    </div>
+                </div>
+
+                <!-- THÔNG TIN CÔNG VIỆC -->
+                <div class="form-section">
+                    <div class="section-title">💼 Thông tin công việc</div>
+
+                    <div class="form-group">
+                        <label>Mã nhân viên <span class="required">*</span></label>
+                        <input type="text" name="MaNV" value="@Model.manv" required class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Chức vụ <span class="required">*</span></label>
+                        <input type="text" name="Chucvu" value="@Model.Chucvu" required class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Bộ phận <span class="required">*</span></label>
+                        <input type="text" name="Bophan" value="@Model.Bophan" required class="form-control" />
+                    </div>
+                </div>
+
+                <!-- ROLES -->
+                <div class="form-section">
+                    <div class="section-title">🎯 Vai trò</div>
+
+                    <label>Chọn Roles (Vai trò) - Có thể chọn nhiều</label>
+
+                    <div class="checkbox-group">
+                        @if (ViewBag.AllRoles != null)
+                        {
+                            var userRoles = ViewBag.UserRoles as IList<string> ?? new List<string>();
+                            foreach (string role in ViewBag.AllRoles)
+                            {
+                                <div class="checkbox-item">
+                                    <input type="checkbox"
+                                           name="SelectedRoles"
+                                           value="@role"
+                                           id="role_@role"
+                                           @(userRoles.Contains(role) ? "checked" : "") />
+
+                                    <label for="role_@role">@role</label>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <span class="form-text">
+                        Nếu không chọn role, hệ thống sẽ tự động gán role dựa trên Chức vụ và Bộ phận.
+                    </span>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Cập nhật</button>
+                    <a href="/Admin/User/DanhSachUser" class="btn btn-secondary">Hủy</a>
+                </div>
+
+                @if (ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div class="alert alert-danger">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <p>@error.ErrorMessage</p>
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Webkho_20241021.Models;
-using Webkho_20241021.Areas.TruongBPKythuat.Data;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Webkho_20241021.Areas.TruongBPKythuat.Data;
+using Webkho_20241021.Models;
 
 
 namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
@@ -217,6 +219,8 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
 
         public IActionResult ThemPhieunhapkho()
         {
+            var maNv = HttpContext.Session.GetString("MaNguoidung");
+
             var Yeucaulist = _context.yeucau
                           .Select(n => new { n.MaYeucau, n.TrangThai })
                           .ToList();
@@ -228,19 +232,165 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                                  .ToList();
             ViewBag.Phieumuahanglist = Phieumuahanglist;
 
-            var Duanlist = _context.duans
-                          .Select(y => new { y.MaDuan, y.TrangThai })
-                          .ToList();
+            var allowedProjectCodes = _context.phieuxuatkho
+                .Where(px => px.MaNguoidung == maNv && !string.IsNullOrEmpty(px.MaDuan))
+                .Select(px => px.MaDuan)
+                .Distinct()
+                .ToList();
+
+            var Duanlist = allowedProjectCodes.Count > 0
+                ? _context.duans
+                    .Where(y => allowedProjectCodes.Contains(y.MaDuan))
+                    .Select(y => (object)new { y.MaDuan, y.TrangThai })
+                    .ToList()
+                : new List<object>();
 
             ViewBag.Duanlist = Duanlist;
+
+            // Lấy mã người dùng hiện tại để auto-fill vào form
+            ViewBag.MaNguoidung = maNv;
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult GetCurrentUser()
+        {
+            var maNv = HttpContext.Session.GetString("MaNguoidung");
+            return Json(new { maNguoidung = maNv });
+        }
+
+        [HttpGet]
+        public IActionResult GetDataKhoCaNhan()
+        {
+            var maNv = HttpContext.Session.GetString("MaNguoidung");
+            if (string.IsNullOrEmpty(maNv))
+            {
+                return BadRequest("Không tìm thấy mã nhân viên");
+            }
+
+            var khoCaNhanItems = _context.khonguoidungs
+                .Where(k => k.NDMaNguoidung == maNv
+                         && (k.TrangThai == "Đang mượn" || k.TrangThai == "Đang sử dụng")
+                         && k.SL > 0)
+                .Select(k => new
+                {
+                    tenSanpham = k.TenSanpham,
+                    maSanpham = k.MaSanpham,
+                    makho = k.NDMakho,
+                    hangSX = k.HangSX,
+                    nhaCC = k.NhaCC,
+                    sl = k.SL,
+                    donVi = k.DonVi
+                })
+                .ToList();
+
+            return Json(new
+            {
+                maNguoidung = maNv,
+                vtKhoCaNhan = khoCaNhanItems
+            });
+        }
+
+        [HttpGet]
+        public IActionResult GetDataByMaDuan(string maduan)
+        {
+            if (string.IsNullOrWhiteSpace(maduan))
+            {
+                return Json(new
+                {
+                    maNguoidung = HttpContext.Session.GetString("MaNguoidung"),
+                    maDuan = "",
+                    vtPhieuMuaHang = new List<object>()
+                });
+            }
+
+            var maNv = HttpContext.Session.GetString("MaNguoidung");
+
+            var allowedProjectCodes = _context.phieuxuatkho
+                .Where(px => px.MaNguoidung == maNv && !string.IsNullOrEmpty(px.MaDuan))
+                .Select(px => px.MaDuan)
+                .Distinct()
+                .ToList();
+
+            if (!allowedProjectCodes.Contains(maduan))
+            {
+                return Json(new
+                {
+                    maNguoidung = maNv,
+                    maDuan = maduan,
+                    vtPhieuMuaHang = new List<object>(),
+                    error = "Bạn không có quyền trả kho cho dự án này."
+                });
+            }
+
+            try
+            {
+                var khoDuanItems = (from vt in _context.vtphieuxuatkho
+                                   join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
+                                   join yc in _context.yeucau on vt.MaYeucau equals yc.MaYeucau
+                                   where px.MaDuan == maduan
+                                      && yc.YCMaNguoidung == maNv
+                                      && (vt.TrangThai == "Đã xác nhận nhận hàng"
+                                          || vt.TrangThai == "Đã lấy hàng"
+                                          || vt.TrangThai == "Đã xuất kho")
+                                      && (vt.SL ?? 0) > 0
+                                   select new
+                                   {
+                                       tenSanpham = vt.TenSanpham,
+                                       maSanpham = vt.MaSanpham,
+                                       makho = vt.Makho,
+                                       hangSX = vt.HangSX,
+                                       nhaCC = vt.NhaCC,
+                                       sl = vt.SL ?? 0,
+                                       donVi = vt.DonVi,
+                                       maXuatkho = vt.MaXuatkho,
+                                       maYeucau = vt.MaYeucau,
+                                       trangThai = vt.TrangThai
+                                   })
+                                   .Distinct()
+                                   .ToList();
+
+                var phieuxuatCount = _context.phieuxuatkho.Count(p => p.MaDuan == maduan);
+
+                return Json(new
+                {
+                    maNguoidung = maNv,
+                    maDuan = maduan,
+                    vtPhieuMuaHang = khoDuanItems,
+                    debug = new
+                    {
+                        phieuxuatCount,
+                        returnedCount = khoDuanItems.Count
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetDataByMaDuan: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                return Json(new
+                {
+                    maNguoidung = maNv,
+                    maDuan = maduan,
+                    vtPhieuMuaHang = new List<object>(),
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpGet]
         public IActionResult TimKiem(string timkiem)
         {
+            if (string.IsNullOrWhiteSpace(timkiem))
+            {
+                return Json(new List<object>());
+            }
+
+            var searchTerm = timkiem.Trim().ToLower();
             var results = _context.khotongs
-                .Where(k => k.TenSanpham.Contains(timkiem) || k.MaSanpham.Contains(timkiem))
+                .Where(k => (k.TenSanpham != null && k.TenSanpham.ToLower().Contains(searchTerm)) ||
+                            (k.MaSanpham != null && k.MaSanpham.ToLower().Contains(searchTerm)))
+                .Take(10)
                 .Select(k => new
                 {
                     k.TenSanpham,
@@ -252,6 +402,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     k.DonVi
                 })
                 .ToList();
+
             return Json(results);
         }
 
@@ -1102,69 +1253,242 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
         }
 
         [HttpPost]
-        public IActionResult ThemPhieunhapkhoSQL(phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, string[] Makho)
+        public IActionResult ThemPhieunhapkhoSQL(phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho,
+            string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC,
+            int[] SL, string[] DonVi, string[] Makho, string LoaiNhapkho)
         {
-            // Kiểm tra xem đã có phiếu nhập kho nào cho mã yêu cầu này chưa
-            var existingPhieunhapkho = _context.phieunhapkho
-                .FirstOrDefault(p => p.MaYeucau == phieunhapkho.MaYeucau);
-            
-            if (existingPhieunhapkho != null)
+            var maNv = HttpContext.Session.GetString("MaNguoidung");
+            if (string.IsNullOrEmpty(maNv))
             {
-                TempData["Error"] = $"Đã tồn tại phiếu nhập kho cho mã yêu cầu {phieunhapkho.MaYeucau}. Không thể tạo phiếu nhập kho thủ công!";
-                return RedirectToAction("ThemPhieunhapkho", "Yeucau", new { area = "TruongBPKythuat" });
+                TempData["Error"] = "Session đã hết hạn. Vui lòng đăng nhập lại!";
+                return RedirectToAction("Login", "Home", new { area = "" });
             }
 
-            // Tính toán số lượng các phần tử tối thiểu giữa các mảng
-            int count = TenSanpham.Length;
+            string currentArea = "TruongBPKythuat";
 
-            int STT = 0;
-            string MaNhapkho;
-
-            // Tạo mã phiếu nhập kho duy nhất
-            while (true)
+            try
             {
-                MaNhapkho = $"PNK{STT}";
-                var existingEntry = _context.phieunhapkho
-                                           .FirstOrDefault(y => y.MaNhapkho == MaNhapkho);
-
-                if (existingEntry == null)
+                if (TenSanpham == null || TenSanpham.Length == 0)
                 {
-                    break;
+                    TempData["Error"] = "Vui lòng nhập ít nhất một vật tư!";
+                    return RedirectToAction("ThemPhieunhapkho", "Yeucau", new { area = currentArea });
                 }
-                STT++;
-            }
 
-            phieunhapkho.MaNhapkho = MaNhapkho;
-            phieunhapkho.TrangThai = "Chờ nhập kho";
-
-            _context.phieunhapkho.Add(phieunhapkho);
-            _context.SaveChanges();
-
-            var newphieunhapkho = _context.phieunhapkho
-                                          .FirstOrDefault(y => y.MaNhapkho == MaNhapkho);
-
-            for (int i = 0; i < count; i++)
-            {
-                var newvtphieunhapkho = new vtphieunhapkho
+                if (string.IsNullOrEmpty(LoaiNhapkho))
                 {
-                    TenSanpham = TenSanpham[i],
-                    MaSanpham = MaSanpham[i],
-                    Makho = Makho[i],
-                    HangSX = HangSX[i],
-                    NhaCC = NhaCC[i],
-                    SL = SL[i],
-                    DonVi = DonVi[i],
-                    TrangThai = "Chờ nhập kho",
-                    MaNhapkho = MaNhapkho,
-                    MaYeucau = newphieunhapkho.MaYeucau
-                };
+                    TempData["Error"] = "Vui lòng chọn loại nhập kho!";
+                    return RedirectToAction("ThemPhieunhapkho", "Yeucau", new { area = currentArea });
+                }
 
-                _context.vtphieunhapkho.Add(newvtphieunhapkho);
+                if (string.IsNullOrEmpty(phieunhapkho.MaNguoidung))
+                {
+                    phieunhapkho.MaNguoidung = maNv;
+                }
+
+                int count = TenSanpham.Length;
+
+                var validationErrors = new List<string>();
+                for (int i = 0; i < count; i++)
+                {
+                    var maSp = (MaSanpham != null && MaSanpham.Length > i) ? (MaSanpham[i] ?? "") : "";
+                    var maKho = (Makho != null && Makho.Length > i) ? (Makho[i] ?? "") : "";
+                    int soLuongTra = (SL != null && SL.Length > i) ? (SL[i]) : 0;
+                    if (soLuongTra <= 0) continue;
+
+                    int soLuongDaMuon = 0;
+
+                    if (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                    {
+                        soLuongDaMuon = (from vt in _context.vtphieuxuatkho
+                                         join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
+                                         where px.MaDuan == phieunhapkho.MaDuan
+                                               && (vt.TrangThai == "Đã xác nhận nhận hàng"
+                                                   || vt.TrangThai == "Đã lấy hàng"
+                                                   || vt.TrangThai == "Đã xuất kho")
+                                               && (vt.SL ?? 0) > 0
+                                               && (maSp == "" || vt.MaSanpham == maSp)
+                                               && (maKho == "" || vt.Makho == maKho)
+                                         select vt.SL ?? 0).Sum();
+                    }
+                    else if (LoaiNhapkho == "canhan")
+                    {
+                        soLuongDaMuon = _context.khonguoidungs
+                            .Where(k => k.NDMaNguoidung == phieunhapkho.MaNguoidung
+                                        && (k.TrangThai == "Đang mượn" || k.TrangThai == "Đang sử dụng")
+                                        && (maSp == "" || k.MaSanpham == maSp))
+                            .Select(k => k.SL ?? 0)
+                            .Sum();
+                    }
+
+                    if (soLuongTra > soLuongDaMuon)
+                    {
+                        var tenSp = (TenSanpham != null && TenSanpham.Length > i) ? (TenSanpham[i] ?? "") : "";
+                        var donVi = (DonVi != null && DonVi.Length > i) ? (DonVi[i] ?? "") : "";
+                        validationErrors.Add($"- {tenSp} ({maSp}): Trả {soLuongTra} {donVi}, nhưng chỉ mượn {soLuongDaMuon}.");
+                    }
+                }
+
+                if (validationErrors.Count > 0)
+                {
+                    TempData["Error"] = "Số lượng trả vượt quá số lượng đã mượn cho các vật tư sau:\n" + string.Join("\n", validationErrors);
+                    return RedirectToAction("ThemPhieunhapkho", "Yeucau", new { area = currentArea });
+                }
+
+                int STT = 0;
+                string MaNhapkho;
+
+                while (true)
+                {
+                    MaNhapkho = $"PNK{STT}";
+                    var existingEntry = _context.phieunhapkho
+                                               .FirstOrDefault(y => y.MaNhapkho == MaNhapkho);
+
+                    if (existingEntry == null)
+                    {
+                        break;
+                    }
+                    STT++;
+                }
+
+                phieunhapkho.MaNhapkho = MaNhapkho;
+                phieunhapkho.NgayNhapkho = DateTime.Now;
+
+                if (!string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                {
+                    phieunhapkho.TrangThai = "Quản lí dự án";
+                }
+                else
+                {
+                    phieunhapkho.TrangThai = "Giám đốc";
+                }
+
+                if (string.IsNullOrEmpty(phieunhapkho.MaYeucau))
+                {
+                    string maYeucauDacBiet = "";
+                    if (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                    {
+                        maYeucauDacBiet = $"NHAPKHO_DUAN_{phieunhapkho.MaDuan}";
+                    }
+                    else if (LoaiNhapkho == "canhan")
+                    {
+                        maYeucauDacBiet = $"NHAPKHO_CANHAN_{maNv}";
+                    }
+                    else
+                    {
+                        maYeucauDacBiet = $"NHAPKHO_TUDO_{maNv}_{DateTime.Now:yyyyMMddHHmmss}";
+                    }
+
+                    var existingYeucauDacBiet = _context.yeucau
+                        .FirstOrDefault(y => y.MaYeucau == maYeucauDacBiet);
+
+                    if (existingYeucauDacBiet == null)
+                    {
+                        string ycMaDuan = null;
+                        if (!string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                        {
+                            var duanExists = _context.duans
+                                .FirstOrDefault(d => d.MaDuan == phieunhapkho.MaDuan);
+
+                            if (duanExists == null)
+                            {
+                                duanExists = _context.duans
+                                    .AsEnumerable()
+                                    .FirstOrDefault(d => d.MaDuan != null &&
+                                                        d.MaDuan.Equals(phieunhapkho.MaDuan, StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            if (duanExists != null)
+                            {
+                                ycMaDuan = duanExists.MaDuan;
+                            }
+                            else
+                            {
+                                var allDuans = _context.duans.Select(d => d.MaDuan).ToList();
+                                Console.WriteLine($"Warning: Mã dự án '{phieunhapkho.MaDuan}' không tồn tại trong bảng duans.");
+                                Console.WriteLine($"Available project codes: {string.Join(", ", allDuans)}");
+                            }
+                        }
+
+                        var nguoiDung = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == maNv);
+                        string tenNguoiDung = nguoiDung?.TenNguoidung ?? "";
+                        string boPhanNguoiDung = nguoiDung?.Bophan ?? "";
+
+                        var newYeucauDacBiet = new yeucau
+                        {
+                            MaYeucau = maYeucauDacBiet,
+                            TenYeucau = "Yêu cầu nhập kho",
+                            YCMaNguoidung = maNv,
+                            NguoiYeucau = tenNguoiDung,
+                            Bophan = boPhanNguoiDung,
+                            YCMaDuan = ycMaDuan,
+                            NgayYeucau = DateTime.Now,
+                            TrangThai = "Đã duyệt"
+                        };
+                        _context.yeucau.Add(newYeucauDacBiet);
+                        _context.SaveChanges();
+                    }
+
+                    phieunhapkho.MaYeucau = maYeucauDacBiet;
+                }
+
+                _context.phieunhapkho.Add(phieunhapkho);
+                _context.SaveChanges();
+
+                for (int i = 0; i < count; i++)
+                {
+                    if (string.IsNullOrEmpty(TenSanpham[i])) continue;
+
+                    var newvtphieunhapkho = new vtphieunhapkho
+                    {
+                        TenSanpham = TenSanpham[i],
+                        MaSanpham = MaSanpham?[i] ?? "",
+                        Makho = Makho?[i] ?? "",
+                        HangSX = HangSX?[i] ?? "",
+                        NhaCC = NhaCC?[i] ?? "",
+                        SL = SL?[i] ?? 0,
+                        DonVi = DonVi?[i] ?? "",
+                        TrangThai = phieunhapkho.TrangThai,
+                        MaNhapkho = MaNhapkho,
+                        MaYeucau = phieunhapkho.MaYeucau
+                    };
+
+                    _context.vtphieunhapkho.Add(newvtphieunhapkho);
+                }
+
+                _context.SaveChanges();
+
+                TempData["Success"] = "Tạo phiếu nhập kho thành công!";
+                return RedirectToAction("Phieunhapkho", "Yeucau", new { area = currentArea });
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("==========================================");
+                Console.WriteLine($"ERROR in ThemPhieunhapkhoSQL: {ex.Message}");
+                Console.WriteLine($"Exception Type: {ex.GetType().Name}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                    Console.WriteLine($"Inner Stack trace: {ex.InnerException.StackTrace}");
+                }
+                Console.WriteLine("==========================================");
 
-            _context.SaveChanges();
+                var maNvCheck = HttpContext.Session.GetString("MaNguoidung") ?? maNv;
+                Console.WriteLine($"Session MaNguoidung after error: {maNvCheck ?? "NULL"}");
+                Console.WriteLine($"Original maNv (from before try): {maNv ?? "NULL"}");
 
-            return RedirectToAction("Phieunhapkho", "Yeucau", new { area = "TruongBPKythuat" });
+                TempData["Error"] = $"Có lỗi xảy ra khi xử lý: {ex.Message}. Vui lòng kiểm tra lại dữ liệu hoặc liên hệ admin.";
+
+                if (!string.IsNullOrEmpty(maNv))
+                {
+                    return RedirectToAction("ThemPhieunhapkho", "Yeucau", new { area = currentArea });
+                }
+                else
+                {
+                    TempData["Error"] = "Session đã hết hạn. Vui lòng đăng nhập lại!";
+                    return RedirectToAction("Login", "Home", new { area = "" });
+                }
+            }
         }
 
         [HttpPost]
@@ -1434,6 +1758,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 {
                     // Cập nhật trạng thái vật tư thành "Đã xác nhận nhận hàng"
                     vt.TrangThai = "Đã xác nhận nhận hàng";
+                    vt.NgayNhapkho = DateTime.Now;
                     _context.vtphieuxuatkho.Update(vt);
                     
                     // Trừ kho tổng khi xác nhận nhận hàng - KIỂM TRA CHẶT CHẼ SỐ LƯỢNG
@@ -1527,6 +1852,51 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 }
 
                 return Json(new { success = false, message = "Phiếu không hợp lệ!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult AutoDongBoTrangThai()
+        {
+            try
+            {
+                var currentUserId = HttpContext.Session.GetString("MaNguoidung");
+                
+                // Lấy các yêu cầu mà kỹ thuật viên này đã tạo
+                var yeuCauList = _context.yeucau
+                    .Where(y => y.YCMaNguoidung == currentUserId)
+                    .Select(y => y.MaYeucau)
+                    .ToList();
+
+                // Lấy các phiếu đã xác nhận nhận hàng
+                var phieuxuatkhoList = _context.phieuxuatkho
+                    .Where(p => yeuCauList.Contains(p.MaYeucau)
+                             && p.TrangThai == "Đã xác nhận nhận hàng")
+                    .ToList();
+
+                int updatedCount = 0;
+                foreach (var phieu in phieuxuatkhoList)
+                {
+                    var VTphieuxuatkhoList = _context.vtphieuxuatkho
+                        .Where(vt => vt.MaXuatkho == phieu.MaXuatkho
+                                 && vt.TrangThai != "Đã xác nhận nhận hàng"
+                                 && vt.TrangThai != "Đã xuất kho")
+                        .ToList();
+
+                    foreach (var vt in VTphieuxuatkhoList)
+                    {
+                        vt.TrangThai = "Đã xác nhận nhận hàng";
+                        _context.vtphieuxuatkho.Update(vt);
+                        updatedCount++;
+                    }
+                }
+
+                _context.SaveChanges();
+                return Json(new { success = true, message = $"Đã đồng bộ {updatedCount} vật tư!" });
             }
             catch (Exception ex)
             {

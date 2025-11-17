@@ -1,0 +1,195 @@
+@model List<object>
+@{
+    ViewData["Title"] = "Danh sách User";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/CSS/Action.css" rel="stylesheet" />
+    <link href="~/CSS/Kho.css" rel="stylesheet" />
+    <link href="~/CSS/style.css" rel="stylesheet" />
+    <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="~/CSS/Tongkho.css" rel="stylesheet" /> 
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Quản Lý User</title>
+</head>
+<body>
+    <div class="warehouse-container">
+        <div class="warehouse-header">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <i class='bx bxs-user'></i> Quản Lý User
+                </h1>
+                <p class="header-subtitle">Quản lý tài khoản người dùng</p>
+            </div>
+        </div>
+
+        <div class="warehouse-nav">
+            <div class="nav-tabs">
+                <a href="/Admin/User/DanhSachUser" class="nav-tab active">
+                    <i class='bx bx-list-ul'></i> Danh sách User
+                </a>
+                <a href="/Admin/User/TaoTaiKhoan" class="nav-tab">
+                    <i class='bx bx-user-plus'></i> Tạo tài khoản
+                </a>
+            </div>
+            <div class="nav-search">
+                <form method="get" action="/Admin/User/DanhSachUser" style="display:flex; align-items:center; gap:8px;">
+                    <i class='bx bx-search'></i>
+                    <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm user..." />
+                    <button type="submit" class="btn btn-primary">Tìm</button>
+                </form>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div id="success-alert" class="alert alert-success">
+                <div class="alert-content">
+                    <i class='bx bx-check-circle'></i>
+                    <div>
+                        <strong>Thành công!</strong>
+                        <p>@TempData["Success"]</p>
+                    </div>
+                </div>
+                <button class="alert-close" onclick="this.parentElement.style.display='none';">
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+        }
+
+        <div class="warehouse-content">
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>Danh sách người dùng</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Tên</th>
+                                <th>Mã NV</th>
+                                <th>Chức vụ</th>
+                                <th>Bộ phận</th>
+                                <th>Email</th>
+                                <th>Số điện thoại</th>
+                                <th>Roles</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (dynamic item in Model)
+                                {
+                                    var user = item.User as Webkho_20241021.Models.User;
+                                    var roles = item.Roles as System.Collections.Generic.IList<string>;
+                                    <tr>
+                                        <td>@user.UserName</td>
+                                        <td>@user.Name</td>
+                                        <td>@user.manv</td>
+                                        <td>@user.Chucvu</td>
+                                        <td>@user.Bophan</td>
+                                        <td>@user.Email</td>
+                                        <td>@user.PhoneNumber</td>
+                                        <td>
+                                            @if (roles != null && roles.Any())
+                                            {
+                                                <span>@string.Join(", ", roles)</span>
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <a href="@Url.Action("SuaUser", "User", new { area = "Admin", id = user.Id })"
+                                               class="btn-action btn-edit">
+                                                <i class='bx bx-edit'></i> Sửa
+                                            </a>
+                                            <a href="@Url.Action("DoiMatKhau", "User", new { area = "Admin", id = user.Id })"
+                                               class="btn-action btn-info">
+                                                <i class='bx bx-key'></i> Đổi MK
+                                            </a>
+                                            <button onclick="xoaUser('@user.Id')" class="btn-action btn-delete">
+                                                <i class='bx bx-trash'></i> Xóa
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="9">Không có dữ liệu.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="pagination">
+                        @{ int totalPage = (int)(ViewBag.TotalPages ?? 1); int curr = (int)(ViewBag.Page ?? 1); var _q = (string)(ViewBag.Q ?? ""); var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q); }
+                        @if (totalPage > 1)
+                        {
+                            for (int i = 1; i <= totalPage; i++)
+                            {
+                                if (i == curr)
+                                { <span class="active">@i</span> }
+                                else
+                                { <a href="?page=@i@Html.Raw(_qParam)">@i</a> }
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const alert = document.getElementById("success-alert");
+            if (alert) {
+                setTimeout(() => {
+                    alert.style.animation = "fadeOut 0.5s ease forwards";
+                    setTimeout(() => alert.style.display = "none", 500);
+                }, 5000);
+            }
+        });
+
+        function xoaUser(userId) {
+            if (confirm('Bạn có chắc chắn muốn xóa user này?')) {
+                fetch('/Admin/User/XoaUser', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({ id: userId })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('Lỗi: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi xóa user. Vui lòng kiểm tra console để xem chi tiết.');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+

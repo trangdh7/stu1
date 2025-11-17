@@ -216,12 +216,16 @@ function renderTable(items) {
                 <td><input type="text" name="Makho" value="${escapeHtml(item.makho || '')}" readonly /></td>
                 <td><input type="text" name="HangSX" value="${escapeHtml(item.hangSX || '')}" readonly /></td>
                 <td><input type="text" name="NhaCC" value="${escapeHtml(item.nhaCC || '')}" readonly /></td>
-                <td><input type="number" name="SL" value="${item.sl || 0}" min="1" max="${item.sl || 0}" placeholder="Nhập số lượng (tối đa: ${item.sl || 0})" /></td>
+                <td><span class="borrowed-qty">${item.sl || 0}</span></td>
+                <td><input type="number" name="SL" value="" min="1" step="1" max="${item.sl || 0}" placeholder="Nhập số lượng" style="width:100px;" /></td>
                 <td><input type="text" name="DonVi" value="${escapeHtml(item.donVi || '')}" readonly /></td>
             </tr>
         `;
         tableBody.insertAdjacentHTML("beforeend", row);
     });
+
+    // Gắn handler: nhập số lượng tự động tích chọn; xóa/0 thì bỏ chọn; ép không vượt max
+    attachRowHandlers();
 }
 
 // Filter vật tư theo tên
@@ -239,6 +243,31 @@ function filterVatTu(searchTerm) {
     });
     
     renderTable(filtered);
+}
+
+// Auto behaviors for rows
+function attachRowHandlers() {
+    const tableBody = document.getElementById("table-body");
+    const rows = tableBody.querySelectorAll("tr");
+    rows.forEach(row => {
+        const checkbox = row.querySelector('.select-item');
+        const slInput = row.querySelector('input[name="SL"]');
+        if (!slInput) return;
+        // Reset to blank on render
+        slInput.value = '';
+        slInput.addEventListener('input', () => {
+            const max = Number(slInput.getAttribute('max') || 0);
+            let val = parseInt(slInput.value || '0', 10);
+            if (Number.isNaN(val)) val = 0;
+            if (max > 0 && val > max) {
+                val = max;
+                slInput.value = String(val);
+            }
+            if (checkbox) {
+                checkbox.checked = val > 0;
+            }
+        });
+    });
 }
 
 // Đảm bảo mã nhân viên được điền tự động khi load trang

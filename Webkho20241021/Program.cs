@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Models;
 using OfficeOpenXml;
+using System.Linq;
+using System.Security.Claims;
 
 // Cấu hình license cho EPPlus 8+
 ExcelPackage.License.SetNonCommercialPersonal("Webkho Management System");
@@ -73,6 +75,31 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Middleware để log authorization failures
+app.Use(async (context, next) =>
+{
+    await next();
+    
+    // Log khi có redirect về login (có thể do authorization failure)
+    if (context.Response.StatusCode == 302 || context.Response.StatusCode == 401)
+    {
+        var path = context.Request.Path.Value;
+        if (path != null && path.Contains("/Home/Dangnhap"))
+        {
+            Console.WriteLine($"⚠️ Authorization failure or redirect to login. Path: {context.Request.Path}, Status: {context.Response.StatusCode}");
+            if (context.User?.Identity?.IsAuthenticated == true)
+            {
+                var roles = context.User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+                Console.WriteLine($"   User authenticated: {context.User.Identity.Name}, Roles in claims: [{string.Join(", ", roles)}]");
+            }
+            else
+            {
+                Console.WriteLine($"   User NOT authenticated");
+            }
+        }
+    }
+});
 
 // Cấu hình route cho Areas
 app.MapControllerRoute(

@@ -1,0 +1,276 @@
+@{
+    ViewData["Title"] = "Themthietbi";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thêm Vật Tư</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+   <link href="~/css/themvattu.css" rel="stylesheet" />
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="max-w-5xl mx-auto px-4">
+        <!-- Header Card -->
+        <div class="bg-white rounded-2xl card-shadow p-8 mb-8">
+            <div class="flex items-center gap-5">
+                <div class="icon-box">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                        Thêm Vật Tư Mới
+                    </h2>
+                    <p class="text-gray-500 mt-1">Nhập thông tin vật tư cần thêm vào kho</p>
+                </div>
+            </div>
+        </div>
+
+        @using (Html.BeginForm("ThemvattuSQL", "Home", new { area = "Admin" }, FormMethod.Post, false, new { @enctype = "multipart/form-data" }))
+        {
+            <!-- Items Container -->
+            <div id="items-container">
+                <!-- Item Card 1 -->
+                <div class="item-card">
+                    <div class="item-number">1</div>
+                    <button type="button" class="btn-delete-card" onclick="deleteCard(this)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Xóa
+                    </button>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
+                        <!-- Tên sản phẩm -->
+                        <div class="lg:col-span-2">
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                                Tên vật tư
+                                <span class="required-star">*</span>
+                            </label>
+                            <input type="text" name="TenSanpham[]" placeholder="Nhập tên vật tư" required class="input-modern" />
+                        </div>
+
+                        <!-- Mã sản phẩm -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                                Mã vật tư
+                                <span class="required-star">*</span>
+                            </label>
+                            <input type="text" name="MaSanpham[]" placeholder="VD: SP001" required class="input-modern" />
+                        </div>
+
+                        <!-- Hãng SX -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                Hãng sản xuất
+                            </label>
+                            <input type="text" name="HangSX[]" placeholder="Nhập hãng SX" class="input-modern" />
+                        </div>
+
+                        <!-- Nhà cung cấp -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                Nhà cung cấp
+                            </label>
+                            <input type="text" name="NhaCC[]" placeholder="Nhập nhà cung cấp" class="input-modern" />
+                        </div>
+
+                        <!-- Số lượng -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                                </svg>
+                                Số lượng
+                                <span class="required-star">*</span>
+                            </label>
+                            <input type="number" name="SL[]" placeholder="0" required min="0" class="input-modern" />
+                        </div>
+
+                        <!-- Đơn vị -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Đơn vị
+                                <span class="required-star">*</span>
+                            </label>
+                            <input type="text" name="DonVi[]" placeholder="Cái, Hộp, Kg..." required class="input-modern" />
+                        </div>
+
+                        <!-- Ngày bảo hành -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Ngày bảo hành
+                            </label>
+                            <input type="date" name="NgayBaohanh[]" class="input-modern" />
+                        </div>
+
+                        <!-- Thời gian BH -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Hết hạn bảo hành
+                            </label>
+                            <input type="date" name="ThoiGianBH[]" class="input-modern" />
+                        </div>
+
+                        <!-- Dự án -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                Dự án
+                            </label>
+                            <input type="text" name="DuAn[]" placeholder="Tên dự án" class="input-modern" />
+                        </div>
+
+                        <!-- Trạng thái -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Trạng thái
+                            </label>
+                            <select name="TrangThai[]" class="input-modern select-modern">
+                                <option value="Tồn kho">Tồn kho</option>
+                                <option value="Hết hàng">Hết hàng</option>
+                            </select>
+                        </div>
+
+                        <!-- Loại cấp phát -->
+                        <div>
+                            <label class="label-modern">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                </svg>
+                                Loại cấp phát
+                            </label>
+                            <select name="LoaiCapPhat[]" class="input-modern select-modern">
+                                <option value="ChoNhanVienMoi">Cho Nhân Viên Mới</option>
+                                <option value="Không">Không</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Button -->
+            <div class="mb-8">
+                <button type="button" class="btn-add-row" onclick="addNewCard()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Thêm vật tư mới
+                </button>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="bg-white rounded-2xl card-shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3 text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <div class="font-semibold">Tổng số vật tư: <span id="total-count" class="text-indigo-600">1</span></div>
+                            <div class="text-sm text-gray-500">Kiểm tra kỹ thông tin trước khi lưu</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Lưu Tất Cả
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <script>
+        function addNewCard() {
+            var container = document.getElementById('items-container');
+            var lastCard = container.querySelector('.item-card:last-child');
+            var newCard = lastCard.cloneNode(true);
+            
+            var inputs = newCard.querySelectorAll('input');
+            inputs.forEach(function(input) {
+                input.value = '';
+            });
+            
+            var selects = newCard.querySelectorAll('select');
+            selects.forEach(function(select) {
+                select.selectedIndex = 0;
+            });
+            
+            var cardCount = container.querySelectorAll('.item-card').length;
+            newCard.querySelector('.item-number').textContent = cardCount + 1;
+            
+            container.appendChild(newCard);
+            updateTotalCount();
+            
+            // Smooth scroll to new card
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        function deleteCard(button) {
+            var container = document.getElementById('items-container');
+            var cardCount = container.querySelectorAll('.item-card').length;
+            
+            if (cardCount > 1) {
+                var card = button.closest('.item-card');
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                setTimeout(function() {
+                    card.remove();
+                    updateCardNumbers();
+                    updateTotalCount();
+                }, 300);
+            } else {
+                alert('⚠️ Phải có ít nhất một vật tư!');
+            }
+        }
+        
+        function updateCardNumbers() {
+            var container = document.getElementById('items-container');
+            var cards = container.querySelectorAll('.item-card');
+            cards.forEach(function(card, index) {
+                card.querySelector('.item-number').textContent = index + 1;
+            });
+        }
+        
+        function updateTotalCount() {
+            var container = document.getElementById('items-container');
+            var cardCount = container.querySelectorAll('.item-card').length;
+            document.getElementById('total-count').textContent = cardCount;
+        }
+    </script>
+</body>
+</html>

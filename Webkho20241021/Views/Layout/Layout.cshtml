@@ -14,7 +14,7 @@
 
     <title>@ViewBag.Title</title>
 </head>
-<body>
+<body data-area="@(ViewContext.RouteData.Values["area"]?.ToString() ?? "")">
     <nav class="sidebar">
         <header>
             <div class="image-text">
@@ -28,6 +28,10 @@
             </div>
         </header>
         <ul>
+            @{
+                var currentArea = ViewContext.RouteData.Values["area"]?.ToString() ?? "";
+                var areaPrefix = string.IsNullOrEmpty(currentArea) ? "" : "/" + currentArea;
+            }
             <li>
                 <a href="">
                     <i class="bx bx-search"></i>
@@ -35,31 +39,31 @@
                 </a>
             </li>
             <li>
-                <a href="/Home/Trangchu">
+                <a href="@(areaPrefix)/Home/Trangchu">
                     <i class="bx bxs-grid-alt"></i>
                     <span class="nav-item">Trang chủ</span>
                 </a>
             </li>
             <li>
-                <a href="/Home/Trangchu">
+                <a href="@(areaPrefix)/Thongtincanhan/Thongtincanhan">
                     <i class='bx bxs-user'></i>
                     <span class="nav-item">Thông tin cá nhân</span>
                 </a>
             </li>
             <li>
-                <a href="/Home/Trangchu">
+                <a href="@(areaPrefix)/Duan/Duan">
                     <i class='bx bxs-calendar-alt'></i>
                     <span class="nav-item">Dự án</span>
                 </a>
             </li>
             <li>
-                <a href="/Home/Tongkho">
+                <a href="@(areaPrefix)/Home/Tongkho">
                     <i class='bx bxs-home-alt-2'></i>
                     <span class="nav-item">Kho</span>
                 </a>
             </li>
             <li>
-                <a href="/Home/Yeucau">
+                <a href="@(areaPrefix)/Yeucau/Yeucau">
                     <i class='bx bxs-bar-chart-square'></i>
                     <span class="nav-item">Yêu cầu</span>
                 </a>
@@ -68,25 +72,40 @@
     </nav>
     <nav class="bodymenu">
         <ul class="menu">
-            <li id="name"><i>Nguyễn Tiến Hiệp</i></li>
-            <li class="notification-dropdown">
-                <a href="#" id="notification-bell">
-                    <i class="bx bxs-bell"></i>
-                </a>
-                <div id="notification-list" class="hidden">
-                    <ul>
-                        <!-- Danh sách thông báo sẽ được load tại đây -->
-                    </ul>
-                </div>
+            <li id="name">
+                <i>@(Context.Session.GetString("TenNguoidung") ?? "Người dùng")</i>
+            </li>
+            <li id="chucvu">
+                <i>@(Context.Session.GetString("Chucvu") ?? "Chức vụ")</i>
             </li>
             <li>
-                <a href=""><i class="bx bx-user-circle"></i></a>
+                <a href="/Home/DoiRole" title="Đổi vai trò" style="text-decoration: none; color: inherit;">
+                    <i class='bx bx-refresh' style="font-size: 30px"></i>
+                </a>
             </li>
+            <li>
+                <form id="logout-form" action="/home/Logout" method="post" style="display: inline;">
+                    <button type="submit" class="logout-btn" style="background:none; border:none">
+                        <i class='bx bx-log-out bx-flip-horizontal' style="font-size: 30px"></i>
+                    </button>
+                </form>
+            </li>
+            
         </ul>
         <div>
             @RenderBody()
         </div>
 
     </nav>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="~/js/layout.js"></script>
+    <script>
+        $(document).ready(function () {
+            if (typeof getThongbaoDatalayout === 'function') {
+                getThongbaoDatalayout();
+            }
+        });
+    </script>
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

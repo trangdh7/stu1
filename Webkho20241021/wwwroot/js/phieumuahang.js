@@ -26,12 +26,22 @@ $('#submitPhieumuahang').click(function () {
     }
 
     const vtmuahangData = [];
+    let hasEmptyPrice = false;
+    
     $('.tablethietbi tbody tr').each(function () {
+        // Bỏ qua hàng tổng tiền
+        if ($(this).hasClass('tong-tien-row')) {
+            return;
+        }
+        
         const cells = $(this).find('td');
-
-        if (cells.length >= 2) {
-            const DonGia = parseFloat($(this).find('.DonGia input').val()) || 0;
-            const SL = parseFloat($(this).find('.DonGia input').data('sl')) || 0;
+        const priceInput = $(this).find('.DonGia input');
+        
+        // Chỉ xử lý các hàng có input giá (có thể nhập giá)
+        if (cells.length >= 2 && priceInput.length > 0) {
+            const inputValue = priceInput.val();
+            const DonGia = inputValue ? parseFloat(inputValue.replace(/[^\d]/g, '')) || 0 : 0;
+            const SL = parseFloat(priceInput.data('sl')) || 0;
             const ThanhTien = SL * DonGia;
 
             if (DonGia > 0 && SL > 0) {
@@ -40,9 +50,19 @@ $('#submitPhieumuahang').click(function () {
                     DonGia: DonGia,
                     ThanhTien: ThanhTien
                 });
+            } else if (SL > 0) {
+                // Có số lượng nhưng chưa nhập giá
+                hasEmptyPrice = true;
             }
         }
     });
+    
+    // Kiểm tra nếu có mục chưa nhập giá
+    if (hasEmptyPrice) {
+        if (!confirm("Có một số vật tư chưa nhập giá. Bạn có muốn tiếp tục không?")) {
+            return;
+        }
+    }
 
     const Phieumuahangviewmodel = {
         MaMuahang: selectedMamuahang,
@@ -109,8 +129,9 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
 
             if (data && data.length > 0) {
                 // Kiểm tra xem có thể nhập đơn giá không
-                // Chỉ cho phép nhập khi: area = TruongBPMuahang và trạng thái phiếu = "Đang chờ báo giá"
-                const canInputPrice = area === 'TruongBPMuahang' && trangThaiPhieu === 'Đang chờ báo giá';
+                // Cho phép nhập khi: area = TruongBPMuahang và (trạng thái phiếu = "Đang chờ báo giá" hoặc chứa "Đã từ chối")
+                const canInputPrice = area === 'TruongBPMuahang' && 
+                    (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
 
                 let STT = 1;
                 data.forEach(function (item) {

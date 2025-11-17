@@ -42,23 +42,33 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
 
         public IActionResult GetVTDuan(string MaDuan)
         {
-            var vatTuList = _context.khoduans
-                                 .Where(v => v.DAMaDuan == MaDuan)
-                                 .Select(v => new {
-                                     v.TenSanpham,
-                                     v.MaSanpham,
-                                     v.DAMakho,
-                                     v.HangSX,
-                                     v.NhaCC,
-                                     v.SL,
-                                     v.DonVi,
-                                     v.NgayNhapkho,
-                                     v.NgayBaohanh,
-                                     v.ThoiGianBH,
-                                     v.TrangThai
-                                 }).ToList();
+            var vatTuList = from vt in _context.vtphieuxuatkho
+                            join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
+                            where px.MaDuan == MaDuan
+                                  && (vt.TrangThai == "Đã xác nhận nhận hàng"
+                                      || vt.TrangThai == "Đã xuất kho"
+                                      || px.TrangThai == "Đã xác nhận nhận hàng"
+                                      || px.TrangThai == "Hoàn thành")
+                            select new
+                            {
+                                TenSanpham = vt.TenSanpham,
+                                MaSanpham = vt.MaSanpham,
+                                DAMakho = vt.Makho,
+                                HangSX = vt.HangSX,
+                                NhaCC = vt.NhaCC,
+                                SL = vt.SL,
+                                DonVi = vt.DonVi,
+                                NgayNhapkho = vt.NgayNhapkho ?? px.NgayXacNhanNhan,
+                                NgayBaohanh = vt.NgayBaohanh,
+                                ThoiGianBH = vt.ThoiGianBH,
+                                TrangThai = vt.TrangThai ?? "Đã xác nhận nhận hàng"
+                            };
 
-            return Json(vatTuList); // Trả về JSON
+            var result = vatTuList.GroupBy(v => new { v.MaSanpham, v.DAMakho })
+                                  .Select(g => g.First())
+                                  .ToList();
+
+            return Json(result);
         }
 
         [HttpPost]

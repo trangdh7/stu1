@@ -1,0 +1,301 @@
+@model Webkho_20241021.Models.khotongs
+@{
+    ViewData["Title"] = "Sửa Vật Tư";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Sửa Vật Tư</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .input-focus:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .label-modern {
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 0.875rem;
+            letter-spacing: 0.025em;
+        }
+        
+        .input-modern {
+            transition: all 0.2s ease;
+        }
+        
+        .input-modern:hover:not(:disabled) {
+            border-color: #a0aec0;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .icon-box {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen py-12">
+    <div class="max-w-5xl mx-auto px-4">
+        <!-- Header Card -->
+        <div class="bg-white rounded-2xl card-shadow p-8 mb-6">
+            <div class="flex items-center gap-4">
+                <div class="icon-box">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                        Chỉnh Sửa Vật Tư
+                    </h2>
+                    <p class="text-gray-500 mt-1">Cập nhật thông tin vật tư trong kho</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-2xl card-shadow overflow-hidden">
+            @using (Html.BeginForm("SuaVatTu", "Home", new { area = "Admin", makho = Model.Makho }, FormMethod.Post))
+            {
+                <div class="p-8">
+                    <!-- Mã Kho Section -->
+                    <div class="mb-8 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border-l-4 border-purple-500">
+                        <label class="label-modern flex items-center gap-2 mb-2">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            Mã Kho
+                        </label>
+                        <input type="text" value="@Model.Makho" readonly 
+                               class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-500 cursor-not-allowed font-mono text-lg font-semibold" />
+                        <p class="text-xs text-gray-500 mt-2">⚠️ Mã kho không thể thay đổi</p>
+                    </div>
+
+                    <!-- Main Fields Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Tên sản phẩm -->
+                        <div class="md:col-span-2">
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                                Tên Sản Phẩm
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="tenSanpham" value="@Model.TenSanpham" required 
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus font-medium" 
+                                   placeholder="Nhập tên sản phẩm..." />
+                        </div>
+
+                        <!-- Mã sản phẩm -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                </svg>
+                                Mã Sản Phẩm
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="maSanpham" value="@Model.MaSanpham" required 
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus font-mono" 
+                                   placeholder="VD: SP001" />
+                        </div>
+
+                        <!-- Hãng SX -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                Hãng Sản Xuất
+                            </label>
+                            <input type="text" name="hangSX" value="@Model.HangSX" 
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus" 
+                                   placeholder="Nhập hãng sản xuất..." />
+                        </div>
+
+                        <!-- Nhà cung cấp -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                Nhà Cung Cấp
+                            </label>
+                            <input type="text" name="nhaCC" value="@Model.NhaCC" 
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus" 
+                                   placeholder="Nhập nhà cung cấp..." />
+                        </div>
+
+                        <!-- Số lượng -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                                </svg>
+                                Số Lượng
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" name="sl" value="@Model.SL" required 
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus font-semibold text-indigo-600" 
+                                   placeholder="0" min="0" />
+                        </div>
+
+                        <!-- Đơn vị -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Đơn Vị
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="donVi" value="@Model.DonVi" required 
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus" 
+                                   placeholder="VD: Cái, Hộp, Kg..." />
+                        </div>
+
+                        <!-- Ngày bảo hành -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Ngày Bảo Hành
+                            </label>
+                            <input type="date" name="ngayBaohanh" value="@(Model.NgayBaohanh?.ToString("yyyy-MM-dd"))" 
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus" />
+                        </div>
+
+                        <!-- Thời gian BH -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Hết Hạn Bảo Hành
+                            </label>
+                            <input type="date" name="thoiGianBH" value="@(Model.ThoiGianBH?.ToString("yyyy-MM-dd"))" 
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus" />
+                        </div>
+
+                        <!-- Dự án -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                Dự Án
+                            </label>
+                            <input type="text" name="duAn" value="@Model.DuAn" 
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus" 
+                                   placeholder="Nhập tên dự án..." />
+                        </div>
+
+                        <!-- Trạng thái -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Trạng Thái
+                            </label>
+                            <select name="trangThai" 
+                                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus appearance-none bg-white cursor-pointer"
+                                    style="background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.5em 1.5em;">
+                                <option value="Tồn kho" @(Model.TrangThai == "Tồn kho" ? "selected" : "")>Tồn kho</option>
+                                <option value="Hết hàng" @(Model.TrangThai == "Hết hàng" ? "selected" : "")>Hết hàng</option>
+                            </select>
+                        </div>
+
+                        <!-- Loại cấp phát -->
+                        <div>
+                            <label class="label-modern mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                </svg>
+                                Loại Cấp Phát
+                            </label>
+                            <select name="loaiCapPhat" 
+                                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus appearance-none bg-white cursor-pointer"
+                                    style="background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.5em 1.5em;">
+                                <option value="ChoNhanVienMoi" @(Model.LoaiCapPhat == "ChoNhanVienMoi" ? "selected" : "")>Cho Nhân Viên Mới</option>
+                                <option value="Không" @(Model.LoaiCapPhat == "Không" ? "selected" : "")>Không</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="bg-gray-50 px-8 py-6 flex flex-col sm:flex-row gap-4 justify-between border-t border-gray-200">
+                    <a href="/Admin/Home/Tongkho" 
+                       class="order-2 sm:order-1 px-8 py-3 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-100 border-2 border-gray-300 transition-all text-center flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Hủy Bỏ
+                    </a>
+                    <button type="submit" 
+                            class="order-1 sm:order-2 px-8 py-3 btn-gradient text-white font-semibold rounded-xl shadow-lg flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Cập Nhật Thông Tin
+                    </button>
+                </div>
+            }
+        </div>
+
+        <!-- Info Footer -->
+        <div class="mt-6 text-center text-sm text-gray-500">
+            <p class="flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Các trường có dấu <span class="text-red-500 font-semibold">*</span> là bắt buộc
+            </p>
+        </div>
+    </div>
+</body>
+</html>

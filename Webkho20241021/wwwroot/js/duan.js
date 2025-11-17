@@ -2,8 +2,8 @@ $(document).ready(function () {
     // Gọi hàm showVTDuan với mã yêu cầu của hàng đầu tiên khi trang được tải
     const firstRow = $('.table tbody tr').first(); // Lấy hàng đầu tiên trong bảng
     if (firstRow.length > 0) {
-        const MaDuan = firstRow.find('td').eq(1).text().trim(); 
-        showVTDuan(Maduan); 
+        const MaDuan = firstRow.find('td').eq(2).text().trim();
+        showVTDuan(MaDuan);
     }
 });
 
@@ -73,7 +73,7 @@ function showVTDuan(MaDuan) {
             // Highlight hàng tương ứng trong bảng
             // Giả sử mã yêu cầu nằm trong cột đầu tiên của bảng
             $('.table tbody tr').each(function () {
-                if ($(this).find('td').eq(1).text().trim() === MaDuan) { // So sánh với cột thứ hai
+                if ($(this).find('td').eq(2).text().trim() === MaDuan) {
                     $(this).addClass('highlight'); // Thêm class highlight cho hàng tương ứng
                 }
             });

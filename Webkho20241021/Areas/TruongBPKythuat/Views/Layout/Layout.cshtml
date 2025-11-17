@@ -86,6 +86,11 @@
                 <i>@(Context.Session.GetString("Chucvu") ?? "Chức vụ")</i>
             </li>
             <li>
+                <a href="/Home/DoiRole" title="Đổi vai trò" style="text-decoration: none; color: inherit;">
+                    <i class='bx bx-refresh' style="font-size: 30px"></i>
+                </a>
+            </li>
+            <li>
                 <form id="logout-form" action="/home/Logout" method="post" style="display: inline;">
                     <button type="submit" class="logout-btn" style="background:none; border:none">
                         <i class='bx bx-log-out bx-flip-horizontal' style="font-size: 30px"></i>
@@ -107,5 +112,6 @@
         });
     </script>
     <script src="~/js/themyeucau.js"></script>
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

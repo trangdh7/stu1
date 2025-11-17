@@ -1,0 +1,57 @@
+@{
+    ViewData["Title"] = "Trangchu";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet" />
+    <title>Trang chủ Admin</title>
+</head>
+<body>
+    <nav class="trangchu">
+        <nav class="trangchu1">
+            <nav class="chucnang">
+                <span>Quản lý User</span>
+                <ul class="canhan-icon">
+                    <li>
+                        <a href="/Admin/User/DanhSachUser"><i class='bx bxs-user' style='color:#8843b1'></i></a>
+                        <a href="/Admin/User/DanhSachUser">Danh sách User</a>
+                    </li>
+                    <li>
+                        <a href="/Admin/User/TaoTaiKhoan"><i class='bx bx-user-plus' style='color:#0c6215'></i></a>
+                        <a href="/Admin/User/TaoTaiKhoan">Tạo tài khoản</a>
+                    </li>
+                </ul>
+            </nav>
+            <nav class="chucnang">
+                <span>Quản lý Kho</span>
+                <ul class="canhan-icon">
+                    <li>
+                        <a href="/Admin/Home/Tongkho"><i class='bx bx-grid' style='color:#0d1348'></i></a>
+                        <a href="/Admin/Home/Tongkho">Tổng kho</a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Home/Themthietbi"><i class='bx bx-plus' style='color:#0c6212'></i></a>
+                        <a href="/Admin/Home/Themthietbi">Thêm vật tư</a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Home/Import"><i class='bx bx-import' style='color:#0c6212'></i></a>
+                        <a href="/Admin/Home/Import">Import</a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("ExportTongkho", "Home", new { area = "Admin" })"><i class='bx bx-export' style='color:#712a0e'></i></a>
+                        <a href="@Url.Action("ExportTongkho", "Home", new { area = "Admin" })">Export</a>
+                    </li>
+                </ul>
+            </nav>
+        </nav>
+    </nav>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</body>
+</html>
+

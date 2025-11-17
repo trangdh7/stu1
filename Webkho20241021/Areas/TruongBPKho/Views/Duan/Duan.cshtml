@@ -7,161 +7,185 @@
     var currentUserId = ViewBag.CurrentUserId as string;
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="~/CSS/Action.css" rel="stylesheet" />
-    <link href="~/CSS/Kho.css" rel="stylesheet" />
-    <link href="~/CSS/style.css" rel="stylesheet" />
-    <link href="~/CSS/Table.css" rel="stylesheet" />
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
-          rel="stylesheet" />
-
-    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Quản lý dự án</title>
 </head>
-<body>
+<body class="bg-gray-50">
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger">@TempData["Error"]</div>
-    }
-    <nav class="bodykho">
-        <div class="menu-kho">
-            <ul>
-                <li><a href="">Danh sách dự án</a></li>
-            </ul>
-            <ul>
-                <li><i class="bx bx-search"></i></li>
-            </ul>
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 mx-4 mt-4">
+            @TempData["Error"]
         </div>
-        <div class="Tableyeucau">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <td>STT</td>
-                        <td>Tên dự án</td>
-                        <td>Mã dự án</td>
-                        <td>Người quản lí</td>
-                        <td>Khách hàng</td>
-                        <td>Ngày bắt đầu</td>
-                        <td>Ngày kết thúc</td>
-                        <td>Trạng thái</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    @{
-                        int STT = 1;
-                    }
-                    @foreach (var item in Model.Duan)
-                    {
+    }
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Projects Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-blue-600">
+                <h2 class="text-lg font-semibold text-white">Danh sách dự án</h2>
+                <button class="text-white hover:text-blue-100 transition">
+                    <i class="bx bx-search text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Projects Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gradient-to-r from-blue-600 to-blue-700 border-b-2 border-blue-800">
                         <tr>
-                            <td>@STT</td>
-                            <td>@item.TenDuan</td>
-                            <td>
-                                <a href="javascript:void(0);" onclick="showVTDuan('@item.MaDuan')">
-                                    @item.MaDuan
-                                </a>
-                            </td>
-                            <td>@item.NguoiQLDA</td>
-                            <td>@item.KhachHang</td>
-                            <td>@item.NgayBatdau</td>
-                            <td>@item.NgayKetthuc</td>
-                            <td>
-                                @{
-                                    var canControl = !string.IsNullOrWhiteSpace(currentUserId) &&
-                                                     !string.IsNullOrWhiteSpace(item.MaNguoiQLDA) &&
-                                                     string.Equals(currentUserId.Trim(), item.MaNguoiQLDA.Trim(), System.StringComparison.OrdinalIgnoreCase);
-                                }
-                                @if (canControl)
-                                {
-                                    if (item.TrangThai == "Chờ")
-                                    {
-                                        using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKho" }, FormMethod.Post))
-                                        {
-                                            <input type="hidden" name="MaDuan" value="@item.MaDuan" />
-                                            <button type="submit" name="action" value="start" class="btn-icon start-btn">
-                                                <i class="bx bx-play-circle"></i> Bắt đầu
-                                            </button>
-                                        }
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">STT</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Tên dự án</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Mã dự án</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Người quản lí</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Khách hàng</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ngày bắt đầu</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ngày kết thúc</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @{
+                            int STT = 1;
+                        }
+                        @foreach (var item in Model.Duan)
+                        {
+                            <tr class="hover:bg-blue-50 transition">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">@STT</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">@item.TenDuan</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <a href="javascript:void(0);"
+                                       onclick="showVTDuan('@item.MaDuan')"
+                                       class="text-blue-600 hover:text-blue-800 font-semibold hover:underline">
+                                        @item.MaDuan
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.NguoiQLDA</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.KhachHang</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.NgayBatdau</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.NgayKetthuc</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    @{
+                                        var canControl = !string.IsNullOrWhiteSpace(currentUserId) &&
+                                        !string.IsNullOrWhiteSpace(item.MaNguoiQLDA) &&
+                                        string.Equals(currentUserId.Trim(), item.MaNguoiQLDA.Trim(), System.StringComparison.OrdinalIgnoreCase);
                                     }
-                                    else if (item.TrangThai == "Đang triển khai")
+                                    @if (canControl)
                                     {
-                                        using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKho" }, FormMethod.Post))
+                                        if (item.TrangThai == "Chờ")
                                         {
-                                            <input type="hidden" name="MaDuan" value="@item.MaDuan" />
-                                            <button type="submit" name="action" value="end" class="btn-icon end-btn">
-                                                <i class="bx bxs-x-circle"></i> Kết thúc
-                                            </button>
+                                            using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKho" }, FormMethod.Post))
+                                            {
+                                                <input type="hidden" name="MaDuan" value="@item.MaDuan" />
+                                                <button type="submit"
+                                                        name="action"
+                                                        value="start"
+                                                        class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
+                                                    <i class="bx bx-play-circle mr-1.5 text-lg"></i> Bắt đầu
+                                                </button>
+                                            }
+                                        }
+                                        else if (item.TrangThai == "Đang triển khai")
+                                        {
+                                            using (Html.BeginForm("Xuliduan", "Duan", new { area = "TruongBPKho" }, FormMethod.Post))
+                                            {
+                                                <input type="hidden" name="MaDuan" value="@item.MaDuan" />
+                                                <button type="submit"
+                                                        name="action"
+                                                        value="end"
+                                                        class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
+                                                    <i class="bx bxs-x-circle mr-1.5 text-lg"></i> Kết thúc
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg shadow-md">
+                                                <i class="bx bx-check-circle mr-1.5"></i>
+                                                @(item.TrangThai ?? string.Empty)
+                                            </span>
                                         }
                                     }
                                     else
                                     {
-                                        <span>@(item.TrangThai ?? string.Empty)</span>
+                                        @if (item.TrangThai == "Chờ")
+                                        {
+                                            <span class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-sm font-semibold rounded-lg shadow-md">
+                                                <i class="bx bx-time-five mr-1.5"></i>
+                                                @(item.TrangThai ?? string.Empty)
+                                            </span>
+                                        }
+                                        else if (item.TrangThai == "Đang triển khai")
+                                        {
+                                            <span class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg shadow-md">
+                                                <i class="bx bx-loader-circle mr-1.5"></i>
+                                                @(item.TrangThai ?? string.Empty)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold rounded-lg shadow-md">
+                                                <i class="bx bx-check-circle mr-1.5"></i>
+                                                @(item.TrangThai ?? string.Empty)
+                                            </span>
+                                        }
                                     }
-                                }
-                                else
-                                {
-                                    <span>@(item.TrangThai ?? string.Empty)</span>
-                                }
-                            </td>
+                                </td>
+                            </tr>
+                            STT++;
+                        }
+                    </tbody>
+                </table>
+            </div>
 
-                        </tr>
-                        STT++;
-                    }
-                </tbody>
-            </table>
+            <!-- Action Button -->
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                <a href="/TruongBPKho/Duan/ThemDuan"
+                   class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
+                    <i class="bx bx-plus mr-2 text-lg"></i>
+                    Thêm dự án
+                </a>
+            </div>
         </div>
-        <div class="action">
-            <ul class="hanhdong">
-                <li>
-                    <a href="/TruongBPKho/Duan/ThemDuan">Thêm dự án</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
-    <nav class="bodyyeucau-thietbi">
-        <div class="Tableyeucau-thietbi-box">
-            <table class="tablethietbi">
-                <thead>
-                    <tr>
-                        <td>Tên vật tư</td>
-                        <td>Mã vật tư</td>
-                        <td>Mã kho</td>
-                        <td>Hãng sx</td>
-                        <td>Nhà cung cấp</td>
-                        <td>Số lượng</td>
-                        <td>Đơn vị</td>
-                        <td>Trạng thái</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.KhoDuan)
-                    {
+
+        <!-- Materials Section -->
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="overflow-x-auto">
+                <table class="w-full tablethietbi">
+                    <thead class="bg-gradient-to-r from-indigo-600 to-indigo-700 border-b-2 border-indigo-800">
                         <tr>
-                            <td>@item.TenSanpham</td>
-                            <td>@item.MaSanpham</td>
-                            <td>@item.DAMakho</td>
-                            <td>@item.HangSX</td>
-                            <td>@item.NhaCC</td>
-                            <td>@item.SL</td>
-                            <td>@item.DonVi</td>
-                            <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
-                            <td>@item.TrangThai</td>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Tên vật tư</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Mã vật tư</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Mã kho</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Hãng sx</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Nhà cung cấp</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Số lượng</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Đơn vị</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ngày nhập kho</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ngày bảo hành</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Thời gian BH</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Trạng thái</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="11" class="px-6 py-12 text-center text-gray-500">
+                                <i class="bx bx-package text-4xl mb-2 block text-gray-300"></i>
+                                Vui lòng chọn một dự án để xem vật tư đã được xuất kho.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </nav>
+    </div>
+
     <script src="~/js/duan.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-

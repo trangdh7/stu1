@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/css/style.css" rel="stylesheet" />
+    <link href="~/css/trangchu.css" rel="stylesheet" />
+    <link href="~/css/table.css" rel="stylesheet" />
+    <link href="~/css/kho.css" rel="stylesheet" />
+    <link href="~/css/action.css" rel="stylesheet" />
+    <link href="~/css/form.css" rel="stylesheet" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet" />
+    <title>@ViewBag.Title</title>
+</head>
+<body>
+    <nav class="sidebar">
+        <header>
+            <div class="image-text">
+                <span class="image">
+                    <img src="~/Icon/logo2.jpg" />
+                </span>
+                <div class="header-text">
+                    <span class="name">STU</span>
+                    <span class="profession">Admin</span>
+                </div>
+            </div>
+        </header>
+        <ul>
+            <li>
+                <a href="/Admin/Home/Trangchu">
+                    <i class="bx bxs-grid-alt"></i>
+                    <span class="nav-item">Trang chủ</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Admin/User/DanhSachUser">
+                    <i class='bx bxs-user'></i>
+                    <span class="nav-item">Quản lý User</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Admin/User/TaoTaiKhoan">
+                    <i class='bx bx-user-plus'></i>
+                    <span class="nav-item">Tạo tài khoản</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Admin/Home/Tongkho">
+                    <i class='bx bxs-home-alt-2'></i>
+                    <span class="nav-item">Quản lý Kho</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Admin/Home/Themthietbi">
+                    <i class='bx bx-plus'></i>
+                    <span class="nav-item">Thêm vật tư</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Admin/Home/Import">
+                    <i class='bx bx-import'></i>
+                    <span class="nav-item">Import Excel</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <nav class="bodymenu">
+        <ul class="menu">
+            <li id="name">
+                <i>@(Context.Session.GetString("TenNguoidung") ?? "Admin")</i>
+            </li>
+            <li id="chucvu">
+                <i>Admin</i>
+            </li>
+            <li>
+                <a href="/Home/DoiRole" title="Đổi vai trò" style="text-decoration: none; color: inherit;">
+                    <i class='bx bx-refresh' style="font-size: 30px"></i>
+                </a>
+            </li>
+            <li>
+                <form id="logout-form" action="/home/Logout" method="post" style="display: inline;">
+                    <button type="submit" class="logout-btn" style="background:none; border:none">
+                        <i class='bx bx-log-out bx-flip-horizontal' style="font-size: 30px"></i>
+                    </button>
+                </form>
+            </li>
+        </ul>        
+    </nav>
+    <nav class="bodylayout">
+        <div>
+            @RenderBody()
+        </div>
+    </nav>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="~/js/layout.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
+
