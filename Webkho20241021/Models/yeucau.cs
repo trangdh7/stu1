@@ -13,6 +13,7 @@ namespace Webkho_20241021.Models
         public string? YCMaNguoidung { get; set; }
         public string? YCMaDuan { get; set; }
         public DateTime? NgayYeucau { get; set; }
+        public DateTime? NgayCanHang { get; set; }
         public string? TrangThai { get; set; }
 
     }

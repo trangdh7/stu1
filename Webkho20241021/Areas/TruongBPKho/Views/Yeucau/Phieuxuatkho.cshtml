@@ -79,7 +79,17 @@
                             <td>@item.MaNguoidung</td>
                             <td>@item.NgayXuatkho?.ToString("dd/MM/yyyy")</td>
                             <td>
-                                @if (item.TrangThai == "Đang chuẩn bị hàng" && BophanSession == "BP kho")
+                                @if (item.TrangThai == "Chờ xác nhận" && BophanSession == "BP kho")
+                                {
+                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt xuất kho">
+                                            <i class="bx bxs-check-circle"></i>
+                                        </button>
+                                    }
+                                }
+                                else if (item.TrangThai == "Đang chuẩn bị hàng" && BophanSession == "BP kho")
                                 {
                                     @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
                                     {

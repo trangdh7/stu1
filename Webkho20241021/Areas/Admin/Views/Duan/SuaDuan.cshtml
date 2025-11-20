@@ -1,0 +1,210 @@
+@model Webkho_20241021.Models.duans
+@{
+    ViewData["Title"] = "Sửa Dự Án";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Sửa Dự Án</title>
+</head>
+@using (Html.BeginForm("SuaDuan", "Duan", new { area = "Admin", id = Model.MaDuan }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
+{
+    <body class="bg-gray-50">
+        <div class="max-w-5xl mx-auto px-4 py-5">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
+                    <div class="flex items-center">
+                        <i class="bx bx-edit text-white text-3xl mr-3"></i>
+                        <h2 class="text-2xl font-bold text-white">Cập nhật thông tin dự án</h2>
+                    </div>
+                </div>
+
+                <!-- Form Content -->
+                <div class="p-8">
+                    <!-- Row 1 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="space-y-2">
+                            <label for="tenduan" class="flex items-center text-sm font-semibold text-gray-700">
+                                <i class="bx bx-briefcase text-blue-600 mr-2"></i>
+                                Tên dự án
+                            </label>
+                            <input type="text"
+                                   id="tenduan"
+                                   name="TenDuan"
+                                   value="@Model.TenDuan"
+                                   placeholder="Nhập tên dự án"
+                                   required
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="maduan" class="flex items-center text-sm font-semibold text-gray-700">
+                                <i class="bx bx-barcode text-blue-600 mr-2"></i>
+                                Mã dự án
+                            </label>
+                            <input type="text"
+                                   id="maduan"
+                                   name="MaDuan"
+                                   value="@Model.MaDuan"
+                                   placeholder="Nhập mã dự án"
+                                   readonly
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed" />
+                            <p class="text-xs text-gray-500 mt-1">Mã dự án không thể thay đổi</p>
+                        </div>
+                        <div class="space-y-2">
+                            <label for="khachhang" class="flex items-center text-sm font-semibold text-gray-700">
+                                <i class="bx bx-user text-blue-600 mr-2"></i>
+                                Khách hàng
+                            </label>
+                            <input type="text"
+                                   id="khachhang"
+                                   name="KhachHang"
+                                   value="@Model.KhachHang"
+                                   placeholder="Nhập tên khách hàng"
+                                   required
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" />
+                        </div>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="space-y-2">
+                            <label for="nguoiquanli" class="flex items-center text-sm font-semibold text-gray-700">
+                                <i class="bx bx-user-check text-blue-600 mr-2"></i>
+                                Người QLDA
+                            </label>
+                            <select id="nguoiquanli"
+                                    name="NguoiQLDA"
+                                    onchange="updateMaNguoiQuanLi()"
+                                    required
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white cursor-pointer">
+                                <option value="">Chọn người quản lý</option>
+                                @if (ViewBag.Tennguoidunglist != null)
+                                {
+                                    @foreach (var n in ViewBag.Tennguoidunglist)
+                                    {
+                                        <option value="@n.TenNguoidung" 
+                                                data-manguoiquanli="@n.MaNguoidung"
+                                                @(Model.NguoiQLDA == n.TenNguoidung ? "selected" : "")>
+                                            @n.TenNguoidung
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label for="manguoiquanli" class="flex items-center text-sm font-semibold text-gray-700">
+                                <i class="bx bx-id-card text-blue-600 mr-2"></i>
+                                Mã người QLDA
+                            </label>
+                            <select id="manguoiquanli"
+                                    name="MaNguoiQLDA"
+                                    required
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white cursor-pointer">
+                                <option value="">Chọn mã người quản lý</option>
+                                @if (!string.IsNullOrEmpty(Model.MaNguoiQLDA))
+                                {
+                                    <option value="@Model.MaNguoiQLDA" selected>@Model.MaNguoiQLDA</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 3 - Ngày bắt đầu và kết thúc -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="space-y-2">
+                            <label for="ngaybatdau" class="flex items-center text-sm font-semibold text-gray-700">
+                                <i class="bx bx-calendar text-blue-600 mr-2"></i>
+                                Ngày bắt đầu
+                            </label>
+                            <input type="date"
+                                   id="ngaybatdau"
+                                   name="NgayBatdau"
+                                   value="@(Model.NgayBatdau?.ToString("yyyy-MM-dd") ?? "")"
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="ngayketthuc" class="flex items-center text-sm font-semibold text-gray-700">
+                                <i class="bx bx-calendar-check text-blue-600 mr-2"></i>
+                                Ngày kết thúc
+                            </label>
+                            <input type="date"
+                                   id="ngayketthuc"
+                                   name="NgayKetthuc"
+                                   value="@(Model.NgayKetthuc?.ToString("yyyy-MM-dd") ?? "")"
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" />
+                        </div>
+                    </div>
+
+                    <!-- Row 4 - Trạng thái -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="space-y-2">
+                            <label for="trangthai" class="flex items-center text-sm font-semibold text-gray-700">
+                                <i class="bx bx-info-circle text-blue-600 mr-2"></i>
+                                Trạng thái
+                            </label>
+                            <select id="trangthai"
+                                    name="TrangThai"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white cursor-pointer">
+                                <option value="Chờ" @(Model.TrangThai == "Chờ" ? "selected" : "")>Chờ</option>
+                                <option value="Đang triển khai" @(Model.TrangThai == "Đang triển khai" ? "selected" : "")>Đang triển khai</option>
+                                <option value="Đã hoàn thành" @(Model.TrangThai == "Đã hoàn thành" ? "selected" : "")>Đã hoàn thành</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                        <a href="/Admin/Duan/DanhSachDuan"
+                           class="inline-flex items-center px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
+                            <i class="bx bx-x mr-2 text-lg"></i>
+                            Hủy bỏ
+                        </a>
+                        <button type="submit"
+                                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
+                            <i class="bx bx-check-circle mr-2 text-lg"></i>
+                            Cập nhật
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function updateMaNguoiQuanLi() {
+                const nguoiQuanLiSelect = document.getElementById("nguoiquanli");
+                const maNguoiQuanLiSelect = document.getElementById("manguoiquanli");
+                const selectedOption = nguoiQuanLiSelect.options[nguoiQuanLiSelect.selectedIndex];
+                const maNguoiQuanLi = selectedOption.getAttribute("data-manguoiquanli");
+                // Xóa các option hiện tại trong mã người quản lý
+                maNguoiQuanLiSelect.innerHTML = "";
+                if (maNguoiQuanLi) {
+                    // Thêm option mới với mã người quản lý tương ứng
+                    const option = document.createElement("option");
+                    option.value = maNguoiQuanLi;
+                    option.text = maNguoiQuanLi;
+                    maNguoiQuanLiSelect.appendChild(option);
+                } else {
+                    const option = document.createElement("option");
+                    option.value = "";
+                    option.text = "Chọn mã người quản lý";
+                    maNguoiQuanLiSelect.appendChild(option);
+                }
+            }
+
+            // Khởi tạo khi trang load để set mã người quản lý nếu đã có
+            document.addEventListener("DOMContentLoaded", function() {
+                const nguoiQuanLiSelect = document.getElementById("nguoiquanli");
+                if (nguoiQuanLiSelect && nguoiQuanLiSelect.value) {
+                    updateMaNguoiQuanLi();
+                }
+            });
+        </script>
+    </body>
+}
+</html>

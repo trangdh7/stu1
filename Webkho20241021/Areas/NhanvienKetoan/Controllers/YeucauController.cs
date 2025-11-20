@@ -58,8 +58,6 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             return View(model);
         }
 
-
-
         public IActionResult Phieuxuatkho()
         {
             var Phieuxuatkholist = _context.phieuxuatkho
@@ -408,6 +406,22 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                                            List<string> HangSX, List<string> NhaCC, List<int> SL,
                                            List<string> DonVi, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
         {
+            DateTime? GetNgayCanHangAt(int index)
+            {
+                if (Request.Form.TryGetValue("VTNgayCanHang", out var dateValues))
+                {
+                    if (index >= 0 && index < dateValues.Count)
+                    {
+                        if (DateTime.TryParse(dateValues[index], out var parsedDate))
+                        {
+                            return parsedDate;
+                        }
+                    }
+                }
+
+                return yeucau.NgayCanHang;
+            }
+
             if (yeucau.TenYeucau != "Y�u c?u nh?p kho")
             {
                 var prefix = yeucau.YCMaNguoidung;
@@ -550,6 +564,7 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                         newVtyeucau.NhaCC = NhaCC[i];
                         newVtyeucau.SL = SL[i];
                         newVtyeucau.DonVi = DonVi[i];
+                        newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
                         newVtyeucau.YCMakho = khoMatch.Makho;
                         newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
                         newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
@@ -566,7 +581,8 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                         newVtyeucau.NhaCC = NhaCC[i];
                         newVtyeucau.SL = SL[i];
                         newVtyeucau.DonVi = DonVi[i];
-                        newVtyeucau.YCMakho = "VT m?i";
+                        newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
+                        newVtyeucau.YCMakho = "VT mới";
                         newVtyeucau.NgayNhapkho = null;
                         newVtyeucau.NgayBaohanh = null;
                         newVtyeucau.ThoiGianBH = null;
@@ -2142,7 +2158,98 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             }
         }
 
+        // In phiếu mua hàng
+        [HttpGet]
+        public IActionResult InPhieumuahang(string MaMuahang)
+        {
+            if (string.IsNullOrEmpty(MaMuahang))
+            {
+                return NotFound();
+            }
 
+            var phieumuahang = _context.phieumuahang
+                .FirstOrDefault(p => p.MaMuahang == MaMuahang);
+
+            if (phieumuahang == null)
+            {
+                return NotFound();
+            }
+
+            var vtphieumuahang = _context.vtphieumuahang
+                .Where(vt => vt.MaMuahang == MaMuahang)
+                .ToList();
+
+            var yeucau = _context.yeucau
+                .FirstOrDefault(y => y.MaYeucau == phieumuahang.MaYeucau);
+
+            ViewBag.Phieumuahang = phieumuahang;
+            ViewBag.VTPhieumuahang = vtphieumuahang;
+            ViewBag.Yeucau = yeucau;
+
+            return View();
+        }
+
+        // In phiếu nhập kho
+        [HttpGet]
+        public IActionResult InPhieunhapkho(string MaNhapkho)
+        {
+            if (string.IsNullOrEmpty(MaNhapkho))
+            {
+                return NotFound();
+            }
+
+            var phieunhapkho = _context.phieunhapkho
+                .FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
+
+            if (phieunhapkho == null)
+            {
+                return NotFound();
+            }
+
+            var vtphieunhapkho = _context.vtphieunhapkho
+                .Where(vt => vt.MaNhapkho == MaNhapkho)
+                .ToList();
+
+            var yeucau = _context.yeucau
+                .FirstOrDefault(y => y.MaYeucau == phieunhapkho.MaYeucau);
+
+            ViewBag.Phieunhapkho = phieunhapkho;
+            ViewBag.VTPhieunhapkho = vtphieunhapkho;
+            ViewBag.Yeucau = yeucau;
+
+            return View();
+        }
+
+        // In phiếu xuất kho
+        [HttpGet]
+        public IActionResult InPhieuxuatkho(string MaXuatkho)
+        {
+            if (string.IsNullOrEmpty(MaXuatkho))
+            {
+                return NotFound();
+            }
+
+            var phieuxuatkho = _context.phieuxuatkho
+                .FirstOrDefault(p => p.MaXuatkho == MaXuatkho);
+
+            if (phieuxuatkho == null)
+            {
+                return NotFound();
+            }
+
+            var vtphieuxuatkho = _context.vtphieuxuatkho
+                .Where(vt => vt.MaXuatkho == MaXuatkho)
+                .ToList();
+
+            var yeucau = _context.yeucau
+                .FirstOrDefault(y => y.MaYeucau == phieuxuatkho.MaYeucau);
+
+            ViewBag.Phieuxuatkho = phieuxuatkho;
+            ViewBag.VTPhieuxuatkho = vtphieuxuatkho;
+            ViewBag.Yeucau = yeucau;
+
+            return View();
+        }
 
     }
 }

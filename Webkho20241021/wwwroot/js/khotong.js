@@ -1,29 +1,46 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
+    const table = document.querySelector('[data-table="tongkho"]');
+    if (!table) {
+        return;
+    }
+
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
     const searchInput = document.getElementById("timkiem");
     const hangsxFilter = document.getElementById("hangsx-filter");
-    const table = document.querySelector(".tablekhotong");
-    const rows = table.querySelectorAll("tbody tr");
+    const nhaCCFilter = document.getElementById("nhacc-filter");
 
-    searchInput.addEventListener("keyup", filterTable);
-    hangsxFilter.addEventListener("change", filterTable);
+    const listeners = [
+        { el: searchInput, event: "input" },
+        { el: hangsxFilter, event: "change" },
+        { el: nhaCCFilter, event: "change" }
+    ];
 
-    function filterTable() {
-        const searchFilter = searchInput.value.toLowerCase();
-        const hangsxFilterValue = hangsxFilter.value;
+    listeners.forEach(({ el, event }) => {
+        if (el) {
+            el.addEventListener(event, applyFilters);
+        }
+    });
+
+    function applyFilters() {
+        const searchValue = (searchInput?.value ?? "").trim().toLowerCase();
+        const hangsxValue = hangsxFilter?.value ?? "";
+        const nhaCCValue = nhaCCFilter?.value ?? "";
 
         rows.forEach(row => {
-            const productName = row.cells[0].textContent.toLowerCase(); // Tên sản phẩm
-            const productCode = row.cells[1].textContent.toLowerCase(); // Mã sản phẩm
-            const hangSX = row.cells[3].textContent; // Hãng sản xuất
+            const name = row.dataset.ten?.toLowerCase() ?? "";
+            const code = row.dataset.ma?.toLowerCase() ?? "";
+            const hangsx = row.dataset.hangsx ?? "";
+            const nhacc = row.dataset.nhacc ?? "";
 
-            const matchesSearch = productName.includes(searchFilter) || productCode.includes(searchFilter);
-            const matchesHangsx = hangsxFilterValue === "" || hangSX === hangsxFilterValue;
+            const matchesSearch =
+                !searchValue ||
+                name.includes(searchValue) ||
+                code.includes(searchValue);
 
-            if (matchesSearch && matchesHangsx) {
-                row.style.display = ""; // Hiện hàng
-            } else {
-                row.style.display = "none"; // Ẩn hàng
-            }
+            const matchesHangsx = !hangsxValue || hangsx === hangsxValue;
+            const matchesNhaCC = !nhaCCValue || nhacc === nhaCCValue;
+
+            row.style.display = matchesSearch && matchesHangsx && matchesNhaCC ? "" : "none";
         });
     }
 });

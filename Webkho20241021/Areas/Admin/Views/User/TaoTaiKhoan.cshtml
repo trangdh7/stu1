@@ -3,190 +3,181 @@
     Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
 }
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tạo Tài Khoản</title>
-      <link href="~/css/taotaikhoan.css" rel="stylesheet" />
+@section Styles {
+    <link href="~/css/taotaikhoan.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-   
-</head>
-<body>
-    <div class="page-wrapper">
-        <div class="form-card">
+}
 
-            <!-- HEADER -->
-            <div class="form-header">
-                <h1>Tạo Tài Khoản Mới</h1>
-                <p>Thêm một người dùng mới vào hệ thống</p>
-            </div>
+<div class="page-wrapper">
+    <div class="form-card">
 
-            <!-- FORM CONTENT -->
-            <div class="form-content">
-                @using (Html.BeginForm("TaoTaiKhoan", "User", new { area = "Admin" }, FormMethod.Post))
-                {
-                    <!-- THÔNG TIN CÁ NHÂN -->
-                    <div class="form-section">
-                        <div class="section-title">👤 Thông tin cá nhân</div>
-
-                        <div class="form-group">
-                            <label>Tên người dùng <span class="required">*</span></label>
-                            <input type="text" name="Name" required class="form-control" placeholder="Nhập tên đầy đủ" />
-                        </div>
-
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" name="Email" class="form-control" placeholder="Nhập địa chỉ email" />
-                        </div>
-
-                        <div class="form-group">
-                            <label>Số điện thoại</label>
-                            <input type="text" name="PhoneNumber" class="form-control" placeholder="Nhập số điện thoại" />
-                        </div>
-                    </div>
-
-                    <!-- THÔNG TIN CÔNG VIỆC -->
-                    <div class="form-section">
-                        <div class="section-title">💼 Thông tin công việc</div>
-
-                        <div class="form-group">
-                            <label>Mã nhân viên <span class="required">*</span></label>
-                            <input type="text" name="MaNV" required class="form-control" placeholder="Ví dụ: EMP001" />
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Chức vụ <span class="required">*</span></label>
-                                <select name="Chucvu" required class="form-select">
-                                    <option value="" disabled selected>Chọn chức vụ</option>
-                                    <option value="Giám đốc">Giám đốc</option>
-                                    <option value="Nhân viên">Nhân viên</option>
-                                    <option value="Trưởng BP">Trưởng bộ phận</option>
-                                    <option value="Admin">Admin</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Bộ phận <span class="required">*</span></label>
-                                <select name="Bophan" required class="form-select">
-                                    <option value="" disabled selected>Chọn bộ phận</option>
-                                    <option value="BP kỹ thuật">BP kỹ thuật</option>
-                                    <option value="BP kho">BP kho</option>
-                                    <option value="BP mua hàng">BP mua hàng</option>
-                                    <option value="BP kế toán">BP kế toán</option>
-                                    <option value="Admin">Admin</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- THÔNG TIN ĐĂNG NHẬP -->
-                    <div class="form-section">
-                        <div class="section-title">🔐 Thông tin đăng nhập</div>
-
-                        <div class="form-group">
-                            <label>Tên đăng nhập (Username) <span class="required">*</span></label>
-                            <input type="text" name="Username" required class="form-control" placeholder="Tên đăng nhập duy nhất" />
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Mật khẩu <span class="required">*</span></label>
-                                <input type="password" name="Password" required minlength="6" class="form-control" placeholder="Tối thiểu 6 ký tự" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>Xác nhận mật khẩu <span class="required">*</span></label>
-                                <input type="password" name="ConfirmPassword" required minlength="6" class="form-control" placeholder="Nhập lại mật khẩu" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- VAI TRÒ -->
-                    <!-- VAI TRÒ -->
-<div class="form-section">
-    <div class="section-title">🎯 Vai trò</div>
-
-    <div class="form-group">
-        <label>Chọn Roles (Vai trò) - Có thể chọn nhiều</label>
-
-        <div class="checkbox-group">
-            <div class="checkbox-item">
-                <input type="checkbox" name="SelectedRoles" value="Nhân viên kho" id="r_nv_kho" />
-                <label for="r_nv_kho">Nhân viên kho</label>
-            </div>
-
-            <div class="checkbox-item">
-                <input type="checkbox" name="SelectedRoles" value="Nhân viên kế toán" id="r_nv_ketoan" />
-                <label for="r_nv_ketoan">Nhân viên kế toán</label>
-            </div>
-
-            <div class="checkbox-item">
-                <input type="checkbox" name="SelectedRoles" value="Nhân viên mua hàng" id="r_nv_mh" />
-                <label for="r_nv_mh">Nhân viên mua hàng</label>
-            </div>
-
-            <div class="checkbox-item">
-                <input type="checkbox" name="SelectedRoles" value="Admin" id="r_admin" />
-                <label for="r_admin">Admin</label>
-            </div>
-
-            <div class="checkbox-item">
-                <input type="checkbox" name="SelectedRoles" value="Giám đốc" id="r_gd" />
-                <label for="r_gd">Giám đốc</label>
-            </div>
-
-            <div class="checkbox-item">
-                <input type="checkbox" name="SelectedRoles" value="Trưởng BP kỹ thuật" id="r_tbpkt" />
-                <label for="r_tbpkt">Trưởng BP kỹ thuật</label>
-            </div>
-
-            <div class="checkbox-item">
-                <input type="checkbox" name="SelectedRoles" value="Trưởng BP kho" id="r_tbpkho" />
-                <label for="r_tbpkho">Trưởng BP kho</label>
-            </div>
-
-            <div class="checkbox-item">
-                <input type="checkbox" name="SelectedRoles" value="Trưởng BP kế toán" id="r_tbpkt" />
-                <label for="r_tbpkt">Trưởng BP kế toán</label>
-            </div>
-
-            <div class="checkbox-item">
-                <input type="checkbox" name="SelectedRoles" value="Trưởng BP mua hàng" id="r_tbpmh" />
-                <label for="r_tbpmh">Trưởng BP mua hàng</label>
-            </div>
+        <div class="form-header">
+            <h1>Tạo Tài Khoản Mới</h1>
+            <p>Thêm một người dùng mới vào hệ thống</p>
         </div>
 
-        <span class="form-text">
-            Nếu không chọn role, hệ thống sẽ tự động gán role dựa trên Chức vụ và Bộ phận.
-        </span>
+        <div class="form-content">
+            @using (Html.BeginForm("TaoTaiKhoan", "User", new { area = "Admin" }, FormMethod.Post))
+            {
+                <div class="form-section">
+                    <div class="section-title">👤 Thông tin cá nhân</div>
+
+                    <div class="form-group">
+                        <label>Tên người dùng <span class="required">*</span></label>
+                        <input type="text" name="Name" required class="form-control" placeholder="Nhập tên đầy đủ" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="Email" class="form-control" placeholder="Nhập địa chỉ email" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <input type="text" name="PhoneNumber" class="form-control" placeholder="Nhập số điện thoại" />
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">💼 Thông tin công việc</div>
+
+                    <div class="form-group">
+                        <label>Mã nhân viên <span class="required">*</span></label>
+                        <input type="text" name="MaNV" required class="form-control" placeholder="Ví dụ: EMP001" />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Chức vụ <span class="required">*</span></label>
+                            <select name="Chucvu" required class="form-select">
+                                <option value="" disabled selected>Chọn chức vụ</option>
+                                <option value="Giám đốc">Giám đốc</option>
+                                <option value="Nhân viên">Nhân viên</option>
+                                <option value="Trưởng BP">Trưởng bộ phận</option>
+                                <option value="Quản lí dự án">Quản lí dự án</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Bộ phận <span class="required">*</span></label>
+                            <select name="Bophan" required class="form-select">
+                                <option value="" disabled selected>Chọn bộ phận</option>
+                                <option value="BP kỹ thuật">BP kỹ thuật</option>
+                                <option value="BP kho">BP kho</option>
+                                <option value="BP mua hàng">BP mua hàng</option>
+                                <option value="BP kế toán">BP kế toán</option>
+                                <option value="BP dự án">BP dự án</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">🔐 Thông tin đăng nhập</div>
+
+                    <div class="form-group">
+                        <label>Tên đăng nhập (Username) <span class="required">*</span></label>
+                        <input type="text" name="Username" required class="form-control" placeholder="Tên đăng nhập duy nhất" />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Mật khẩu <span class="required">*</span></label>
+                            <input type="password" name="Password" required minlength="6" class="form-control" placeholder="Tối thiểu 6 ký tự" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Xác nhận mật khẩu <span class="required">*</span></label>
+                            <input type="password" name="ConfirmPassword" required minlength="6" class="form-control" placeholder="Nhập lại mật khẩu" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">🎯 Vai trò</div>
+
+                    <div class="form-group">
+                        <label>Chọn Roles (Vai trò) - Có thể chọn nhiều</label>
+
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Nhân viên kho" id="r_nv_kho" />
+                                <label for="r_nv_kho">Nhân viên kho</label>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Nhân viên kế toán" id="r_nv_ketoan" />
+                                <label for="r_nv_ketoan">Nhân viên kế toán</label>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Nhân viên mua hàng" id="r_nv_mh" />
+                                <label for="r_nv_mh">Nhân viên mua hàng</label>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Admin" id="r_admin" />
+                                <label for="r_admin">Admin</label>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Giám đốc" id="r_gd" />
+                                <label for="r_gd">Giám đốc</label>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Trưởng BP kỹ thuật" id="r_tbpkt" />
+                                <label for="r_tbpkt">Trưởng BP kỹ thuật</label>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Trưởng BP kho" id="r_tbpkho" />
+                                <label for="r_tbpkho">Trưởng BP kho</label>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Trưởng BP kế toán" id="r_tbpkt" />
+                                <label for="r_tbpkt">Trưởng BP kế toán</label>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Trưởng BP mua hàng" id="r_tbpmh" />
+                                <label for="r_tbpmh">Trưởng BP mua hàng</label>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="SelectedRoles" value="Quản lí dự án" id="r_qlda" />
+                                <label for="r_qlda">Quản lí dự án</label>
+                            </div>
+                        </div>
+
+                        <span class="form-text">
+                            Nếu không chọn role, hệ thống sẽ tự động gán role dựa trên Chức vụ và Bộ phận.
+                        </span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
+                    <a href="/Admin/User/DanhSachUser" class="btn btn-secondary">Hủy</a>
+                </div>
+
+                @if (ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div class="alert">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <p>@error.ErrorMessage</p>
+                        }
+                    </div>
+                }
+            }
+        </div>
     </div>
 </div>
 
-
-                    <!-- ACTIONS -->
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
-                        <a href="/Admin/User/DanhSachUser" class="btn btn-secondary">Hủy</a>
-                    </div>
-
-                    <!-- ERROR MESSAGES -->
-                    @if (ViewData.ModelState.ErrorCount > 0)
-                    {
-                        <div class="alert">
-                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                            {
-                                <p>@error.ErrorMessage</p>
-                            }
-                        </div>
-                    }
-                }
-            </div>
-        </div>
-    </div>
-
+@section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+}

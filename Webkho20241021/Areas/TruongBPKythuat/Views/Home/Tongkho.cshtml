@@ -51,7 +51,14 @@
                     <div class="table-filter">
                         <select id="hangsx-filter" class="filter-select">
                             <option value="">Tất cả hãng SX</option>
-                            @foreach (var item in Model.Select(m => m.HangSX).Distinct())
+                            @foreach (var item in Model.Select(m => m.HangSX).Where(h => !string.IsNullOrWhiteSpace(h)).Distinct())
+                            {
+                                <option value="@item">@item</option>
+                            }
+                        </select>
+                        <select id="nhacc-filter" class="filter-select">
+                            <option value="">Tất cả nhà cung cấp</option>
+                            @foreach (var item in Model.Select(m => m.NhaCC).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct())
                             {
                                 <option value="@item">@item</option>
                             }
@@ -59,7 +66,7 @@
                     </div>
                 </div>
                 <div class="table-wrapper">
-                    <table class="data-table">
+                    <table class="data-table" data-table="tongkho">
                         <thead>
                             <tr>
                                 <th>STT</th>
@@ -73,8 +80,6 @@
                                 <th>Ngày nhập</th>
                                 <th>Ngày BH</th>
                                 <th>Thời gian BH</th>
-                                <th>Trạng thái</th>
-                                <th>Loại cấp phát</th>
                                
                             </tr>
                         </thead>
@@ -82,7 +87,7 @@
                             @{ var stt = 1 + ((((int?)ViewBag.Page ?? 1) - 1) * 20); }
                             @foreach (var item in Model)
                             {
-                                <tr>
+                                <tr data-ma="@item.MaSanpham" data-ten="@item.TenSanpham" data-hangsx="@item.HangSX" data-nhacc="@item.NhaCC">
                                     <td>@stt</td>
                                     <td>@(item.MaSanpham ?? "-")</td>
                                     <td class="text-bold">@item.TenSanpham</td>
@@ -94,8 +99,6 @@
                                     <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
                                     <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
                                     <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
-                                    <td>@(item.SL > 0 ? "Tồn kho" : "Hết hàng")</td>
-                                    <td>@item.LoaiCapPhat</td>
                                     
                                 </tr>
                                 stt++;

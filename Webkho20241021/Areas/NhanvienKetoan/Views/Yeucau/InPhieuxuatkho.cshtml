@@ -1,0 +1,255 @@
+@{
+    ViewData["Title"] = "In Phiếu Xuất Kho";
+    Layout = null;
+}
+@using Webkho_20241021.Models
+@{
+    var phieuxuatkho = ViewBag.Phieuxuatkho as phieuxuatkho;
+    var vtphieuxuatkho = ViewBag.VTPhieuxuatkho as List<vtphieuxuatkho>;
+    var yeucau = ViewBag.Yeucau as yeucau;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHIẾU XUẤT KHO</title>
+    <link rel="stylesheet" href="~/css/phieumuahang.css" />
+</head>
+<body>
+    <div class="print-container">
+        <div class="header">
+            <div class="company-name">CÔNG TY CỔ PHẦN DỊCH VỤ TỰ ĐỘNG HOÁ STU</div>
+            <div class="company-address">SỐ 46, HEM 34/232/18 VĨNH TUY, P.VĨNH TUY, Q.HAI BÀ TRƯNG, TP HÀ NỘI</div>
+            <div class="tax-code">Mã số thuế: 0106421618</div>
+            <div class="form-info">Mẫu số: 02 - VT (Ban hành theo Thông tư số 133/2016/TT-BTC ngày 26/8/2016 của Bộ Tài chính)</div>
+        </div>
+
+        <div class="document-title">
+            PHIẾU XUẤT KHO
+        </div>
+
+        <div class="document-info">
+            <div class="document-info-left">
+                <div class="info-row">
+                    <span class="info-label">Ngày:</span>
+                    <span>@(phieuxuatkho?.NgayXuatkho?.ToString("dd") ?? "__") THÁNG @(phieuxuatkho?.NgayXuatkho?.ToString("MM") ?? "__") NĂM @(phieuxuatkho?.NgayXuatkho?.ToString("yyyy") ?? "____")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Số:</span>
+                    <span>@(phieuxuatkho?.MaXuatkho ?? "")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Mã yêu cầu:</span>
+                    <span>@(phieuxuatkho?.MaYeucau ?? "")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Mã dự án:</span>
+                    <span>@(phieuxuatkho?.MaDuan ?? "")</span>
+                </div>
+            </div>
+            <div class="document-info-right">
+                <div class="info-row">
+                    <span class="info-label">Người yêu cầu:</span>
+                    <span>@(phieuxuatkho?.MaNguoidung ?? "")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Trạng thái:</span>
+                    <span>@(phieuxuatkho?.TrangThai ?? "")</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">STT</th>
+                        <th style="width: 35%;">TÊN, NHÃN HIỆU, QUY CÁCH, PHẨM CHẤT VẬT TƯ, DỤNG CỤ, SẢN PHẨM, HÀNG HÓA</th>
+                        <th style="width: 10%;">MÃ SỐ</th>
+                        <th style="width: 8%;">ĐVT</th>
+                        <th style="width: 10%;">SỐ LƯỢNG</th>
+                        <th style="width: 12%;">ĐƠN GIÁ</th>
+                        <th style="width: 15%;">THÀNH TIỀN</th>
+                        <th style="width: 5%;">NHÀ CC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (vtphieuxuatkho != null && vtphieuxuatkho.Any())
+                    {
+                        int stt = 1;
+                        decimal tongTien = 0;
+                        foreach (var item in vtphieuxuatkho)
+                        {
+                            var thanhTien = item.ThanhTien ?? ((item.DonGia ?? 0) * (item.SL ?? 0));
+                            tongTien += thanhTien;
+                            <tr>
+                                <td class="text-center">@stt</td>
+                                <td>@(item.TenSanpham ?? "")</td>
+                                <td class="text-center">@(item.MaSanpham ?? "")</td>
+                                <td class="text-center">@(item.DonVi ?? "")</td>
+                                <td class="text-right">@((item.SL ?? 0).ToString("N0"))</td>
+                                <td class="text-right">@((item.DonGia ?? 0).ToString("N0"))</td>
+                                <td class="text-right">@(thanhTien.ToString("N0"))</td>
+                                <td>@(item.NhaCC ?? "")</td>
+                            </tr>
+                            stt++;
+                        }
+                        <tr>
+                            <td colspan="6" style="text-align: center; font-weight: bold;">CỘNG:</td>
+                            <td class="text-right" style="font-weight: bold;">@(tongTien.ToString("N0"))</td>
+                            <td></td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" style="text-align: center;">Không có dữ liệu</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="summary">
+            @if (vtphieuxuatkho != null && vtphieuxuatkho.Any())
+            {
+                decimal tongTien = vtphieuxuatkho.Sum(vt => vt.ThanhTien ?? ((vt.DonGia ?? 0) * (vt.SL ?? 0)));
+                <div class="total-words">
+                    <strong>- Tổng cộng số tiền (Viết bằng chữ):</strong> 
+                    @{
+                        string soTienBangChu = DocSo(tongTien);
+                    }
+                    @soTienBangChu
+                </div>
+            }
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-line">
+                    <div>NGƯỜI LẬP PHIẾU</div>
+                    <div style="margin-top: 5px;">(Ký, họ tên)</div>
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    <div>THỦ KHO</div>
+                    <div style="margin-top: 5px;">(Ký, họ tên)</div>
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    <div>NGƯỜI NHẬN</div>
+                    <div style="margin-top: 5px;">(Ký, họ tên)</div>
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    <div>KẾ TOÁN</div>
+                    <div style="margin-top: 5px;">(Ký, họ tên)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="no-print" style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 14pt; cursor: pointer;">
+            In phiếu
+        </button>
+    </div>
+
+    @functions {
+        private string DocSo(decimal so)
+        {
+            if (so == 0) return "Không đồng";
+            
+            string[] donVi = { "", "nghìn", "triệu", "tỷ", "nghìn tỷ", "triệu tỷ" };
+            string[] chuSo = { "không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín" };
+            
+            long soNguyen = (long)so;
+            string ketQua = "";
+            
+            if (soNguyen == 0)
+            {
+                return "Không đồng";
+            }
+            
+            int donViIndex = 0;
+            while (soNguyen > 0)
+            {
+                int nhom = (int)(soNguyen % 1000);
+                soNguyen /= 1000;
+                
+                if (nhom > 0)
+                {
+                    string nhomChu = DocNhom(nhom);
+                    if (donViIndex > 0)
+                    {
+                        ketQua = nhomChu + " " + donVi[donViIndex] + " " + ketQua;
+                    }
+                    else
+                    {
+                        ketQua = nhomChu;
+                    }
+                }
+                donViIndex++;
+            }
+            
+            return ketQua.Trim() + " đồng";
+        }
+        
+        private string DocNhom(int nhom)
+        {
+            string[] chuSo = { "", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín" };
+            string ketQua = "";
+            
+            int tram = nhom / 100;
+            int chuc = (nhom % 100) / 10;
+            int donVi = nhom % 10;
+            
+            if (tram > 0)
+            {
+                ketQua += chuSo[tram] + " trăm ";
+            }
+            
+            if (chuc > 1)
+            {
+                ketQua += chuSo[chuc] + " mươi ";
+                if (donVi == 1)
+                {
+                    ketQua += "mốt ";
+                }
+                else if (donVi > 0)
+                {
+                    ketQua += chuSo[donVi] + " ";
+                }
+            }
+            else if (chuc == 1)
+            {
+                ketQua += "mười ";
+                if (donVi == 5)
+                {
+                    ketQua += "lăm ";
+                }
+                else if (donVi > 0)
+                {
+                    ketQua += chuSo[donVi] + " ";
+                }
+            }
+            else if (donVi > 0)
+            {
+                if (tram > 0)
+                {
+                    ketQua += "lẻ ";
+                }
+                ketQua += chuSo[donVi] + " ";
+            }
+            
+            return ketQua.Trim();
+        }
+    }
+</body>
+</html>
+

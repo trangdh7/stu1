@@ -58,8 +58,6 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
             return View(model);
         }
 
-
-
         public IActionResult Phieuxuatkho()
         {
             var Phieuxuatkholist = _context.phieuxuatkho

@@ -1,0 +1,312 @@
+@{
+    ViewData["Title"] = "In Phiếu Nhập Kho";
+    Layout = null;
+}
+@using Webkho_20241021.Models
+@{
+    var phieunhapkho = ViewBag.Phieunhapkho as phieunhapkho;
+    var vtphieunhapkho = ViewBag.VTPhieunhapkho as List<vtphieunhapkho>;
+    var yeucau = ViewBag.Yeucau as yeucau;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHIẾU NHẬP KHO</title>
+    <link rel="stylesheet" href="~/css/phieunhapkho.css" />
+</head>
+<body>
+    <div class="print-container">
+        <!-- Header Section -->
+        <div class="header">
+            <div class="company-name">CÔNG TY CỔ PHẦN DỊCH VỤ TỰ ĐỘNG HOÁ STU</div>
+            <div class="company-address">SỐ 46, HEM 34/232/18 VĨNH TUY, P.VĨNH TUY, Q.HAI BÀ TRƯNG, TP HÀ NỘI</div>
+            <div class="header-top">
+                <div class="header-left"></div>
+                <div class="header-right">
+                    <div class="tax-code">Mã số thuế: 0106421618</div>
+                    <div class="form-info">Mẫu số: 01 - VT</div>
+                    <div class="form-info">(Ban hành theo Thông tư số 133/2016/TT-BTC ngày 26/8/2016 của Bộ Tài chính)</div>
+                    <div class="form-number">No: 152</div>
+                    <div class="form-number">Có: 33111</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Title -->
+        <div class="document-title">
+            PHIẾU NHẬP KHO
+        </div>
+
+        <!-- Document Info -->
+        <div class="document-info">
+            <div class="document-info-left">
+                <div class="info-row">
+                    <span class="info-label">Ngày:</span>
+                    <span>@(phieunhapkho?.NgayNhapkho?.ToString("dd") ?? "__") THÁNG @(phieunhapkho?.NgayNhapkho?.ToString("MM") ?? "__") NĂM @(phieunhapkho?.NgayNhapkho?.ToString("yyyy") ?? "____")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Số:</span>
+                    <span>@(phieunhapkho?.MaNhapkho ?? "")</span>
+                </div>
+            </div>
+            <div class="document-info-right">
+                <div class="info-row">
+                    <span class="info-label">Mã yêu cầu:</span>
+                    <span>@(phieunhapkho?.MaYeucau ?? "")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Mã dự án:</span>
+                    <span>@(phieunhapkho?.MaDuan ?? "")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supplier/Delivery Info -->
+        <div class="supplier-info">
+            <div class="supplier-row">
+                <span class="supplier-label">- Họ và tên người giao hàng:</span>
+                <span>@(vtphieunhapkho?.FirstOrDefault()?.NhaCC ?? "")</span>
+            </div>
+            <div class="supplier-row">
+                <span class="supplier-label">- Theo số ngày.......... tháng năm của</span>
+            </div>
+            <div class="supplier-row">
+                <span class="supplier-label">- Nhập tại kho: KHO STU, địa điểm</span>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-stt">STT</th>
+                        <th class="col-ten">TÊN, NHÃN HIỆU, QUY CÁCH, PHẨM CHẤT VẬT TƯ, DỤNG CỤ, SẢN PHẨM, HÀNG HÓA</th>
+                        <th class="col-maso">MÃ SỐ</th>
+                        <th class="col-dvt">ĐVT</th>
+                        <th class="col-soluong" colspan="2">SỐ LƯỢNG</th>
+                        <th class="col-dongia">ĐƠN GIÁ</th>
+                        <th class="col-thanhtien">THÀNH TIỀN</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="col-soluong-sub">THEO C. TỪ</th>
+                        <th class="col-soluong-sub">THỰC NHẬP</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (vtphieunhapkho != null && vtphieunhapkho.Any())
+                    {
+                        int stt = 1;
+                        decimal tongTien = 0;
+                        foreach (var item in vtphieunhapkho)
+                        {
+                            // Tính thành tiền: ưu tiên lấy từ database, nếu không có thì tính từ đơn giá * số lượng
+                            decimal donGia = item.DonGia ?? 0;
+                            int soLuong = item.SL ?? 0;
+                            decimal thanhTien = item.ThanhTien ?? (donGia * soLuong);
+                            
+                            // Nếu thành tiền vẫn = 0 và có đơn giá và số lượng, tính lại
+                            if (thanhTien == 0 && donGia > 0 && soLuong > 0)
+                            {
+                                thanhTien = donGia * soLuong;
+                            }
+                            
+                            tongTien += thanhTien;
+                            <tr>
+                                <td class="text-center">@stt</td>
+                                <td>@(item.TenSanpham ?? "")</td>
+                                <td class="text-center">@(item.MaSanpham ?? "")</td>
+                                <td class="text-center">@(item.DonVi ?? "")</td>
+                                <td class="text-center"></td>
+                                <td class="text-right">@(soLuong.ToString("N0"))</td>
+                                <td class="text-right">@(donGia.ToString("N0"))</td>
+                                <td class="text-right">@(thanhTien.ToString("N0"))</td>
+                            </tr>
+                            stt++;
+                        }
+                        <tr>
+                            <td colspan="6" class="total-row">CỘNG:</td>
+                            <td class="text-right total-row">@(tongTien.ToString("N0"))</td>
+                            <td></td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center">Không có dữ liệu</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="summary">
+            @if (vtphieunhapkho != null && vtphieunhapkho.Any())
+            {
+                // Tính tổng tiền từ tất cả các vật tư
+                decimal tongTienSummary = 0;
+                foreach (var vt in vtphieunhapkho)
+                {
+                    decimal donGia = vt.DonGia ?? 0;
+                    int soLuong = vt.SL ?? 0;
+                    decimal thanhTien = vt.ThanhTien ?? (donGia * soLuong);
+                    
+                    if (thanhTien == 0 && donGia > 0 && soLuong > 0)
+                    {
+                        thanhTien = donGia * soLuong;
+                    }
+                    
+                    tongTienSummary += thanhTien;
+                }
+                string soTienBangChu = DocSo(tongTienSummary);
+                <div class="total-words">
+                    <strong>- Tổng cộng số tiền (Viết bằng chữ):</strong> 
+                    @soTienBangChu
+                </div>
+                <div class="summary-info">
+                    <div class="summary-row">
+                        <span>- Số chứng từ gốc kèm theo: 0</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-date">Ngày ..... tháng ..... năm</div>
+                <div class="signature-line">
+                    <div class="signature-title">NGƯỜI LẬP PHIẾU</div>
+                    <div class="signature-subtitle">(Ký, họ tên)</div>
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    <div class="signature-title">NGƯỜI GIAO HÀNG</div>
+                    <div class="signature-subtitle">(Ký, họ tên)</div>
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    <div class="signature-title">THỦ KHO</div>
+                    <div class="signature-subtitle">(Ký, họ tên)</div>
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    <div class="signature-title">KẾ TOÁN</div>
+                    <div class="signature-subtitle">(Hoặc bộ phận có nhu cầu nhập)</div>
+                    <div class="signature-subtitle">(Ký, họ tên)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="no-print">
+        <button onclick="window.print()" class="print-button">
+            In phiếu
+        </button>
+    </div>
+
+    @functions {
+        private string DocSo(decimal so)
+        {
+            if (so == 0) return "Không đồng";
+            
+            string[] donVi = { "", "nghìn", "triệu", "tỷ", "nghìn tỷ", "triệu tỷ" };
+            string[] chuSo = { "không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín" };
+            
+            long soNguyen = (long)so;
+            string ketQua = "";
+            
+            if (soNguyen == 0)
+            {
+                return "Không đồng";
+            }
+            
+            int donViIndex = 0;
+            while (soNguyen > 0)
+            {
+                int nhom = (int)(soNguyen % 1000);
+                soNguyen /= 1000;
+                
+                if (nhom > 0)
+                {
+                    string nhomChu = DocNhom(nhom);
+                    if (donViIndex > 0)
+                    {
+                        ketQua = nhomChu + " " + donVi[donViIndex] + " " + ketQua;
+                    }
+                    else
+                    {
+                        ketQua = nhomChu;
+                    }
+                }
+                donViIndex++;
+            }
+            
+            return ketQua.Trim() + " đồng";
+        }
+        
+        private string DocNhom(int nhom)
+        {
+            string[] chuSo = { "", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín" };
+            string ketQua = "";
+            
+            int tram = nhom / 100;
+            int chuc = (nhom % 100) / 10;
+            int donVi = nhom % 10;
+            
+            if (tram > 0)
+            {
+                ketQua += chuSo[tram] + " trăm ";
+            }
+            
+            if (chuc > 1)
+            {
+                ketQua += chuSo[chuc] + " mươi ";
+                if (donVi == 1)
+                {
+                    ketQua += "mốt ";
+                }
+                else if (donVi > 0)
+                {
+                    ketQua += chuSo[donVi] + " ";
+                }
+            }
+            else if (chuc == 1)
+            {
+                ketQua += "mười ";
+                if (donVi == 5)
+                {
+                    ketQua += "lăm ";
+                }
+                else if (donVi > 0)
+                {
+                    ketQua += chuSo[donVi] + " ";
+                }
+            }
+            else if (donVi > 0)
+            {
+                if (tram > 0)
+                {
+                    ketQua += "lẻ ";
+                }
+                ketQua += chuSo[donVi] + " ";
+            }
+            
+            return ketQua.Trim();
+        }
+    }
+</body>
+</html>

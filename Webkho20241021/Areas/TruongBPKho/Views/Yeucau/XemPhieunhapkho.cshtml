@@ -1,0 +1,247 @@
+@{
+    ViewData["Title"] = "Xem Phiếu Nhập Kho";
+    Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
+}
+@model Webkho_20241021.Areas.TruongBPKho.Data.Phieunhapkhoviewmodel
+
+@{
+    var phieunhapkho = Model.Phieunhapkho?.FirstOrDefault();
+    var vtphieunhapkho = Model.VTphieunhapkho ?? new List<Webkho_20241021.Models.vtphieunhapkho>();
+    var nhaCC = ViewBag.NhaCC as string ?? "";
+    var nguoiDung = ViewBag.NguoiDung as Webkho_20241021.Models.nguoidungs;
+    var duan = ViewBag.Duan as Webkho_20241021.Models.duans;
+    
+    // Tính tổng tiền hàng
+    decimal tongTienHang = 0;
+    decimal tongChiPhi = 0;
+    decimal tongThueGTGT = 0;
+    foreach (var vt in vtphieunhapkho)
+    {
+        tongTienHang += (vt.ThanhTien ?? 0);
+    }
+    tongThueGTGT = tongTienHang * 0.1m; // 10% VAT
+    decimal tongTienTT = tongTienHang + tongChiPhi + tongThueGTGT;
+    
+    // Format ngày
+    var ngayNhap = phieunhapkho?.NgayNhapkho ?? DateTime.Now;
+    var ngayThang = ngayNhap.ToString("dd");
+    var thang = ngayNhap.ToString("MM");
+    var nam = ngayNhap.ToString("yyyy");
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phiếu Nhập Kho</title>
+    <link rel="stylesheet" href="~/css/xemphieunhapkho.css" />
+</head>
+<body>
+    <div class="container">
+        <!-- Header công ty -->
+        <div class="company-header">
+            <div class="company-info">
+                <div class="company-name">CÔNG TY CỔ PHẦN DỊCH VỤ TỰ ĐỘNG HOÁ STU</div>
+                <div class="company-address">SỐ 46, HEM 34/232/18 VĨNH TUY, P.VĨNH TUY, Q.HAI BÀ TRƯNG, TP HÀ NỘI</div>
+            </div>
+            <div class="tax-info">
+                <div class="tax-code">Mã số thuế: 0106421618</div>
+                <div class="form-number">Mẫu số: 01 - VT</div>
+                <div class="form-number" style="font-size: 10px;">(Ban hành theo Thông tư số 133/2016/TT-BTC ngày 26/8/2016 của Bộ Tài chính)</div>
+            </div>
+        </div>
+
+        <!-- Tiêu đề phiếu -->
+        <div class="document-title">PHIẾU NHẬP KHO</div>
+        
+        <div class="document-info">
+            <div class="document-date">NGÀY @ngayThang THÁNG @thang NĂM @nam</div>
+            <div class="document-number">SỐ: @phieunhapkho?.MaNhapkho</div>
+        </div>
+
+        <div class="accounting-codes">
+            <div>Nợ: 152</div>
+            <div>Có: 33111</div>
+        </div>
+
+        <!-- Thông tin chung -->
+        <div class="general-info">
+            <div class="info-line">
+                <strong>- Họ và tên người yêu cầu:</strong> @(ViewBag.TenNguoiGiaoHang as string ?? "") - Mã: @(ViewBag.MaNguoiGiaoHang as string ?? "") 
+            </div>
+            <div class="info-line">
+                <strong>- Theo:</strong> @(duan != null ? $"Phiếu mua hàng - Dự án {duan.MaDuan}" : "Phiếu mua hàng")
+            </div>
+        </div>
+
+        <!-- Bảng chi tiết -->
+        <table class="detail-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">STT</th>
+                    <th style="width: 10%;">Mã vật tư</th>
+                    <th style="width: 25%;">Tên vật tư</th>
+                    <th style="width: 8%;">Đvt</th>
+                    <th style="width: 8%;">Mã kho</th>
+                    <th style="width: 8%;">Số lượng</th>
+                    <th style="width: 10%;">Đơn giá</th>
+                    <th style="width: 12%;">Thành tiền</th>
+                    <th style="width: 6%;">Tk nợ</th>
+                    <th style="width: 8%;">Mã dự án</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    int stt = 1;
+                }
+                @foreach (var vt in vtphieunhapkho)
+                {
+                    <tr>
+                        <td>@stt</td>
+                        <td>@(vt.MaSanpham ?? "")</td>
+                        <td style="text-align: left;">@(vt.TenSanpham ?? "")</td>
+                        <td>@(vt.DonVi ?? "")</td>
+                        <td>@(vt.Makho ?? "")</td>
+                        <td>@(vt.SL?.ToString("N0") ?? "0")</td>
+                        <td>@((vt.DonGia ?? 0).ToString("N2"))</td>
+                        <td>@((vt.ThanhTien ?? 0).ToString("N0"))</td>
+                        <td>156</td>
+                        <td>@(phieunhapkho?.MaDuan ?? "")</td>
+                    </tr>
+                    stt++;
+                }
+                @if (vtphieunhapkho.Count == 0)
+                {
+                    <tr>
+                        <td colspan="10" style="text-align: center;">Không có dữ liệu</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Tổng cộng -->
+        <div class="total-section">
+            <div class="total-row">
+                <span class="total-label">Cộng tiền hàng:</span>
+                <span class="total-value">@tongTienHang.ToString("N0")</span>
+            </div>
+            <div class="total-row">
+                <span class="total-label">Tiền chi phí:</span>
+                <span class="total-value">@tongChiPhi.ToString("N0")</span>
+            </div>
+            <div class="total-row">
+                <span class="total-label">Tiền thuế GTGT:</span>
+                <span class="total-value">@tongThueGTGT.ToString("N0")</span>
+            </div>
+            <div class="total-row" style="font-size: 14px; font-weight: bold; margin-top: 10px;">
+                <span class="total-label">Tổng tiền thanh toán:</span>
+                <span class="total-value" style="color: #d9534f;">@tongTienTT.ToString("N0")</span>
+            </div>
+        </div>
+
+        <!-- Chữ ký -->
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-label">Người lập phiếu</div>
+                <div style="margin-top: 50px;">(Ký, ghi rõ họ tên)</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-label">Người giao hàng</div>
+                <div style="margin-top: 50px;">(Ký, ghi rõ họ tên)</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-label">Thủ kho</div>
+                <div style="margin-top: 50px;">(Ký, ghi rõ họ tên)</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-label">Kế toán trưởng</div>
+                <div style="margin-top: 50px;">(Ký, ghi rõ họ tên)</div>
+            </div>
+        </div>
+
+        <!-- Trạng thái và nút hành động -->
+        <div style="margin-top: 30px; text-align: center;">
+            <div style="margin-bottom: 15px;">
+                <strong>Trạng thái: </strong>
+                <span class="status-badge @(phieunhapkho?.TrangThai == "Chờ nhập kho" ? "status-waiting" : phieunhapkho?.TrangThai == "Đã nhập kho" ? "status-approved" : "status-completed")">
+                    @phieunhapkho?.TrangThai
+                </span>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            @if (phieunhapkho?.TrangThai == "Chờ nhập kho" || phieunhapkho?.TrangThai == "Sẵn sàng nhập kho")
+            {
+                @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                {
+                    <input type="hidden" name="MaNhapkho" value="@phieunhapkho?.MaNhapkho" />
+                    <button type="submit" name="action" value="approve" class="btn btn-approve">
+                        ✓ Duyệt phiếu nhập kho
+                    </button>
+                }
+            }
+            <button type="button" class="btn btn-print" onclick="window.print()">
+                🖨️ In phiếu nhập kho
+            </button>
+            <button type="button" class="btn" style="background-color: #17a2b8; color: white;" onclick="kiemTraGiaTien()">
+                🔍 Kiểm tra giá tiền
+            </button>
+            <a href="/TruongBPKho/Yeucau/Phieunhapkho" class="btn btn-back">
+                ← Quay lại
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        function kiemTraGiaTien() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const maNhapkho = urlParams.get('MaNhapkho');
+            
+            if (!maNhapkho) {
+                alert('Không tìm thấy mã nhập kho!');
+                return;
+            }
+            
+            fetch(`/TruongBPKho/Yeucau/KiemTraGiaTien?MaNhapkho=${maNhapkho}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Lỗi: ' + data.error);
+                        return;
+                    }
+                    
+                    let message = '=== KIỂM TRA GIÁ TIỀN ===\n\n';
+                    message += `Mã nhập kho: ${data.MaNhapkho}\n`;
+                    message += `Mã yêu cầu: ${data.MaYeucau || 'N/A'}\n\n`;
+                    
+                    message += '--- Vật tư trong phiếu nhập kho ---\n';
+                    if (data.VTPhieunhapkho && data.VTPhieunhapkho.length > 0) {
+                        data.VTPhieunhapkho.forEach((vt, index) => {
+                            message += `${index + 1}. ${vt.TenSanpham} (${vt.MaSanpham})\n`;
+                            message += `   SL: ${vt.SL}, Đơn giá: ${vt.DonGia || 0}, Thành tiền: ${vt.ThanhTien || 0}\n`;
+                        });
+                    } else {
+                        message += 'Không có dữ liệu\n';
+                    }
+                    
+                    message += '\n--- Vật tư trong phiếu mua hàng ---\n';
+                    if (data.VTPhieumuahang && data.VTPhieumuahang.length > 0) {
+                        data.VTPhieumuahang.forEach((vt, index) => {
+                            message += `${index + 1}. ${vt.TenSanpham} (${vt.MaSanpham})\n`;
+                            message += `   SL: ${vt.SL}, Đơn giá: ${vt.DonGia || 0}, Thành tiền: ${vt.ThanhTien || 0}, Trạng thái: ${vt.TrangThai}\n`;
+                        });
+                    } else {
+                        message += 'Không có dữ liệu hoặc không tìm thấy phiếu mua hàng\n';
+                    }
+                    
+                    alert(message);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi kiểm tra giá tiền: ' + error.message);
+                });
+        }
+    </script>
+</body>
+</html>

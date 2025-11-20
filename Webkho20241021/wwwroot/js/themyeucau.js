@@ -1,152 +1,653 @@
 document.addEventListener("DOMContentLoaded", function () {
     const tableBody = document.getElementById("table-body");
-    const searchResultsContainer = document.getElementById("searchResults");
+    const fileInput = document.getElementById("excel-upload");
+    const ngayCanHangDefault = document.getElementById("ngaycanhang");
+    const feedbackEl = document.getElementById("excel-feedback");
+    const hiddenInputsWrapper = document.getElementById("excel-hidden-inputs");
+    let currentRows = [];
+    const areaSegment = window.location.pathname.split("/")[1] || "";
+    const khoDataUrl = areaSegment
+        ? `/${areaSegment}/Yeucau/GetKhoTongData`
+        : "/Yeucau/GetKhoTongData";
+    const khoDataState = {
+        data: [],
+        loaded: false,
+        loading: false
+    };
 
-    // Thêm một hàng mới vào bảng
-    function addNewRow() {
-        const newRow = document.createElement("tr");
-        const rowCount = tableBody.rows.length + 1;
+    if (!tableBody || !fileInput) {
+        return;
+    }
 
-        newRow.innerHTML = `
-        <td>${rowCount}</td>
-        <td><input type="text" class="TenSanpham" name="TenSanpham" placeholder="Tên vật tư"/></td>
-        <td><input type="text" name="MaSanpham" placeholder="Mã vật tư" /></td>
-        <td><input type="text" name="YCMakho" placeholder="Mã kho" readonly/></td>
-        <td><input type="text" name="HangSX" placeholder="Hãng SX" /></td>
-        <td><input type="text" name="NhaCC" placeholder="Nhà cung cấp" /></td>
-        <td><input type="number" name="SL" placeholder="Số lượng" min="1" step="1" onkeypress="return (event.charCode >= 48 && event.charCode <= 57)" oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value && parseInt(this.value) < 1) this.value = 1;" required /></td>
-        <td><input type="text" name="DonVi" placeholder="Đơn vị" required /></td>
-        <td><button type="button" class="btn-remove-row" onclick="removeRow(this)">Xóa</button></td>
-    `;
+    loadKhoTongData();
 
-        // Gắn sự kiện tìm kiếm cho ô input mới trong hàng
-        const tenSanphamInput = newRow.querySelector("input[name='TenSanpham']");
-        if (tenSanphamInput) {
-            tenSanphamInput.addEventListener("input", searchProducts);
+    const HEADER_LOOKAHEAD = 3;
+
+    const headerAliases = {
+        ten: [
+            "ten",
+            "tenthietbi",
+            "tenthietbihanghoa",
+            "tenhanghoa",
+            "tenvattu",
+            "tenvatlieu"
+        ],
+        ma: ["mavt", "mavattu", "mahanghoa", "ma"],
+        hang: ["hangsx", "hangsanxuat", "hang", "nhasx"],
+        donvi: ["donvi", "dv", "dvt", "donvitinh"],
+        slcu: ["slcu", "cu", "soluongcu", "old"],
+        slmoi: ["slmoi", "moi", "soluongmoi", "new"],
+        nhacc: ["nhacungcap", "ncc"],
+        ngay: ["ngaycanhang", "ngaycan", "ngaynhan", "ngaycan"]
+    };
+    
+    
+    function normalizeHeader(text) {
+        return text
+            ? text
+                  .toString()
+                  .trim()
+                  .toLowerCase()
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "")
+                  .replace(/đ/g, "d")
+                  .replace(/[^a-z0-9]/g, "")
+            : "";
+    }
+
+    function normalizeCode(value) {
+        return value ? value.toString().trim().toLowerCase() : "";
+    }
+
+    function loadKhoTongData() {
+        if (khoDataState.loaded || khoDataState.loading) {
+            return;
         }
+        khoDataState.loading = true;
+        fetch(khoDataUrl, {
+            headers: {
+                Accept: "application/json"
+            }
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Không thể tải dữ liệu kho tổng.");
+                }
+                return response.json();
+            })
+            .then((data) => {
+                if (Array.isArray(data)) {
+                    khoDataState.data = data.map((item) => ({
+                        tenSanpham: item?.tenSanpham || "",
+                        maSanpham: item?.maSanpham || "",
+                        hangSX: item?.hangSX || "",
+                        donVi: item?.donVi || "",
+                        makho: item?.makho || "",
+                        nhaCC: item?.nhaCC || ""
+                    }));
+                } else {
+                    khoDataState.data = [];
+                }
+            })
+            .catch((error) => {
+                console.error("Lỗi tải dữ liệu kho tổng:", error);
+            })
+            .finally(() => {
+                khoDataState.loaded = true;
+            });
+    }
 
-        tableBody.appendChild(newRow);
-        updateRowNumbers();
-        // Chỉ gọi getThongbaoData nếu hàm tồn tại (tránh lỗi nếu không load yeucau.js)
-        if (typeof getThongbaoData === 'function') {
-            getThongbaoData();
+    function findKhoItemByCode(code) {
+        const normalized = normalizeCode(code);
+        if (!normalized) return null;
+        return (
+            khoDataState.data.find(
+                (item) => normalizeCode(item.maSanpham) === normalized
+            ) || null
+        );
+    }
+
+    function applyKhoData(rowData) {
+        const matchedItem = findKhoItemByCode(rowData.MaSanpham);
+        if (!matchedItem) {
+            return rowData;
+        }
+        return {
+            ...rowData,
+            TenSanpham: matchedItem.tenSanpham || rowData.TenSanpham,
+            MaSanpham: matchedItem.maSanpham || rowData.MaSanpham,
+            HangSX: matchedItem.hangSX || rowData.HangSX,
+            DonVi: matchedItem.donVi || rowData.DonVi,
+            NhaCC: rowData.NhaCC || matchedItem.nhaCC || "",
+            YCMakho: matchedItem.makho || rowData.YCMakho || "",
+            hasKhoMatch: true
+        };
+    }
+
+    function matchesAlias(normalizedHeader, aliasList) {
+        return aliasList.some((alias) => {
+            if (!alias || !normalizedHeader) return false;
+            if (normalizedHeader === alias) {
+                return true;
+            }
+            if (
+                alias.length >= normalizedHeader.length &&
+                alias.includes(normalizedHeader) &&
+                normalizedHeader.length >= 3
+            ) {
+                return true;
+            }
+            return false;
+        });
+    }
+
+    function mapHeaders(headerRows) {
+        const mapping = {};
+        const scores = {};
+        if (!headerRows || !headerRows.length) {
+            return mapping;
+        }
+        const maxColumns = Math.max(
+            ...headerRows.map((row) => (row ? row.length : 0))
+        );
+        for (let col = 0; col < maxColumns; col++) {
+            for (let rowIdx = headerRows.length - 1; rowIdx >= 0; rowIdx--) {
+                const row = headerRows[rowIdx] || [];
+                const cell = row[col];
+                const normalized = normalizeHeader(cell);
+                if (!normalized) {
+                    continue;
+                }
+                Object.entries(headerAliases).forEach(([key, aliases]) => {
+                    if (!matchesAlias(normalized, aliases)) {
+                        return;
+                    }
+                    const depthScore = (headerRows.length - rowIdx) * 5;
+                    const score = normalized.length + depthScore;
+                    if (scores[key] === undefined || score > scores[key]) {
+                        scores[key] = score;
+                        mapping[key] = col;
+                    }
+                });
+            }
+        }
+        return mapping;
+    }
+
+    function tryFillMissingColumns(mapping, headerRows) {
+        if (!headerRows || !headerRows.length) return mapping;
+        const maxColumns = Math.max(
+            ...headerRows.map((row) => (row ? row.length : 0))
+        );
+        const headerHasText = (colIndex) =>
+            headerRows.some((row) => {
+                if (!row || row[colIndex] === undefined) return false;
+                return normalizeHeader(row[colIndex]) !== "";
+            });
+
+        const orderedKeys = [
+            "ten",
+            "ma",
+            "hang",
+            "donvi",
+            "slcu",
+            "slmoi",
+            "ngay",
+            "nhacc"
+        ];
+
+        let lastKnownColumn = undefined;
+        orderedKeys.forEach((key) => {
+            if (mapping[key] !== undefined) {
+                lastKnownColumn = mapping[key];
+                return;
+            }
+            if (lastKnownColumn === undefined) {
+                return;
+            }
+            let candidate = lastKnownColumn + 1;
+            while (candidate < maxColumns && !headerHasText(candidate)) {
+                candidate++;
+            }
+            if (candidate < maxColumns) {
+                mapping[key] = candidate;
+                lastKnownColumn = candidate;
+            }
+        });
+        return mapping;
+    }
+
+    function setFeedback(message, isError = false) {
+        if (!feedbackEl) return;
+        feedbackEl.textContent = message || "";
+        feedbackEl.classList.toggle("error", isError);
+        feedbackEl.classList.toggle("success", !isError);
+    }
+
+    function clearTable() {
+        tableBody.innerHTML = "";
+        if (hiddenInputsWrapper) {
+            hiddenInputsWrapper.innerHTML = "";
         }
     }
 
-    // Cập nhật số thứ tự các hàng và hiển thị/ẩn nút xóa
-    function updateRowNumbers() {
-        const rows = tableBody.querySelectorAll('tr');
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return "";
+        return text
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function parseDateValue(value) {
+        if (!value) return "";
+        if (typeof value === "number") {
+            const dateObj = XLSX.SSF.parse_date_code(value);
+            if (!dateObj) return "";
+            const jsDate = new Date(Date.UTC(dateObj.y, dateObj.m - 1, dateObj.d));
+            return jsDate.toISOString().slice(0, 10);
+        }
+        const parsed = new Date(value);
+        if (isNaN(parsed.getTime())) {
+            return "";
+        }
+        return parsed.toISOString().slice(0, 10);
+    }
+
+    function isValidFutureDate(dateString) {
+        if (!dateString) return true; // Cho phép để trống
+        const date = new Date(dateString);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        date.setHours(0, 0, 0, 0);
+        return date >= today;
+    }
+
+    function parseQuantity(value) {
+        if (value === null || value === undefined || value === "") return "";
+        const num = Number(value);
+        if (isNaN(num)) {
+            return value.toString();
+        }
+        return num.toString();
+    }
+
+    function appendHiddenInput(name, value) {
+        if (!hiddenInputsWrapper) return;
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value ?? "";
+        hiddenInputsWrapper.appendChild(input);
+    }
+
+    const hasQuantityValue = (value) =>
+        !(value === undefined || value === null || value === "");
+
+    function resolveFinalQuantity(rowData) {
+        if (!rowData) return "";
+        if (hasQuantityValue(rowData.SLMoi)) {
+            return rowData.SLMoi;
+        }
+        if (hasQuantityValue(rowData.SLCu)) {
+            return rowData.SLCu;
+        }
+        return "";
+    }
+
+    function appendRowHiddenInputs(rowData) {
+        appendHiddenInput("TenSanpham", rowData.TenSanpham);
+        appendHiddenInput("MaSanpham", rowData.MaSanpham);
+        appendHiddenInput("YCMakho", rowData.YCMakho || "");
+        appendHiddenInput("HangSX", rowData.HangSX);
+        appendHiddenInput("DonVi", rowData.DonVi);
+        appendHiddenInput("SLCu", rowData.SLCu);
+        const finalQuantity = rowData.SLToSave ?? resolveFinalQuantity(rowData);
+        appendHiddenInput("SL", finalQuantity);
+        appendHiddenInput("NhaCC", rowData.NhaCC);
+        appendHiddenInput("VTNgayCanHang", rowData.NgayCanHang);
+    }
+
+    function renderRows(rows, updateState = true) {
+        clearTable();
         rows.forEach((row, index) => {
-            row.querySelector('td:first-child').textContent = index + 1;
-            // Hiển thị nút xóa cho các hàng từ hàng thứ 2 trở đi
-            const removeBtn = row.querySelector('.btn-remove-row');
-            if (removeBtn) {
-                if (rows.length > 1 && index > 0) {
-                    removeBtn.style.display = 'inline-block';
-                } else {
-                    removeBtn.style.display = 'none';
+            const tr = document.createElement("tr");
+            const finalQuantity = row.SLToSave ?? resolveFinalQuantity(row);
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${escapeHtml(row.TenSanpham)}</td>
+                <td>${escapeHtml(row.MaSanpham)}</td>
+                <td>${escapeHtml(row.HangSX)}</td>
+                <td>${escapeHtml(row.DonVi)}</td>
+                <td>${escapeHtml(row.SLCu)}</td>
+                <td>${escapeHtml(finalQuantity)}</td>
+                <td>${escapeHtml(row.NgayCanHang)}</td>
+                <td>${escapeHtml(row.NhaCC)}</td>
+            `;
+            tableBody.appendChild(tr);
+            appendRowHiddenInputs(row);
+        });
+        if (updateState) {
+            currentRows = rows.map((row) => ({ ...row }));
+        }
+    }
+
+    function updateRowsDefaultDate(newDate) {
+        if (!currentRows.length) return;
+        let updated = false;
+        currentRows = currentRows.map((row) => {
+            if (row.hasManualDate) {
+                return row;
+            }
+            if (row.NgayCanHang === newDate) {
+                return row;
+            }
+            updated = true;
+            return { ...row, NgayCanHang: newDate };
+        });
+        if (updated) {
+            renderRows(currentRows, false);
+        }
+    }
+
+    function findHeaderRowIndex(sheetRows) {
+        let bestIndex = -1;
+        let bestScore = 0;
+
+        sheetRows.forEach((row, index) => {
+            if (!row || !row.length) return;
+            const matchedKeys = new Set();
+            row.forEach((cell) => {
+                const normalized = normalizeHeader(cell);
+                if (!normalized) return;
+                Object.entries(headerAliases).forEach(([key, aliases]) => {
+                    if (matchesAlias(normalized, aliases)) {
+                        matchedKeys.add(key);
+                    }
+                });
+            });
+            if (!matchedKeys.has("ten")) {
+                return;
+            }
+            if (matchedKeys.size > bestScore) {
+                bestScore = matchedKeys.size;
+                bestIndex = index;
+            }
+        });
+
+        return bestIndex;
+    }
+
+    function processSheet(sheetRows) {
+        if (!sheetRows || !sheetRows.length) {
+            setFeedback("Tệp Excel không có dữ liệu.", true);
+            clearTable();
+            return;
+        }
+
+        const headerRowIndex = findHeaderRowIndex(sheetRows);
+        if (headerRowIndex === -1) {
+            setFeedback("Không tìm thấy dòng tiêu đề hợp lệ trong tệp.", true);
+            clearTable();
+            return;
+        }
+
+        const headerRows = sheetRows.slice(
+            headerRowIndex,
+            Math.min(sheetRows.length, headerRowIndex + HEADER_LOOKAHEAD)
+        );
+        const headerRow = headerRows[0] || [];
+        const dataRows = sheetRows.slice(headerRowIndex + 1);
+        if (!headerRow.length) {
+            setFeedback("Không đọc được tiêu đề cột trong tệp.", true);
+            clearTable();
+            return;
+        }
+
+        const headerIndex = mapHeaders(headerRows);
+        const requiredKeys = ["ten", "ma", "hang", "donvi", "slmoi"];
+        const missingKeys = requiredKeys.filter(
+            (key) => headerIndex[key] === undefined
+        );
+        if (missingKeys.length) {
+            const missingLabels = {
+                ten: "Tên thiết bị/hàng hóa",
+                ma: "Mã VT",
+                hang: "Hãng SX",
+                donvi: "ĐV",
+                slmoi: "SL Mới"
+            };
+            const missingText = missingKeys
+                .map((key) => missingLabels[key] || key)
+                .join(", ");
+            setFeedback(`Thiếu cột bắt buộc: ${missingText}.`, true);
+            clearTable();
+            return;
+        }
+
+        const headerTexts = {};
+        Object.entries(headerIndex).forEach(([key, colIndex]) => {
+            for (let i = 0; i < headerRows.length; i++) {
+                const cell = headerRows[i] && headerRows[i][colIndex];
+                if (cell === undefined || cell === null) continue;
+                const text = cell.toString().trim();
+                if (text) {
+                    headerTexts[key] = text;
+                    break;
                 }
             }
         });
-    }
 
-    // Xóa hàng
-    window.removeRow = function(button) {
-        const row = button.closest('tr');
-        if (tableBody.rows.length > 1) {
-            row.remove();
-            updateRowNumbers();
-        } else {
-            alert('Phải có ít nhất 1 hàng vật tư!');
+        const normalizedHeaderTexts = Object.fromEntries(
+            Object.entries(headerTexts).map(([key, text]) => [
+                key,
+                normalizeHeader(text)
+            ])
+        );
+
+        const defaultDate = ngayCanHangDefault ? ngayCanHangDefault.value : "";
+        const today = new Date().toISOString().slice(0, 10);
+        let hasInvalidDate = false;
+
+        const rows = dataRows
+            .map((row) => {
+                const getValue = (key) =>
+                    headerIndex[key] !== undefined ? row[headerIndex[key]] : "";
+                const parsedDate = parseDateValue(getValue("ngay")) || defaultDate;
+                let rowData = {
+                    TenSanpham: (getValue("ten") || "").toString().trim(),
+                    MaSanpham: (getValue("ma") || "").toString().trim(),
+                    HangSX: (getValue("hang") || "").toString().trim(),
+                    DonVi: (getValue("donvi") || "").toString().trim(),
+                    SLCu: parseQuantity(getValue("slcu")),
+                    SLMoi: parseQuantity(getValue("slmoi")),
+                    NhaCC: (getValue("nhacc") || "").toString().trim(),
+                    NgayCanHang: parsedDate,
+                    YCMakho: "",
+                    hasManualDate: Boolean(getValue("ngay"))
+                };
+                rowData.SLToSave = resolveFinalQuantity(rowData);
+                rowData = applyKhoData(rowData);
+                if (!rowData.hasManualDate) {
+                    rowData.NgayCanHang = defaultDate;
+                }
+                // Kiểm tra ngày hợp lệ (phải là ngày tương lai)
+                if (rowData.NgayCanHang && !isValidFutureDate(rowData.NgayCanHang)) {
+                    hasInvalidDate = true;
+                    rowData.NgayCanHang = today; // Tự động đặt về ngày hôm nay nếu là ngày quá khứ
+                }
+                return rowData;
+            })
+            .filter((row) => {
+                if (!row.TenSanpham) return false;
+                if (
+                    normalizedHeaderTexts.slmoi &&
+                    normalizeHeader(row.SLMoi) === normalizedHeaderTexts.slmoi
+                ) {
+                    return false;
+                }
+                if (
+                    normalizedHeaderTexts.slcu &&
+                    normalizeHeader(row.SLCu) === normalizedHeaderTexts.slcu
+                ) {
+                    return false;
+                }
+                const isNumericName = /^[0-9]+(\.[0-9]+)*$/.test(row.TenSanpham);
+                if (isNumericName) return false;
+                const otherFields = [
+                    row.MaSanpham,
+                    row.HangSX,
+                    row.DonVi,
+                    row.SLCu,
+                    row.SLMoi,
+                    row.NhaCC
+                ];
+                const hasOtherData = otherFields.some(
+                    (value) => value !== null && value !== ""
+                );
+                return hasOtherData;
+            });
+
+        if (!rows.length) {
+            setFeedback("Không tìm thấy dữ liệu hợp lệ trong tệp.", true);
+            clearTable();
+            return;
         }
-    };
 
-    // Gắn sự kiện cho nút thêm hàng
-    const btnAddRow = document.getElementById('btn-add-row');
-    if (btnAddRow) {
-        btnAddRow.addEventListener('click', addNewRow);
+        renderRows(rows);
+        if (hasInvalidDate) {
+            setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel. Lưu ý: Một số ngày cần hàng trong quá khứ đã được tự động điều chỉnh thành ngày hôm nay.`, false);
+        } else {
+        setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel.`, false);
+        }
     }
 
-    // Hàm tìm kiếm sản phẩm
-    // Hàm tìm kiếm sản phẩm
-    function searchProducts(event) {
-        const currentRow = event.target.closest('tr'); // Lấy hàng của input hiện tại
-        const tenSanphamInput = currentRow.querySelector("input[name='TenSanpham']");
-        const searchValue = tenSanphamInput ? tenSanphamInput.value : "";
-        const pathSegments = window.location.pathname.split('/');
-        const area = pathSegments.length > 1 ? pathSegments[1] : ''; // Giả sử area là segment đầu tiên sau dấu '/'
+    function handleFileChange(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            setFeedback("Chưa chọn tệp Excel.", true);
+            clearTable();
+            return;
+        }
 
-        const url = `/${area}/Yeucau/TimKiem?timkiem=${searchValue}`;
+        if (!/\.(xlsx|xls|xlsm)$/i.test(file.name)) {
+            setFeedback("Vui lòng chọn tệp Excel (.xlsx, .xls, .xlsm).", true);
+            fileInput.value = "";
+            clearTable();
+            return;
+        }
 
-        if (searchValue.length > 0) {
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    searchResultsContainer.style.display = "table-row-group";
-                    searchResultsContainer.innerHTML = "";
+        const isLegacyXls = /\.xls$/i.test(file.name) && !/\.xlsx$/i.test(file.name);
+        const reader = new FileReader();
 
-                    if (data && data.length > 0) {
-                        data.forEach((item, index) => {
-                            const row = document.createElement("tr");
-                            row.classList.add("search-row");
-                            row.innerHTML = `
-                            <td>${index + 1}</td>
-                            <td>${item.tenSanpham || 'Không xác định'}</td>
-                            <td>${item.maSanpham || 'Không xác định'}</td>
-                            <td>${item.makho || 'Không xác định'}</td>
-                            <td>${item.hangSX || 'Không xác định'}</td>
-                            <td>${item.nhaCC || 'Không xác định'}</td>
-                            <td>${item.sl === 0 ? 0 : item.sl || 'Không xác định'}</td>
-                            <td>${item.donVi || 'Không xác định'}</td>
-                        `;
-
-                            row.addEventListener("click", () => {
-                                // Điền dữ liệu vào ô input của hàng hiện tại
-                                currentRow.querySelector("input[name='TenSanpham']").value = item.tenSanpham || '';
-                                currentRow.querySelector("input[name='MaSanpham']").value = item.maSanpham || '';
-                                currentRow.querySelector("input[name='YCMakho']").value = item.makho || '';
-                                currentRow.querySelector("input[name='HangSX']").value = item.hangSX || '';
-                                currentRow.querySelector("input[name='NhaCC']").value = item.nhaCC || '';
-                                currentRow.querySelector("input[name='SL']").value = item.sl || '';
-                                currentRow.querySelector("input[name='DonVi']").value = item.donVi || '';
-
-                                // Ẩn bảng kết quả tìm kiếm
-                                searchResultsContainer.style.display = "none";
-                            });
-
-                            searchResultsContainer.appendChild(row);
-                        });
-                    } 
-                })
-                .catch(error => {
-                    console.error("Lỗi khi tìm kiếm sản phẩm:", error);
-                    searchResultsContainer.innerHTML = "<tr><td colspan='8'>Lỗi khi tải dữ liệu</td></tr>";
+        reader.onload = function (e) {
+            try {
+                const data = e.target.result;
+                const workbook = XLSX.read(isLegacyXls ? data : new Uint8Array(data), {
+                    type: isLegacyXls ? "binary" : "array"
                 });
+                if (!workbook.SheetNames.length) {
+                    setFeedback("Tệp không chứa sheet nào.", true);
+                    clearTable();
+                    return;
+                }
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const sheetRows = XLSX.utils.sheet_to_json(sheet, {
+                    header: 1,
+                    defval: "",
+                    blankrows: false
+                });
+                processSheet(sheetRows);
+            } catch (error) {
+                console.error("Lỗi khi đọc tệp Excel:", error);
+                setFeedback(
+                    `Không thể đọc tệp Excel. ${error && error.message ? error.message : "Vui lòng kiểm tra lại."}`,
+                    true
+                );
+                clearTable();
+            }
+        };
+        reader.onerror = function () {
+            setFeedback("Đã xảy ra lỗi khi đọc tệp. Vui lòng thử lại.", true);
+            clearTable();
+        };
+
+        if (isLegacyXls) {
+            reader.readAsBinaryString(file);
         } else {
-            searchResultsContainer.innerHTML = "";
-            searchResultsContainer.style.display = "none";
+            reader.readAsArrayBuffer(file);
         }
     }
 
+    function ensureXlsxLibrary(readyCallback) {
+        if (typeof window.XLSX !== "undefined") {
+            readyCallback();
+            return;
+        }
 
-    // Lắng nghe sự kiện nhập liệu trong ô Tên sản phẩm để tìm kiếm khi người dùng nhập
-    const tenSanphamInput = document.querySelector("input[name='TenSanpham']");
-    if (tenSanphamInput) {
-        tenSanphamInput.addEventListener("input", searchProducts);
+        const script = document.createElement("script");
+        script.src =
+            "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+        script.async = true;
+        script.onload = readyCallback;
+        script.onerror = function () {
+            setFeedback("Không thể tải thư viện XLSX. Vui lòng kiểm tra kết nối.", true);
+        };
+        document.head.appendChild(script);
     }
 
-    // Xử lý chuyển hướng khi chọn "Yêu cầu nhập kho"
-    const tenyeucauSelect = document.getElementById("tenyeucau");
-    if (tenyeucauSelect) {
-        tenyeucauSelect.addEventListener("change", function() {
-            if (this.value === "Yêu cầu nhập kho") {
-                const pathSegments = window.location.pathname.split('/').filter(Boolean);
-                const currentArea = pathSegments.length > 0 ? pathSegments[0] : "NhanvienKythuat";
-                window.location.href = `/${currentArea}/Yeucau/ThemPhieunhapkho`;
+    ensureXlsxLibrary(() => {
+        fileInput.addEventListener("change", handleFileChange);
+    });
+
+    if (ngayCanHangDefault) {
+        ngayCanHangDefault.addEventListener("change", (event) => {
+            const newDate = event.target.value || "";
+            if (newDate && !isValidFutureDate(newDate)) {
+                const today = new Date().toISOString().slice(0, 10);
+                event.target.value = today;
+                setFeedback("Ngày cần hàng phải là ngày tương lai. Đã tự động điều chỉnh thành ngày hôm nay.", true);
+                setTimeout(() => {
+                    setFeedback("", false);
+                }, 3000);
+                updateRowsDefaultDate(today);
+            } else {
+            updateRowsDefaultDate(newDate);
             }
         });
     }
 
-    // Cập nhật số thứ tự và nút xóa khi trang load
-    updateRowNumbers();
+    // Validation khi submit form
+    const form = document.querySelector("form");
+    if (form) {
+        form.addEventListener("submit", function(event) {
+            // Kiểm tra ngày cần hàng chính
+            if (ngayCanHangDefault && ngayCanHangDefault.value) {
+                if (!isValidFutureDate(ngayCanHangDefault.value)) {
+                    event.preventDefault();
+                    setFeedback("Ngày cần hàng phải là ngày tương lai. Vui lòng chọn lại ngày hợp lệ.", true);
+                    ngayCanHangDefault.focus();
+                    return false;
+                }
+            }
+
+            // Kiểm tra các ngày cần hàng từ Excel
+            const dateInputs = hiddenInputsWrapper.querySelectorAll('input[name="VTNgayCanHang"]');
+            let hasInvalidDateInForm = false;
+            dateInputs.forEach((input) => {
+                if (input.value && !isValidFutureDate(input.value)) {
+                    hasInvalidDateInForm = true;
+                }
+            });
+
+            if (hasInvalidDateInForm) {
+                event.preventDefault();
+                setFeedback("Có một số ngày cần hàng trong quá khứ. Vui lòng kiểm tra và sửa lại trước khi gửi.", true);
+                return false;
+            }
+        });
+    }
 });

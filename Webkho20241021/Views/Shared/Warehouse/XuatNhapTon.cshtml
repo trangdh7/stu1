@@ -1,0 +1,243 @@
+@model Webkho_20241021.Models.ViewModels.InventoryMovementPageViewModel
+@{
+    var layoutPath = ViewBag.LayoutPath as string ?? "~/Areas/NhanvienKho/Views/Layout/Layout.cshtml";
+    var areaName = ViewBag.AreaName as string ?? "NhanvienKho";
+    ViewData["Title"] = "Xuất nhập tồn";
+    Layout = layoutPath;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/css/Action.css" rel="stylesheet" />
+    <link href="~/css/Kho.css" rel="stylesheet" />
+    <link href="~/css/style.css" rel="stylesheet" />
+    <link href="~/css/Table.css" rel="stylesheet" />
+    <link href="~/css/Tongkho.css" rel="stylesheet" />
+    <link href="~/css/XuatNhapTon.css" rel="stylesheet" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Xuất nhập tồn</title>
+</head>
+<body>
+    <div class="warehouse-container xnt-container">
+        <div class="warehouse-header">
+            <div class="header-content">
+                <h1 class="header-title"><i class='bx bx-transfer'></i> Xuất nhập tồn</h1>
+                <p class="header-subtitle">Theo dõi biến động vật tư theo ngày, người nhận và tồn kho hiện tại</p>
+            </div>
+        </div>
+
+        <div class="warehouse-nav">
+            <div class="nav-tabs">
+                @{
+                    var actionName = (string)ViewContext.RouteData.Values["action"];
+                }
+                <a href="@Url.Action("Tongkho", "Home", new { area = areaName })"
+                   class="nav-tab @(actionName == "Tongkho" ? "active" : "")">
+                    <i class='bx bx-store'></i> Tổng kho
+                </a>
+                <a href="@Url.Action("VatTuMoi", "Home", new { area = areaName })"
+                   class="nav-tab @(actionName == "VatTuMoi" ? "active" : "")">
+                    <i class='bx bx-package'></i> Kho nv mới
+                </a>
+                <a href="@Url.Action("KhoDuAn", "Home", new { area = areaName })"
+                   class="nav-tab @(actionName == "KhoDuAn" ? "active" : "")">
+                    <i class='bx bx-briefcase'></i> Kho dự án
+                </a>
+                <a href="@Url.Action("XuatNhapTon", "Home", new { area = areaName })"
+                   class="nav-tab @(actionName == "XuatNhapTon" ? "active" : "")">
+                    <i class='bx bx-transfer'></i> Xuất nhập tồn
+                </a>
+            </div>
+            <div class="nav-search">
+                <form method="get" action="@Url.Action("XuatNhapTon", "Home", new { area = areaName })"
+                      class="nav-search-form">
+                    <i class='bx bx-search'></i>
+                    <input type="text"
+                           name="q"
+                           value="@Model.Keyword"
+                           placeholder="Tìm mã vật tư, tên, hãng SX..." />
+                    <button type="submit" class="btn btn-primary">Lọc</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="xnt-summary">
+            <div class="xnt-summary-card">
+                <span>Tổng vật tư</span>
+                <strong>@Model.TongSoMatHang</strong>
+            </div>
+            <div class="xnt-summary-card in">
+                <span>Tổng nhập</span>
+                <strong>@Model.TongNhap</strong>
+            </div>
+            <div class="xnt-summary-card out">
+                <span>Tổng xuất</span>
+                <strong>@Model.TongXuat</strong>
+            </div>
+            <div class="xnt-summary-card stock">
+                <span>Tồn kho</span>
+                <strong>@Model.TongTon</strong>
+            </div>
+        </div>
+
+        <div class="warehouse-content">
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>Bảng xuất nhập tồn</h2>
+                    <p class="table-subtitle">Chạm vào tên vật tư để xem lịch sử chi tiết</p>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table xnt-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã vật tư</th>
+                                <th>Tên vật tư</th>
+                                <th>Đvt</th>
+                                <th>SL tồn đầu</th>
+                                <th>Dư đầu (₫)</th>
+                                <th>SL nhập</th>
+                                <th>Tiền nhập (₫)</th>
+                                <th>SL xuất</th>
+                                <th>Tiền xuất (₫)</th>
+                                <th>SL tồn cuối</th>
+                                <th>Dư cuối (₫)</th>
+                                <th>TK vật tư</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Items != null && Model.Items.Any())
+                            {
+                                var index = 1;
+                                foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td>@index</td>
+                                        <td>@item.MaSanpham</td>
+                                        <td>
+                                            <button type="button"
+                                                    class="link-button"
+                                                    data-detail-trigger
+                                                    data-detail-url="@Url.Action("ChiTietVatTu", "Home", new { area = areaName, maSanpham = item.MaSanpham })"
+                                                    data-detail-name="@item.TenSanpham"
+                                                    data-detail-code="@item.MaSanpham"
+                                                    data-detail-ton="@item.TonKho"
+                                                    data-detail-donvi="@item.DonVi">
+                                                @item.TenSanpham
+                                            </button>
+                                        </td>
+                                        <td>@item.DonVi</td>
+                                        <td class="text-right">@item.TonDauSoLuong</td>
+                                        <td class="text-right" data-money>@item.GiaTriTonDau</td>
+                                        <td class="text-right text-in">@item.TongNhap</td>
+                                        <td class="text-right text-in" data-money>@item.GiaTriNhap</td>
+                                        <td class="text-right text-out">@item.TongXuat</td>
+                                        <td class="text-right text-out" data-money>@item.GiaTriXuat</td>
+                                        <td class="text-right text-stock">@item.TonKho</td>
+                                        <td class="text-right text-stock" data-money>@item.GiaTriTonCuoi</td>
+                                        <td>@(item.TaiKhoanVatTu ?? "152")</td>
+                                        <td>
+                                            <button type="button"
+                                                    class="btn btn-outline"
+                                                    data-detail-trigger
+                                                    data-detail-url="@Url.Action("ChiTietVatTu", "Home", new { area = areaName, maSanpham = item.MaSanpham })"
+                                                    data-detail-name="@item.TenSanpham"
+                                                    data-detail-code="@item.MaSanpham"
+                                                    data-detail-ton="@item.TonKho"
+                                                    data-detail-donvi="@item.DonVi">
+                                                Chi tiết
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    index++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="14">Không có dữ liệu phù hợp.</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4">Tổng cộng</td>
+                                <td class="text-right">@Model.Items.Sum(i => i.TonDauSoLuong)</td>
+                                <td class="text-right" data-money>@Model.Items.Sum(i => i.GiaTriTonDau)</td>
+                                <td class="text-right">@Model.TongNhap</td>
+                                <td class="text-right" data-money>@Model.TongGiaTriNhap</td>
+                                <td class="text-right">@Model.TongXuat</td>
+                                <td class="text-right" data-money>@Model.TongGiaTriXuat</td>
+                                <td class="text-right">@Model.TongTon</td>
+                                <td class="text-right" data-money>@Model.TongGiaTriTon</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="inventory-detail" data-detail-panel>
+        <div class="inventory-detail-overlay" data-close-detail></div>
+        <div class="inventory-detail-card">
+            <div class="inventory-detail-header">
+                <div>
+                    <h3 class="inventory-detail-title" data-detail-title>Chi tiết vật tư</h3>
+                    <p class="inventory-detail-meta">
+                        Mã: <span data-detail-code>---</span>
+                    </p>
+                </div>
+                <button class="inventory-detail-close" type="button" data-close-detail>
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+            <div class="inventory-detail-summary">
+                <div class="summary-box in">
+                    <span>Đã nhập</span>
+                    <strong data-summary-in>0</strong>
+                </div>
+                <div class="summary-box out">
+                    <span>Đã xuất</span>
+                    <strong data-summary-out>0</strong>
+                </div>
+                <div class="summary-box stock">
+                    <span>Tồn</span>
+                    <strong data-summary-stock>0</strong>
+                </div>
+            </div>
+            <div class="inventory-detail-table-wrapper">
+                <table class="inventory-detail-table">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Số CT</th>
+                            <th>Loại</th>
+                            <th>Đối tượng</th>
+                            <th>TK đối ứng</th>
+                            <th>Kho</th>
+                            <th>Đơn giá</th>
+                            <th>Số lượng</th>
+                            <th>Thành tiền</th>
+                            <th>Diễn giải</th>
+                        </tr>
+                    </thead>
+                    <tbody data-detail-body>
+                        <tr>
+                            <td colspan="9">Chọn vật tư để xem lịch sử.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/xuatnhapton.js"></script>
+</body>
+</html>
+

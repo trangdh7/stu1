@@ -5,6 +5,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using OfficeOpenXml;
+using Webkho_20241021.Models.ViewModels;
+using Webkho_20241021.Services;
 
 namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 {
@@ -64,6 +66,18 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
         public IActionResult Import()
         {
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult XuatNhapTon(string q = null)
+        {
+            var service = new InventoryMovementService(_context);
+            var viewModel = service.BuildPageViewModel(q);
+
+            ViewBag.LayoutPath = "~/Areas/NhanvienKho/Views/Layout/Layout.cshtml";
+            ViewBag.AreaName = "NhanvienKho";
+
+            return View("~/Views/Shared/Warehouse/XuatNhapTon.cshtml", viewModel);
         }
 
         [HttpPost]
@@ -127,6 +141,20 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                 .Where(k => k.TenSanpham.Contains(timkiem) || k.MaSanpham.Contains(timkiem))
                 .ToList();
             return Json(results);
+        }
+
+        [HttpGet]
+        public IActionResult ChiTietVatTu(string maSanpham)
+        {
+            var service = new InventoryMovementService(_context);
+            var detail = service.BuildDetail(maSanpham);
+
+            if (detail.Summary == null && (detail.Transactions == null || detail.Transactions.Count == 0))
+            {
+                return Json(new { success = false, message = "Không tìm thấy dữ liệu cho vật tư này." });
+            }
+
+            return Json(new { success = true, data = detail });
         }
 
         [HttpPost]
@@ -371,6 +399,29 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
                     fileName);
             }
+        }
+
+        // In tem
+        public IActionResult InTem(string makho, string tenSanpham = null, string maSanpham = null, string hangSX = null, string nhaCC = null, string ngayNhapkho = null)
+        {
+            // Ưu tiên sử dụng tham số từ query string nếu có, nếu không thì tìm trong khotongs
+            if (!string.IsNullOrEmpty(makho))
+            {
+                var item = _context.khotongs.FirstOrDefault(k => k.Makho == makho);
+                
+                ViewBag.Makho = makho;
+                ViewBag.TenSanpham = !string.IsNullOrEmpty(tenSanpham) ? tenSanpham : (item?.TenSanpham ?? "");
+                ViewBag.MaSanpham = !string.IsNullOrEmpty(maSanpham) ? maSanpham : (item?.MaSanpham ?? "");
+                ViewBag.HangSX = !string.IsNullOrEmpty(hangSX) ? hangSX : (item?.HangSX ?? "");
+                ViewBag.NhaCC = !string.IsNullOrEmpty(nhaCC) ? nhaCC : (item?.NhaCC ?? "");
+                ViewBag.NgayNhapkho = !string.IsNullOrEmpty(ngayNhapkho) ? ngayNhapkho : (item?.NgayNhapkho?.ToString("dd/MM/yyyy") ?? DateTime.Now.ToString("dd/MM/yyyy"));
+            }
+            else
+            {
+                return NotFound();
+            }
+
+            return View("InTem");
         }
 
     }

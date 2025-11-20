@@ -26,6 +26,7 @@ namespace Webkho_20241021.Models
         public DbSet<vtphieunhapkho> vtphieunhapkho { get; set; }
         public DbSet<vtyeucau> vtyeucau { get; set; }
         public DbSet<yeucau> yeucau { get; set; }
+        public DbSet<SanPhamNhaCC> SanPhamNhaCC { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<khoduans>()

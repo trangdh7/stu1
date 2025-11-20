@@ -279,6 +279,24 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
         }
 
         [HttpGet]
+        public IActionResult GetKhoTongData()
+        {
+            var data = _context.khotongs
+                .Select(k => new
+                {
+                    tenSanpham = k.TenSanpham,
+                    maSanpham = k.MaSanpham,
+                    hangSX = k.HangSX,
+                    donVi = k.DonVi,
+                    makho = k.Makho,
+                    nhaCC = k.NhaCC
+                })
+                .ToList();
+
+            return Json(data);
+        }
+
+        [HttpGet]
         public IActionResult GetDataByMaDuan(string maduan)
         {
             if (string.IsNullOrEmpty(maduan))
@@ -408,6 +426,22 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                                            List<string> HangSX, List<string> NhaCC, List<int> SL,
                                            List<string> DonVi, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
         {
+            DateTime? GetNgayCanHangAt(int index)
+            {
+                if (Request.Form.TryGetValue("VTNgayCanHang", out var dateValues))
+                {
+                    if (index >= 0 && index < dateValues.Count)
+                    {
+                        if (DateTime.TryParse(dateValues[index], out var parsedDate))
+                        {
+                            return parsedDate;
+                        }
+                    }
+                }
+
+                return yeucau.NgayCanHang;
+            }
+
             if (yeucau.TenYeucau != "Yêu cầu nhập kho")
             {
                 var prefix = yeucau.YCMaNguoidung;
@@ -532,24 +566,44 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
-                for (int i = 0; i < YCMaKho.Count; i++)
+                int rowCount = new[]
                 {
-                    if (string.IsNullOrEmpty(TenSanpham[i]))
+                    TenSanpham?.Count ?? 0,
+                    MaSanpham?.Count ?? 0,
+                    HangSX?.Count ?? 0,
+                    NhaCC?.Count ?? 0,
+                    SL?.Count ?? 0,
+                    DonVi?.Count ?? 0,
+                    YCMaKho?.Count ?? 0
+                }.Max();
+
+                for (int i = 0; i < rowCount; i++)
+                {
+                    var ten = (TenSanpham != null && i < TenSanpham.Count) ? TenSanpham[i] : null;
+                    if (string.IsNullOrEmpty(ten))
                     {
                         continue;
                     }
 
-                    var khoMatch = _context.khotongs.FirstOrDefault(p => p.Makho == YCMaKho[i]);
+                    var maKhoValue = (YCMaKho != null && i < YCMaKho.Count) ? YCMaKho[i] : null;
+                    var maValue = (MaSanpham != null && i < MaSanpham.Count) ? MaSanpham[i] : null;
+                    var hangValue = (HangSX != null && i < HangSX.Count) ? HangSX[i] : null;
+                    var nhaCcValue = (NhaCC != null && i < NhaCC.Count) ? NhaCC[i] : null;
+                    var donViValue = (DonVi != null && i < DonVi.Count) ? DonVi[i] : null;
+                    var slValue = (SL != null && i < SL.Count) ? SL[i] : 0;
+
+                    var khoMatch = _context.khotongs.FirstOrDefault(p => p.Makho == maKhoValue);
                     if (khoMatch != null)
                     {
                         var newVtyeucau = new vtyeucau();
                         newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
-                        newVtyeucau.TenSanpham = TenSanpham[i];
-                        newVtyeucau.MaSanpham = MaSanpham[i];
-                        newVtyeucau.HangSX = HangSX[i];
-                        newVtyeucau.NhaCC = NhaCC[i];
-                        newVtyeucau.SL = SL[i];
-                        newVtyeucau.DonVi = DonVi[i];
+                        newVtyeucau.TenSanpham = ten;
+                        newVtyeucau.MaSanpham = maValue;
+                        newVtyeucau.HangSX = hangValue;
+                        newVtyeucau.NhaCC = nhaCcValue;
+                        newVtyeucau.SL = slValue;
+                        newVtyeucau.DonVi = donViValue;
+                        newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
                         newVtyeucau.YCMakho = khoMatch.Makho;
                         newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
                         newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
@@ -560,12 +614,13 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     {
                         var newVtyeucau = new vtyeucau();
                         newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
-                        newVtyeucau.TenSanpham = TenSanpham[i];
-                        newVtyeucau.MaSanpham = MaSanpham[i];
-                        newVtyeucau.HangSX = HangSX[i];
-                        newVtyeucau.NhaCC = NhaCC[i];
-                        newVtyeucau.SL = SL[i];
-                        newVtyeucau.DonVi = DonVi[i];
+                        newVtyeucau.TenSanpham = ten;
+                        newVtyeucau.MaSanpham = maValue;
+                        newVtyeucau.HangSX = hangValue;
+                        newVtyeucau.NhaCC = nhaCcValue;
+                        newVtyeucau.SL = slValue;
+                        newVtyeucau.DonVi = donViValue;
+                        newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
                         newVtyeucau.YCMakho = "VT mới";
                         newVtyeucau.NgayNhapkho = null;
                         newVtyeucau.NgayBaohanh = null;
@@ -1246,6 +1301,8 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 vtPhieuMuaHang = vtYeucau  // Trả về dữ liệu từ vtyeucau
             });
         }
+
+        // Đã rollback logic sinh mã kho cho VT mới, giữ nguyên "VT mới" như trước
 
         [HttpPost]
         public IActionResult ThemPhieunhapkhoSQL(phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, 

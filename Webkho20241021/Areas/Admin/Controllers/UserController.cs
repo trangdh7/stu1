@@ -156,6 +156,16 @@ namespace Webkho_20241021.Areas.Admin.Controllers
                         }
                         await _userManager.AddToRoleAsync(user, adminRole);
                     }
+                    else if (Chucvu == "Quản lí dự án")
+                    {
+                        // Quản lí dự án role
+                        string qldaRole = "Quản lí dự án";
+                        if (!await _roleManager.RoleExistsAsync(qldaRole))
+                        {
+                            await _roleManager.CreateAsync(new IdentityRole(qldaRole));
+                        }
+                        await _userManager.AddToRoleAsync(user, qldaRole);
+                    }
                     else
                     {
                         string combinedRole = $"{Chucvu}-{Bophan}";

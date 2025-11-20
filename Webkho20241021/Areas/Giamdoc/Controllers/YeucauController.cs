@@ -58,8 +58,6 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             return View(model);
         }
 
-
-
         public IActionResult Phieuxuatkho()
         {
             var Phieuxuatkholist = _context.phieuxuatkho
@@ -1078,6 +1076,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 {
                     // Trường hợp không tìm thấy kho tổng
                     Console.WriteLine($"Đã chạy: Không tìm thấy kho tổng phù hợp cho Makho: {VattuYC.YCMakho}");
+                    // Không có kho tổng nhưng vẫn phải mua → đảm bảo tạo phiếu mua hàng
+                    isPhieuMuaHangCreated = true;
                 }
             }
             if ((isPhieuMuaHangCreated == true) && (isPhieuXuatKhoCreated == true))
@@ -1219,7 +1219,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 }
             }
 
-            _context.SaveChanges();
+                _context.SaveChanges();
 
 
             return RedirectToAction("Yeucau", "Yeucau", new { area = "Giamdoc" });

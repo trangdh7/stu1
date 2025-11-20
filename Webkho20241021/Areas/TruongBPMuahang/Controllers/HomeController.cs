@@ -129,9 +129,63 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         [HttpGet]
         public IActionResult TimKiem(string timkiem)
         {
-            var results = _context.khotongs
-                .Where(k => k.TenSanpham.Contains(timkiem) || k.MaSanpham.Contains(timkiem))
+            if (string.IsNullOrEmpty(timkiem))
+            {
+                return Json(new List<object>());
+            }
+
+            var searchTerm = timkiem.Trim().ToLower();
+            var products = _context.khotongs
+                .Where(k => (k.TenSanpham != null && k.TenSanpham.ToLower().Contains(searchTerm)) || 
+                           (k.MaSanpham != null && k.MaSanpham.ToLower().Contains(searchTerm)))
+                .Take(10) // Giới hạn 10 kết quả để hiệu suất tốt hơn
                 .ToList();
+
+            var results = new List<object>();
+            
+            foreach (var product in products)
+            {
+                // Lấy tất cả nhà cung cấp cho sản phẩm này từ bảng SanPhamNhaCC
+                var suppliers = _context.SanPhamNhaCC
+                    .Where(s => s.MaSanpham == product.MaSanpham)
+                    .Select(s => s.NhaCC)
+                    .Distinct()
+                    .ToList();
+
+                // Nếu có nhà cung cấp trong bảng SanPhamNhaCC, sử dụng danh sách đó
+                if (suppliers.Any())
+                {
+                    // Tạo một kết quả cho mỗi nhà cung cấp
+                    foreach (var supplier in suppliers)
+                    {
+                        results.Add(new
+                        {
+                            tenSanpham = product.TenSanpham,
+                            maSanpham = product.MaSanpham,
+                            makho = product.Makho,
+                            hangSX = product.HangSX,
+                            nhaCC = supplier,
+                            sl = product.SL,
+                            donVi = product.DonVi
+                        });
+                    }
+                }
+                else
+                {
+                    // Nếu không có trong bảng SanPhamNhaCC, sử dụng nhà cung cấp từ khotongs (tương thích ngược)
+                    results.Add(new
+                    {
+                        tenSanpham = product.TenSanpham,
+                        maSanpham = product.MaSanpham,
+                        makho = product.Makho,
+                        hangSX = product.HangSX,
+                        nhaCC = product.NhaCC,
+                        sl = product.SL,
+                        donVi = product.DonVi
+                    });
+                }
+            }
+            
             return Json(results);
         }
 

@@ -108,6 +108,25 @@ namespace Webkho_20241021.Controllers
                     }
                     await _userManager.AddToRoleAsync(user, adminRole);
                 }
+                else if (Chucvu == "Quản lí dự án")
+                {
+                    // Quản lí dự án role
+                    string qldaRole = "Quản lí dự án";
+                    if (!await _roleManager.RoleExistsAsync(qldaRole))
+                    {
+                        var roleResult = await _roleManager.CreateAsync(new IdentityRole(qldaRole));
+
+                        if (!roleResult.Succeeded)
+                        {
+                            foreach (var error in roleResult.Errors)
+                            {
+                                ModelState.AddModelError("", error.Description);
+                            }
+                            return View("Create");
+                        }
+                    }
+                    await _userManager.AddToRoleAsync(user, qldaRole);
+                }
                 else
                 {
                     // Các trường hợp khác: tạo role theo format "Chucvu-Bophan"
@@ -417,6 +436,11 @@ namespace Webkho_20241021.Controllers
             {
                 Console.WriteLine($"Redirecting to NhanvienMuahang area");
                 return RedirectToAction("Trangchu", "Home", new { area = "NhanvienMuahang" });
+            }
+            else if (normalizedRole == "Quản lí dự án" || normalizedRole.Contains("Quản lí dự án"))
+            {
+                Console.WriteLine($"Redirecting to QuanLiDuAn area");
+                return RedirectToAction("Trangchu", "Home", new { area = "QuanLiDuAn" });
             }
 
             // Nếu role không khớp, log và redirect về trang đăng nhập với thông báo lỗi

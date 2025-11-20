@@ -46,13 +46,13 @@ function showVTYeucau(MaYeucau) {
                     // Tạo một dòng mới
                     let row = `<tr>
                         <td>${STT++}</td>
-                        <td>${item.tenSanpham || 'Không xác định'}</td>
-                        <td>${item.maSanpham || 'Không xác định'}</td>
-                        <td>${item.ycMakho || 'Không xác định'}</td>
-                        <td>${item.hangSX || 'Không xác định'}</td>
-                        <td>${item.nhaCC || 'Không xác định'}</td>
+                        <td>${item.tenSanpham || ''}</td>
+                        <td>${item.maSanpham || ''}</td>
+                        <td>${item.ycMakho || ''}</td>
+                        <td>${item.hangSX || ''}</td>
+                        <td>${item.nhaCC || ''}</td>
                         <td>${item.sl}</td>
-                        <td>${item.donVi || 'Không xác định'}</td>
+                        <td>${item.donVi || ''}</td>
                         <td>${item.trangThai}</td>
                     </tr>`;
                     $('.tablethietbi tbody').append(row);

@@ -25,8 +25,29 @@ $('#submitPhieumuahang').click(function () {
         return;
     }
 
+    // Lưu lại tất cả giá trị đã nhập trước khi submit để có thể restore nếu fail
+    const savedInputValues = {};
+    $('.tablethietbi tbody tr').each(function () {
+        if ($(this).hasClass('tong-tien-row')) {
+            return;
+        }
+        const priceInput = $(this).find('.DonGia input');
+        if (priceInput.length > 0) {
+            const MaSanpham = $(this).find('td').eq(2).text().trim();
+            if (MaSanpham) {
+                const inputValue = priceInput.val();
+                savedInputValues[MaSanpham] = inputValue;
+                // Lưu vào biến global để restore khi rebuild table
+                if (inputValue) {
+                    savedInputValuesForRestore[MaSanpham] = inputValue;
+                }
+            }
+        }
+    });
+
     const vtmuahangData = [];
     let hasEmptyPrice = false;
+    let missingRequiredData = [];
     
     $('.tablethietbi tbody tr').each(function () {
         // Bỏ qua hàng tổng tiền
@@ -43,21 +64,45 @@ $('#submitPhieumuahang').click(function () {
             const DonGia = inputValue ? parseFloat(inputValue.replace(/[^\d]/g, '')) || 0 : 0;
             const SL = parseFloat(priceInput.data('sl')) || 0;
             const ThanhTien = SL * DonGia;
+            
+            // Lấy MaSanpham từ cột thứ 3 (index 2) trong bảng
+            const MaSanpham = $(this).find('td').eq(2).text().trim();
+            const TenSanpham = $(this).find('td').eq(1).text().trim();
+
+            // Nếu số lượng = 0, không cần nhập, bỏ qua
+            if (SL === 0) {
+                return;
+            }
+            
+            // Nếu số lượng = 1, bắt buộc phải nhập đơn giá
+            if (SL === 1) {
+                if (DonGia <= 0) {
+                    missingRequiredData.push(TenSanpham || MaSanpham);
+                    return;
+                }
+            }
 
             if (DonGia > 0 && SL > 0) {
                 vtmuahangData.push({
                     MaMuahang: selectedMamuahang,
+                    MaSanpham: MaSanpham, // Thêm MaSanpham để match đúng
                     DonGia: DonGia,
                     ThanhTien: ThanhTien
                 });
-            } else if (SL > 0) {
-                // Có số lượng nhưng chưa nhập giá
+            } else if (SL > 1) {
+                // Có số lượng > 1 nhưng chưa nhập giá (không bắt buộc nhưng cảnh báo)
                 hasEmptyPrice = true;
             }
         }
     });
     
-    // Kiểm tra nếu có mục chưa nhập giá
+    // Kiểm tra nếu có mục bắt buộc chưa nhập (SL = 1)
+    if (missingRequiredData.length > 0) {
+        alert("Bạn chưa nhập xong hết số liệu. Vui lòng nhập đơn giá cho các vật tư có số lượng = 1:\n" + missingRequiredData.join("\n"));
+        return;
+    }
+    
+    // Kiểm tra nếu có mục chưa nhập giá (SL > 1, không bắt buộc)
     if (hasEmptyPrice) {
         if (!confirm("Có một số vật tư chưa nhập giá. Bạn có muốn tiếp tục không?")) {
             return;
@@ -73,6 +118,12 @@ $('#submitPhieumuahang').click(function () {
     const area = pathSegments.length > 1 ? pathSegments[1] : '';
     const url = `/${area}/Yeucau/ThemPhieumuahangSQL`;
 
+    // Disable nút submit để tránh double submit
+    const $submitBtn = $('#submitPhieumuahang');
+    $submitBtn.prop('disabled', true);
+    const originalText = $submitBtn.text();
+    $submitBtn.text('Đang gửi...');
+
     fetch(url, {
         method: "POST",
         body: JSON.stringify(Phieumuahangviewmodel),
@@ -82,16 +133,66 @@ $('#submitPhieumuahang').click(function () {
     })
         .then(response => response.json())
         .then(data => {
-            alert("Gửi dữ liệu thành công!");
-            location.reload();
+            // Re-enable nút submit
+            $submitBtn.prop('disabled', false);
+            $submitBtn.text(originalText);
+
+            if (data.success) {
+                // Clear saved values khi submit thành công
+                savedInputValuesForRestore = {};
+                alert("Gửi dữ liệu thành công!");
+                location.reload();
+            } else {
+                // Nếu fail, restore lại giá trị đã nhập
+                $('.tablethietbi tbody tr').each(function () {
+                    if ($(this).hasClass('tong-tien-row')) {
+                        return;
+                    }
+                    const priceInput = $(this).find('.DonGia input');
+                    if (priceInput.length > 0) {
+                        const MaSanpham = $(this).find('td').eq(2).text().trim();
+                        if (MaSanpham && savedInputValues[MaSanpham] !== undefined) {
+                            priceInput.val(savedInputValues[MaSanpham]);
+                            // Lưu lại vào biến global để restore khi rebuild table
+                            savedInputValuesForRestore[MaSanpham] = savedInputValues[MaSanpham];
+                            // Trigger input event để cập nhật thành tiền
+                            priceInput.trigger('input');
+                        }
+                    }
+                });
+                alert(data.message || "Gửi dữ liệu thất bại.");
+            }
         })
         .catch(error => {
+            // Re-enable nút submit
+            $submitBtn.prop('disabled', false);
+            $submitBtn.text(originalText);
+
+            // Restore lại giá trị đã nhập
+            $('.tablethietbi tbody tr').each(function () {
+                if ($(this).hasClass('tong-tien-row')) {
+                    return;
+                }
+                const priceInput = $(this).find('.DonGia input');
+                if (priceInput.length > 0) {
+                    const MaSanpham = $(this).find('td').eq(2).text().trim();
+                    if (MaSanpham && savedInputValues[MaSanpham] !== undefined) {
+                        priceInput.val(savedInputValues[MaSanpham]);
+                        // Lưu lại vào biến global để restore khi rebuild table
+                        savedInputValuesForRestore[MaSanpham] = savedInputValues[MaSanpham];
+                        // Trigger input event để cập nhật thành tiền
+                        priceInput.trigger('input');
+                    }
+                }
+            });
             console.error("Lỗi:", error);
             alert("Gửi dữ liệu thất bại.");
         });
 });
 
 let selectedMamuahang = "";
+// Lưu giá trị đã nhập để restore khi rebuild table
+let savedInputValuesForRestore = {};
 
 // Hiển thị vật tư theo mã mua hàng
 function showVTmuahang(Mamuahang, trangThaiPhieu) {
@@ -138,17 +239,24 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                     // Chỉ cho phép nhập khi điều kiện đúng, ngược lại hiển thị số hoặc disabled
                     // canInputPrice đã kiểm tra area và trạng thái phiếu, nên chỉ cần kiểm tra canInputPrice
                     let donGiaCell = '';
+                    // Kiểm tra xem có giá trị đã lưu không (để restore khi rebuild table)
+                    const savedValue = savedInputValuesForRestore[item.maSanpham];
+                    const displayValue = savedValue !== undefined ? savedValue : (item.donGia != null ? item.donGia : null);
+                    
                     if (canInputPrice) {
                         // Cho phép nhập đơn giá khi area = TruongBPMuahang và trạng thái phiếu = "Đang chờ báo giá"
-                        if (item.donGia != null) {
-                            donGiaCell = `<span class="DonGia"><input type="text" value="${item.donGia.toLocaleString('vi-VN')}" placeholder="Nhập giá" class="form-control" data-sl="${item.sl}" /></span>`;
+                        if (displayValue != null) {
+                            // Format lại giá trị nếu là số
+                            const formattedValue = typeof displayValue === 'string' ? displayValue : displayValue.toLocaleString('vi-VN');
+                            donGiaCell = `<span class="DonGia"><input type="text" value="${formattedValue}" placeholder="Nhập giá" class="form-control" data-sl="${item.sl}" /></span>`;
                         } else {
                             donGiaCell = `<span class="DonGia"><input type="text" placeholder="Nhập giá" class="form-control" data-sl="${item.sl}" /></span>`;
                         }
                     } else {
                         // Hiển thị số (read-only) khi không phải area TruongBPMuahang hoặc không phải trạng thái "Đang chờ báo giá"
-                        if (item.donGia != null) {
-                            donGiaCell = `<span class="DonGia">${item.donGia.toLocaleString('vi-VN')}</span>`;
+                        if (displayValue != null) {
+                            const formattedValue = typeof displayValue === 'string' ? displayValue : displayValue.toLocaleString('vi-VN');
+                            donGiaCell = `<span class="DonGia">${formattedValue}</span>`;
                         } else {
                             donGiaCell = `<span class="DonGia">-</span>`;
                         }
@@ -316,3 +424,17 @@ function setActiveMenu() {
 $(document).ready(function () {
     getThongbaoData();
 });
+
+// Hàm in phiếu mua hàng
+function inPhieuMuaHang() {
+    if (!selectedMamuahang) {
+        alert("Vui lòng chọn mã mua hàng trước khi in.");
+        return;
+    }
+    
+    const pathSegments = window.location.pathname.split('/');
+    const area = pathSegments.length > 1 ? pathSegments[1] : '';
+    const url = `/${area}/Yeucau/InPhieumuahang?MaMuahang=${selectedMamuahang}`;
+    
+    window.open(url, '_blank');
+}

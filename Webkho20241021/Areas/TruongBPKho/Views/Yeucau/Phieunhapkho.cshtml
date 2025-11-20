@@ -51,12 +51,13 @@
                 <thead>
                     <tr>
                         <td>STT</td>
-                        <td>Mã xuất kho</td>
+                        <td>Mã nhập kho</td>
                         <td>Mã yêu cầu</td>
                         <td>Mã dự án</td>
                         <td>Người yêu cầu</td>
                         <td>Ngày nhập kho</td>
                         <td>Trạng thái</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,7 +71,10 @@
                         <tr>
                             <td>@STT</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTnhapkho('@item.MaNhapkho')">
+                                <a href="/TruongBPKho/Yeucau/XemPhieunhapkho?MaNhapkho=@item.MaNhapkho" 
+                                   title="Click để xem vật tư, Double-click để xem chi tiết phiếu nhập kho" 
+                                   class="manhapkho-link"
+                                   data-manhapkho="@item.MaNhapkho">
                                     @item.MaNhapkho
                                 </a>
                             </td>
@@ -79,54 +83,31 @@
                             <td>@item.MaNguoidung</td>
                             <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
                             <td>
+                                <span>@item.TrangThai</span>
+                            </td>
+                            <td>
                                 @{
-                                    // Hiển thị trạng thái và nút duyệt theo quyền
-                                    var duan = Model.Duans?.FirstOrDefault(d => d.MaDuan == item.MaDuan);
-                                    var maQLDA = duan?.MaNguoiQLDA;
-                                    var isQLDA = !string.IsNullOrEmpty(maQLDA) && maQLDA == Context.Session.GetString("MaNguoidung");
-                                    var isGiamDoc = ChucvuSession == "Giám đốc";
-                                    var isKho = BophanSession == "BP kho";
+                                    bool isKhoUser = string.Equals(BophanSession, "BP kho", StringComparison.OrdinalIgnoreCase);
                                 }
-                                
-                                @if (item.TrangThai == "Quản lí dự án" && isQLDA)
+                                @if (isKhoUser && item.TrangThai == "Chờ nhập kho")
                                 {
                                     @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt nhập kho">
                                             <i class="bx bxs-check-circle"></i>
                                         </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối">
-                                            <i class="bx bxs-x-circle"></i>
-                                        </button>
                                     }
                                 }
-                                else if (item.TrangThai == "Giám đốc" && isGiamDoc)
+
+                                @if (item.TrangThai == "Đã nhập kho")
                                 {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối">
-                                            <i class="bx bxs-x-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else if (item.TrangThai == "Chờ nhập kho" && isKho)
-                                {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Xác nhận nhập kho">
-                                            <i class="bx bxs-check-circle"></i> Xác nhận nhập kho
-                                        </button>
-                                    }
-                                }
-                                else
-                                {
-                                    <span>@item.TrangThai</span>
+                                    <a href="@Url.Action("InPhieunhapkho", "Yeucau", new { area = "TruongBPKho", MaNhapkho = item.MaNhapkho })" 
+                                       target="_blank" 
+                                       class="btn-icon" 
+                                       title="In phiếu">
+                                        <i class="bx bx-printer"></i>
+                                    </a>
                                 }
                             </td>
                         </tr>
@@ -163,19 +144,29 @@
                     @{
                         int ST = 1;
                     }
-                    @foreach (var item in Model.VTphieunhapkho)
+                    @if (Model.VTphieunhapkho != null && Model.VTphieunhapkho.Any())
+                    {
+                        @foreach (var item in Model.VTphieunhapkho)
+                        {
+                            <tr>
+                                <td>@ST</td>
+                                <td>@item.TenSanpham</td>
+                                <td>@item.MaSanpham</td>
+                                <td>@item.Makho</td>
+                                <td>@item.HangSX</td>
+                                <td>@item.NhaCC</td>
+                                <td>@item.SL</td>
+                                <td>@item.DonVi</td>
+                                <td>@item.TrangThai</td>
+                            </tr>
+                            ST++;
+                        }
+                    }
+                    else
                     {
                         <tr>
-                            <td>@ST</td>
-                            <td>@item.TenSanpham</td>
-                            <td>@item.MaSanpham</td>
-                            <td>@item.Makho</td>
-                            <td>@item.HangSX</td>
-                            <td>@item.NhaCC</td>
-                            <td>@item.SL</td>
-                            <td>@item.DonVi</td>
+                            <td colspan="10" style="text-align:center;">Không có dữ liệu vật tư.</td>
                         </tr>
-                        ST++;
                     }
                 </tbody>
             </table>

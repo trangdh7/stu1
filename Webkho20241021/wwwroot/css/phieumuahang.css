@@ -1,0 +1,160 @@
+﻿* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Times New Roman', serif;
+    font-size: 12pt;
+    line-height: 1.4;
+    padding: 20px;
+    background: white;
+}
+
+.print-container {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: white;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.company-name {
+    font-size: 14pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.company-address {
+    font-size: 11pt;
+    margin-bottom: 5px;
+}
+
+.tax-code {
+    font-size: 11pt;
+    margin-bottom: 15px;
+}
+
+.form-info {
+    font-size: 10pt;
+    font-style: italic;
+    margin-bottom: 20px;
+}
+
+.document-title {
+    text-align: center;
+    font-size: 16pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 20px 0;
+    border: 2px solid black;
+    padding: 10px;
+}
+
+.document-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-size: 11pt;
+}
+
+.document-info-left, .document-info-right {
+    flex: 1;
+}
+
+.info-row {
+    margin-bottom: 8px;
+}
+
+.info-label {
+    font-weight: bold;
+    display: inline-block;
+    min-width: 120px;
+}
+
+.table-container {
+    margin: 20px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+}
+
+    table th, table td {
+        border: 1px solid black;
+        padding: 6px;
+        text-align: left;
+    }
+
+    table th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+        text-align: center;
+    }
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.summary {
+    margin-top: 20px;
+    font-size: 11pt;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    padding: 5px 0;
+}
+
+.summary-label {
+    font-weight: bold;
+}
+
+.total-words {
+    margin-top: 15px;
+    font-style: italic;
+}
+
+.signature-section {
+    margin-top: 40px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.signature-box {
+    text-align: center;
+    width: 200px;
+}
+
+.signature-line {
+    border-top: 1px solid black;
+    margin-top: 50px;
+    padding-top: 5px;
+}
+
+@media print {
+    body {
+        padding: 0;
+    }
+
+    .no-print {
+        display: none;
+    }
+
+    .print-container {
+        max-width: 100%;
+    }
+}

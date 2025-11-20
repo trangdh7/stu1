@@ -1,0 +1,223 @@
+@model List<Webkho_20241021.Models.duans>
+@{
+    ViewData["Title"] = "Danh sách Dự án";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="~/CSS/Action.css" rel="stylesheet" />
+    <link href="~/CSS/Kho.css" rel="stylesheet" />
+    <link href="~/CSS/style.css" rel="stylesheet" />
+    <link href="~/CSS/Table.css" rel="stylesheet" />
+    <link href="~/CSS/Tongkho.css" rel="stylesheet" /> 
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Quản Lý Dự Án</title>
+</head>
+<body>
+    <div class="warehouse-container">
+        <div class="warehouse-header">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <i class='bx bx-folder'></i> Quản Lý Dự Án
+                </h1>
+                <p class="header-subtitle">Quản lý thông tin các dự án</p>
+            </div>
+        </div>
+
+        <div class="warehouse-nav">
+            <div class="nav-tabs">
+                <a href="/Admin/Duan/DanhSachDuan" class="nav-tab active">
+                    <i class='bx bx-list-ul'></i> Danh sách dự án
+                </a>
+                <a href="/Admin/Duan/TaoDuan" class="nav-tab">
+                    <i class='bx bx-folder-plus'></i> Tạo dự án mới
+                </a>
+            </div>
+            <div class="nav-search">
+                <form method="get" action="/Admin/Duan/DanhSachDuan" style="display:flex; align-items:center; gap:8px;">
+                    <i class='bx bx-search'></i>
+                    <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm dự án..." />
+                    <button type="submit" class="btn btn-primary">Tìm</button>
+                </form>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div id="success-alert" class="alert alert-success">
+                <div class="alert-content">
+                    <i class='bx bx-check-circle'></i>
+                    <div>
+                        <strong>Thành công!</strong>
+                        <p>@TempData["Success"]</p>
+                    </div>
+                </div>
+                <button class="alert-close" onclick="this.parentElement.style.display='none';">
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+        }
+
+        <div class="warehouse-content">
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>Danh sách dự án</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Mã dự án</th>
+                                <th>Tên dự án</th>
+                                <th>Người QLDA</th>
+                                <th>Mã người QLDA</th>
+                                <th>Khách hàng</th>
+                                <th>Ngày bắt đầu</th>
+                                <th>Ngày kết thúc</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var duan in Model)
+                                {
+                                    <tr>
+                                        <td>@duan.MaDuan</td>
+                                        <td>@duan.TenDuan</td>
+                                        <td>@duan.NguoiQLDA</td>
+                                        <td>@duan.MaNguoiQLDA</td>
+                                        <td>@duan.KhachHang</td>
+                                        <td>@(duan.NgayBatdau?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                        <td>@(duan.NgayKetthuc?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                        <td>
+                                            @{
+                                                var statusClass = "";
+                                                var statusText = duan.TrangThai ?? "Chờ";
+                                                switch (statusText)
+                                                {
+                                                    case "Chờ":
+                                                        statusClass = "status-pending";
+                                                        break;
+                                                    case "Đang triển khai":
+                                                        statusClass = "status-active";
+                                                        break;
+                                                    case "Đã hoàn thành":
+                                                        statusClass = "status-completed";
+                                                        break;
+                                                    default:
+                                                        statusClass = "status-pending";
+                                                        break;
+                                                }
+                                            }
+                                            <span class="status-badge @statusClass">@statusText</span>
+                                        </td>
+                                        <td>
+                                            <a href="@Url.Action("SuaDuan", "Duan", new { area = "Admin", id = duan.MaDuan })"
+                                               class="btn-action btn-edit">
+                                                <i class='bx bx-edit'></i> Sửa
+                                            </a>
+                                            <button onclick="xoaDuan('@duan.MaDuan')" class="btn-action btn-delete">
+                                                <i class='bx bx-trash'></i> Xóa
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="9">Không có dữ liệu.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="pagination">
+                        @{ int totalPage = (int)(ViewBag.TotalPages ?? 1); int curr = (int)(ViewBag.Page ?? 1); var _q = (string)(ViewBag.Q ?? ""); var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q); }
+                        @if (totalPage > 1)
+                        {
+                            for (int i = 1; i <= totalPage; i++)
+                            {
+                                if (i == curr)
+                                { <span class="active">@i</span> }
+                                else
+                                { <a href="?page=@i@Html.Raw(_qParam)">@i</a> }
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-active {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .status-completed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+    </style>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const alert = document.getElementById("success-alert");
+            if (alert) {
+                setTimeout(() => {
+                    alert.style.animation = "fadeOut 0.5s ease forwards";
+                    setTimeout(() => alert.style.display = "none", 500);
+                }, 5000);
+            }
+        });
+
+        function xoaDuan(maDuan) {
+            if (confirm('Bạn có chắc chắn muốn xóa dự án này?')) {
+                fetch('/Admin/Duan/XoaDuan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({ id: maDuan })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('Lỗi: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi xóa dự án. Vui lòng kiểm tra console để xem chi tiết.');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+

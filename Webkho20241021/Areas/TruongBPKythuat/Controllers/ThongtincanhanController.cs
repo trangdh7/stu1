@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Models;
+using OfficeOpenXml;
 
 namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
 {
@@ -84,19 +85,90 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 .OrderByDescending(k => k.NgayNhapkho)
                 .ToList();
             
-            // Tạo file Excel hoặc CSV
-            var csv = new System.Text.StringBuilder();
-            csv.AppendLine("STT,Tên vật tư,Mã vật tư,Mã kho,Hãng SX,Nhà cung cấp,Số lượng,Đơn vị,Ngày nhập kho,Ngày bảo hành,Thời gian BH,Trạng thái");
-            
-            int stt = 1;
-            foreach (var item in materials)
+            using (var package = new ExcelPackage())
             {
-                csv.AppendLine($"{stt},{item.TenSanpham},{item.MaSanpham},{item.NDMakho},{item.HangSX},{item.NhaCC},{item.SL},{item.DonVi},{item.NgayNhapkho?.ToString("dd/MM/yyyy")},{item.NgayBaohanh?.ToString("dd/MM/yyyy")},{item.ThoiGianBH?.ToString("dd/MM/yyyy")},{item.TrangThai}");
-                stt++;
+                var worksheet = package.Workbook.Worksheets.Add("Vật tư cá nhân");
+
+                // Hàng 1: Tiêu đề
+                worksheet.Cells[1, 1, 1, 12].Merge = true;
+                worksheet.Cells[1, 1].Value = $"Danh sách vật tư cá nhân xuất file ngày {DateTime.Now:dd/MM/yyyy}";
+                worksheet.Cells[1, 1].Style.Font.Bold = true;
+                worksheet.Cells[1, 1].Style.Font.Size = 14;
+                worksheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet.Cells[1, 1].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                worksheet.Cells[1, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                worksheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(68, 114, 196));
+                worksheet.Cells[1, 1].Style.Font.Color.SetColor(System.Drawing.Color.White);
+                worksheet.Row(1).Height = 25;
+
+                // Hàng 2: Header row
+                worksheet.Cells[2, 1].Value = "STT";
+                worksheet.Cells[2, 2].Value = "Tên vật tư";
+                worksheet.Cells[2, 3].Value = "Mã vật tư";
+                worksheet.Cells[2, 4].Value = "Mã kho";
+                worksheet.Cells[2, 5].Value = "Hãng SX";
+                worksheet.Cells[2, 6].Value = "Nhà cung cấp";
+                worksheet.Cells[2, 7].Value = "Số lượng";
+                worksheet.Cells[2, 8].Value = "Đơn vị";
+                worksheet.Cells[2, 9].Value = "Ngày nhập kho";
+                worksheet.Cells[2, 10].Value = "Ngày bảo hành";
+                worksheet.Cells[2, 11].Value = "Thời gian BH";
+                worksheet.Cells[2, 12].Value = "Trạng thái";
+
+                // Định dạng header
+                using (var range = worksheet.Cells[2, 1, 2, 12])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(173, 216, 230));
+                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                }
+
+                // Điền dữ liệu
+                int row = 3;
+                int stt = 1;
+                foreach (var item in materials)
+                {
+                    worksheet.Cells[row, 1].Value = stt;
+                    worksheet.Cells[row, 2].Value = item.TenSanpham ?? "";
+                    worksheet.Cells[row, 3].Value = item.MaSanpham ?? "";
+                    worksheet.Cells[row, 4].Value = item.NDMakho ?? "";
+                    worksheet.Cells[row, 5].Value = item.HangSX ?? "";
+                    worksheet.Cells[row, 6].Value = item.NhaCC ?? "";
+                    worksheet.Cells[row, 7].Value = item.SL ?? 0;
+                    worksheet.Cells[row, 8].Value = item.DonVi ?? "";
+                    worksheet.Cells[row, 9].Value = item.NgayNhapkho?.ToString("dd/MM/yyyy") ?? "";
+                    worksheet.Cells[row, 10].Value = item.NgayBaohanh?.ToString("dd/MM/yyyy") ?? "";
+                    worksheet.Cells[row, 11].Value = item.ThoiGianBH?.ToString("dd/MM/yyyy") ?? "";
+                    worksheet.Cells[row, 12].Value = item.TrangThai ?? "";
+
+                    // Định dạng border cho từng dòng
+                    using (var range = worksheet.Cells[row, 1, row, 12])
+                    {
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    }
+
+                    row++;
+                    stt++;
+                }
+
+                // Tự động điều chỉnh độ rộng cột
+                worksheet.Cells.AutoFitColumns();
+
+                var excelBytes = package.GetAsByteArray();
+                var fileName = $"Danh_sach_vat_tu_ca_nhan_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                
+                return File(excelBytes, 
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                    fileName);
             }
-            
-            var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
-            return File(bytes, "text/csv", $"Danh_sach_vat_tu_ca_nhan_{DateTime.Now:yyyyMMdd}.csv");
         }
     }
 }

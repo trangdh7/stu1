@@ -1,0 +1,256 @@
+.xnt-container .nav-search-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.xnt-container .nav-search-form input {
+    min-width: 280px;
+    padding: 8px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+}
+
+.xnt-summary {
+    margin: 18px 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.xnt-summary-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #eef2f7;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+.xnt-summary-card span {
+    color: #6b7280;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.xnt-summary-card strong {
+    font-size: 24px;
+    color: #111827;
+    font-weight: 700;
+}
+
+.xnt-summary-card.in strong {
+    color: #0f9d58;
+}
+
+.xnt-summary-card.out strong {
+    color: #d93025;
+}
+
+.xnt-summary-card.stock strong {
+    color: #2563eb;
+}
+
+.xnt-table td,
+.xnt-table th {
+    text-align: left;
+}
+
+.xnt-table .text-in {
+    color: #0f9d58;
+    font-weight: 600;
+}
+
+.xnt-table .text-out {
+    color: #d93025;
+    font-weight: 600;
+}
+
+.xnt-table .text-stock {
+    color: #2563eb;
+    font-weight: 700;
+}
+
+.xnt-table .text-right {
+    text-align: right;
+}
+
+.link-button {
+    background: none;
+    border: none;
+    color: #2563eb;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+
+.link-button:hover {
+    text-decoration: underline;
+    color: #1d4ed8;
+}
+
+.inventory-detail {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.inventory-detail.active {
+    display: flex;
+}
+
+.inventory-detail-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.inventory-detail-card {
+    position: relative;
+    width: min(1000px, 90%);
+    max-height: 90vh;
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2);
+    z-index: 1;
+}
+
+.inventory-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.inventory-detail-title {
+    font-size: 22px;
+    margin: 0;
+}
+
+.inventory-detail-meta {
+    margin: 4px 0 0 0;
+    color: #6b7280;
+}
+
+.inventory-detail-close {
+    border: none;
+    background: #f3f4f6;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    color: #111827;
+}
+
+.inventory-detail-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.summary-box {
+    border-radius: 10px;
+    padding: 14px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.summary-box span {
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    text-transform: uppercase;
+}
+
+.summary-box strong {
+    font-size: 20px;
+}
+
+.summary-box.in strong {
+    color: #0f9d58;
+}
+
+.summary-box.out strong {
+    color: #d93025;
+}
+
+.summary-box.stock strong {
+    color: #2563eb;
+}
+
+.inventory-detail-table-wrapper {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 240px;
+}
+
+.inventory-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.inventory-detail-table thead {
+    background: #f1f5f9;
+}
+
+.inventory-detail-table th,
+.inventory-detail-table td {
+    padding: 10px 14px;
+    font-size: 14px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.inventory-detail-table tbody tr:nth-child(even) {
+    background: #fafbfc;
+}
+
+.btn.btn-outline {
+    border: 1px solid #cbd5f5;
+    background: #f8fbff;
+    color: #2563eb;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn.btn-outline:hover {
+    background: #eff6ff;
+}
+
+@media (max-width: 768px) {
+    .xnt-container .nav-search-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .xnt-container .nav-search-form input {
+        width: 100%;
+    }
+
+    .inventory-detail-card {
+        padding: 18px;
+    }
+}
+
+

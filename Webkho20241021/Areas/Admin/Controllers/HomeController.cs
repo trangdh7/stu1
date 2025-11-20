@@ -430,6 +430,117 @@ namespace Webkho_20241021.Areas.Admin.Controllers
                     fileName);
             }
         }
+
+        // API quản lý nhà cung cấp cho sản phẩm
+        [HttpGet]
+        public IActionResult GetNhaCCByMaSanpham(string maSanpham)
+        {
+            if (string.IsNullOrEmpty(maSanpham))
+            {
+                return Json(new List<object>());
+            }
+
+            var suppliers = _context.SanPhamNhaCC
+                .Where(s => s.MaSanpham == maSanpham)
+                .Select(s => new
+                {
+                    id = s.ID,
+                    nhaCC = s.NhaCC,
+                    donGiaMacDinh = s.DonGiaMacDinh,
+                    ngayTao = s.NgayTao,
+                    ghiChu = s.GhiChu
+                })
+                .ToList();
+
+            return Json(suppliers);
+        }
+
+        [HttpPost]
+        public IActionResult ThemNhaCCChoSanpham(string maSanpham, string nhaCC, decimal? donGiaMacDinh = null, string ghiChu = null)
+        {
+            if (string.IsNullOrEmpty(maSanpham) || string.IsNullOrEmpty(nhaCC))
+            {
+                return Json(new { success = false, message = "Mã sản phẩm và nhà cung cấp không được để trống!" });
+            }
+
+            // Kiểm tra xem đã tồn tại chưa
+            var existing = _context.SanPhamNhaCC
+                .FirstOrDefault(s => s.MaSanpham == maSanpham && s.NhaCC == nhaCC);
+
+            if (existing != null)
+            {
+                return Json(new { success = false, message = "Nhà cung cấp này đã tồn tại cho sản phẩm này!" });
+            }
+
+            var newSupplier = new SanPhamNhaCC
+            {
+                MaSanpham = maSanpham,
+                NhaCC = nhaCC,
+                DonGiaMacDinh = donGiaMacDinh,
+                GhiChu = ghiChu,
+                NgayTao = DateTime.Now
+            };
+
+            _context.SanPhamNhaCC.Add(newSupplier);
+            _context.SaveChanges();
+
+            return Json(new { success = true, message = "Thêm nhà cung cấp thành công!" });
+        }
+
+        [HttpPost]
+        public IActionResult XoaNhaCCKhoiSanpham(int id)
+        {
+            var supplier = _context.SanPhamNhaCC.FirstOrDefault(s => s.ID == id);
+            if (supplier == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy nhà cung cấp!" });
+            }
+
+            _context.SanPhamNhaCC.Remove(supplier);
+            _context.SaveChanges();
+
+            return Json(new { success = true, message = "Xóa nhà cung cấp thành công!" });
+        }
+
+        // Đồng bộ nhà cung cấp từ khotongs sang SanPhamNhaCC (một lần)
+        [HttpPost]
+        public IActionResult DongBoNhaCC()
+        {
+            try
+            {
+                var products = _context.khotongs
+                    .Where(k => !string.IsNullOrEmpty(k.MaSanpham) && !string.IsNullOrEmpty(k.NhaCC))
+                    .Select(k => new { k.MaSanpham, k.NhaCC })
+                    .Distinct()
+                    .ToList();
+
+                int count = 0;
+                foreach (var product in products)
+                {
+                    var existing = _context.SanPhamNhaCC
+                        .FirstOrDefault(s => s.MaSanpham == product.MaSanpham && s.NhaCC == product.NhaCC);
+
+                    if (existing == null)
+                    {
+                        var newSupplier = new SanPhamNhaCC
+                        {
+                            MaSanpham = product.MaSanpham,
+                            NhaCC = product.NhaCC,
+                            NgayTao = DateTime.Now
+                        };
+                        _context.SanPhamNhaCC.Add(newSupplier);
+                        count++;
+                    }
+                }
+
+                _context.SaveChanges();
+                return Json(new { success = true, message = $"Đã đồng bộ {count} nhà cung cấp từ kho tổng!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Lỗi: {ex.Message}" });
+            }
+        }
     }
 }
 

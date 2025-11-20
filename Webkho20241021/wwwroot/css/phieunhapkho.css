@@ -1,0 +1,305 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Times New Roman', serif;
+    font-size: 12pt;
+    line-height: 1.4;
+    padding: 20px;
+    background: white;
+}
+
+.print-container {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: white;
+}
+
+/* Header Section */
+.header {
+    margin-bottom: 15px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.header-right {
+    text-align: right;
+    font-size: 10pt;
+}
+
+.company-name {
+    font-size: 14pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.company-address {
+    font-size: 11pt;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.tax-code {
+    font-size: 11pt;
+    margin-bottom: 5px;
+}
+
+.form-info {
+    font-size: 10pt;
+    font-style: italic;
+    margin-bottom: 5px;
+}
+
+.form-number {
+    font-size: 10pt;
+    margin-top: 5px;
+}
+
+/* Document Title */
+.document-title {
+    text-align: center;
+    font-size: 16pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 15px 0;
+    border: 2px solid black;
+    padding: 8px;
+}
+
+/* Document Info Section */
+.document-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    font-size: 11pt;
+}
+
+.document-info-left {
+    flex: 1;
+}
+
+.document-info-right {
+    flex: 1;
+    text-align: right;
+}
+
+.info-row {
+    margin-bottom: 5px;
+}
+
+.info-label {
+    font-weight: bold;
+    display: inline-block;
+    min-width: 100px;
+}
+
+/* Supplier/Delivery Info */
+.supplier-info {
+    margin-bottom: 15px;
+    font-size: 11pt;
+}
+
+.supplier-row {
+    margin-bottom: 8px;
+}
+
+.supplier-label {
+    font-weight: normal;
+}
+
+/* Table Container */
+.table-container {
+    margin: 15px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+}
+
+table th,
+table td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: left;
+}
+
+table th {
+    background-color: #d4edda;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: middle;
+}
+
+table thead th {
+    background-color: #d4edda;
+}
+
+table tbody td {
+    vertical-align: top;
+}
+
+/* Table Column Widths */
+.col-stt {
+    width: 3%;
+}
+
+.col-ten {
+    width: 30%;
+}
+
+.col-maso {
+    width: 8%;
+}
+
+.col-dvt {
+    width: 5%;
+}
+
+.col-soluong {
+    width: 12%;
+}
+
+.col-soluong-sub {
+    width: 50%;
+    text-align: center;
+}
+
+.col-dongia {
+    width: 10%;
+}
+
+.col-thanhtien {
+    width: 12%;
+}
+
+.col-nhacc {
+    width: 10%;
+}
+
+/* Text Alignment */
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-left {
+    text-align: left;
+}
+
+/* Summary Section */
+.summary {
+    margin-top: 15px;
+    font-size: 11pt;
+}
+
+.summary-row {
+    margin-bottom: 5px;
+}
+
+.total-row {
+    font-weight: bold;
+    text-align: center;
+}
+
+.total-words {
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.summary-info {
+    margin-top: 8px;
+}
+
+/* Signature Section */
+.signature-section {
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.signature-box {
+    text-align: center;
+    width: 22%;
+}
+
+.signature-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.signature-subtitle {
+    font-size: 10pt;
+    margin-top: 3px;
+}
+
+.signature-line {
+    border-top: 1px solid black;
+    margin-top: 40px;
+    padding-top: 5px;
+}
+
+.signature-date {
+    margin-top: 10px;
+    font-size: 10pt;
+}
+
+/* Print Button */
+.no-print {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.print-button {
+    padding: 10px 20px;
+    font-size: 14pt;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+}
+
+.print-button:hover {
+    background-color: #0056b3;
+}
+
+/* Print Media Query */
+@media print {
+    body {
+        padding: 0;
+    }
+
+    .no-print {
+        display: none;
+    }
+
+    .print-container {
+        max-width: 100%;
+    }
+
+    table th {
+        background-color: #d4edda !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+

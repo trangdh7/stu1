@@ -58,6 +58,7 @@
                         <td>Người yêu cầu</td>
                         <td>Ngày nhập kho</td>
                         <td>Trạng thái</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,6 +116,14 @@
                                     @item.TrangThai
                                     ;
                                 }
+                            </td>
+                            <td>
+                                <a href="@Url.Action("InPhieunhapkho", "Yeucau", new { area = "TruongBPKetoan", MaNhapkho = item.MaNhapkho })" 
+                                   target="_blank" 
+                                   class="btn-icon" 
+                                   title="In phiếu">
+                                    <i class="bx bx-printer"></i>
+                                </a>
                             </td>
                         </tr>
                         STT++;

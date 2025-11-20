@@ -194,7 +194,7 @@ function renderTable(items) {
     tableBody.innerHTML = ""; // Xóa nội dung cũ
     
     if (!items || items.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Không có vật tư nào.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Không có vật tư nào.</td></tr>';
         return;
     }
     
@@ -219,6 +219,7 @@ function renderTable(items) {
                 <td><span class="borrowed-qty">${item.sl || 0}</span></td>
                 <td><input type="number" name="SL" value="" min="1" step="1" max="${item.sl || 0}" placeholder="Nhập số lượng" style="width:100px;" /></td>
                 <td><input type="text" name="DonVi" value="${escapeHtml(item.donVi || '')}" readonly /></td>
+                <td><input type="number" name="DonGia" value="${item.donGia || ''}" placeholder="Đơn giá" min="0" step="0.01" style="width:120px;" /></td>
             </tr>
         `;
         tableBody.insertAdjacentHTML("beforeend", row);

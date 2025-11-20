@@ -132,7 +132,13 @@
                 </table>
             </div>
             <div class="action">
-                @* Chỉ hiển thị nút cho bộ phận mua hàng *@
+                @if (Context.Session.GetString("Bophan") == "BP mua hàng")
+                {
+                    <button type="button" id="submitPhieumuahang">Gửi báo giá</button>
+                    <button type="button" id="btnInPhieu" onclick="inPhieuMuaHang()" style="margin-left: 10px;">
+                        <i class='bx bx-printer'></i> In phiếu mua hàng
+                    </button>
+                }
             </div>
         </nav>
         <script src="~/js/phieumuahang.js"></script>

@@ -1,0 +1,117 @@
+@model Webkho_20241021.Models.yeucau
+@{
+    ViewData["Title"] = "ThemYeucau";
+    Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Th�m Y�u C?u</title>
+</head>
+@using (Html.BeginForm("ThemYeucauSQL", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post, true, new { enctype = "multipart/form-data" }))
+{
+    <body>
+        <div class="formyeucau">
+            <div class="tieude">
+                <p>Th�ng tin y�u c?u</p>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="ten">T�n</label>
+                    <input type="text" id="ten" name="NguoiYeucau" placeholder="T�n"
+                           value="@Context.Session.GetString("TenNguoidung")" required readonly />
+                </div>
+                <div class="field">
+                    <label for="manv">M� NV</label>
+                    <input type="text" id="manv" name="YCMaNguoidung" placeholder="M� nh�n vi�n"
+                           value="@Context.Session.GetString("MaNguoidung")" required readonly />
+                </div>
+                <div class="field">
+                    <label for="bophan">B? ph?n</label>
+                    <input type="text" id="bophan" name="Bophan" placeholder="B? ph?n"
+                           value="@Context.Session.GetString("Bophan")" required readonly />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="bophanduan">B? ph?n d? �n</label>
+                    <input type="text" id="bophanduan" name="BoPhanDuAn" placeholder="B? ph?n d? �n" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="tenyeucau">T�n y�u c?u</label>
+                    <select id="tenyeucau" name="TenYeucau" required>
+                        <option value="" disabled selected>Ch?n y�u c?u</option>
+                        <option value="Y�u c?u v?t tu">Y�u c?u v?t tu</option>
+                        <option value="Y�u c?u nh?p kho">Y�u c?u nh?p kho</option>
+                        <option value="Y�u c?u xu?t kho">Y�u c?u xu?t kho</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="maduan">M� d? �n</label>
+                    <select id="maduan" name="YCMaDuan" required>
+                        <option value="">Ch?n m� d? �n</option>
+                        <option value="">Kh�ng</option>
+                        @foreach (var n in ViewBag.Duanlist)
+                        {
+                            <option value="@n.MaDuan">@n.MaDuan</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="ngaycanhang">Ng�y c?n h�ng</label>
+                    <input type="date" id="ngaycanhang" name="NgayCanHang" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                </div>
+            </div>
+        </div>
+        <div class="formtableyeucau">
+            <div class="tieude">
+                <p>Danh s�ch v?t tu y�u c?u</p>
+            </div>
+            <div class="upload-excel">
+                <label for="excel-upload">T?i t?p Excel</label>
+                <input type="file" id="excel-upload" accept=".xlsx, .xls" />
+                <p class="text-sm text-gray-600 leading-tight">
+                    Vui l�ng s? d?ng t?p c� c�c c?t:
+                    <b>T�n</b>, <b>M� v?t tu</b>, <b>H�ng s?n xu?t</b>,
+                    <b>�on v?</b>, <b>S? lu?ng</b>, <b>Nh� cung c?p</b>, <b>Ng�y c?n h�ng</b>.
+                </p>
+
+            </div>
+            <div id="excel-feedback"
+                 class="mt-3 min-h-[40px] p-3 rounded-lg text-sm bg-gray-50 border-l-4 border-transparent">
+            </div>
+
+            <div class="themyeucau-table">
+                <table class="form-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>T�n thi?t b?/h�ng h�a</th>
+                            <th>M� VT</th>
+                            <th>H�ng SX</th>
+                            <th>�V</th>
+                            <th>SL (Cu)</th>
+                            <th>SL (M?i)</th>
+                            <th>Ng�y c?n</th>
+                            <th>NCC</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+                @* T?m th?i ?n ch?c nang nh?p tay s?n ph?m theo y�u c?u *@
+            </div>
+            <div id="excel-hidden-inputs" style="display:none;"></div>
+            <div class="action">
+                <button type="submit">G?i</button>
+            </div>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-pJW25KcTnYxSNhKp1FeLnii52PPiVUPwsh2n5WAnvptuP9HNy0T0VEgfi+c8xPmjOZ+NaAhhQBWQS421qY4mZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="~/js/themyeucau.js"></script>
+    </body>
+}
+</html>

@@ -1,0 +1,266 @@
+﻿body {
+    font-family: "Times New Roman", serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #fff;
+    font-size: 13px;
+}
+
+.container {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: white;
+    padding: 15mm;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Header công ty */
+.company-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 10px;
+}
+
+.company-info {
+    flex: 1;
+}
+
+.company-name {
+    font-weight: bold;
+    font-size: 14px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.company-address {
+    font-size: 11px;
+    margin-bottom: 5px;
+}
+
+.tax-info {
+    text-align: right;
+    flex: 1;
+}
+
+.tax-code {
+    font-size: 11px;
+    margin-bottom: 5px;
+}
+
+.form-number {
+    font-size: 11px;
+    font-style: italic;
+}
+
+/* Tiêu đề phiếu */
+.document-title {
+    text-align: center;
+    margin: 20px 0;
+    font-weight: bold;
+    font-size: 16px;
+    text-transform: uppercase;
+}
+
+.document-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.document-date {
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.document-number {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.accounting-codes {
+    text-align: right;
+    margin-bottom: 20px;
+    font-size: 12px;
+}
+
+/* Thông tin chung */
+.general-info {
+    margin-bottom: 20px;
+}
+
+.info-line {
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.info-line strong {
+    display: inline-block;
+    width: 200px;
+}
+
+/* Bảng chi tiết */
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 12px;
+}
+
+.detail-table th,
+.detail-table td {
+    border: 1px solid #000;
+    padding: 6px;
+    text-align: center;
+}
+
+.detail-table th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+.detail-table td {
+    text-align: left;
+}
+
+.detail-table td:nth-child(1),
+.detail-table td:nth-child(4),
+.detail-table td:nth-child(5),
+.detail-table td:nth-child(6),
+.detail-table td:nth-child(7),
+.detail-table td:nth-child(8),
+.detail-table td:nth-child(9) {
+    text-align: center;
+}
+
+/* Tổng cộng */
+.total-section {
+    margin-top: 20px;
+    text-align: right;
+    font-size: 12px;
+}
+
+.total-row {
+    margin-bottom: 5px;
+}
+
+.total-label {
+    display: inline-block;
+    width: 150px;
+    text-align: left;
+    font-weight: bold;
+}
+
+.total-value {
+    display: inline-block;
+    width: 150px;
+    text-align: right;
+    font-weight: bold;
+}
+
+/* Chữ ký */
+.signature-section {
+    margin-top: 40px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.signature-box {
+    text-align: center;
+    width: 200px;
+}
+
+.signature-label {
+    font-weight: bold;
+    margin-bottom: 50px;
+    font-size: 12px;
+}
+
+/* Nút hành động */
+.action-buttons {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 10px 25px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-approve {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-approve:hover {
+    background-color: #218838;
+}
+
+.btn-print {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-print:hover {
+    background-color: #0056b3;
+}
+
+.btn-back {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-back:hover {
+    background-color: #5a6268;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-waiting {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-approved {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-completed {
+    background-color: #17a2b8;
+    color: white;
+}
+
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+    
+    .container {
+        box-shadow: none;
+        padding: 10mm;
+    }
+    
+    .action-buttons,
+    .btn-back {
+        display: none;
+    }
+    
+    .detail-table {
+        page-break-inside: avoid;
+    }
+}

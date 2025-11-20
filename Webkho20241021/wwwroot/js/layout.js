@@ -2,7 +2,7 @@ function getThongbaoDatalayout() {
     // Danh sách các area hợp lệ
     const validAreas = ['NhanvienKho', 'NhanvienKetoan', 'NhanvienMuahang', 'NhanvienKythuat', 
                         'TruongBPKho', 'TruongBPKetoan', 'TruongBPMuahang', 'TruongBPKythuat',
-                        'Giamdoc', 'Admin'];
+                        'Giamdoc', 'Admin', 'QuanLiDuAn'];
     
     // Lấy area từ data attribute của body
     let area = $('body').data('area') || '';
