@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace Webkho_20241021.Areas.Admin.Controllers
 {
@@ -101,6 +102,17 @@ namespace Webkho_20241021.Areas.Admin.Controllers
             if (await _userManager.FindByNameAsync(Username) != null)
             {
                 ModelState.AddModelError("", "Tên đăng nhập đã tồn tại");
+                ViewBag.AllRoles = _roleManager.Roles.Select(r => r.Name).ToList();
+                return View();
+            }
+
+            var existingNguoiDung = await _context.nguoidungs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(nd => nd.MaNguoidung == MaNV);
+
+            if (existingNguoiDung != null)
+            {
+                ModelState.AddModelError("", "Mã nhân viên đã tồn tại");
                 ViewBag.AllRoles = _roleManager.Roles.Select(r => r.Name).ToList();
                 return View();
             }

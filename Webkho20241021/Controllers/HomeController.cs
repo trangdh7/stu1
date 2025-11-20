@@ -6,6 +6,7 @@ using Webkho_20241021.Models;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 
 namespace Webkho_20241021.Controllers
 {
@@ -50,6 +51,16 @@ namespace Webkho_20241021.Controllers
             if (await _userManager.FindByNameAsync(Username) != null)
             {
                 ModelState.AddModelError("", "Tên đăng nhập đã tồn tại");
+                return View("Create");
+            }
+
+            var existingNguoiDung = await _context.nguoidungs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(nd => nd.MaNguoidung == MaNV);
+
+            if (existingNguoiDung != null)
+            {
+                ModelState.AddModelError("", "Mã nhân viên đã tồn tại");
                 return View("Create");
             }
 
