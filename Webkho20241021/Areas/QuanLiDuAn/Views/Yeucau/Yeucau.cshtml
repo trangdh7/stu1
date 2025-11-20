@@ -6,11 +6,11 @@
     Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>yeucau</title>
+    <title>Yêu cầu</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
@@ -19,32 +19,32 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/QuanLiDuAn/Yeucau/Yeucau">Chua duy?t</a>
+                    <a href="/QuanLiDuAn/Yeucau/Yeucau">Chưa duyệt</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
                 <li class="menu-xuatkho">
-                    <a href="/QuanLiDuAn/Yeucau/Phieuxuatkho">Phi?u xu?t kho</a>
+                    <a href="/QuanLiDuAn/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
                 <li class="menu-nhapkho">
-                    <a href="/QuanLiDuAn/Yeucau/Phieunhapkho">Phi?u nh?p kho</a>
+                    <a href="/QuanLiDuAn/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
                 <li class="menu-muahang">
-                    <a href="/QuanLiDuAn/Yeucau/Phieumuahang">Phi?u mua h�ng</a>
+                    <a href="/QuanLiDuAn/Yeucau/Phieumuahang">Phiếu mua hàng</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
             </ul>
             <ul>
-                <input type="text" id="timkiem" name="Timkiem" placeholder="T�m ki?m" />
+                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
             </ul>
         </div>
 
@@ -53,14 +53,14 @@
                 <thead>
                     <tr>
                         <td>STT</td>
-                        <td>T�n y�u c?u</td>
-                        <td>M� y�u c?u</td>
-                        <td>Ngu?i y�u c?u</td>
-                        <td>B? ph?n</td>
-                        <td>M� ngu?i YC</td>
-                        <td>M� d? �n</td>
-                        <td>Ng�y y�u c?u</td>
-                        <td>Tr?ng th�i</td>
+                        <td>Tên yêu cầu</td>
+                        <td>Mã yêu cầu</td>
+                        <td>Người yêu cầu</td>
+                        <td>Bộ phận</td>
+                        <td>Mã người YC</td>
+                        <td>Mã dự án</td>
+                        <td>Ngày yêu cầu</td>
+                        <td>Trạng thái</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -86,7 +86,7 @@
                             <td>@item.YCMaDuan</td>
                             <td>@item.NgayYeucau?.ToString("dd/MM/yyyy")</td>
                             <td>
-                                @if (item.TrangThai == "Qu?n l� d? �n" && maNguoiQLDA == maNguoidungSession)
+                                @if (item.TrangThai == "Quản lí dự án" && maNguoiQLDA == maNguoidungSession)
                                 {
                                     @using (Html.BeginForm("XuLyYeucau", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post))
                                     {
@@ -112,7 +112,7 @@
                                         </button>
                                     }
                                 }
-                                else if (item.TrangThai == Context.Session.GetString("Chucvu") && Context.Session.GetString("Chucvu") == "Gi�m d?c")
+                                else if (item.TrangThai == Context.Session.GetString("Chucvu") && Context.Session.GetString("Chucvu") == "Giám đốc")
                                 {
                                     @using (Html.BeginForm("XuLyYeucau", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post))
                                     {
@@ -140,7 +140,7 @@
         <div class="action">
             <ul class="hanhdong">
                 <li>
-                    <a href="/QuanLiDuAn/Yeucau/ThemYeucau">Th�m y�u c?u</a>
+                    <a href="/QuanLiDuAn/Yeucau/ThemYeucau">Thêm yêu cầu</a>
                 </li>
             </ul>
         </div>
@@ -151,14 +151,14 @@
                 <thead>
                     <tr>
                         <td>STT</td>
-                        <td>T�n v?t tu</td>
-                        <td>M� v?t tu</td>
-                        <td>M� kho</td>
-                        <td>H�ng sx</td>
-                        <td>Nh� cung c?p</td>
-                        <td>S? lu?ng</td>
-                        <td>�on v?</td>
-                        <td>Tr?ng th�i</td>
+                        <td>Tên vật tư</td>
+                        <td>Mã vật tư</td>
+                        <td>Mã kho</td>
+                        <td>Hãng SX</td>
+                        <td>Nhà cung cấp</td>
+                        <td>Số lượng</td>
+                        <td>Đơn vị</td>
+                        <td>Trạng thái</td>
                     </tr>
                 </thead>
                 <tbody>

@@ -5,11 +5,11 @@
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ThÍm YÍu C?u</title>
+    <title>Th√™m phi·∫øu nh·∫≠p kho</title>
 </head>
 @using (Html.BeginForm("ThemPhieunhapkhoSQL", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
 {
@@ -22,21 +22,21 @@
         }
         <div class="formyeucau">
             <div class="tieude">    
-                <p>ThÙng tin yÍu c?u</p>
+                <p>Th√¥ng tin y√™u c·∫ßu</p>
             </div>
             <div class="row">
                 <div class="field">
-                    <label for="loainhapkho">Lo?i nh?p kho</label>
+                    <label for="loainhapkho">Lo·∫°i nh·∫≠p kho</label>
                     <select id="loainhapkho" name="LoaiNhapkho" required onchange="handleLoaiNhapkhoChange()">
-                        <option value="">Ch?n lo?i</option>
-                        <option value="duan">T? d? ·n</option>
-                        <option value="canhan">T? c· nh‚n</option>
+                        <option value="">Ch·ªçn lo·∫°i</option>
+                        <option value="duan">T·ª´ d·ª± √°n</option>
+                        <option value="canhan">T·ª´ c√° nh√¢n</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label for="maduan">M„ d? ·n</label>
+                    <label for="maduan">M√£ d·ª± √°n</label>
                     <select id="maduan" name="MaDuan" onchange="handleDuanChange()">
-                        <option value="">Ch?n m„ d? ·n</option>
+                        <option value="">Ch·ªçn m√£ d·ª± √°n</option>
                         @foreach (var y in ViewBag.Duanlist)
                         {
                             <option value="@y.MaDuan">@y.MaDuan</option>
@@ -44,34 +44,34 @@
                     </select>
                 </div>
                 <div class="field">
-                    <label for="ycmanguoidung">NV yÍu c?u</label>
-                    <input type="text" id="ycmanguoidung" name="MaNguoidung" placeholder="M„ nh‚n viÍn" required readonly />
+                    <label for="ycmanguoidung">NV y√™u c·∫ßu</label>
+                    <input type="text" id="ycmanguoidung" name="MaNguoidung" placeholder="M√£ nh√¢n vi√™n" required readonly />
                 </div>
             </div>
         </div>
         <div class="formtableyeucau">
             <div class="tieude">
-                <p>Danh s·ch v?t tu yÍu c?u</p>
+                <p>Danh s√°ch v·∫≠t t∆∞ y√™u c·∫ßu</p>
             </div>
-            <!-- Section tÏm ki?m v?t tu t? d? ·n -->
+            <!-- Section t√¨m ki·∫øm v·∫≠t t∆∞ t·ª´ d·ª± √°n -->
             <div id="searchSection" style="display: none; margin-bottom: 15px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: bold;">TÏm ki?m v?t tu mu?n tr? l?i:</label>
-                <input type="text" id="searchVatTuInput" placeholder="Nh?p tÍn s?n ph?m mu?n tr? l?i..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" autocomplete="off" />
+                <label style="display: block; margin-bottom: 8px; font-weight: bold;">T√¨m ki·∫øm v·∫≠t t∆∞ mu·ªën tr·∫£ l·∫°i:</label>
+                <input type="text" id="searchVatTuInput" placeholder="Nh·∫≠p t√™n s·∫£n ph·∫©m mu·ªën tr·∫£ l·∫°i..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" autocomplete="off" />
             </div>
             <div class="themyeucau-table">
                 <table class="form-table">
                     <thead> 
                         <tr>
-                            <th>Ch?n</th>
+                            <th>Ch·ªçn</th>
                             <th>STT</th>
-                            <th>TÍn v?t tu</th>
-                            <th>M„ v?t tu</th>
-                            <th>M„ kho</th>
-                            <th>H„ng SX</th>
-                            <th>Nh‡ cung c?p</th>
-                            <th>–„ mu?n</th>
-                            <th>Tr?</th>
-                            <th>–on v?</th>
+                            <th>T√™n v·∫≠t t∆∞</th>
+                            <th>M√£ v·∫≠t t∆∞</th>
+                            <th>M√£ kho</th>
+                            <th>H√£ng SX</th>
+                            <th>Nh√† cung c·∫•p</th>
+                            <th>ƒê√£ m∆∞·ª£n</th>
+                            <th>Tr·∫£</th>
+                            <th>ƒê∆°n v·ªã</th>
                         </tr>
                     </thead>
                     <tbody id="table-body">
@@ -80,29 +80,29 @@
                             <td>1</td>
                             <td>
                                 <div style="position: relative;">
-                                    <input type="text" id="tenSanphamSearch" class="TenSanpham" name="TenSanpham" placeholder="TÍn v?t tu" autocomplete="off" readonly />
+                                    <input type="text" id="tenSanphamSearch" class="TenSanpham" name="TenSanpham" placeholder="T√™n v·∫≠t t∆∞" autocomplete="off" readonly />
                                     <div id="suggestionBox" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-top: none; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></div>
                                 </div>
                             </td>
-                            <td><input type="text" id="maSanpham" name="MaSanpham" placeholder="M„ s?n ph?m" readonly /></td>
-                            <td><input type="text" id="makho" name="Makho" placeholder="M„ kho" readonly /></td>
-                            <td><input type="text" id="hangSX" name="HangSX" placeholder="H„ng SX" readonly /></td>
-                            <td><input type="text" id="nhaCC" name="NhaCC" placeholder="Nh‡ cung c?p" readonly /></td>
-                            <td><span id="borrowedInfo">ó</span></td>
-                            <td><input type="number" id="sl" name="SL" placeholder="S? lu?ng tr?" min="1" /></td>
-                            <td><input type="text" id="donVi" name="DonVi" placeholder="–on v?" readonly /></td>
+                            <td><input type="text" id="maSanpham" name="MaSanpham" placeholder="M√£ s·∫£n ph·∫©m" readonly /></td>
+                            <td><input type="text" id="makho" name="Makho" placeholder="M√£ kho" readonly /></td>
+                            <td><input type="text" id="hangSX" name="HangSX" placeholder="H√£ng SX" readonly /></td>
+                            <td><input type="text" id="nhaCC" name="NhaCC" placeholder="Nh√† cung c·∫•p" readonly /></td>
+                            <td><span id="borrowedInfo">-</span></td>
+                            <td><input type="number" id="sl" name="SL" placeholder="S·ªë l∆∞·ª£ng tr·∫£" min="1" /></td>
+                            <td><input type="text" id="donVi" name="DonVi" placeholder="ƒê∆°n v·ªã" readonly /></td>
                         </tr>
                     </tbody>
                     <tbody id="searchResults" style="display: none;"></tbody>
                 </table>
             </div>
             <div class="action">
-                <button type="button" onclick="submitSelectedItems()">G?i</button>
+                <button type="button" onclick="submitSelectedItems()">G·ª≠i</button>
             </div>
         </div>
         <script src="~/js/themphieunhapkho.js"></script>
         <script>
-            // KhÛa m?i Ù nh?p tr? Ù s? lu?ng
+            // Kh√≥a to√†n b·ªô √¥ vƒÉn b·∫£n, ch·ªâ cho ph√©p nh·∫≠p s·ªë l∆∞·ª£ng
             (function lockReadonlyFields() {
                 try {
                     const table = document.getElementById('table-body');
@@ -113,36 +113,34 @@
                             input.readOnly = true;
                         }
                     });
-                } catch(e) { console.warn(e); }
+                } catch (e) {
+                    console.warn(e);
+                }
             })();
 
-            // H‡m submit ch? nh?ng item du?c ch?n - S? d?ng AJAX
             function submitSelectedItems() {
                 try {
                     const tableBody = document.getElementById('table-body');
                     if (!tableBody) {
-                        alert('KhÙng tÏm th?y b?ng d? li?u!');
+                        alert('Kh√¥ng t√¨m th·∫•y b·∫£ng d·ªØ li·ªáu!');
                         return;
                     }
-                    
+
                     const rows = tableBody.querySelectorAll('tr');
-                    
-                    // Ki?m tra c·c field quan tr?ng
                     const loaiNhapkho = document.getElementById('loainhapkho')?.value;
                     const maDuan = document.getElementById('maduan')?.value || '';
                     const maNguoidung = document.getElementById('ycmanguoidung')?.value;
-                    
+
                     if (!loaiNhapkho) {
-                        alert('Vui lÚng ch?n lo?i nh?p kho!');
+                        alert('Vui l√≤ng ch·ªçn lo·∫°i nh·∫≠p kho!');
                         return;
                     }
-                    
+
                     if (!maNguoidung) {
-                        alert('Vui lÚng ki?m tra m„ nh‚n viÍn!');
+                        alert('Vui l√≤ng ki·ªÉm tra m√£ nh√¢n vi√™n!');
                         return;
                     }
-                    
-                    // Thu th?p d? li?u t? c·c v?t tu du?c ch?n
+
                     const selectedData = {
                         TenSanpham: [],
                         MaSanpham: [],
@@ -152,11 +150,11 @@
                         SL: [],
                         DonVi: []
                     };
-                    
+
                     let hasSelected = false;
-                    let invalidMsgs = [];
-                    
-                    rows.forEach((row, index) => {
+                    const invalidMsgs = [];
+
+                    rows.forEach(row => {
                         const checkbox = row.querySelector('.select-item');
                         if (checkbox && checkbox.checked) {
                             const tenSanpham = row.querySelector('input[name="TenSanpham"]')?.value || '';
@@ -164,14 +162,12 @@
                             const slInput = row.querySelector('input[name="SL"]');
                             const sl = slInput?.value || '';
                             const max = Number(slInput?.getAttribute('max') || 0);
-                            const parsed = parseInt(sl);
-                            
-                            // Ch? thÍm n?u cÛ tÍn s?n ph?m v‡ s? lu?ng
+                            const parsed = parseInt(sl, 10);
+
                             if (tenSanpham && sl && parsed > 0) {
-                                // Client-side validate: khÙng cho tr? qu· s? lu?ng mu?n
                                 if (max > 0 && parsed > max) {
-                                    invalidMsgs.push(`- ${tenSanpham} (${maSanpham}): Nh?p ${parsed} > t?i da ${max}`);
-                                    return; // skip add this row
+                                    invalidMsgs.push(`- ${tenSanpham} (${maSanpham}): nh·∫≠p ${parsed} > t·ªëi ƒëa ${max}`);
+                                    return;
                                 }
                                 selectedData.TenSanpham.push(tenSanpham);
                                 selectedData.MaSanpham.push(maSanpham || '');
@@ -184,26 +180,24 @@
                             }
                         }
                     });
-                    
+
                     if (invalidMsgs.length > 0) {
-                        alert('B?n tr? qu· s? lu?ng b?n mu?n cho c·c v?t tu:\n' + invalidMsgs.join('\n'));
+                        alert('B·∫°n tr·∫£ qu√° s·ªë l∆∞·ª£ng ƒë√£ m∆∞·ª£n:\n' + invalidMsgs.join('\n'));
                         return;
                     }
-                    
+
                     if (!hasSelected) {
-                        alert('Vui lÚng ch?n Ìt nh?t m?t v?t tu v‡ nh?p s? lu?ng d? tr?!');
+                        alert('Vui l√≤ng ch·ªçn √≠t nh·∫•t m·ªôt v·∫≠t t∆∞ v√† nh·∫≠p s·ªë l∆∞·ª£ng tr·∫£!');
                         return;
                     }
-                    
-                    // Chu?n b? d? li?u d? g?i - S? d?ng FormData d? h? tr? arrays
+
                     const formData = new FormData();
                     formData.append('LoaiNhapkho', loaiNhapkho);
                     if (loaiNhapkho === 'duan' && maDuan) {
                         formData.append('MaDuan', maDuan);
                     }
                     formData.append('MaNguoidung', maNguoidung);
-                    
-                    // ThÍm arrays v‡o FormData
+
                     selectedData.TenSanpham.forEach(v => formData.append('TenSanpham', v));
                     selectedData.MaSanpham.forEach(v => formData.append('MaSanpham', v));
                     selectedData.Makho.forEach(v => formData.append('Makho', v));
@@ -211,149 +205,123 @@
                     selectedData.NhaCC.forEach(v => formData.append('NhaCC', v));
                     selectedData.SL.forEach(v => formData.append('SL', v));
                     selectedData.DonVi.forEach(v => formData.append('DonVi', v));
-                    
-                    console.log('Submitting data - Items count:', selectedData.TenSanpham.length);
-                    
-                    // Disable n˙t submit d? tr·nh double submit
+
                     const submitBtn = document.querySelector('button[onclick="submitSelectedItems()"]');
                     if (submitBtn) {
                         submitBtn.disabled = true;
-                        submitBtn.textContent = '–ang g?i...';
+                        submitBtn.textContent = 'ƒêang g·ª≠i...';
                     }
-                    
-                    // G?i b?ng AJAX
+
                     const pathSegments = window.location.pathname.split('/');
                     const area = pathSegments.length > 1 ? pathSegments[1] : '';
                     const url = `/${area}/Yeucau/ThemPhieunhapkhoSQL`;
-                    
+
                     fetch(url, {
                         method: 'POST',
                         body: formData,
-                        credentials: 'same-origin' // Quan tr?ng: g?i cookies/session
+                        credentials: 'same-origin'
                     })
-                    .then(response => {
-                        console.log('Response status:', response.status);
-                        if (response.redirected) {
-                            console.log('Redirected to:', response.url);
-                            // N?u redirect v? login, cÛ th? session d„ h?t
-                            if (response.url.includes('Login') || response.url.includes('Dangnhap')) {
-                                alert('Session d„ h?t h?n. Vui lÚng dang nh?p l?i!');
+                        .then(response => {
+                            if (response.redirected) {
                                 window.location.href = response.url;
                             } else {
-                                window.location.href = response.url;
+                                return response.text().then(() => window.location.reload());
                             }
-                        } else {
-                            return response.text().then(text => {
-                                console.log('Response text:', text.substring(0, 200));
-                                // N?u response l‡ HTML (cÛ th? l‡ error page), reload trang
-                                window.location.reload();
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error submitting:', error);
-                        alert('CÛ l?i x?y ra khi g?i d? li?u: ' + error.message);
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = 'G?i';
-                        }
-                    });
-                    
+                        })
+                        .catch(error => {
+                            console.error('Error submitting:', error);
+                            alert('C√≥ l·ªói x·∫£y ra khi g·ª≠i d·ªØ li·ªáu: ' + error.message);
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'G·ª≠i';
+                            }
+                        });
+
                 } catch (error) {
-                    console.error('L?i khi submit:', error);
-                    alert('CÛ l?i x?y ra khi g?i d? li?u: ' + error.message);
+                    console.error('Submit error:', error);
+                    alert('C√≥ l·ªói x·∫£y ra khi g·ª≠i d·ªØ li·ªáu: ' + error.message);
                 }
             }
-            
-            // Autocomplete cho tÍn v?t tu
+
+            // Autocomplete cho t√™n v·∫≠t t∆∞
             let searchTimeout;
             const tenSanphamInput = document.getElementById('tenSanphamSearch');
             const suggestionBox = document.getElementById('suggestionBox');
-            
+
             if (tenSanphamInput) {
-                tenSanphamInput.addEventListener('input', function() {
+                tenSanphamInput.addEventListener('input', function () {
                     const searchTerm = this.value.trim();
-                    
-                    // Clear timeout n?u cÛ
                     clearTimeout(searchTimeout);
-                    
+
                     if (searchTerm.length < 1) {
                         suggestionBox.style.display = 'none';
                         return;
                     }
-                    
-                    // Debounce: ch? 300ms sau khi ngu?i d˘ng ng?ng gı
+
                     searchTimeout = setTimeout(() => {
                         searchProducts(searchTerm);
                     }, 300);
                 });
-                
-                // ?n suggestion box khi click ra ngo‡i
-                document.addEventListener('click', function(e) {
+
+                document.addEventListener('click', function (e) {
                     if (!tenSanphamInput.contains(e.target) && !suggestionBox.contains(e.target)) {
                         suggestionBox.style.display = 'none';
                     }
                 });
             }
-            
+
             function searchProducts(searchTerm) {
                 const pathSegments = window.location.pathname.split('/');
                 const area = pathSegments.length > 1 ? pathSegments[1] : '';
-                
+
                 fetch(`/${area}/Yeucau/TimKiem?timkiem=${encodeURIComponent(searchTerm)}`)
                     .then(response => response.json())
                     .then(data => {
                         displaySuggestions(data);
                     })
                     .catch(error => {
-                        console.error('L?i khi tÏm ki?m:', error);
+                        console.error('L·ªói khi t√¨m ki·∫øm:', error);
                         suggestionBox.style.display = 'none';
                     });
             }
-            
+
             function displaySuggestions(items) {
                 if (!items || items.length === 0) {
-                    suggestionBox.innerHTML = '<div style="padding: 10px; color: #999;">KhÙng tÏm th?y k?t qu?</div>';
+                    suggestionBox.innerHTML = '<div style="padding: 10px; color: #999;">Kh√¥ng t√¨m th·∫•y k·∫øt qu·∫£</div>';
                     suggestionBox.style.display = 'block';
                     return;
                 }
-                
+
+                const escapeHtml = (str) => {
+                    if (!str) return '';
+                    return String(str)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                };
+
                 let html = '';
                 items.forEach((item, index) => {
-                    // Escape HTML v‡ d?u nh·y d? tr·nh l?i
-                    const escapeHtml = (str) => {
-                        if (!str) return '';
-                        return String(str)
-                            .replace(/&/g, '&amp;')
-                            .replace(/</g, '&lt;')
-                            .replace(/>/g, '&gt;')
-                            .replace(/"/g, '&quot;')
-                            .replace(/'/g, '&#39;');
-                    };
-                    
                     const tenSanpham = escapeHtml(item.TenSanpham || '');
                     const maSanpham = escapeHtml(item.MaSanpham || '');
-                    const makho = escapeHtml(item.Makho || '');
-                    const hangSX = escapeHtml(item.HangSX || '');
-                    const nhaCC = escapeHtml(item.NhaCC || '');
                     const donVi = escapeHtml(item.DonVi || '');
-                    
                     html += `
                         <div class="suggestion-item" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" 
                              onmouseover="this.style.backgroundColor='#f0f0f0'" 
                              onmouseout="this.style.backgroundColor='white'"
                              data-index="${index}">
                             <strong>${tenSanpham}</strong><br>
-                            <small style="color: #666;">M„: ${maSanpham} | SL: ${item.SL || 0} ${donVi}</small>
+                            <small style="color: #666;">M√£: ${maSanpham} | SL: ${item.SL || 0} ${donVi}</small>
                         </div>
                     `;
                 });
-                
+
                 suggestionBox.innerHTML = html;
-                
-                // ThÍm event listener cho m?i suggestion item
+
                 suggestionBox.querySelectorAll('.suggestion-item').forEach((el, index) => {
-                    el.addEventListener('click', function() {
+                    el.addEventListener('click', function () {
                         const item = items[index];
                         selectProduct(
                             item.TenSanpham || '',
@@ -366,10 +334,10 @@
                         );
                     });
                 });
-                
+
                 suggestionBox.style.display = 'block';
             }
-            
+
             function selectProduct(tenSanpham, maSanpham, makho, hangSX, nhaCC, donVi, sl) {
                 document.getElementById('tenSanphamSearch').value = tenSanpham;
                 document.getElementById('maSanpham').value = maSanpham;
@@ -377,15 +345,15 @@
                 document.getElementById('hangSX').value = hangSX;
                 document.getElementById('nhaCC').value = nhaCC;
                 document.getElementById('donVi').value = donVi;
-                // KhÙng set gi· tr? m?c d?nh, d? user t? nh?p s? lu?ng
                 document.getElementById('sl').value = '';
-                document.getElementById('sl').placeholder = `Nh?p s? lu?ng (t?i da: ${sl})`;
+                document.getElementById('sl').placeholder = `Nh·∫≠p s·ªë l∆∞·ª£ng (t·ªëi ƒëa: ${sl})`;
                 document.getElementById('sl').max = sl;
-                document.getElementById('sl').focus(); // Focus v‡o Ù s? lu?ng d? user nh?p ngay
-                
+                document.getElementById('sl').focus();
+
                 suggestionBox.style.display = 'none';
             }
         </script>
     </body>
 }
 </html>
+

@@ -5,57 +5,51 @@
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Th�m Y�u C?u</title>
+    <title>Thêm Yêu Cầu</title>
 </head>
 @using (Html.BeginForm("ThemYeucauSQL", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post, true, new { enctype = "multipart/form-data" }))
 {
     <body>
         <div class="formyeucau">
             <div class="tieude">
-                <p>Th�ng tin y�u c?u</p>
+                <p>Thông tin yêu cầu</p>
             </div>
             <div class="row">
                 <div class="field">
-                    <label for="ten">T�n</label>
-                    <input type="text" id="ten" name="NguoiYeucau" placeholder="T�n"
+                    <label for="ten">Tên</label>
+                    <input type="text" id="ten" name="NguoiYeucau" placeholder="Tên"
                            value="@Context.Session.GetString("TenNguoidung")" required readonly />
                 </div>
                 <div class="field">
-                    <label for="manv">M� NV</label>
-                    <input type="text" id="manv" name="YCMaNguoidung" placeholder="M� nh�n vi�n"
+                    <label for="manv">Mã NV</label>
+                    <input type="text" id="manv" name="YCMaNguoidung" placeholder="Mã nhân viên"
                            value="@Context.Session.GetString("MaNguoidung")" required readonly />
                 </div>
                 <div class="field">
-                    <label for="bophan">B? ph?n</label>
-                    <input type="text" id="bophan" name="Bophan" placeholder="B? ph?n"
+                    <label for="bophan">Bộ phận</label>
+                    <input type="text" id="bophan" name="Bophan" placeholder="Bộ phận"
                            value="@Context.Session.GetString("Bophan")" required readonly />
                 </div>
             </div>
             <div class="row">
                 <div class="field">
-                    <label for="bophanduan">B? ph?n d? �n</label>
-                    <input type="text" id="bophanduan" name="BoPhanDuAn" placeholder="B? ph?n d? �n" />
-                </div>
-            </div>
-            <div class="row">
-                <div class="field">
-                    <label for="tenyeucau">T�n y�u c?u</label>
+                    <label for="tenyeucau">Tên yêu cầu</label>
                     <select id="tenyeucau" name="TenYeucau" required>
-                        <option value="" disabled selected>Ch?n y�u c?u</option>
-                        <option value="Y�u c?u v?t tu">Y�u c?u v?t tu</option>
-                        <option value="Y�u c?u nh?p kho">Y�u c?u nh?p kho</option>
-                        <option value="Y�u c?u xu?t kho">Y�u c?u xu?t kho</option>
+                        <option value="" disabled selected>Chọn yêu cầu</option>
+                        <option value="Yêu cầu vật tư">Yêu cầu vật tư</option>
+                        <option value="Yêu cầu nhập kho">Yêu cầu nhập kho</option>
+                        <option value="Yêu cầu xuất kho">Yêu cầu xuất kho</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label for="maduan">M� d? �n</label>
+                    <label for="maduan">Mã dự án</label>
                     <select id="maduan" name="YCMaDuan" required>
-                        <option value="">Ch?n m� d? �n</option>
-                        <option value="">Kh�ng</option>
+                        <option value="">Chọn mã dự án</option>
+                        <option value="">Không</option>
                         @foreach (var n in ViewBag.Duanlist)
                         {
                             <option value="@n.MaDuan">@n.MaDuan</option>
@@ -63,22 +57,22 @@
                     </select>
                 </div>
                 <div class="field">
-                    <label for="ngaycanhang">Ng�y c?n h�ng</label>
+                    <label for="ngaycanhang">Ngày cần hàng</label>
                     <input type="date" id="ngaycanhang" name="NgayCanHang" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
                 </div>
             </div>
         </div>
         <div class="formtableyeucau">
             <div class="tieude">
-                <p>Danh s�ch v?t tu y�u c?u</p>
+                <p>Danh sách vật tư yêu cầu</p>
             </div>
             <div class="upload-excel">
-                <label for="excel-upload">T?i t?p Excel</label>
+                <label for="excel-upload">Tải tệp Excel</label>
                 <input type="file" id="excel-upload" accept=".xlsx, .xls" />
                 <p class="text-sm text-gray-600 leading-tight">
-                    Vui l�ng s? d?ng t?p c� c�c c?t:
-                    <b>T�n</b>, <b>M� v?t tu</b>, <b>H�ng s?n xu?t</b>,
-                    <b>�on v?</b>, <b>S? lu?ng</b>, <b>Nh� cung c?p</b>, <b>Ng�y c?n h�ng</b>.
+                    Vui lòng sử dụng tệp có các cột:
+                    <b>Tên</b>, <b>Mã vật tư</b>, <b>Hãng sản xuất</b>,
+                    <b>Đơn vị</b>, <b>Số lượng</b>, <b>Nhà cung cấp</b>, <b>Ngày cần hàng</b>.
                 </p>
 
             </div>
@@ -91,23 +85,23 @@
                     <thead>
                         <tr>
                             <th>STT</th>
-                            <th>T�n thi?t b?/h�ng h�a</th>
-                            <th>M� VT</th>
-                            <th>H�ng SX</th>
-                            <th>�V</th>
-                            <th>SL (Cu)</th>
-                            <th>SL (M?i)</th>
-                            <th>Ng�y c?n</th>
+                            <th>Tên thiết bị/hàng hóa</th>
+                            <th>Mã VT</th>
+                            <th>Hãng SX</th>
+                            <th>ĐV</th>
+                            <th>SL (Cũ)</th>
+                            <th>SL (Mới)</th>
+                            <th>Ngày cần</th>
                             <th>NCC</th>
                         </tr>
                     </thead>
                     <tbody id="table-body"></tbody>
                 </table>
-                @* T?m th?i ?n ch?c nang nh?p tay s?n ph?m theo y�u c?u *@
+                @* Tạm thời ẩn chức năng nhập tay sản phẩm theo yêu cầu *@
             </div>
             <div id="excel-hidden-inputs" style="display:none;"></div>
             <div class="action">
-                <button type="submit">G?i</button>
+                <button type="submit">Gửi</button>
             </div>
         </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-pJW25KcTnYxSNhKp1FeLnii52PPiVUPwsh2n5WAnvptuP9HNy0T0VEgfi+c8xPmjOZ+NaAhhQBWQS421qY4mZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>

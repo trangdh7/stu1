@@ -5,11 +5,11 @@
 @model Webkho_20241021.Areas.QuanLiDuAn.Data.Phieumuahangviewmodel
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>yeucau</title>
+    <title>Phiếu mua hàng</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
@@ -18,32 +18,32 @@
             <div class="menu-kho">
                 <ul class="timkiem">
                     <li class="menu-yeucau">
-                        <a href="/QuanLiDuAn/Yeucau/Yeucau">Chua duy?t</a>
+                        <a href="/QuanLiDuAn/Yeucau/Yeucau">Chưa duyệt</a>
                         <span class="badge">
                             <span class="notification"></span>
                         </span>
                     </li>
                     <li class="menu-xuatkho">
-                        <a href="/QuanLiDuAn/Yeucau/Phieuxuatkho">Phi?u xu?t kho</a>
+                        <a href="/QuanLiDuAn/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
                         <span class="badge">
                             <span class="notification"></span>
                         </span>
                     </li>
                     <li class="menu-nhapkho">
-                        <a href="/QuanLiDuAn/Yeucau/Phieunhapkho">Phi?u nh?p kho</a>
+                        <a href="/QuanLiDuAn/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
                         <span class="badge">
                             <span class="notification"></span>
                         </span>
                     </li>
                     <li class="menu-muahang">
-                        <a href="/QuanLiDuAn/Yeucau/Phieumuahang">Phi?u mua h�ng</a>
+                        <a href="/QuanLiDuAn/Yeucau/Phieumuahang">Phiếu mua hàng</a>
                         <span class="badge">
                             <span class="notification"></span>
                         </span>
                     </li>
                 </ul>
                 <ul>
-                    <input type="text" id="timkiem" name="Timkiem" placeholder="T�m ki?m" />
+                    <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
                 </ul>
             </div>
 
@@ -52,12 +52,12 @@
                     <thead>
                         <tr>
                             <td>STT</td>
-                            <td>M� xu?t kho</td>
-                            <td>M� y�u c?u</td>
-                            <td>M� d? �n</td>
-                            <td>Ngu?i y�u c?u</td>
-                            <td>Ng�y xu?t kho</td>
-                            <td>Tr?ng th�i</td>
+                            <td>Mã mua hàng</td>
+                            <td>Mã yêu cầu</td>
+                            <td>Mã dự án</td>
+                            <td>Người yêu cầu</td>
+                            <td>Ngày mua hàng</td>
+                            <td>Trạng thái</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -80,8 +80,8 @@
                                 <td>@item.MaNguoidung</td>
                                 <td>@item.NgayMuahang?.ToString("dd/MM/yyyy")</td>
                                 <td>
-                                    @if ((item.TrangThai == "�� b�o gi�" && ChucvuSession == "Gi�m d?c") ||
-                                          (item.TrangThai == "Ch? thanh to�n" && BophanSession == "BP k? to�n"))
+                                    @if ((item.TrangThai == "Đã báo giá" && ChucvuSession == "Giám đốc") ||
+                                          (item.TrangThai == "Chờ thanh toán" && BophanSession == "BP kế toán"))
                                     {
                                         @using (Html.BeginForm("XuLyPhieumuahang", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post))
                                         {
@@ -115,16 +115,16 @@
                     <thead>
                         <tr>
                             <td>STT</td>
-                            <td>T�n v?t tu</td>
-                            <td>M� v?t tu</td>
-                            <td>M� kho</td>
-                            <td>H�ng sx</td>
-                            <td>Nh� cung c?p</td>
-                            <td>S? lu?ng</td>
-                            <td>�on v?</td>
-                            <td>�on gi�</td>
-                            <td>Th�nh ti?n</td>
-                            <td>Tr?ng th�i</td>
+                            <td>Tên vật tư</td>
+                            <td>Mã vật tư</td>
+                            <td>Mã kho</td>
+                            <td>Hãng SX</td>
+                            <td>Nhà cung cấp</td>
+                            <td>Số lượng</td>
+                            <td>Đơn vị</td>
+                            <td>Đơn giá</td>
+                            <td>Thành tiền</td>
+                            <td>Trạng thái</td>
                         </tr>
                     </thead>
                     <tbody>                      
@@ -132,7 +132,7 @@
                 </table>
             </div>
             <div class="action">
-                @* Ch? hi?n th? n�t cho b? ph?n mua h�ng *@
+                @* Ch? hi?n th? n�t cho b? ph?n mua h�ng *@
             </div>
         </nav>
         <script src="~/js/phieumuahang.js"></script>

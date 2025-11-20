@@ -4,11 +4,11 @@
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Import V?t Tu</title>
+    <title>Import Vật Tư</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script>
         function handleFileUpload(event) {
@@ -28,18 +28,18 @@
         }
 
         function formatExcelDateToDatetimeLocal(dateString) {
-            // Ki?m tra n?u chu?i ng�y kh�ng h?p l? ho?c r?ng
+            // Kiểm tra nếu chuỗi ngày không hợp lệ hoặc rỗng
             if (!dateString) return '';
 
-            // Gi? s? chu?i ng�y c� d?nh d?ng dd/MM/yyyy
+            // Giả sử chuỗi ngày có định dạng dd/MM/yyyy
             const [day, month, year] = dateString.split('/');
 
             if (day && month && year && day.length <= 2 && month.length <= 2) {
-                // �?nh d?ng l?i theo `yyyy-MM-dd` d? d�ng trong th? input
+                // Định dạng lại theo `yyyy-MM-dd` để dùng trong thẻ input
                 return `${year}-${day.padStart(2, '0')}-${month.padStart(2, '0')}`;
             }
 
-            return ''; // Tr? v? chu?i r?ng n?u kh�ng th? d?nh d?ng d�ng
+            return ''; // Trả về chuỗi rỗng nếu không thể định dạng đúng
         }
 
         function populateTable(data) {
@@ -55,14 +55,14 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${i}</td>
-                    <td style="width: 20%;"><input type="text" name="TenSanpham" value="${data[i][1] || ''}" placeholder="T�n v?t tu" required /></td>
-                    <td><input type="text" name="MaSanpham" value="${data[i][2] || ''}" placeholder="M� v?t tu" required /></td>
-                    <td><input type="text" name="HangSX" value="${data[i][3] || ''}" placeholder="H�ng SX" /></td>
-                    <td><input type="text" name="NhaCC" value="${data[i][4] || ''}" placeholder="Nh� cung c?p" /></td>
-                    <td><input type="number" name="SL" value="${data[i][5] || ''}" placeholder="S? lu?ng" required /></td>
-                    <td><input type="text" name="DonVi" value="${data[i][6] || ''}" placeholder="�on v?" required /></td>
-                    <td><input type="date" name="NgayBaohanh" value="${formattedNgayBaohanh}" placeholder="Ng�y b?o h�nh" /></td>
-                    <td><input type="date" name="ThoiGianBH" value="${formattedThoiGianBH}" placeholder="Th?i gian BH" /></td>
+                    <td style="width: 20%;"><input type="text" name="TenSanpham" value="${data[i][1] || ''}" placeholder="Tên vật tư" required /></td>
+                    <td><input type="text" name="MaSanpham" value="${data[i][2] || ''}" placeholder="Mã vật tư" required /></td>
+                    <td><input type="text" name="HangSX" value="${data[i][3] || ''}" placeholder="Hãng SX" /></td>
+                    <td><input type="text" name="NhaCC" value="${data[i][4] || ''}" placeholder="Nhà cung cấp" /></td>
+                    <td><input type="number" name="SL" value="${data[i][5] || ''}" placeholder="Số lượng" required /></td>
+                    <td><input type="text" name="DonVi" value="${data[i][6] || ''}" placeholder="Đơn vị" required /></td>
+                    <td><input type="date" name="NgayBaohanh" value="${formattedNgayBaohanh}" placeholder="Ngày bảo hành" /></td>
+                    <td><input type="date" name="ThoiGianBH" value="${formattedThoiGianBH}" placeholder="Thời gian BH" /></td>
                 `;
                 tbody.appendChild(row);
             }
@@ -75,7 +75,7 @@
     {
         <div class="formyeucau">
             <div class="tieude">
-                <p>Ch?n file Excel d? import</p>
+                <p>Chọn file Excel để import</p>
             </div>
             <div class="row">
                 <div class="field">
@@ -89,21 +89,21 @@
         </div>
         <div class="formtableyeucau">
             <div class="tieude">
-                <p>Danh s�ch v?t tu import</p>
+                <p>Danh sách vật tư import</p>
             </div>
             <div class="themyeucau-table">
                 <table class="form-table">
                     <thead>
                         <tr>
                             <td>STT</td>
-                            <td>T�n v?t tu</td>
-                            <td>M� v?t tu</td>
-                            <td>H�ng SX</td>
-                            <td>Nh� cung c?p</td>
-                            <td>S? lu?ng</td>
-                            <td>�on v?</td>
-                            <td>Ng�y b?o h�nh</td>
-                            <td>Th?i gian BH</td>
+                            <td>Tên vật tư</td>
+                            <td>Mã vật tư</td>
+                            <td>Hãng SX</td>
+                            <td>Nhà cung cấp</td>
+                            <td>Số lượng</td>
+                            <td>Đơn vị</td>
+                            <td>Ngày bảo hành</td>
+                            <td>Thời gian BH</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -112,7 +112,7 @@
                 </table>
             </div>
             <div class="action">
-                <button type="submit">Th�m v?t tu</button>
+                <button type="submit">Thêm vật tư</button>
             </div>
         </div>
     }

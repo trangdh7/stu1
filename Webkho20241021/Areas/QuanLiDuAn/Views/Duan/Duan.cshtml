@@ -13,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <title>Qu?n l� d? �n</title>
+    <title>Quản lý dự án</title>
 </head>
 <body class="bg-gray-50">
     @if (TempData["Error"] != null)
@@ -29,7 +29,7 @@
         <div class="bg-white rounded-lg shadow-md mb-6">
             <!-- Header -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-blue-600">
-                <h2 class="text-lg font-semibold text-white">Danh s�ch d? �n</h2>
+                <h2 class="text-lg font-semibold text-white">Danh sách dự án</h2>
                 <button class="text-white hover:text-blue-100 transition">
                     <i class="bx bx-search text-xl"></i>
                 </button>
@@ -41,13 +41,13 @@
                     <thead class="bg-gradient-to-r from-blue-600 to-blue-700 border-b-2 border-blue-800">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">STT</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">T�n d? �n</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">M� d? �n</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ngu?i qu?n l�</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Kh�ch h�ng</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ng�y b?t d?u</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ng�y k?t th�c</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Tr?ng th�i</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Tên dự án</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Mã dự án</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Người quản lý</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Khách hàng</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ngày bắt đầu</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ngày kết thúc</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -78,7 +78,7 @@
                                     }
                                     @if (canControl)
                                     {
-                                        if (item.TrangThai == "Ch?")
+                                        if (item.TrangThai == "Chờ")
                                         {
                                             using (Html.BeginForm("Xuliduan", "Duan", new { area = "QuanLiDuAn" }, FormMethod.Post))
                                             {
@@ -87,11 +87,11 @@
                                                         name="action"
                                                         value="start"
                                                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
-                                                    <i class="bx bx-play-circle mr-1.5 text-lg"></i> B?t d?u
+                                                    <i class="bx bx-play-circle mr-1.5 text-lg"></i> Bắt đầu
                                                 </button>
                                             }
                                         }
-                                        else if (item.TrangThai == "�ang tri?n khai")
+                                        else if (item.TrangThai == "Đang triển khai")
                                         {
                                             using (Html.BeginForm("Xuliduan", "Duan", new { area = "QuanLiDuAn" }, FormMethod.Post))
                                             {
@@ -100,7 +100,7 @@
                                                         name="action"
                                                         value="end"
                                                         class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
-                                                    <i class="bx bxs-x-circle mr-1.5 text-lg"></i> K?t th�c
+                                                    <i class="bx bxs-x-circle mr-1.5 text-lg"></i> Kết thúc
                                                 </button>
                                             }
                                         }
@@ -114,14 +114,14 @@
                                     }
                                     else
                                     {
-                                        @if (item.TrangThai == "Ch?")
+                                        @if (item.TrangThai == "Chờ")
                                         {
                                             <span class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-sm font-semibold rounded-lg shadow-md">
                                                 <i class="bx bx-time-five mr-1.5"></i>
                                                 @(item.TrangThai ?? string.Empty)
                                             </span>
                                         }
-                                        else if (item.TrangThai == "�ang tri?n khai")
+                                        else if (item.TrangThai == "Đang triển khai")
                                         {
                                             <span class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg shadow-md">
                                                 <i class="bx bx-loader-circle mr-1.5"></i>
@@ -149,7 +149,7 @@
                 <a href="/QuanLiDuAn/Duan/ThemDuan"
                    class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
                     <i class="bx bx-plus mr-2 text-lg"></i>
-                    Th�m d? �n
+                    Thêm dự án
                 </a>
             </div>
         </div>
@@ -160,24 +160,24 @@
                 <table class="w-full tablethietbi">
                     <thead class="bg-gradient-to-r from-indigo-600 to-indigo-700 border-b-2 border-indigo-800">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">T�n v?t tu</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">M� v?t tu</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">M� kho</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">H�ng sx</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Nh� cung c?p</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">S? lu?ng</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">�on v?</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ng�y nh?p kho</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ng�y b?o h�nh</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Th?i gian BH</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Tr?ng th�i</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Tên vật tư</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Mã vật tư</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Mã kho</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Hãng SX</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Nhà cung cấp</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Số lượng</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Đơn vị</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ngày nhập kho</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ngày bảo hành</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Thời gian BH</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr>
                             <td colspan="11" class="px-6 py-12 text-center text-gray-500">
                                 <i class="bx bx-package text-4xl mb-2 block text-gray-300"></i>
-                                Vui l�ng ch?n m?t d? �n d? xem v?t tu d� du?c xu?t kho.
+                                Vui lòng chọn một dự án để xem vật tư đã được xuất kho.
                             </td>
                         </tr>
                     </tbody>

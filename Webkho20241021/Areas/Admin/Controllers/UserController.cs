@@ -149,6 +149,37 @@ namespace Webkho_20241021.Areas.Admin.Controllers
                 }
                 else
                 {
+                    // Không chọn role mới => gán lại role mặc định dựa trên chức vụ/bộ phận
+                    string defaultRole = null;
+
+                    if (Chucvu == "Giám đốc")
+                    {
+                        defaultRole = "Giám đốc";
+                    }
+                    else if (Chucvu == "Admin")
+                    {
+                        defaultRole = "Admin";
+                    }
+                    else if (Chucvu == "Quản lí dự án")
+                    {
+                        defaultRole = "Quản lí dự án";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Chucvu) && !string.IsNullOrWhiteSpace(Bophan))
+                    {
+                        defaultRole = $"{Chucvu}-{Bophan}";
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(defaultRole))
+                    {
+                        if (!await _roleManager.RoleExistsAsync(defaultRole))
+                        {
+                            await _roleManager.CreateAsync(new IdentityRole(defaultRole));
+                        }
+                        await _userManager.AddToRoleAsync(user, defaultRole);
+                    }
+                }
+                else
+                {
                     // Nếu không chọn role, tự động gán role dựa trên Chucvu và Bophan
                     if (Chucvu == "Giám đốc")
                     {

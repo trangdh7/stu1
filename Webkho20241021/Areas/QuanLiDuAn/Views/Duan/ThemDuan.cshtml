@@ -3,13 +3,13 @@
     Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <title>Th�m Y�u C?u</title>
+    <title>Thêm Dự Án</title>
 </head>
 @using (Html.BeginForm("ThemDuanSQL", "Duan", new { area = "QuanLiDuAn" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
 {
@@ -20,7 +20,7 @@
                 <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
                     <div class="flex items-center">
                         <i class="bx bx-folder-plus text-white text-3xl mr-3"></i>
-                        <h2 class="text-2xl font-bold text-white">Th�ng tin d? �n m?i</h2>
+                        <h2 class="text-2xl font-bold text-white">Thông tin dự án mới</h2>
                     </div>
                 </div>
 
@@ -31,36 +31,36 @@
                         <div class="space-y-2">
                             <label for="tenduan" class="flex items-center text-sm font-semibold text-gray-700">
                                 <i class="bx bx-briefcase text-blue-600 mr-2"></i>
-                                T�n d? �n
+                                Tên dự án
                             </label>
                             <input type="text"
                                    id="tenduan"
                                    name="TenDuan"
-                                   placeholder="Nh?p t�n d? �n"
+                                   placeholder="Nhập tên dự án"
                                    required
                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" />
                         </div>
                         <div class="space-y-2">
                             <label for="maduan" class="flex items-center text-sm font-semibold text-gray-700">
                                 <i class="bx bx-barcode text-blue-600 mr-2"></i>
-                                M� d? �n
+                                Mã dự án
                             </label>
                             <input type="text"
                                    id="maduan"
                                    name="MaDuan"
-                                   placeholder="Nh?p m� d? �n"
+                                   placeholder="Nhập mã dự án"
                                    required
                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" />
                         </div>
                         <div class="space-y-2">
                             <label for="khachhang" class="flex items-center text-sm font-semibold text-gray-700">
                                 <i class="bx bx-user text-blue-600 mr-2"></i>
-                                Kh�ch h�ng
+                                Khách hàng
                             </label>
                             <input type="text"
                                    id="khachhang"
                                    name="KhachHang"
-                                   placeholder="Nh?p t�n kh�ch h�ng"
+                                   placeholder="Nhập tên khách hàng"
                                    required
                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" />
                         </div>
@@ -71,14 +71,14 @@
                         <div class="space-y-2">
                             <label for="nguoiquanli" class="flex items-center text-sm font-semibold text-gray-700">
                                 <i class="bx bx-user-check text-blue-600 mr-2"></i>
-                                Ngu?i QLDA
+                                Người QLDA
                             </label>
                             <select id="nguoiquanli"
                                     name="NguoiQLDA"
                                     onchange="updateMaNguoiQuanLi()"
                                     required
                                     class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white cursor-pointer">
-                                <option value="">Ch?n ngu?i qu?n l�</option>
+                                <option value="">Chọn người quản lý</option>
                                 @foreach (var n in ViewBag.Tennguoidunglist)
                                 {
                                     <option value="@n.TenNguoidung" data-manguoiquanli="@n.MaNguoidung">@n.TenNguoidung</option>
@@ -88,13 +88,13 @@
                         <div class="space-y-2">
                             <label for="manguoiquanli" class="flex items-center text-sm font-semibold text-gray-700">
                                 <i class="bx bx-id-card text-blue-600 mr-2"></i>
-                                M� ngu?i QLDA
+                                Mã người QLDA
                             </label>
                             <select id="manguoiquanli"
                                     name="MaNguoiQLDA"
                                     required
                                     class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white cursor-pointer">
-                                <option value="">Ch?n m� ngu?i qu?n l�</option>
+                                <option value="">Chọn mã người quản lý</option>
                             </select>
                         </div>
                     </div>
@@ -104,12 +104,12 @@
                         <a href="/QuanLiDuAn/Duan/Duan"
                            class="inline-flex items-center px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
                             <i class="bx bx-x mr-2 text-lg"></i>
-                            H?y b?
+                            Hủy bỏ
                         </a>
                         <button type="submit"
                                 class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105">
                             <i class="bx bx-check-circle mr-2 text-lg"></i>
-                            X�c nh?n
+                            Xác nhận
                         </button>
                     </div>
                 </div>
@@ -122,10 +122,10 @@
                 const maNguoiQuanLiSelect = document.getElementById("manguoiquanli");
                 const selectedOption = nguoiQuanLiSelect.options[nguoiQuanLiSelect.selectedIndex];
                 const maNguoiQuanLi = selectedOption.getAttribute("data-manguoiquanli");
-                // X�a c�c option hi?n t?i trong m� ngu?i qu?n l�
+                // Xóa các option hiện tại trong mã người quản lý
                 maNguoiQuanLiSelect.innerHTML = "";
                 if (maNguoiQuanLi) {
-                    // Th�m option m?i v?i m� ngu?i qu?n l� tuong ?ng
+                    // Thêm option mới với mã người quản lý tương ứng
                     const option = document.createElement("option");
                     option.value = maNguoiQuanLi;
                     option.text = maNguoiQuanLi;
