@@ -178,47 +178,6 @@ namespace Webkho_20241021.Areas.Admin.Controllers
                         await _userManager.AddToRoleAsync(user, defaultRole);
                     }
                 }
-                else
-                {
-                    // Nếu không chọn role, tự động gán role dựa trên Chucvu và Bophan
-                    if (Chucvu == "Giám đốc")
-                    {
-                        if (!await _roleManager.RoleExistsAsync(Chucvu))
-                        {
-                            await _roleManager.CreateAsync(new IdentityRole(Chucvu));
-                        }
-                        await _userManager.AddToRoleAsync(user, Chucvu);
-                    }
-                    else if (Chucvu == "Admin")
-                    {
-                        // Admin role không có bộ phận, chỉ là "Admin"
-                        string adminRole = "Admin";
-                        if (!await _roleManager.RoleExistsAsync(adminRole))
-                        {
-                            await _roleManager.CreateAsync(new IdentityRole(adminRole));
-                        }
-                        await _userManager.AddToRoleAsync(user, adminRole);
-                    }
-                    else if (Chucvu == "Quản lí dự án")
-                    {
-                        // Quản lí dự án role
-                        string qldaRole = "Quản lí dự án";
-                        if (!await _roleManager.RoleExistsAsync(qldaRole))
-                        {
-                            await _roleManager.CreateAsync(new IdentityRole(qldaRole));
-                        }
-                        await _userManager.AddToRoleAsync(user, qldaRole);
-                    }
-                    else
-                    {
-                        string combinedRole = $"{Chucvu}-{Bophan}";
-                        if (!await _roleManager.RoleExistsAsync(combinedRole))
-                        {
-                            await _roleManager.CreateAsync(new IdentityRole(combinedRole));
-                        }
-                        await _userManager.AddToRoleAsync(user, combinedRole);
-                    }
-                }
 
                 // Tạo bản ghi trong bảng nguoidungs
                 var nguoidung = new nguoidungs
