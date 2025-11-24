@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Models;
 using Webkho_20241021.Areas.NhanvienKythuat.Data;
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -566,6 +567,54 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
+                // Lưu file Excel nếu có
+                try
+                {
+                    if (Request.Form.Files != null && Request.Form.Files.Count > 0)
+                    {
+                        var excelFile = Request.Form.Files.FirstOrDefault(f => 
+                            f.Name == "excel-upload" || 
+                            (!string.IsNullOrEmpty(f.FileName) && (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))));
+                        
+                        if (excelFile != null && excelFile.Length > 0)
+                        {
+                            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "excel");
+                            if (!Directory.Exists(uploadsFolder))
+                            {
+                                Directory.CreateDirectory(uploadsFolder);
+                            }
+
+                            var uniqueFileName = $"{yeucau.MaYeucau}_{DateTime.Now:yyyyMMddHHmmss}_{Path.GetFileName(excelFile.FileName)}";
+                            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                            using (var stream = new FileStream(filePath, FileMode.Create))
+                            {
+                                excelFile.CopyTo(stream);
+                            }
+
+                            var excelFileRecord = new ExcelFile
+                            {
+                                MaYeucau = yeucau.MaYeucau,
+                                MaDuan = yeucau.YCMaDuan,
+                                TenFile = excelFile.FileName,
+                                DuongDanFile = $"/uploads/excel/{uniqueFileName}",
+                                NgayUpload = DateTime.Now,
+                                NguoiUpload = maNv2,
+                                KichThuocFile = excelFile.Length
+                            };
+
+                            _context.ExcelFiles.Add(excelFileRecord);
+                            _context.SaveChanges();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log lỗi nhưng không dừng quá trình xử lý
+                    Console.WriteLine($"Lỗi khi lưu file Excel: {ex.Message}");
+                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                }
+
                 int rowCount = new[]
                 {
                     TenSanpham?.Count ?? 0,
@@ -612,6 +661,28 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     }
                     else
                     {
+                        // Tạo bản ghi "VT mới" trong khotongs nếu chưa tồn tại
+                        var vtMoiKho = _context.khotongs.FirstOrDefault(p => p.Makho == "VT mới");
+                        if (vtMoiKho == null)
+                        {
+                            vtMoiKho = new khotongs
+                            {
+                                Makho = "VT mới",
+                                TenSanpham = "Vật tư mới",
+                                MaSanpham = "",
+                                HangSX = "",
+                                NhaCC = "",
+                                SL = 0,
+                                DonVi = "",
+                                NgayNhapkho = null,
+                                NgayBaohanh = null,
+                                ThoiGianBH = null,
+                                TrangThai = "VT mới"
+                            };
+                            _context.khotongs.Add(vtMoiKho);
+                            _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại
+                        }
+
                         var newVtyeucau = new vtyeucau();
                         newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
                         newVtyeucau.TenSanpham = ten;

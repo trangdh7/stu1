@@ -1,0 +1,208 @@
+@{
+    ViewData["Title"] = "So sánh file Excel";
+    Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
+    var excelFiles = ViewBag.ExcelFiles as List<Webkho_20241021.Models.ExcelFile>;
+    var vatTuComparison = ViewBag.VatTuComparison as List<Webkho_20241021.Models.VatTuComparisonViewModel>;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>So sánh file Excel</title>
+    <style>
+        .header-section {
+            background: #e7f3ff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .header-section h2 {
+            margin-top: 0;
+        }
+        .file-list {
+            list-style: none;
+            padding: 0;
+        }
+        .file-list li {
+            padding: 8px;
+            background: white;
+            margin: 5px 0;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background: linear-gradient(90deg, #1d4ed8, #2563eb);
+            color: #fff;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .table .file-column {
+            min-width: 200px;
+            background-color: #eef2ff;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .table .vat-tu-column {
+            background-color: #fff;
+        }
+        .btn-back {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover {
+            background: #5a6268;
+        }
+        .highlight {
+            background-color: #fff3cd !important;
+        }
+        .summary-box {
+            background: #d1ecf1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .diff-highlight {
+            background-color: #ffe6e6 !important;
+            font-weight: bold;
+        }
+        .same-value {
+            background-color: #e6f7e6;
+        }
+        .zero-value {
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="bodyyeucau">
+        <a href="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })" class="btn-back">← Quay lại danh sách</a>
+
+        <div class="header-section">
+            <h2>So sánh file Excel</h2>
+            <p><strong>Số file được so sánh:</strong> @(excelFiles?.Count ?? 0)</p>
+            <ul class="file-list">
+                @foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                {
+                    <li>
+                        <strong>@file.TenFile</strong> - 
+                        Mã YC: @file.MaYeucau - 
+                        Ngày: @(file.NgayUpload?.ToString("dd/MM/yyyy HH:mm") ?? "")
+                    </li>
+                }
+            </ul>
+            <p style="margin-bottom:0;"><small>* Cột “Đã cấp phát” lấy số liệu từ file lên kế hoạch sớm nhất, “Tồn đọng” lấy số liệu từ file mới nhất. “Dư” = Đã cấp phát - Tồn đọng.</small></p>
+        </div>
+
+        @if (vatTuComparison != null && vatTuComparison.Any())
+        {
+            <div class="summary-box">
+                <h3>Tóm tắt</h3>
+                <p><strong>Tổng số loại vật tư:</strong> @vatTuComparison.Count</p>
+                <p><strong>Tổng số lượng vật tư:</strong> @vatTuComparison.Sum(v => v.TongSL)</p>
+                <p><strong>Tổng tồn đọng:</strong> @ViewBag.TotalTonDong</p>
+                <p><strong>Tổng dư:</strong> @ViewBag.TotalDu</p>
+            </div>
+
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="vat-tu-column">Mã VT</th>
+                            <th class="vat-tu-column">Tên thiết bị/hàng hóa</th>
+                            <th class="vat-tu-column">Hãng SX</th>
+                            <th class="vat-tu-column">ĐV</th>
+                            @foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                            {
+                                <th class="file-column">@file.TenFile<br/><small>@(file.NgayUpload?.ToString("dd/MM/yyyy") ?? "")</small></th>
+                            }
+                            <th class="vat-tu-column">Tổng SL</th>
+                            <th class="vat-tu-column">Đã cấp phát</th>
+                            <th class="vat-tu-column">Tồn đọng</th>
+                            <th class="vat-tu-column">Dư</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (vatTuComparison != null && vatTuComparison.Any())
+                        {
+                            @foreach (var vatTu in vatTuComparison)
+                            {
+                                <tr>
+                                    <td>@(vatTu.MaSanpham ?? "-")</td>
+                                    <td>@(vatTu.TenSanpham ?? "-")</td>
+                                    <td>@(vatTu.HangSX ?? "-")</td>
+                                    <td>@(vatTu.DonVi ?? "-")</td>
+                                    @{
+                                        var quantities = new List<int>();
+                                        foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                                        {
+                                            var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.FileID == file.ID);
+                                            var sl = chiTiet != null ? chiTiet.SL : 0;
+                                            quantities.Add(sl);
+                                        }
+                                        // Check if there are differences
+                                        var hasDifference = quantities.Distinct().Count() > 1;
+                                        
+                                        foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                                        {
+                                            var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.FileID == file.ID);
+                                            var sl = chiTiet != null ? chiTiet.SL : 0;
+                                            var cellClass = "";
+                                            if (sl == 0)
+                                            {
+                                                cellClass = "zero-value";
+                                            }
+                                            else if (hasDifference)
+                                            {
+                                                cellClass = "diff-highlight";
+                                            }
+                                            <td class="@cellClass" style="text-align: center;">@sl</td>
+                                        }
+                                    }
+                                <td style="text-align: center; font-weight: bold;">@vatTu.TongSL</td>
+                                <td style="text-align: center;">@vatTu.CapPhat</td>
+                                <td style="text-align: center;">@vatTu.TonDong</td>
+                                <td style="text-align: center; font-weight: 600; color: @(vatTu.Du > 0 ? "#dc2626" : "#15803d");">
+                                    @vatTu.Du
+                                </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div style="text-align: center; padding: 40px; background: #f5f5f5; border-radius: 8px;">
+                <p>Không có dữ liệu để so sánh.</p>
+            </div>
+        }
+    </div>
+</body>
+</html>
+

@@ -60,8 +60,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">@STT</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">@item.TenDuan</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <a href="javascript:void(0);"
-                                       onclick="showVTDuan('@item.MaDuan')"
+                                    <a href="@Url.Action("ChiTietVatTuDuan", "Duan", new { area = "QuanLiDuAn", MaDuan = item.MaDuan })"
                                        class="text-blue-600 hover:text-blue-800 font-semibold hover:underline">
                                         @item.MaDuan
                                     </a>

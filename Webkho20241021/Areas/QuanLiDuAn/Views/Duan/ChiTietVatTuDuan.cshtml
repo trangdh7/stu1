@@ -1,0 +1,270 @@
+@{
+    ViewData["Title"] = "Chi tiết vật tư dự án";
+    Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
+    var duan = ViewBag.Duan as Webkho_20241021.Models.duans;
+    var vatTuList = ViewBag.VatTuList as List<dynamic>;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chi tiết vật tư dự án</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <style>
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header-section h1 {
+            margin: 0 0 15px 0;
+            font-size: 28px;
+        }
+        .header-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .info-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .info-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-back {
+            padding: 12px 24px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .btn-back:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .table tbody tr {
+            transition: background-color 0.2s;
+        }
+        .table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .summary-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .summary-box h3 {
+            margin: 0 0 15px 0;
+            font-size: 20px;
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .stat-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="bodyyeucau">
+        <a href="@Url.Action("Duan", "Duan", new { area = "QuanLiDuAn" })" class="btn-back">
+            <i class='bx bx-arrow-back'></i>
+            Quay lại danh sách dự án
+        </a>
+
+        @if (duan != null)
+        {
+            <div class="header-section">
+                <h1><i class='bx bxs-package'></i> Vật tư đã cấp phát cho dự án</h1>
+                <div class="header-info">
+                    <div class="info-item">
+                        <div class="info-label">Tên dự án</div>
+                        <div class="info-value">@duan.TenDuan</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Mã dự án</div>
+                        <div class="info-value">@duan.MaDuan</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Người quản lý</div>
+                        <div class="info-value">@duan.NguoiQLDA</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Trạng thái</div>
+                        <div class="info-value">@duan.TrangThai</div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (vatTuList != null && vatTuList.Count > 0)
+        {
+            <div class="summary-box">
+                <h3><i class='bx bx-stats'></i> Tóm tắt</h3>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">@vatTuList.Count</div>
+                        <div class="stat-label">Số loại vật tư</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">@vatTuList.Sum(v => (int)(v.SL ?? 0))</div>
+                        <div class="stat-label">Tổng số lượng</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">@vatTuList.Select(v => v.MaNguoiNhan).Distinct().Count()</div>
+                        <div class="stat-label">Số người nhận</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">@vatTuList.Select(v => v.MaXuatkho).Distinct().Count()</div>
+                        <div class="stat-label">Số phiếu xuất kho</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên thiết bị/hàng hóa</th>
+                            <th>Mã VT</th>
+                            <th>Mã kho</th>
+                            <th>Hãng SX</th>
+                            <th>Nhà CC</th>
+                            <th>SL</th>
+                            <th>ĐV</th>
+                            <th>Người nhận</th>
+                            <th>Ngày xuất kho</th>
+                            <th>Ngày nhận</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int stt = 1;
+                        }
+                        @foreach (var vt in vatTuList)
+                        {
+                            <tr>
+                                <td>@stt</td>
+                                <td>@(vt.TenSanpham ?? "")</td>
+                                <td>@(vt.MaSanpham ?? "")</td>
+                                <td>@(vt.DAMakho ?? "")</td>
+                                <td>@(vt.HangSX ?? "")</td>
+                                <td>@(vt.NhaCC ?? "")</td>
+                                <td style="text-align: center; font-weight: bold;">@(vt.SL ?? 0)</td>
+                                <td>@(vt.DonVi ?? "")</td>
+                                <td>
+                                    <strong style="color: #667eea;">@(vt.TenNguoiNhan ?? vt.MaNguoiNhan ?? "")</strong>
+                                    @if (!string.IsNullOrEmpty(vt.MaNguoiNhan) && vt.MaNguoiNhan != vt.TenNguoiNhan)
+                                    {
+                                        <br/><small style="color: #6b7280;">(@vt.MaNguoiNhan)</small>
+                                    }
+                                </td>
+                                <td>@(vt.NgayXuatkho?.ToString("dd/MM/yyyy") ?? "")</td>
+                                <td>@(vt.NgayXacNhanNhan?.ToString("dd/MM/yyyy") ?? "")</td>
+                                <td>
+                                    @{
+                                        var trangThai = vt.TrangThai?.ToString() ?? "";
+                                        var badgeClass = trangThai.Contains("Đã") ? "badge-success" : "badge-info";
+                                    }
+                                    <span class="badge @badgeClass">@trangThai</span>
+                                </td>
+                            </tr>
+                            stt++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div style="text-align: center; padding: 60px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                <i class='bx bx-package' style="font-size: 64px; color: #d1d5db; margin-bottom: 20px;"></i>
+                <h3 style="color: #6b7280; margin-bottom: 10px;">Chưa có vật tư nào được cấp phát</h3>
+                <p style="color: #9ca3af;">Dự án này chưa có vật tư nào được xuất kho.</p>
+            </div>
+        }
+    </div>
+</body>
+</html>
+

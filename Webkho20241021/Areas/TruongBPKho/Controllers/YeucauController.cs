@@ -2117,24 +2117,19 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         
                         // Cộng vào kho tổng (cho cả phiếu từ mua hàng và phiếu từ dự án/cá nhân)
                         // Kiểm tra xem entity đã được track chưa để tránh lỗi tracking
-                        // Lưu ý: Kiểm tra cả NhaCC để tách riêng nếu nhà cung cấp khác nhau
                         var khotong = _context.khotongs
                             .AsNoTracking()
                             .FirstOrDefault(k => 
                                 k.TenSanpham == VTPhieunhapkho.TenSanpham && 
                                 k.MaSanpham == VTPhieunhapkho.MaSanpham && 
                                 k.HangSX == VTPhieunhapkho.HangSX &&
-                                k.Makho == VTPhieunhapkho.Makho &&
-                                (k.NhaCC == VTPhieunhapkho.NhaCC || 
-                                 (string.IsNullOrWhiteSpace(k.NhaCC) && string.IsNullOrWhiteSpace(VTPhieunhapkho.NhaCC))));
+                                k.Makho == VTPhieunhapkho.Makho);
                             
                         if (khotong != null)
                         {
                             // Kiểm tra xem entity đã được track trong context chưa
                             var trackedEntity = _context.khotongs.Local
-                                .FirstOrDefault(k => k.Makho == khotong.Makho && 
-                                    (k.NhaCC == khotong.NhaCC || 
-                                     (string.IsNullOrWhiteSpace(k.NhaCC) && string.IsNullOrWhiteSpace(khotong.NhaCC))));
+                                .FirstOrDefault(k => k.Makho == khotong.Makho);
                             
                             if (trackedEntity != null)
                             {
@@ -2151,11 +2146,9 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         }
                         else
                         {
-                            // Kiểm tra xem có entity với cùng Makho và NhaCC đang được track không
+                            // Kiểm tra xem có entity với cùng Makho đang được track không
                             var existingTracked = _context.khotongs.Local
-                                .FirstOrDefault(k => k.Makho == VTPhieunhapkho.Makho &&
-                                    (k.NhaCC == VTPhieunhapkho.NhaCC || 
-                                     (string.IsNullOrWhiteSpace(k.NhaCC) && string.IsNullOrWhiteSpace(VTPhieunhapkho.NhaCC))));
+                                .FirstOrDefault(k => k.Makho == VTPhieunhapkho.Makho);
                             
                             if (existingTracked != null)
                             {
@@ -2164,40 +2157,17 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                             }
                             else
                             {
-                                // Kiểm tra xem có record với cùng Makho nhưng khác NhaCC không
-                                var existingInDbSameMakho = _context.khotongs
+                                // Kiểm tra lại trong database xem Makho đã tồn tại chưa (chỉ kiểm tra Makho)
+                                var existingInDb = _context.khotongs
                                     .AsNoTracking()
                                     .FirstOrDefault(k => k.Makho == VTPhieunhapkho.Makho);
                                 
-                                if (existingInDbSameMakho != null)
+                                if (existingInDb != null)
                                 {
-                                    // Cùng Makho nhưng khác NhaCC (hoặc ngược lại) → tạo Makho mới với suffix
-                                    string baseMakho = VTPhieunhapkho.Makho;
-                                    int suffix = 1;
-                                    string newMakho;
-                                    
-                                    do
-                                    {
-                                        newMakho = $"{baseMakho}-{suffix:D2}";
-                                        suffix++;
-                                    }
-                                    while (_context.khotongs.Any(k => k.Makho == newMakho) ||
-                                           _context.khotongs.Local.Any(k => k.Makho == newMakho));
-                                    
-                                    // Tạo mới với Makho mới
-                                    var newKhotong = new khotongs
-                                    {
-                                        TenSanpham = VTPhieunhapkho.TenSanpham,
-                                        MaSanpham = VTPhieunhapkho.MaSanpham,
-                                        HangSX = VTPhieunhapkho.HangSX,
-                                        NhaCC = VTPhieunhapkho.NhaCC,
-                                        SL = VTPhieunhapkho.SL ?? 0,
-                                        DonVi = VTPhieunhapkho.DonVi,
-                                        Makho = newMakho,
-                                        NgayNhapkho = DateTime.Now,
-                                        TrangThai = "Tồn kho"
-                                    };
-                                    _context.khotongs.Add(newKhotong);
+                                    // Makho đã tồn tại, cập nhật thay vì tạo mới
+                                    existingInDb.SL += VTPhieunhapkho.SL ?? 0;
+                                    _context.khotongs.Attach(existingInDb);
+                                    _context.Entry(existingInDb).State = EntityState.Modified;
                                 }
                                 else
                                 {

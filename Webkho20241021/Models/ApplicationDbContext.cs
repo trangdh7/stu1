@@ -27,6 +27,7 @@ namespace Webkho_20241021.Models
         public DbSet<vtyeucau> vtyeucau { get; set; }
         public DbSet<yeucau> yeucau { get; set; }
         public DbSet<SanPhamNhaCC> SanPhamNhaCC { get; set; }
+        public DbSet<ExcelFile> ExcelFiles { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<khoduans>()
@@ -43,6 +44,10 @@ namespace Webkho_20241021.Models
 
             modelBuilder.Entity<phieuxuatkho>()
                 .HasKey(k => new { k.MaXuatkho, k.MaYeucau });
+
+            // Cấu hình tên bảng cho ExcelFile
+            modelBuilder.Entity<ExcelFile>()
+                .ToTable("excelfiles");
 
             base.OnModelCreating(modelBuilder);
         }

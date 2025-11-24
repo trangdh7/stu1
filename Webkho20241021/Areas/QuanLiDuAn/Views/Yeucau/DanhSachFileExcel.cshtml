@@ -1,0 +1,301 @@
+@model List<Webkho_20241021.Models.ExcelFile>
+@{
+    ViewData["Title"] = "Danh sách file Excel";
+    Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Danh sách file Excel</title>
+    <style>
+        .filter-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .filter-section input, .filter-section select {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .filter-section button {
+            padding: 8px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .filter-section button:hover {
+            background: #0056b3;
+        }
+        .action-bar {
+            background: #e7f3ff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .action-bar button {
+            padding: 10px 20px;
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .action-bar button:hover {
+            background: #138496;
+        }
+        .action-bar button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .action-bar .select-all {
+            background: #6c757d;
+        }
+        .action-bar .select-all:hover {
+            background: #5a6268;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .table input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .btn-view {
+            padding: 6px 12px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .btn-view:hover {
+            background: #218838;
+        }
+        .btn-download {
+            padding: 6px 12px;
+            background: #17a2b8;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .btn-download:hover {
+            background: #138496;
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .pagination a {
+            padding: 8px 12px;
+            margin: 0 4px;
+            text-decoration: none;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .pagination a:hover {
+            background: #f0f0f0;
+        }
+        .pagination .active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .selected-count {
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="bodyyeucau">
+        <h2>Danh sách file Excel đã upload</h2>
+
+        <div class="filter-section">
+            <form method="get" action="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })">
+                <input type="text" name="q" placeholder="Tìm kiếm..." value="@ViewBag.Q" />
+                <select name="maDuan">
+                    <option value="">Tất cả dự án</option>
+                    @foreach (var duan in ViewBag.Duans)
+                    {
+                        <option value="@duan.MaDuan" selected="@(ViewBag.MaDuan == duan.MaDuan)">@duan.MaDuan - @duan.TenDuan</option>
+                    }
+                </select>
+                <button type="submit">Tìm kiếm</button>
+                <a href="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })" style="margin-left: 10px; color: #007bff;">Xóa bộ lọc</a>
+            </form>
+        </div>
+
+        <div class="action-bar">
+            <button type="button" class="select-all" onclick="toggleSelectAll()">Chọn tất cả</button>
+            <button type="button" onclick="clearSelection()">Bỏ chọn</button>
+            <span class="selected-count" id="selectedCount">Đã chọn: 0 file</span>
+            <button type="button" id="btnCompare" onclick="compareSelected()" disabled>So sánh các file đã chọn</button>
+        </div>
+
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">
+                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" />
+                        </th>
+                        <th>STT</th>
+                        <th>Tên file</th>
+                        <th>Mã yêu cầu</th>
+                        <th>Mã dự án</th>
+                        <th>Người upload</th>
+                        <th>Ngày upload</th>
+                        <th>Kích thước</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int stt = 1;
+                        var yeucauList = ViewBag.YeucauList as List<Webkho_20241021.Models.yeucau>;
+                        var duanList = ViewBag.DuanList as List<Webkho_20241021.Models.duans>;
+                    }
+                    @foreach (var file in Model)
+                    {
+                        var yeucau = yeucauList?.FirstOrDefault(y => y.MaYeucau == file.MaYeucau);
+                        var duan = duanList?.FirstOrDefault(d => d.MaDuan == file.MaDuan);
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="file-checkbox" value="@file.ID" onchange="updateSelectedCount()" />
+                            </td>
+                            <td>@stt</td>
+                            <td>@file.TenFile</td>
+                            <td>@file.MaYeucau</td>
+                            <td>@(duan != null ? $"{file.MaDuan} - {duan.TenDuan}" : file.MaDuan)</td>
+                            <td>@file.NguoiUpload</td>
+                            <td>@(file.NgayUpload?.ToString("dd/MM/yyyy HH:mm") ?? "")</td>
+                            <td>@((file.KichThuocFile ?? 0) / 1024) KB</td>
+                            <td>
+                                <a href="@Url.Action("XemFileExcel", "Yeucau", new { area = "QuanLiDuAn", id = file.ID })" class="btn-view">Xem</a>
+                                @if (!string.IsNullOrEmpty(file.DuongDanFile))
+                                {
+                                    <a href="@file.DuongDanFile" target="_blank" class="btn-download">Tải về</a>
+                                }
+                            </td>
+                        </tr>
+                        stt++;
+                    }
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" style="text-align: center; padding: 20px;">
+                                Không có file Excel nào được tìm thấy.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <div class="pagination">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <a href="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn", page = i, q = ViewBag.Q, maDuan = ViewBag.MaDuan })" 
+                       class="@(ViewBag.Page == i ? "active" : "")">@i</a>
+                }
+            </div>
+        }
+    </div>
+
+    <script>
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const checkboxes = document.querySelectorAll('.file-checkbox');
+            const isChecked = selectAllCheckbox.checked;
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+            
+            updateSelectedCount();
+        }
+
+        function clearSelection() {
+            const checkboxes = document.querySelectorAll('.file-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            selectAllCheckbox.checked = false;
+            
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const count = checkboxes.length;
+            const selectedCountEl = document.getElementById('selectedCount');
+            const btnCompare = document.getElementById('btnCompare');
+            
+            selectedCountEl.textContent = `Đã chọn: ${count} file`;
+            
+            if (count > 0) {
+                btnCompare.disabled = false;
+            } else {
+                btnCompare.disabled = true;
+            }
+
+            // Cập nhật checkbox "Chọn tất cả"
+            const allCheckboxes = document.querySelectorAll('.file-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            if (allCheckboxes.length > 0) {
+                selectAllCheckbox.checked = count === allCheckboxes.length;
+            }
+        }
+
+        function compareSelected() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selectedIds.length < 2) {
+                alert('Vui lòng chọn ít nhất 2 file để so sánh!');
+                return;
+            }
+            
+            // Chuyển đến trang so sánh với danh sách ID
+            const idsParam = selectedIds.join(',');
+            window.location.href = '@Url.Action("SoSanhNhieuFile", "Yeucau", new { area = "QuanLiDuAn" })?ids=' + idsParam;
+        }
+    </script>
+</body>
+</html>

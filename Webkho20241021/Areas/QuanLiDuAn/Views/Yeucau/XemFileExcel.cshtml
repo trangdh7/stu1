@@ -1,0 +1,197 @@
+@model Webkho_20241021.Models.ExcelFile
+@{
+    ViewData["Title"] = "Chi tiết file Excel";
+    Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
+    var yeucau = ViewBag.Yeucau as Webkho_20241021.Models.yeucau;
+    var duan = ViewBag.Duan as Webkho_20241021.Models.duans;
+    var vtyeucau = ViewBag.VTYeucau as List<Webkho_20241021.Models.vtyeucau> ?? new List<Webkho_20241021.Models.vtyeucau>();
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chi tiết file Excel</title>
+    <style>
+        .info-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .info-section h3 {
+            margin-top: 0;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            width: 150px;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .btn-back {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover {
+            background: #5a6268;
+        }
+        .btn-download {
+            padding: 10px 20px;
+            background: #17a2b8;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .btn-download:hover {
+            background: #138496;
+        }
+    </style>
+</head>
+<body>
+    <div class="bodyyeucau">
+        <a href="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })" class="btn-back">← Quay lại</a>
+        
+        @if (!string.IsNullOrEmpty(Model.DuongDanFile))
+        {
+            <a href="@Model.DuongDanFile" target="_blank" class="btn-download">Tải file Excel</a>
+        }
+
+        <div class="info-section">
+            <h3>Thông tin file</h3>
+            <div class="info-row">
+                <span class="info-label">Tên file:</span>
+                <span>@Model.TenFile</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ngày upload:</span>
+                <span>@(Model.NgayUpload?.ToString("dd/MM/yyyy HH:mm") ?? "")</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Người upload:</span>
+                <span>@Model.NguoiUpload</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Kích thước:</span>
+                <span>@((Model.KichThuocFile ?? 0) / 1024) KB</span>
+            </div>
+        </div>
+
+        @if (yeucau != null)
+        {
+            <div class="info-section">
+                <h3>Thông tin yêu cầu</h3>
+                <div class="info-row">
+                    <span class="info-label">Mã yêu cầu:</span>
+                    <span>@yeucau.MaYeucau</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tên yêu cầu:</span>
+                    <span>@yeucau.TenYeucau</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Người yêu cầu:</span>
+                    <span>@yeucau.NguoiYeucau</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ngày yêu cầu:</span>
+                    <span>@(yeucau.NgayYeucau?.ToString("dd/MM/yyyy") ?? "")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Trạng thái:</span>
+                    <span>@yeucau.TrangThai</span>
+                </div>
+            </div>
+        }
+
+        @if (duan != null)
+        {
+            <div class="info-section">
+                <h3>Thông tin dự án</h3>
+                <div class="info-row">
+                    <span class="info-label">Mã dự án:</span>
+                    <span>@duan.MaDuan</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tên dự án:</span>
+                    <span>@duan.TenDuan</span>
+                </div>
+            </div>
+        }
+
+        <div class="info-section">
+            <h3>Danh sách vật tư trong file (@vtyeucau.Count vật tư)</h3>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên thiết bị/hàng hóa</th>
+                            <th>Mã VT</th>
+                            <th>Hãng SX</th>
+                            <th>ĐV</th>
+                            <th>SL</th>
+                            <th>Nhà CC</th>
+                            <th>Ngày cần hàng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int stt = 1;
+                        }
+                        @foreach (var vt in vtyeucau)
+                        {
+                            <tr>
+                                <td>@stt</td>
+                                <td>@vt.TenSanpham</td>
+                                <td>@vt.MaSanpham</td>
+                                <td>@vt.HangSX</td>
+                                <td>@vt.DonVi</td>
+                                <td>@vt.SL</td>
+                                <td>@vt.NhaCC</td>
+                                <td>@(vt.NgayCanHang?.ToString("dd/MM/yyyy") ?? "")</td>
+                            </tr>
+                            stt++;
+                        }
+                        @if (vtyeucau.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 20px;">
+                                    Không có vật tư nào trong file này.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

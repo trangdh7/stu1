@@ -1,0 +1,158 @@
+@model List<dynamic>
+@{
+    ViewData["Title"] = "So sánh số liệu vật tư theo ngày";
+    Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>So sánh số liệu vật tư theo ngày</title>
+    <style>
+        .filter-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .filter-section input, .filter-section select {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .filter-section button {
+            padding: 8px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .filter-section button:hover {
+            background: #0056b3;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .btn-back {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover {
+            background: #5a6268;
+        }
+        .summary-box {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .summary-box h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="bodyyeucau">
+        <a href="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })" class="btn-back">← Quay lại</a>
+
+        <h2>So sánh số liệu vật tư theo ngày upload</h2>
+
+        <div class="filter-section">
+            <form method="get" action="@Url.Action("SoSanhVatTuTheoNgay", "Yeucau", new { area = "QuanLiDuAn" })">
+                <label>Từ ngày:</label>
+                <input type="date" name="ngay1" value="@ViewBag.Ngay1" required />
+                
+                <label>Đến ngày:</label>
+                <input type="date" name="ngay2" value="@ViewBag.Ngay2" required />
+                
+                <select name="maDuan">
+                    <option value="">Tất cả dự án</option>
+                    @foreach (var duan in ViewBag.Duans)
+                    {
+                        <option value="@duan.MaDuan" selected="@(ViewBag.MaDuan == duan.MaDuan)">@duan.MaDuan - @duan.TenDuan</option>
+                    }
+                </select>
+                
+                <button type="submit">So sánh</button>
+            </form>
+        </div>
+
+        @if (Model != null && Model.Count > 0)
+        {
+            <div class="summary-box">
+                <h3>Tóm tắt</h3>
+                <p><strong>Số file Excel:</strong> @ViewBag.ExcelFiles.Count</p>
+                <p><strong>Số loại vật tư:</strong> @Model.Count</p>
+                <p><strong>Tổng số lượng vật tư:</strong> @Model.Sum(m => m.TongSL)</p>
+            </div>
+
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Ngày upload</th>
+                            <th>Mã VT</th>
+                            <th>Tên thiết bị/hàng hóa</th>
+                            <th>Hãng SX</th>
+                            <th>Tổng SL</th>
+                            <th>Số file</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int stt = 1;
+                        }
+                        @foreach (var item in Model.OrderBy(m => m.NgayUpload).ThenBy(m => m.MaSanpham))
+                        {
+                            <tr>
+                                <td>@stt</td>
+                                <td>@(((DateTime)item.NgayUpload).ToString("dd/MM/yyyy"))</td>
+                                <td>@item.MaSanpham</td>
+                                <td>@item.TenSanpham</td>
+                                <td>@item.HangSX</td>
+                                <td>@item.TongSL</td>
+                                <td>@item.SoLuongFile</td>
+                            </tr>
+                            stt++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div style="text-align: center; padding: 40px; background: #f5f5f5; border-radius: 8px;">
+                <p>Không có dữ liệu để so sánh trong khoảng thời gian đã chọn.</p>
+            </div>
+        }
+    </div>
+</body>
+</html>
+

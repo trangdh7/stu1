@@ -198,11 +198,32 @@ body {
     border: none;
     cursor: pointer;
     transition: all 0.3s ease;
-    text-decoration: none;
+    text-decoration: none !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-height: 44px;
+}
+
+/* Loại bỏ gạch dưới cho tất cả thẻ <a> */
+a {
+    text-decoration: none !important;
+}
+
+a:hover,
+a:focus,
+a:active,
+a:visited {
+    text-decoration: none !important;
+}
+
+/* Đảm bảo các thẻ <a> với class btn không có gạch dưới */
+a.btn,
+a.btn:hover,
+a.btn:focus,
+a.btn:active,
+a.btn:visited {
+    text-decoration: none !important;
 }
 
 .btn-primary {

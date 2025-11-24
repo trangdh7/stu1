@@ -114,6 +114,62 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
             return RedirectToAction("Duan", "Duan", new { area = "QuanLiDuAn" });
         }
+
+        // Hiển thị chi tiết vật tư đã cấp phát cho dự án
+        public IActionResult ChiTietVatTuDuan(string MaDuan)
+        {
+            if (string.IsNullOrWhiteSpace(MaDuan))
+            {
+                return NotFound();
+            }
+
+            var duan = _context.duans.FirstOrDefault(d => d.MaDuan == MaDuan);
+            if (duan == null)
+            {
+                return NotFound();
+            }
+
+            // Lấy danh sách vật tư đã được cấp phát cho dự án
+            var vatTuList = from vt in _context.vtphieuxuatkho
+                            join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
+                            join nd in _context.nguoidungs on px.MaNguoidung equals nd.MaNguoidung into ndGroup
+                            from nd in ndGroup.DefaultIfEmpty()
+                            where px.MaDuan == MaDuan
+                                  && (vt.TrangThai == "Đã xác nhận nhận hàng"
+                                      || vt.TrangThai == "Đã xuất kho"
+                                      || px.TrangThai == "Đã xác nhận nhận hàng"
+                                      || px.TrangThai == "Hoàn thành")
+                            select new
+                            {
+                                TenSanpham = vt.TenSanpham,
+                                MaSanpham = vt.MaSanpham,
+                                DAMakho = vt.Makho,
+                                HangSX = vt.HangSX,
+                                NhaCC = vt.NhaCC,
+                                SL = vt.SL,
+                                DonVi = vt.DonVi,
+                                NgayNhapkho = vt.NgayNhapkho ?? px.NgayXacNhanNhan,
+                                NgayBaohanh = vt.NgayBaohanh,
+                                ThoiGianBH = vt.ThoiGianBH,
+                                TrangThai = vt.TrangThai ?? "Đã xác nhận nhận hàng",
+                                MaXuatkho = vt.MaXuatkho,
+                                MaYeucau = vt.MaYeucau,
+                                MaNguoidung = px.MaNguoidung,
+                                TenNguoiNhan = nd != null ? nd.TenNguoidung : px.MaNguoidung,
+                                NgayXuatkho = px.NgayXuatkho,
+                                NgayXacNhanNhan = px.NgayXacNhanNhan
+                            };
+
+            var result = vatTuList
+                .OrderByDescending(v => v.NgayXuatkho)
+                .ThenBy(v => v.TenSanpham)
+                .ToList();
+
+            ViewBag.Duan = duan;
+            ViewBag.VatTuList = result;
+
+            return View();
+        }
     }
 }
 

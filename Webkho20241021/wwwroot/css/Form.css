@@ -151,7 +151,8 @@
 }
 
 .table tbody tr.highlight {
-    background-color: #00CC00 !important; /* Hoặc màu bạn muốn */
+    background-color: #90EE90 !important; /* xanh lá khi chọn hàng */
+    color: #0f172a;
 }
 
 #suggestions {
