@@ -17,6 +17,28 @@ $(document).ready(function () {
     setActiveMenu();
 });
 
+const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
+const ROW_HIGHLIGHT_TEXT_COLOR = "#ffffff";
+
+function applyTableRowHighlight($row) {
+    const $rows = $('.table tbody tr');
+    $rows.removeClass('highlight');
+    $rows.find('td').css({
+        backgroundColor: '',
+        color: ''
+    });
+    $rows.find('a').css('color', '');
+
+    if ($row && $row.length) {
+        $row.addClass('highlight');
+        $row.find('td').css({
+            backgroundColor: ROW_HIGHLIGHT_COLOR,
+            color: ROW_HIGHLIGHT_TEXT_COLOR
+        });
+        $row.find('a').css('color', ROW_HIGHLIGHT_TEXT_COLOR);
+    }
+}
+
 function showVTYeucau(MaYeucau) {
     console.log("Mã yêu cầu được chọn:", MaYeucau); // Kiểm tra mã yêu cầu
 
@@ -37,8 +59,6 @@ function showVTYeucau(MaYeucau) {
             console.log(data); // Kiểm tra dữ liệu nhận được
 
             $('.tablethietbi tbody').empty();
-
-            $('.table tbody tr').removeClass('highlight');
 
             if (data && data.length > 0) {
                 let STT = 1;
@@ -67,11 +87,14 @@ function showVTYeucau(MaYeucau) {
             }
 
             // Highlight hàng tương ứng trong bảng
+            let $rowToHighlight = $();
             $('.table tbody tr').each(function () {
-                if ($(this).find('td').eq(2).text().trim() === MaYeucau) { // So sánh với cột thứ hai
-                    $(this).addClass('highlight'); // Thêm class highlight cho hàng tương ứng
+                if ($(this).find('td').eq(2).text().trim() === MaYeucau) {
+                    $rowToHighlight = $(this);
+                    return false;
                 }
             });
+            applyTableRowHighlight($rowToHighlight);
         },
         error: function (xhr, status, error) {
             console.error("Lỗi:", error); // Ghi lỗi vào console

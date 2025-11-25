@@ -18,6 +18,28 @@ $(document).ready(function () {
     setActiveMenu();
 });
 
+const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
+const ROW_HIGHLIGHT_TEXT_COLOR = "#ffffff";
+
+function applyPurchaseRowHighlight($row) {
+    const $rows = $('.table tbody tr');
+    $rows.removeClass('highlight');
+    $rows.find('td').css({
+        backgroundColor: '',
+        color: ''
+    });
+    $rows.find('a').css('color', '');
+
+    if ($row && $row.length) {
+        $row.addClass('highlight');
+        $row.find('td').css({
+            backgroundColor: ROW_HIGHLIGHT_COLOR,
+            color: ROW_HIGHLIGHT_TEXT_COLOR
+        });
+        $row.find('a').css('color', ROW_HIGHLIGHT_TEXT_COLOR);
+    }
+}
+
 // Xử lý khi nhấn nút "Gửi phiếu mua hàng"
 $('#submitPhieumuahang').click(function () {
     if (!selectedMamuahang) {
@@ -231,8 +253,6 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
         data: { Mamuahang: Mamuahang },
         success: function (data) {
             $('.tablethietbi tbody').empty();
-            $('.table tbody tr').removeClass('highlight');
-
             if (data && data.length > 0) {
                 // Kiểm tra xem có thể nhập đơn giá không
                 // Cho phép nhập khi: area = TruongBPMuahang và (trạng thái phiếu = "Đang chờ báo giá" hoặc chứa "Đã từ chối")
@@ -305,11 +325,14 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                 `);
             }
 
+            let $rowToHighlight = $();
             $('.table tbody tr').each(function () {
                 if ($(this).find('td').eq(1).text().trim() === Mamuahang) {
-                    $(this).addClass('highlight');
+                    $rowToHighlight = $(this);
+                    return false;
                 }
             });
+            applyPurchaseRowHighlight($rowToHighlight);
         },
         error: function (xhr, status, error) {
             alert("Không thể lấy dữ liệu vật tư. Lỗi: " + error);

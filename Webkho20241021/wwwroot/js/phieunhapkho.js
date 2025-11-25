@@ -51,6 +51,28 @@ $(document).ready(function () {
     });
 });
 
+const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
+const ROW_HIGHLIGHT_TEXT_COLOR = "#ffffff";
+
+function applyNhapKhoRowHighlight($row) {
+    const $rows = $('.table tbody tr');
+    $rows.removeClass('highlight');
+    $rows.find('td').css({
+        backgroundColor: '',
+        color: ''
+    });
+    $rows.find('a').css('color', '');
+
+    if ($row && $row.length) {
+        $row.addClass('highlight');
+        $row.find('td').css({
+            backgroundColor: ROW_HIGHLIGHT_COLOR,
+            color: ROW_HIGHLIGHT_TEXT_COLOR
+        });
+        $row.find('a').css('color', ROW_HIGHLIGHT_TEXT_COLOR);
+    }
+}
+
 function showVTnhapkho(Manhapkho) {
     if (!Manhapkho || Manhapkho.trim() === '') {
         console.error("Mã nhập kho không hợp lệ:", Manhapkho);
@@ -76,8 +98,6 @@ function showVTnhapkho(Manhapkho) {
             console.log("Số lượng vật tư:", data ? data.length : 0);
 
             $('.tablethietbi tbody').empty();
-
-            $('.table tbody tr').removeClass('highlight');
 
             if (data && Array.isArray(data) && data.length > 0) {
                 let STT = 1;
@@ -186,12 +206,15 @@ function showVTnhapkho(Manhapkho) {
                 );
             }
 
+            let $rowToHighlight = $();
             $('.table tbody tr').each(function () {
                 const linkText = $(this).find('.manhapkho-link').text().trim();
-                if (linkText === Manhapkho) { 
-                    $(this).addClass('highlight'); 
+                if (linkText === Manhapkho) {
+                    $rowToHighlight = $(this);
+                    return false;
                 }
             });
+            applyNhapKhoRowHighlight($rowToHighlight);
         },
         error: function (xhr, status, error) {
             console.error("Lỗi khi gọi API:", error);

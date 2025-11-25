@@ -55,7 +55,7 @@
         font-size: 15px;
     }
     .menu-kho li a.active {
-        background-color: #4a26ab;
+        background-color: #2d9f3c;
         color: white;
         font-weight: bold;
     }
@@ -163,7 +163,7 @@
 }
 
 .menu-kho .active-bg {
-    background-color: #4a26ab;
+    background-color: #2d9f3c;
 }
 
 .badge-trangchu {

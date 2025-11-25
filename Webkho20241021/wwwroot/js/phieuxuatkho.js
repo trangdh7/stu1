@@ -8,6 +8,28 @@ $(document).ready(function () {
     setActiveMenu();
 });
 
+const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
+const ROW_HIGHLIGHT_TEXT_COLOR = "#ffffff";
+
+function applyXuatKhoRowHighlight($row) {
+    const $rows = $('.table tbody tr');
+    $rows.removeClass('highlight');
+    $rows.find('td').css({
+        backgroundColor: '',
+        color: ''
+    });
+    $rows.find('a').css('color', '');
+
+    if ($row && $row.length) {
+        $row.addClass('highlight');
+        $row.find('td').css({
+            backgroundColor: ROW_HIGHLIGHT_COLOR,
+            color: ROW_HIGHLIGHT_TEXT_COLOR
+        });
+        $row.find('a').css('color', ROW_HIGHLIGHT_TEXT_COLOR);
+    }
+}
+
 // Hàm hiển thị thiết bị theo mã yêu cầu
 function showVTxuatkho(Maxuatkho) {
     console.log("Mã xuất kho được chọn:", Maxuatkho); // Kiểm tra mã yêu cầu
@@ -50,8 +72,6 @@ function loadVTData(Maxuatkho, url, area) {
 
             $('.tablethietbi tbody').empty();
 
-            $('.table tbody tr').removeClass('highlight');
-
             if (data && data.length > 0) {
                 let STT = 1;
                 data.forEach(function (item) {
@@ -89,11 +109,14 @@ function loadVTData(Maxuatkho, url, area) {
                 );
             }
 
+            let $rowToHighlight = $();
             $('.table tbody tr').each(function () {
-                if ($(this).find('td').eq(1).text().trim() === Maxuatkho) { 
-                    $(this).addClass('highlight'); 
+                if ($(this).find('td').eq(1).text().trim() === Maxuatkho) {
+                    $rowToHighlight = $(this);
+                    return false;
                 }
             });
+            applyXuatKhoRowHighlight($rowToHighlight);
         },
         error: function (xhr, status, error) {
             console.error("Lỗi:", error); 

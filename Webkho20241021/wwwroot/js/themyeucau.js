@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const hiddenInputsWrapper = document.getElementById("excel-hidden-inputs");
     let currentRows = [];
     const areaSegment = window.location.pathname.split("/")[1] || "";
+    const areaBasePath = areaSegment ? `/${areaSegment}/Yeucau` : "/Yeucau";
+    const requestSelect = document.getElementById("tenyeucau");
     const khoDataUrl = areaSegment
         ? `/${areaSegment}/Yeucau/GetKhoTongData`
         : "/Yeucau/GetKhoTongData";
@@ -53,6 +55,24 @@ document.addEventListener("DOMContentLoaded", function () {
                   .replace(/đ/g, "d")
                   .replace(/[^a-z0-9]/g, "")
             : "";
+    }
+
+    const requestRedirectMap = {
+        yeucaunhapkho: "ThemPhieunhapkho"
+    };
+
+    function handleRequestRedirect(event) {
+        const normalizedValue = normalizeHeader(event.target.value || "");
+        const targetRoute = requestRedirectMap[normalizedValue];
+        if (!targetRoute) {
+            return;
+        }
+        const targetUrl = `${areaBasePath}/${targetRoute}`;
+        window.location.href = targetUrl;
+    }
+
+    if (requestSelect) {
+        requestSelect.addEventListener("change", handleRequestRedirect);
     }
 
     function normalizeCode(value) {
