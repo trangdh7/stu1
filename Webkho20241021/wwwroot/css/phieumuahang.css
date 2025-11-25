@@ -19,7 +19,7 @@ body {
 }
 
 .header {
-    text-align: center;
+    text-align: left;
     margin-bottom: 20px;
 }
 
@@ -38,12 +38,14 @@ body {
 .tax-code {
     font-size: 11pt;
     margin-bottom: 15px;
+    text-align: right;
 }
 
 .form-info {
     font-size: 10pt;
     font-style: italic;
     margin-bottom: 20px;
+    text-align: right;
 }
 
 .document-title {

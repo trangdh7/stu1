@@ -2270,6 +2270,30 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                                             // Tính số lượng xuất kho (lấy số lượng nhỏ nhất giữa yêu cầu và số lượng nhập)
                                             int slXuat = Math.Min(vtYeucau.SL ?? 0, VTPhieunhapkho.SL ?? 0);
                                             
+                                            // Tính đơn giá và thành tiền từ phiếu nhập kho
+                                            decimal? donGia = VTPhieunhapkho.DonGia;
+                                            decimal? thanhTien = null;
+                                            
+                                            // Nếu có đơn giá và số lượng, tính thành tiền
+                                            if (donGia != null && donGia > 0 && slXuat > 0)
+                                            {
+                                                // Tính thành tiền theo tỷ lệ số lượng xuất / số lượng nhập
+                                                if (VTPhieunhapkho.SL > 0 && VTPhieunhapkho.ThanhTien != null)
+                                                {
+                                                    thanhTien = (VTPhieunhapkho.ThanhTien.Value / VTPhieunhapkho.SL.Value) * slXuat;
+                                                }
+                                                else
+                                                {
+                                                    thanhTien = donGia * slXuat;
+                                                }
+                                            }
+                                            else if (VTPhieunhapkho.ThanhTien != null && VTPhieunhapkho.SL > 0)
+                                            {
+                                                // Nếu không có đơn giá nhưng có thành tiền, tính theo tỷ lệ
+                                                thanhTien = (VTPhieunhapkho.ThanhTien.Value / VTPhieunhapkho.SL.Value) * slXuat;
+                                                donGia = thanhTien / slXuat;
+                                            }
+                                            
                                             var newVTPhieuxuatkho = new vtphieuxuatkho
                                             {
                                                 MaXuatkho = MaXuatkho,
@@ -2281,6 +2305,8 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                                                 NhaCC = khotong.NhaCC,
                                                 DonVi = khotong.DonVi,
                                                 SL = slXuat,
+                                                DonGia = donGia,
+                                                ThanhTien = thanhTien,
                                                 NgayBaohanh = khotong.NgayBaohanh,
                                                 ThoiGianBH = khotong.ThoiGianBH,
                                                 TrangThai = "Chờ xác nhận"
@@ -2502,6 +2528,8 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     NhaCC = VTPhieunhapkho.NhaCC,
                     SL = VTPhieunhapkho.SL,
                     DonVi = VTPhieunhapkho.DonVi,
+                    DonGia = VTPhieunhapkho.DonGia,
+                    ThanhTien = VTPhieunhapkho.ThanhTien,
                     TrangThai = "Đang chuẩn bị hàng",
                 };
                 _context.vtphieuxuatkho.Add(newvtphieuxuatkho);
@@ -2901,6 +2929,152 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
 
             ViewBag.Phieunhapkho = phieunhapkho;
             ViewBag.VTPhieunhapkho = vtphieunhapkho;
+            ViewBag.Yeucau = yeucau;
+
+            return View();
+        }
+
+        // In phiếu xuất kho
+        [HttpGet]
+        public IActionResult InPhieuxuatkho(string MaXuatkho)
+        {
+            if (string.IsNullOrEmpty(MaXuatkho))
+            {
+                return NotFound();
+            }
+
+            var phieuxuatkho = _context.phieuxuatkho
+                .FirstOrDefault(p => p.MaXuatkho == MaXuatkho);
+
+            if (phieuxuatkho == null)
+            {
+                return NotFound();
+            }
+
+            var vtphieuxuatkho = _context.vtphieuxuatkho
+                .Where(vt => vt.MaXuatkho == MaXuatkho)
+                .ToList();
+
+            // Lấy giá tiền từ phiếu nhập kho hoặc phiếu mua hàng nếu phiếu xuất kho không có giá
+            if (!string.IsNullOrEmpty(phieuxuatkho.MaYeucau))
+            {
+                // Bước 1: Thử lấy từ phiếu nhập kho
+                var phieunhapkho = _context.phieunhapkho
+                    .FirstOrDefault(pn => pn.MaYeucau == phieuxuatkho.MaYeucau);
+
+                if (phieunhapkho != null)
+                {
+                    var vtphieunhapkho = _context.vtphieunhapkho
+                        .Where(vt => vt.MaNhapkho == phieunhapkho.MaNhapkho)
+                        .ToList();
+
+                    // Cập nhật giá tiền cho các vật tư trong phiếu xuất kho từ phiếu nhập kho
+                    foreach (var vtxuatkho in vtphieuxuatkho)
+                    {
+                        // Tìm vật tư tương ứng trong phiếu nhập kho theo mã sản phẩm, nếu không thấy mới so sánh tên
+                        var vtnhapkho = vtphieunhapkho.FirstOrDefault(vt => 
+                            !string.IsNullOrEmpty(vt.MaSanpham) && 
+                            vt.MaSanpham == vtxuatkho.MaSanpham);
+
+                        if (vtnhapkho == null)
+                        {
+                            vtnhapkho = vtphieunhapkho.FirstOrDefault(vt =>
+                                !string.IsNullOrEmpty(vt.TenSanpham) &&
+                                vt.TenSanpham == vtxuatkho.TenSanpham);
+                        }
+
+                        if (vtnhapkho != null)
+                        {
+                            // Nếu phiếu xuất kho không có giá hoặc giá = 0, lấy từ phiếu nhập kho
+                            if (vtxuatkho.DonGia == null || vtxuatkho.DonGia == 0)
+                            {
+                                if (vtnhapkho.DonGia != null && vtnhapkho.DonGia > 0)
+                                {
+                                    vtxuatkho.DonGia = vtnhapkho.DonGia;
+                                }
+                            }
+
+                            if (vtxuatkho.ThanhTien == null || vtxuatkho.ThanhTien == 0)
+                            {
+                                // Tính thành tiền theo tỷ lệ số lượng xuất / số lượng nhập
+                                if (vtnhapkho.SL > 0 && vtnhapkho.ThanhTien != null && vtnhapkho.ThanhTien > 0 && vtxuatkho.SL > 0)
+                                {
+                                    vtxuatkho.ThanhTien = (vtnhapkho.ThanhTien.Value / vtnhapkho.SL.Value) * vtxuatkho.SL.Value;
+                                }
+                                else if (vtxuatkho.DonGia != null && vtxuatkho.DonGia > 0 && vtxuatkho.SL > 0)
+                                {
+                                    // Nếu thành tiền vẫn = 0, tính từ đơn giá * số lượng
+                                    vtxuatkho.ThanhTien = vtxuatkho.DonGia * vtxuatkho.SL;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Bước 2: Nếu phiếu nhập kho không có giá, lấy từ phiếu mua hàng
+                var phieumuahang = _context.phieumuahang
+                    .FirstOrDefault(pm => pm.MaYeucau == phieuxuatkho.MaYeucau);
+
+                if (phieumuahang != null)
+                {
+                    var vtphieumuahang = _context.vtphieumuahang
+                        .Where(vt => vt.MaMuahang == phieumuahang.MaMuahang)
+                        .ToList();
+
+                    // Cập nhật giá tiền cho các vật tư trong phiếu xuất kho từ phiếu mua hàng
+                    foreach (var vtxuatkho in vtphieuxuatkho)
+                    {
+                        // Chỉ cập nhật nếu chưa có giá từ phiếu nhập kho
+                        if (vtxuatkho.DonGia == null || vtxuatkho.DonGia == 0 || 
+                            vtxuatkho.ThanhTien == null || vtxuatkho.ThanhTien == 0)
+                        {
+                            // Tìm vật tư tương ứng trong phiếu mua hàng theo mã sản phẩm, nếu không thấy mới so sánh tên
+                            var vtmuahang = vtphieumuahang.FirstOrDefault(vt => 
+                                !string.IsNullOrEmpty(vt.MaSanpham) &&
+                                vt.MaSanpham == vtxuatkho.MaSanpham);
+
+                            if (vtmuahang == null)
+                            {
+                                vtmuahang = vtphieumuahang.FirstOrDefault(vt =>
+                                    !string.IsNullOrEmpty(vt.TenSanpham) &&
+                                    vt.TenSanpham == vtxuatkho.TenSanpham);
+                            }
+
+                            if (vtmuahang != null)
+                            {
+                                // Nếu phiếu xuất kho không có giá hoặc giá = 0, lấy từ phiếu mua hàng
+                                if (vtxuatkho.DonGia == null || vtxuatkho.DonGia == 0)
+                                {
+                                    if (vtmuahang.DonGia != null && vtmuahang.DonGia > 0)
+                                    {
+                                        vtxuatkho.DonGia = vtmuahang.DonGia;
+                                    }
+                                }
+
+                                if (vtxuatkho.ThanhTien == null || vtxuatkho.ThanhTien == 0)
+                                {
+                                    // Tính thành tiền theo tỷ lệ số lượng xuất / số lượng mua
+                                    if (vtmuahang.SL > 0 && vtmuahang.ThanhTien != null && vtmuahang.ThanhTien > 0 && vtxuatkho.SL > 0)
+                                    {
+                                        vtxuatkho.ThanhTien = (vtmuahang.ThanhTien.Value / vtmuahang.SL.Value) * vtxuatkho.SL.Value;
+                                    }
+                                    else if (vtxuatkho.DonGia != null && vtxuatkho.DonGia > 0 && vtxuatkho.SL > 0)
+                                    {
+                                        // Nếu thành tiền vẫn = 0, tính từ đơn giá * số lượng
+                                        vtxuatkho.ThanhTien = vtxuatkho.DonGia * vtxuatkho.SL;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            var yeucau = _context.yeucau
+                .FirstOrDefault(y => y.MaYeucau == phieuxuatkho.MaYeucau);
+
+            ViewBag.Phieuxuatkho = phieuxuatkho;
+            ViewBag.VTPhieuxuatkho = vtphieuxuatkho;
             ViewBag.Yeucau = yeucau;
 
             return View();

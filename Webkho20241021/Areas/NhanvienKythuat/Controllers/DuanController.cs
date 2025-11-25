@@ -44,8 +44,11 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
         {
             // Đọc từ vtphieuxuatkho - vật tư đã được xuất kho cho dự án
             // Join với phieuxuatkho để lấy vật tư của dự án này
+            // Join với nguoidungs để lấy thông tin người nhận
             var vatTuList = from vt in _context.vtphieuxuatkho
                            join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
+                           join nd in _context.nguoidungs on px.MaNguoidung equals nd.MaNguoidung into ndGroup
+                           from nd in ndGroup.DefaultIfEmpty()
                            where px.MaDuan == MaDuan
                                  && (vt.TrangThai == "Đã xác nhận nhận hàng" 
                                      || vt.TrangThai == "Đã xuất kho" 
@@ -62,13 +65,16 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                                NgayNhapkho = vt.NgayNhapkho ?? px.NgayXacNhanNhan,
                                NgayBaohanh = vt.NgayBaohanh,
                                ThoiGianBH = vt.ThoiGianBH,
-                               TrangThai = vt.TrangThai ?? "Đã xác nhận nhận hàng"
+                               TrangThai = vt.TrangThai ?? "Đã xác nhận nhận hàng",
+                               MaNguoiNhan = px.MaNguoidung,
+                               TenNguoiNhan = nd != null ? nd.TenNguoidung : (px.MaNguoidung ?? "")
                            };
 
-            // Remove duplicates nếu có (cùng vật tư từ nhiều phiếu)
-            var result = vatTuList.GroupBy(v => new { v.MaSanpham, v.DAMakho })
-                                 .Select(g => g.First())
-                                 .ToList();
+            // Không group để giữ thông tin người nhận cho từng lần cấp phát
+            var result = vatTuList
+                .OrderByDescending(v => v.NgayNhapkho)
+                .ThenBy(v => v.TenSanpham)
+                .ToList();
 
             return Json(result); // Trả về JSON
         }

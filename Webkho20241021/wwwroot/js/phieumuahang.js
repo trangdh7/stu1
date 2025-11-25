@@ -46,7 +46,6 @@ $('#submitPhieumuahang').click(function () {
     });
 
     const vtmuahangData = [];
-    let hasEmptyPrice = false;
     let missingRequiredData = [];
     
     $('.tablethietbi tbody tr').each(function () {
@@ -61,9 +60,10 @@ $('#submitPhieumuahang').click(function () {
         // Chỉ xử lý các hàng có input giá (có thể nhập giá)
         if (cells.length >= 2 && priceInput.length > 0) {
             const inputValue = priceInput.val();
-            const DonGia = inputValue ? parseFloat(inputValue.replace(/[^\d]/g, '')) || 0 : 0;
+            // Xử lý giá trị có thể chứa dấu chấm hoặc dấu phẩy
+            let cleanValue = inputValue ? inputValue.replace(/[^\d.]/g, '') : '';
+            const DonGia = cleanValue ? parseFloat(cleanValue) || 0 : 0;
             const SL = parseFloat(priceInput.data('sl')) || 0;
-            const ThanhTien = SL * DonGia;
             
             // Lấy MaSanpham từ cột thứ 3 (index 2) trong bảng
             const MaSanpham = $(this).find('td').eq(2).text().trim();
@@ -74,39 +74,44 @@ $('#submitPhieumuahang').click(function () {
                 return;
             }
             
-            // Nếu số lượng = 1, bắt buộc phải nhập đơn giá
-            if (SL === 1) {
-                if (DonGia <= 0) {
-                    missingRequiredData.push(TenSanpham || MaSanpham);
+            // Tất cả vật tư có số lượng > 0 đều bắt buộc phải nhập đơn giá > 0
+            if (SL > 0) {
+                if (!inputValue || inputValue.trim() === '' || DonGia <= 0 || isNaN(DonGia)) {
+                    missingRequiredData.push({
+                        ten: TenSanpham || MaSanpham,
+                        ma: MaSanpham,
+                        sl: SL
+                    });
                     return;
                 }
             }
 
+            // Chỉ thêm vào dữ liệu nếu có giá hợp lệ
             if (DonGia > 0 && SL > 0) {
+                const ThanhTien = SL * DonGia;
                 vtmuahangData.push({
                     MaMuahang: selectedMamuahang,
-                    MaSanpham: MaSanpham, // Thêm MaSanpham để match đúng
+                    MaSanpham: MaSanpham,
                     DonGia: DonGia,
                     ThanhTien: ThanhTien
                 });
-            } else if (SL > 1) {
-                // Có số lượng > 1 nhưng chưa nhập giá (không bắt buộc nhưng cảnh báo)
-                hasEmptyPrice = true;
             }
         }
     });
     
-    // Kiểm tra nếu có mục bắt buộc chưa nhập (SL = 1)
+    // Kiểm tra nếu có mục chưa nhập đủ
     if (missingRequiredData.length > 0) {
-        alert("Bạn chưa nhập xong hết số liệu. Vui lòng nhập đơn giá cho các vật tư có số lượng = 1:\n" + missingRequiredData.join("\n"));
+        const missingList = missingRequiredData.map(item => 
+            `- ${item.ten} (Mã: ${item.ma}, Số lượng: ${item.sl})`
+        ).join('\n');
+        alert("Vui lòng nhập đầy đủ đơn giá cho tất cả vật tư trước khi gửi!\n\nCác vật tư còn thiếu:\n" + missingList);
         return;
     }
     
-    // Kiểm tra nếu có mục chưa nhập giá (SL > 1, không bắt buộc)
-    if (hasEmptyPrice) {
-        if (!confirm("Có một số vật tư chưa nhập giá. Bạn có muốn tiếp tục không?")) {
-            return;
-        }
+    // Kiểm tra nếu không có dữ liệu nào để gửi
+    if (vtmuahangData.length === 0) {
+        alert("Không có dữ liệu để gửi. Vui lòng kiểm tra lại!");
+        return;
     }
 
     const Phieumuahangviewmodel = {
@@ -314,10 +319,63 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
 
 // Gắn sự kiện cho bảng
 function attachEventHandlers() {
+    // Xử lý validation khi nhập giá - chỉ cho phép số dương
+    $('.tablethietbi tbody').on('keypress', '.DonGia input', function (e) {
+        // Cho phép các phím điều khiển: backspace (8), tab (9), enter (13), delete (46), escape (27)
+        // Cho phép dấu chấm (46 hoặc 110 hoặc 190) và số (48-57)
+        const keyCode = e.which || e.keyCode;
+        const char = String.fromCharCode(keyCode);
+        
+        // Cho phép phím điều khiển
+        if (keyCode === 8 || keyCode === 9 || keyCode === 13 || keyCode === 27 || keyCode === 46) {
+            return true;
+        }
+        
+        // Cho phép số (0-9)
+        if (keyCode >= 48 && keyCode <= 57) {
+            return true;
+        }
+        
+        // Cho phép dấu chấm (.) nhưng chỉ một lần
+        if ((keyCode === 46 || keyCode === 110 || keyCode === 190) && $(this).val().indexOf('.') === -1) {
+            return true;
+        }
+        
+        // Chặn tất cả các ký tự khác
+        e.preventDefault();
+        return false;
+    });
+
+    // Xử lý khi paste hoặc nhập - loại bỏ ký tự không hợp lệ
+    $('.tablethietbi tbody').on('input paste', '.DonGia input', function (e) {
+        let value = $(this).val();
+        // Loại bỏ tất cả ký tự không phải số và dấu chấm
+        value = value.replace(/[^0-9.]/g, '');
+        // Loại bỏ nhiều dấu chấm, chỉ giữ lại một
+        const parts = value.split('.');
+        if (parts.length > 2) {
+            value = parts[0] + '.' + parts.slice(1).join('');
+        }
+        // Đảm bảo không có số âm
+        if (value.startsWith('-')) {
+            value = value.replace('-', '');
+        }
+        $(this).val(value);
+    });
+
+    // Xử lý tính toán khi nhập giá
     $('.tablethietbi tbody').on('input', '.DonGia input', function () {
         const $row = $(this).closest('tr');
-        const sl = parseInt($(this).data('sl')) || 0;
-        const donGia = parseInt($(this).val()) || 0;
+        const sl = parseFloat($(this).data('sl')) || 0;
+        let inputValue = $(this).val().replace(/[^\d.]/g, '');
+        const donGia = parseFloat(inputValue) || 0;
+        
+        // Đảm bảo giá không âm
+        if (donGia < 0 || isNaN(donGia)) {
+            $(this).val('0');
+            return;
+        }
+        
         const thanhTien = sl * donGia;
 
         $row.find('.ThanhTien').text(thanhTien.toLocaleString('vi-VN'));    

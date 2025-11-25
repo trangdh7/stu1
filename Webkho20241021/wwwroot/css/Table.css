@@ -104,3 +104,9 @@ button {
   font-weight: bold;
   color: var(--body-color);
 }
+
+/* Style for print icon in Phieunhapkho */
+.btn-icon .bx-printer,
+.btn-icon i.bx-printer {
+  color: black !important;
+}

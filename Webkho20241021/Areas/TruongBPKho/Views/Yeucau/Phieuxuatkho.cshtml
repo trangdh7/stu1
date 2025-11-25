@@ -57,6 +57,7 @@
                         <td>Người yêu cầu</td>
                         <td>Ngày xuất kho</td>
                         <td>Trạng thái</td>
+                        <td>In phiếu</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,6 +116,12 @@
                                         Chờ người yêu cầu xác nhận
                                     </span>
                                 }
+                                else if (item.TrangThai == "Đã xác nhận nhận hàng")
+                                {
+                                    <span class="status-waiting" style="color: #28a745; font-weight: bold;">
+                                        Đã xác nhận nhận hàng
+                                    </span>
+                                }
                                 else if (item.TrangThai == "Đã lấy hàng" && BophanSession == "BP kho")
                                 {
                                     @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
@@ -129,6 +136,14 @@
                                 {
                                     @item.TrangThai
                                     ;
+                                }
+                            </td>
+                            <td>
+                                @if (item.TrangThai == "Đã xác nhận nhận hàng")
+                                {
+                                    <a class="btn-icon" target="_blank" href='@Url.Action("InPhieuxuatkho", "Yeucau", new { area = "TruongBPKho", MaXuatkho = item.MaXuatkho })' title="In phiếu xuất kho">
+                                        <i class="bx bx-printer"></i>
+                                    </a>
                                 }
                             </td>
                         </tr>

@@ -1,8 +1,11 @@
+@model Webkho_20241021.Models.ViewModels.ChiTietVatTuDuanViewModel
+
 @{
     ViewData["Title"] = "Chi tiết vật tư dự án";
     Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
-    var duan = ViewBag.Duan as Webkho_20241021.Models.duans;
-    var vatTuList = ViewBag.VatTuList as List<dynamic>;
+    var duan = Model?.Duan;
+    var vatTuList = Model?.VatTuList ?? new List<Webkho_20241021.Models.ViewModels.VatTuDuAnItemViewModel>();
+    var nguoiNhanSummaries = Model?.NguoiNhanSummaries ?? new List<Webkho_20241021.Models.ViewModels.NguoiNhanVatTuSummary>();
 }
 
 <!DOCTYPE html>
@@ -12,137 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chi tiết vật tư dự án</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <style>
-        .header-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .header-section h1 {
-            margin: 0 0 15px 0;
-            font-size: 28px;
-        }
-        .header-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .info-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-        }
-        .info-label {
-            font-size: 12px;
-            opacity: 0.9;
-            margin-bottom: 5px;
-        }
-        .info-value {
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .btn-back {
-            padding: 12px 24px;
-            background: #6c757d;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 20px;
-            transition: all 0.3s;
-        }
-        .btn-back:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-        }
-        .table-container {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .table thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .table th {
-            padding: 16px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .table tbody tr {
-            transition: background-color 0.2s;
-        }
-        .table tbody tr:hover {
-            background-color: #f9fafb;
-        }
-        .table tbody tr:last-child td {
-            border-bottom: none;
-        }
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .badge-success {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        .badge-info {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        .summary-box {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .summary-box h3 {
-            margin: 0 0 15px 0;
-            font-size: 20px;
-        }
-        .summary-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        .stat-item {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 15px;
-            border-radius: 8px;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .stat-label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-    </style>
+    <link href="~/css/chitietvattuduan.css" rel="stylesheet" />
 </head>
 <body>
     <div class="bodyyeucau">
@@ -176,7 +49,7 @@
             </div>
         }
 
-        @if (vatTuList != null && vatTuList.Count > 0)
+        @if (vatTuList.Any())
         {
             <div class="summary-box">
                 <h3><i class='bx bx-stats'></i> Tóm tắt</h3>
@@ -190,7 +63,7 @@
                         <div class="stat-label">Tổng số lượng</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">@vatTuList.Select(v => v.MaNguoiNhan).Distinct().Count()</div>
+                        <div class="stat-value">@nguoiNhanSummaries.Count</div>
                         <div class="stat-label">Số người nhận</div>
                     </div>
                     <div class="stat-item">
@@ -199,6 +72,68 @@
                     </div>
                 </div>
             </div>
+
+            @if (nguoiNhanSummaries.Count > 0)
+            {
+                <div class="summary-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin-bottom: 20px; color: white;">
+                    <div class="summary-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin:0;"><i class='bx bx-user'></i> Lọc theo người nhận</h3>
+                        <div>
+                            <a href="@Url.Action("ChiTietVatTuDuan", "Duan", new { area = "QuanLiDuAn", MaDuan = duan?.MaDuan })" class="btn-filter @(string.IsNullOrEmpty(Model?.SelectedMaNguoiNhan) ? "active" : "")">
+                                Tất cả
+                            </a>
+                        </div>
+                    </div>
+                    <div class="filter-chips">
+                        @foreach (var nguoi in nguoiNhanSummaries)
+                        {
+                            if (string.IsNullOrEmpty(nguoi.MaNguoi))
+                            {
+                                <span class="filter-chip disabled">
+                                    <strong>@nguoi.TenNguoi</strong>
+                                    <small>@nguoi.SoLoaiVatTu loại • @nguoi.TongSoLuong chiếc</small>
+                                </span>
+                            }
+                            else
+                            {
+                                var isActive = !string.IsNullOrEmpty(Model?.SelectedMaNguoiNhan) && string.Equals(Model.SelectedMaNguoiNhan?.Trim(), nguoi.MaNguoi?.Trim(), StringComparison.OrdinalIgnoreCase);
+                                <a class="filter-chip @(isActive ? "active" : "")"
+                                   href="@Url.Action("ChiTietVatTuDuan", "Duan", new { area = "QuanLiDuAn", MaDuan = duan?.MaDuan, maNguoiNhan = nguoi.MaNguoi })">
+                                    <strong>@nguoi.TenNguoi</strong>
+                                    <small>@nguoi.SoLoaiVatTu loại • @nguoi.TongSoLuong chiếc</small>
+                                </a>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="search-section">
+                <form method="get" asp-area="QuanLiDuAn" asp-controller="Duan" asp-action="ChiTietVatTuDuan" class="search-form">
+                    <input type="hidden" name="MaDuan" value="@duan?.MaDuan" />
+                    @if (!string.IsNullOrEmpty(Model?.SelectedMaNguoiNhan))
+                    {
+                        <input type="hidden" name="maNguoiNhan" value="@Model.SelectedMaNguoiNhan" />
+                    }
+                    <div class="search-input-wrapper">
+                        <i class='bx bx-search'></i>
+                        <input type="text" name="keyword" placeholder="Tìm theo tên vật tư, mã, kho, hãng..." value="@Model?.SearchKeyword" />
+                    </div>
+                    <button type="submit" class="btn-search">Tìm kiếm</button>
+                    @if (!string.IsNullOrEmpty(Model?.SearchKeyword))
+                    {
+                        <a class="btn-clear" href="@Url.Action("ChiTietVatTuDuan", "Duan", new { area = "QuanLiDuAn", MaDuan = duan?.MaDuan, maNguoiNhan = Model.SelectedMaNguoiNhan })">Xóa</a>
+                    }
+                </form>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model?.SelectedMaNguoiNhan))
+            {
+                <div class="alert alert-info" style="margin-bottom:20px;">
+                    Đang hiển thị vật tư do <strong>@(Model.SelectedTenNguoiNhan ?? Model.SelectedMaNguoiNhan)</strong> nhận.
+                    <a href="@Url.Action("ChiTietVatTuDuan", "Duan", new { area = "QuanLiDuAn", MaDuan = duan?.MaDuan })" style="margin-left:10px; text-decoration:underline;">Bỏ lọc</a>
+                </div>
+            }
 
             <div class="table-container">
                 <table class="table">
@@ -215,42 +150,49 @@
                             <th>Người nhận</th>
                             <th>Ngày xuất kho</th>
                             <th>Ngày nhận</th>
-                            <th>Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody>
                         @{
                             int stt = 1;
-                        }
-                        @foreach (var vt in vatTuList)
-                        {
-                            <tr>
-                                <td>@stt</td>
-                                <td>@(vt.TenSanpham ?? "")</td>
-                                <td>@(vt.MaSanpham ?? "")</td>
-                                <td>@(vt.DAMakho ?? "")</td>
-                                <td>@(vt.HangSX ?? "")</td>
-                                <td>@(vt.NhaCC ?? "")</td>
-                                <td style="text-align: center; font-weight: bold;">@(vt.SL ?? 0)</td>
-                                <td>@(vt.DonVi ?? "")</td>
-                                <td>
-                                    <strong style="color: #667eea;">@(vt.TenNguoiNhan ?? vt.MaNguoiNhan ?? "")</strong>
-                                    @if (!string.IsNullOrEmpty(vt.MaNguoiNhan) && vt.MaNguoiNhan != vt.TenNguoiNhan)
-                                    {
-                                        <br/><small style="color: #6b7280;">(@vt.MaNguoiNhan)</small>
-                                    }
-                                </td>
-                                <td>@(vt.NgayXuatkho?.ToString("dd/MM/yyyy") ?? "")</td>
-                                <td>@(vt.NgayXacNhanNhan?.ToString("dd/MM/yyyy") ?? "")</td>
-                                <td>
-                                    @{
-                                        var trangThai = vt.TrangThai?.ToString() ?? "";
-                                        var badgeClass = trangThai.Contains("Đã") ? "badge-success" : "badge-info";
-                                    }
-                                    <span class="badge @badgeClass">@trangThai</span>
-                                </td>
-                            </tr>
-                            stt++;
+                            foreach (var vt in vatTuList)
+                            {
+                                <tr>
+                                    <td>@stt</td>
+                                    <td>@(vt.TenSanpham ?? "")</td>
+                                    <td>@(vt.MaSanpham ?? "")</td>
+                                    <td>@(vt.DAMakho ?? "")</td>
+                                    <td>@(vt.HangSX ?? "")</td>
+                                    <td>@(vt.NhaCC ?? "")</td>
+                                    <td style="text-align: center; font-weight: bold; color: #667eea; font-size: 16px;">
+                                        <span style="background: #e0e7ff; padding: 4px 8px; border-radius: 6px; display: inline-block;">
+                                            @(vt.SL ?? 0)
+                                        </span>
+                                    </td>
+                                    <td>@(vt.DonVi ?? "")</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(vt.TenNguoiNhan?.ToString()))
+                                        {
+                                            <strong style="color: #667eea;">@vt.TenNguoiNhan</strong>
+                                            @if (!string.IsNullOrEmpty(vt.MaNguoiNhan?.ToString()) && vt.MaNguoiNhan.ToString() != vt.TenNguoiNhan.ToString())
+                                            {
+                                                <br/><small style="color: #6b7280;">(@vt.MaNguoiNhan)</small>
+                                            }
+                                        }
+                                        else if (!string.IsNullOrEmpty(vt.MaNguoiNhan?.ToString()))
+                                        {
+                                            <strong style="color: #667eea;">@vt.MaNguoiNhan</strong>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: #9ca3af;">Chưa xác định</span>
+                                        }
+                                    </td>
+                                    <td>@(vt.NgayXuatkho?.ToString("dd/MM/yyyy") ?? "")</td>
+                                    <td>@(vt.NgayXacNhanNhan?.ToString("dd/MM/yyyy") ?? "")</td>
+                                </tr>
+                                stt++;
+                            }
                         }
                     </tbody>
                 </table>

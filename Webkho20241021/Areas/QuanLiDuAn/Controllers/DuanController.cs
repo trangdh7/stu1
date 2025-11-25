@@ -1,10 +1,12 @@
 using System;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Areas.QuanLiDuAn.Data;
 using Webkho_20241021.Models;
+using Webkho_20241021.Models.ViewModels;
 
 namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 {
@@ -116,7 +118,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
         }
 
         // Hiển thị chi tiết vật tư đã cấp phát cho dự án
-        public IActionResult ChiTietVatTuDuan(string MaDuan)
+        public IActionResult ChiTietVatTuDuan(string MaDuan, string? maNguoiNhan, string? keyword)
         {
             if (string.IsNullOrWhiteSpace(MaDuan))
             {
@@ -129,46 +131,100 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 return NotFound();
             }
 
-            // Lấy danh sách vật tư đã được cấp phát cho dự án
-            var vatTuList = from vt in _context.vtphieuxuatkho
-                            join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
-                            join nd in _context.nguoidungs on px.MaNguoidung equals nd.MaNguoidung into ndGroup
-                            from nd in ndGroup.DefaultIfEmpty()
-                            where px.MaDuan == MaDuan
-                                  && (vt.TrangThai == "Đã xác nhận nhận hàng"
-                                      || vt.TrangThai == "Đã xuất kho"
-                                      || px.TrangThai == "Đã xác nhận nhận hàng"
-                                      || px.TrangThai == "Hoàn thành")
-                            select new
-                            {
-                                TenSanpham = vt.TenSanpham,
-                                MaSanpham = vt.MaSanpham,
-                                DAMakho = vt.Makho,
-                                HangSX = vt.HangSX,
-                                NhaCC = vt.NhaCC,
-                                SL = vt.SL,
-                                DonVi = vt.DonVi,
-                                NgayNhapkho = vt.NgayNhapkho ?? px.NgayXacNhanNhan,
-                                NgayBaohanh = vt.NgayBaohanh,
-                                ThoiGianBH = vt.ThoiGianBH,
-                                TrangThai = vt.TrangThai ?? "Đã xác nhận nhận hàng",
-                                MaXuatkho = vt.MaXuatkho,
-                                MaYeucau = vt.MaYeucau,
-                                MaNguoidung = px.MaNguoidung,
-                                TenNguoiNhan = nd != null ? nd.TenNguoidung : px.MaNguoidung,
-                                NgayXuatkho = px.NgayXuatkho,
-                                NgayXacNhanNhan = px.NgayXacNhanNhan
-                            };
+            // Lấy danh sách vật tư đã được cấp phát cho dự án.
+            // Một số bản ghi vtphieuxuatkho không lưu MaYeucau nên chỉ join theo MaXuatkho để tránh mất dữ liệu.
+            var vatTuQuery = from vt in _context.vtphieuxuatkho
+                             join px in _context.phieuxuatkho
+                                 on vt.MaXuatkho equals px.MaXuatkho
+                             join nd in _context.nguoidungs on px.MaNguoidung equals nd.MaNguoidung into ndGroup
+                             from nd in ndGroup.DefaultIfEmpty()
+                             where px.MaDuan == MaDuan
+                                   && (vt.TrangThai == "Đã xác nhận nhận hàng"
+                                       || vt.TrangThai == "Đã xuất kho"
+                                       || px.TrangThai == "Đã xác nhận nhận hàng"
+                                       || px.TrangThai == "Hoàn thành"
+                                       || px.TrangThai == "Đã xuất kho")
+                             select new VatTuDuAnItemViewModel
+                             {
+                                 TenSanpham = vt.TenSanpham,
+                                 MaSanpham = vt.MaSanpham,
+                                 DAMakho = vt.Makho,
+                                 HangSX = vt.HangSX,
+                                 NhaCC = vt.NhaCC,
+                                 SL = vt.SL,
+                                 DonVi = vt.DonVi,
+                                 NgayNhapkho = vt.NgayNhapkho ?? px.NgayXacNhanNhan,
+                                 NgayBaohanh = vt.NgayBaohanh,
+                                 ThoiGianBH = vt.ThoiGianBH,
+                                 TrangThai = vt.TrangThai ?? px.TrangThai ?? "Đã xác nhận nhận hàng",
+                                 MaXuatkho = vt.MaXuatkho,
+                                 MaYeucau = vt.MaYeucau,
+                                 MaNguoidung = px.MaNguoidung,
+                                 MaNguoiNhan = px.MaNguoidung,
+                                 TenNguoiNhan = nd != null ? nd.TenNguoidung : (px.MaNguoidung ?? "Chưa xác định"),
+                                 NgayXuatkho = px.NgayXuatkho,
+                                 NgayXacNhanNhan = px.NgayXacNhanNhan
+                             };
 
-            var result = vatTuList
+            var nguoiNhanSummaries = vatTuQuery
+                .GroupBy(v => new
+                {
+                    Key = (v.MaNguoidung ?? v.MaNguoiNhan ?? string.Empty).Trim(),
+                    Ten = v.TenNguoiNhan ?? (v.MaNguoidung ?? v.MaNguoiNhan ?? "Chưa xác định")
+                })
+                .Select(g => new NguoiNhanVatTuSummary
+                {
+                    MaNguoi = g.Key.Key,
+                    TenNguoi = g.Key.Ten,
+                    TongSoLuong = g.Sum(x => x.SL ?? 0),
+                    SoLoaiVatTu = g.Count()
+                })
+                .OrderByDescending(x => x.TongSoLuong)
+                .ThenBy(x => x.TenNguoi)
+                .ToList();
+
+            var filteredVatTu = vatTuQuery.ToList();
+            string selectedTenNguoi = string.Empty;
+            if (!string.IsNullOrWhiteSpace(maNguoiNhan))
+            {
+                var normalized = maNguoiNhan.Trim();
+                filteredVatTu = filteredVatTu
+                    .Where(v => string.Equals((v.MaNguoidung ?? v.MaNguoiNhan ?? string.Empty).Trim(), normalized, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                selectedTenNguoi = nguoiNhanSummaries
+                    .FirstOrDefault(x => string.Equals(x.MaNguoi?.Trim(), normalized, StringComparison.OrdinalIgnoreCase))?.TenNguoi
+                    ?? normalized;
+            }
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var lower = keyword.Trim().ToLower();
+                filteredVatTu = filteredVatTu.Where(v =>
+                        (v.TenSanpham ?? string.Empty).ToLower().Contains(lower) ||
+                        (v.MaSanpham ?? string.Empty).ToLower().Contains(lower) ||
+                        (v.DAMakho ?? string.Empty).ToLower().Contains(lower) ||
+                        (v.HangSX ?? string.Empty).ToLower().Contains(lower) ||
+                        (v.NhaCC ?? string.Empty).ToLower().Contains(lower))
+                    .ToList();
+            }
+
+            filteredVatTu = filteredVatTu
                 .OrderByDescending(v => v.NgayXuatkho)
                 .ThenBy(v => v.TenSanpham)
                 .ToList();
 
-            ViewBag.Duan = duan;
-            ViewBag.VatTuList = result;
+            var viewModel = new ChiTietVatTuDuanViewModel
+            {
+                Duan = duan,
+                VatTuList = filteredVatTu,
+                NguoiNhanSummaries = nguoiNhanSummaries,
+                SelectedMaNguoiNhan = maNguoiNhan,
+                SelectedTenNguoiNhan = selectedTenNguoi,
+                SearchKeyword = keyword
+            };
 
-            return View();
+            return View(viewModel);
         }
     }
 }

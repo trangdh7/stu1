@@ -4,16 +4,8 @@
     Layout = "~/Areas/NhanvienKho/Views/Layout/Layout.cshtml";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Thêm Yêu Cầu</title>
-</head>
 @using (Html.BeginForm("ThemYeucauSQL", "Yeucau", new { area = "NhanvienKho" }, FormMethod.Post, true, new { enctype = "multipart/form-data" }))
 {
-    <body>
         <div class="formyeucau">
             <div class="tieude">
                 <p>Thông tin yêu cầu</p>
@@ -104,8 +96,9 @@
                 <button type="submit">Gửi</button>
             </div>
         </div>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-pJW25KcTnYxSNhKp1FeLnii52PPiVUPwsh2n5WAnvptuP9HNy0T0VEgfi+c8xPmjOZ+NaAhhQBWQS421qY4mZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-        <script src="~/js/themyeucau.js"></script>
-    </body>
 }
-</html>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-pJW25KcTnYxSNhKp1FeLnii52PPiVUPwsh2n5WAnvptuP9HNy0T0VEgfi+c8xPmjOZ+NaAhhQBWQS421qY4mZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="~/js/themyeucau.js"></script>
+}

@@ -46,14 +46,28 @@ function showVTDuan(MaDuan) {
                         }
                     };
 
+                    // Hiển thị người nhận
+                    let nguoiNhanDisplay = '';
+                    if (item.tenNguoiNhan) {
+                        nguoiNhanDisplay = `<strong style="color: #667eea;">${item.tenNguoiNhan}</strong>`;
+                        if (item.maNguoiNhan && item.maNguoiNhan !== item.tenNguoiNhan) {
+                            nguoiNhanDisplay += `<br/><small style="color: #6b7280;">(${item.maNguoiNhan})</small>`;
+                        }
+                    } else if (item.maNguoiNhan) {
+                        nguoiNhanDisplay = `<strong style="color: #667eea;">${item.maNguoiNhan}</strong>`;
+                    } else {
+                        nguoiNhanDisplay = '<span style="color: #9ca3af;">Chưa xác định</span>';
+                    }
+
                     let row = `<tr>
                         <td>${item.tenSanpham || 'Không xác định'}</td>
                         <td>${item.maSanpham || 'Không xác định'}</td>
                         <td>${item.daMakho || 'Không xác định'}</td>
                         <td>${item.hangSX || 'Không xác định'}</td>
                         <td>${item.nhaCC || 'Không xác định'}</td>
-                        <td>${item.sl || 0}</td>
+                        <td style="text-align: center; font-weight: bold; color: #667eea;">${item.sl || 0}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
+                        <td>${nguoiNhanDisplay}</td>
                         <td>${formatDate(item.ngayNhapkho)}</td>
                         <td>${formatDate(item.ngayBaohanh)}</td>
                         <td>${formatDate(item.thoiGianBH)}</td>
@@ -65,7 +79,7 @@ function showVTDuan(MaDuan) {
                 // Hiển thị thông báo nếu không có dữ liệu
                 $('.tablethietbi tbody').append(
                     `<tr>
-                        <td colspan="11" style="text-align:center;">Không có dữ liệu vật tư đã được xuất kho cho dự án này.</td>
+                        <td colspan="12" style="text-align:center;">Không có dữ liệu vật tư đã được xuất kho cho dự án này.</td>
                     </tr>`
                 );
             }

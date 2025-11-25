@@ -11,121 +11,66 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>So sánh file Excel</title>
-    <style>
-        .header-section {
-            background: #e7f3ff;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-        .header-section h2 {
-            margin-top: 0;
-        }
-        .file-list {
-            list-style: none;
-            padding: 0;
-        }
-        .file-list li {
-            padding: 8px;
-            background: white;
-            margin: 5px 0;
-            border-radius: 4px;
-            border-left: 4px solid #007bff;
-        }
-        .table-container {
-            overflow-x: auto;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .table th, .table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        .table th {
-            background: linear-gradient(90deg, #1d4ed8, #2563eb);
-            color: #fff;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .table tr:hover {
-            background-color: #f5f5f5;
-        }
-        .table .file-column {
-            min-width: 200px;
-            background-color: #eef2ff;
-            color: #0f172a;
-            font-weight: 600;
-        }
-        .table .vat-tu-column {
-            background-color: #fff;
-        }
-        .btn-back {
-            padding: 10px 20px;
-            background: #6c757d;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-        .btn-back:hover {
-            background: #5a6268;
-        }
-        .highlight {
-            background-color: #fff3cd !important;
-        }
-        .summary-box {
-            background: #d1ecf1;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .diff-highlight {
-            background-color: #ffe6e6 !important;
-            font-weight: bold;
-        }
-        .same-value {
-            background-color: #e6f7e6;
-        }
-        .zero-value {
-            color: #999;
-        }
-    </style>
+
+    <!-- CSS tách riêng -->
+    <link rel="stylesheet" href="~/css/so-sanh-excel.css" />
 </head>
 <body>
     <div class="bodyyeucau">
-        <a href="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })" class="btn-back">← Quay lại danh sách</a>
+        <a href="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })" class="btn-back">
+            ← Quay lại danh sách
+        </a>
 
         <div class="header-section">
             <h2>So sánh file Excel</h2>
-            <p><strong>Số file được so sánh:</strong> @(excelFiles?.Count ?? 0)</p>
+            
+            <div class="header-content">
+                <div class="header-stat">
+                    <strong>Số file được so sánh:</strong>
+                    <span>@(excelFiles?.Count ?? 0)</span>
+                </div>
+            </div>
+
             <ul class="file-list">
                 @foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
                 {
                     <li>
-                        <strong>@file.TenFile</strong> - 
-                        Mã YC: @file.MaYeucau - 
-                        Ngày: @(file.NgayUpload?.ToString("dd/MM/yyyy HH:mm") ?? "")
+                        <strong>@file.TenFile</strong>
+                        <div>Mã YC: <strong>@file.MaYeucau</strong> • @(file.NgayUpload?.ToString("dd/MM/yyyy HH:mm") ?? "")</div>
                     </li>
                 }
             </ul>
-            <p style="margin-bottom:0;"><small>* Cột “Đã cấp phát” lấy số liệu từ file lên kế hoạch sớm nhất, “Tồn đọng” lấy số liệu từ file mới nhất. “Dư” = Đã cấp phát - Tồn đọng.</small></p>
+
+            <div class="header-note">
+                <small>
+                    ℹ️ <strong>Ghi chú:</strong> Cột "Đã cấp phát" lấy số liệu từ file lên kế hoạch sớm nhất • 
+                    "Tồn đọng" lấy số liệu từ file mới nhất • "Dư" = Đã cấp phát - Tồn đọng
+                </small>
+            </div>
         </div>
 
         @if (vatTuComparison != null && vatTuComparison.Any())
         {
             <div class="summary-box">
-                <h3>Tóm tắt</h3>
-                <p><strong>Tổng số loại vật tư:</strong> @vatTuComparison.Count</p>
-                <p><strong>Tổng số lượng vật tư:</strong> @vatTuComparison.Sum(v => v.TongSL)</p>
-                <p><strong>Tổng tồn đọng:</strong> @ViewBag.TotalTonDong</p>
-                <p><strong>Tổng dư:</strong> @ViewBag.TotalDu</p>
+                <h3>📊 Tóm tắt</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <strong>Tổng loại vật tư</strong>
+                        <p>@vatTuComparison.Count</p>
+                    </div>
+                    <div class="summary-item">
+                        <strong>Tổng số lượng</strong>
+                        <p>@vatTuComparison.Sum(v => v.TongSL)</p>
+                    </div>
+                    <div class="summary-item">
+                        <strong>Tồn đọng</strong>
+                        <p>@ViewBag.TotalTonDong</p>
+                    </div>
+                    <div class="summary-item">
+                        <strong>Tổng dư</strong>
+                        <p>@ViewBag.TotalDu</p>
+                    </div>
+                </div>
             </div>
 
             <div class="table-container">
@@ -138,7 +83,10 @@
                             <th class="vat-tu-column">ĐV</th>
                             @foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
                             {
-                                <th class="file-column">@file.TenFile<br/><small>@(file.NgayUpload?.ToString("dd/MM/yyyy") ?? "")</small></th>
+                                <th class="file-column">
+                                    @file.TenFile<br />
+                                    <small>@(file.NgayUpload?.ToString("dd/MM/yyyy") ?? "")</small>
+                                </th>
                             }
                             <th class="vat-tu-column">Tổng SL</th>
                             <th class="vat-tu-column">Đã cấp phát</th>
@@ -147,50 +95,44 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (vatTuComparison != null && vatTuComparison.Any())
+                        @foreach (var vatTu in vatTuComparison)
                         {
-                            @foreach (var vatTu in vatTuComparison)
-                            {
-                                <tr>
-                                    <td>@(vatTu.MaSanpham ?? "-")</td>
-                                    <td>@(vatTu.TenSanpham ?? "-")</td>
-                                    <td>@(vatTu.HangSX ?? "-")</td>
-                                    <td>@(vatTu.DonVi ?? "-")</td>
-                                    @{
-                                        var quantities = new List<int>();
-                                        foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
-                                        {
-                                            var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.FileID == file.ID);
-                                            var sl = chiTiet != null ? chiTiet.SL : 0;
-                                            quantities.Add(sl);
-                                        }
-                                        // Check if there are differences
-                                        var hasDifference = quantities.Distinct().Count() > 1;
-                                        
-                                        foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
-                                        {
-                                            var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.FileID == file.ID);
-                                            var sl = chiTiet != null ? chiTiet.SL : 0;
-                                            var cellClass = "";
-                                            if (sl == 0)
-                                            {
-                                                cellClass = "zero-value";
-                                            }
-                                            else if (hasDifference)
-                                            {
-                                                cellClass = "diff-highlight";
-                                            }
-                                            <td class="@cellClass" style="text-align: center;">@sl</td>
-                                        }
+                            <tr>
+                                <td class="vat-tu-column">@(vatTu.MaSanpham ?? "-")</td>
+                                <td class="vat-tu-column">@(vatTu.TenSanpham ?? "-")</td>
+                                <td class="vat-tu-column">@(vatTu.HangSX ?? "-")</td>
+                                <td class="vat-tu-column">@(vatTu.DonVi ?? "-")</td>
+
+                                @{
+                                    var quantities = new List<int>();
+                                    foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                                    {
+                                        var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.FileID == file.ID);
+                                        var sl = chiTiet != null ? chiTiet.SL : 0;
+                                        quantities.Add(sl);
                                     }
-                                <td style="text-align: center; font-weight: bold;">@vatTu.TongSL</td>
+                                    var hasDifference = quantities.Distinct().Count() > 1;
+
+                                    foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                                    {
+                                        var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.FileID == file.ID);
+                                        var sl = chiTiet != null ? chiTiet.SL : 0;
+
+                                        var cellClass = "";
+                                        if (sl == 0) cellClass = "zero-value";
+                                        else if (hasDifference) cellClass = "diff-highlight";
+
+                                        <td class="@cellClass" style="text-align: center;">@sl</td>
+                                    }
+                                }
+
+                                <td style="text-align: center; font-weight: bold; color: #60a5fa;">@vatTu.TongSL</td>
                                 <td style="text-align: center;">@vatTu.CapPhat</td>
                                 <td style="text-align: center;">@vatTu.TonDong</td>
-                                <td style="text-align: center; font-weight: 600; color: @(vatTu.Du > 0 ? "#dc2626" : "#15803d");">
+                                <td style="text-align: center;" class="@(vatTu.Du > 0 ? "surplus-positive" : "surplus-zero")">
                                     @vatTu.Du
                                 </td>
-                                </tr>
-                            }
+                            </tr>
                         }
                     </tbody>
                 </table>
@@ -198,11 +140,10 @@
         }
         else
         {
-            <div style="text-align: center; padding: 40px; background: #f5f5f5; border-radius: 8px;">
-                <p>Không có dữ liệu để so sánh.</p>
+            <div class="empty-state">
+                <p>✨ Không có dữ liệu để so sánh.</p>
             </div>
         }
     </div>
 </body>
 </html>
-
