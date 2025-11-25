@@ -1,6 +1,6 @@
 @model List<object>
 @{
-    ViewData["Title"] = "Danh sách User";
+    ViewData["Title"] = "Danh sách tài khoản người dùng";
     Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
 }
 <!DOCTYPE html>
@@ -14,14 +14,14 @@
     <link href="~/CSS/Table.css" rel="stylesheet" />
     <link href="~/CSS/Tongkho.css" rel="stylesheet" /> 
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <title>Quản Lý User</title>
+    <title>Quản lý tài khoản người dùng</title>
 </head>
 <body>
     <div class="warehouse-container">
         <div class="warehouse-header">
             <div class="header-content">
                 <h1 class="header-title">
-                    <i class='bx bxs-user'></i> Quản Lý User
+                    <i class='bx bxs-user'></i> Quản lý tài khoản người dùng
                 </h1>
                 <p class="header-subtitle">Quản lý tài khoản người dùng</p>
             </div>
@@ -30,7 +30,7 @@
         <div class="warehouse-nav">
             <div class="nav-tabs">
                 <a href="/Admin/User/DanhSachUser" class="nav-tab active">
-                    <i class='bx bx-list-ul'></i> Danh sách User
+                    <i class='bx bx-list-ul'></i> Danh sách tài khoản
                 </a>
                 <a href="/Admin/User/TaoTaiKhoan" class="nav-tab">
                     <i class='bx bx-user-plus'></i> Tạo tài khoản
@@ -39,7 +39,7 @@
             <div class="nav-search">
                 <form method="get" action="/Admin/User/DanhSachUser" style="display:flex; align-items:center; gap:8px;">
                     <i class='bx bx-search'></i>
-                    <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm user..." />
+                    <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm tài khoản người dùng..." />
                     <button type="submit" class="btn btn-primary">Tìm</button>
                 </form>
             </div>
@@ -160,7 +160,7 @@
         });
 
         function xoaUser(userId) {
-            if (confirm('Bạn có chắc chắn muốn xóa user này?')) {
+            if (confirm('Bạn có chắc chắn muốn xóa tài khoản người dùng này?')) {
                 fetch('/Admin/User/XoaUser', {
                     method: 'POST',
                     headers: {

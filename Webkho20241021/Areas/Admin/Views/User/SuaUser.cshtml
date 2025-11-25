@@ -55,12 +55,27 @@
 
                     <div class="form-group">
                         <label>Chức vụ <span class="required">*</span></label>
-                        <input type="text" name="Chucvu" value="@Model.Chucvu" required class="form-control" />
+                        <select name="Chucvu" required class="form-select">
+                            <option value="" disabled @(string.IsNullOrEmpty(Model.Chucvu) ? "selected" : null)>Chọn chức vụ</option>
+                            <option value="Giám đốc" @(Model.Chucvu == "Giám đốc" ? "selected" : null)>Giám đốc</option>
+                            <option value="Nhân viên" @(Model.Chucvu == "Nhân viên" ? "selected" : null)>Nhân viên</option>
+                            <option value="Trưởng BP" @(Model.Chucvu == "Trưởng BP" ? "selected" : null)>Trưởng bộ phận</option>
+                            <option value="Quản lí dự án" @(Model.Chucvu == "Quản lí dự án" ? "selected" : null)>Quản lí dự án</option>
+                            <option value="Admin" @(Model.Chucvu == "Admin" ? "selected" : null)>Admin</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
                         <label>Bộ phận <span class="required">*</span></label>
-                        <input type="text" name="Bophan" value="@Model.Bophan" required class="form-control" />
+                        <select name="Bophan" required class="form-select">
+                            <option value="" disabled @(string.IsNullOrEmpty(Model.Bophan) ? "selected" : null)>Chọn bộ phận</option>
+                            <option value="BP kỹ thuật" @(Model.Bophan == "BP kỹ thuật" ? "selected" : null)>BP kỹ thuật</option>
+                            <option value="BP kho" @(Model.Bophan == "BP kho" ? "selected" : null)>BP kho</option>
+                            <option value="BP mua hàng" @(Model.Bophan == "BP mua hàng" ? "selected" : null)>BP mua hàng</option>
+                            <option value="BP kế toán" @(Model.Bophan == "BP kế toán" ? "selected" : null)>BP kế toán</option>
+                            <option value="BP dự án" @(Model.Bophan == "BP dự án" ? "selected" : null)>BP dự án</option>
+                            <option value="Admin" @(Model.Bophan == "Admin" ? "selected" : null)>Admin</option>
+                        </select>
                     </div>
                 </div>
 
