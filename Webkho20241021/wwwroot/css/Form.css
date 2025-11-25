@@ -1,180 +1,239 @@
-﻿body {
-    font-family: Arial, sans-serif;
+﻿/* --- PAGE WRAPPER --- */
+.excel-detail-page {
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
 }
 
-.bodyyeucau {
-    margin: 10px 5px;
-    background: white;
-    border-radius: 10px;
-    padding: 5px;
+/* Reset tránh ảnh hưởng global */
+.excel-detail-page * {
     box-sizing: border-box;
-}
-
-.bodyyeucau-thietbi {
-    margin: 10px 5px;
-    background: white;
-    border-radius: 10px;
-    padding: 5px;
-    box-sizing: border-box;
-}
-
-.formtableyeucau {
-    margin: 10px 5px;
-    background: white;
-    border-radius: 5px;
-    padding: 10px;
-    box-sizing: border-box;
-    overflow: auto;
-    max-width: 100%;
-}
-
-.formyeucau {
-    margin: 10px 5px;
-    background: white;
-    border-radius: 5px;
-    padding: 10px;
-    box-sizing: border-box;
-}
-
-.tieude {
-    background-color: #660099;
-    margin-bottom: 10px;
-}
-
-.tieude p {
-    font-size: 0.8em;
-    color:white;
-    padding: 3px 5px;
-}
-
-.field label {
-    background-color: #DDDDDD;
-    font-size: 13px;
-    font-weight: bold;
-    justify-content: center;
-    text-align: center;
-    align-items: center;
-    width: 40%;
-}
-
-.field input {
-    font-size: 15px;
-    text-align: center;
-    border: none;
-    width: 60%;
-}
-
-.field select {
-    font-size: 15px;
-    text-align: center;
-    border: none;
-    width: 60%;
-}
-
-.field {
-    display: flex;
-    border: 1px solid #003399;
-    margin:0;
-    height: 25px;
-    width: 32%;
-}
-
-.field-hidden {
-    visibility: hidden;
-    display: flex;
-    border: 1px solid #003399;
-    border-radius: 5px;
     margin: 0;
-    height: 20px;
-    width: 32%;
+    padding: 0;
 }
 
-.row {
-    display:flex;
-    padding-top: 5px;
+/* --- MAIN CONTAINER --- */
+.excel-detail-page .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* --- HEADER --- */
+.excel-detail-page .header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px 30px;
+    display: flex;
     justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
 }
 
-.themyeucau-form-table {
-    width: 100%;
-    max-height: 75vh;
-    overflow-y: auto;
-    border: 1px solid black;
-    box-sizing: border-box;
-    margin: 0;
+.excel-detail-page .header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
 }
 
-.form-table {
+.excel-detail-page .header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* --- BUTTONS --- */
+.excel-detail-page .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.excel-detail-page .btn-back {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.excel-detail-page .btn-back:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.excel-detail-page .btn-download {
+    background: #10b981;
+    color: white;
+}
+
+.excel-detail-page .btn-download:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+}
+
+/* --- CONTENT --- */
+.excel-detail-page .content {
+    padding: 40px 30px;
+}
+
+.excel-detail-page .section {
+    margin-bottom: 40px;
+}
+
+.excel-detail-page .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #667eea;
+    display: inline-block;
+}
+
+/* --- CARDS --- */
+.excel-detail-page .section-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+/* --- GRID INFO --- */
+.excel-detail-page .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.excel-detail-page .info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.excel-detail-page .info-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.excel-detail-page .info-value {
+    font-size: 15px;
+    color: #1f2937;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+/* --- TABLE --- */
+.excel-detail-page .table-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.excel-detail-page .table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8em;
-    font-family: sans-serif;
+    font-size: 14px;
 }
 
-.form-table thead tr {
-  background-color: #d8cff3;
-  color: black;
-  text-align: left;
-  font-weight: bold;
-  position: sticky;
-  top: 0;
+.excel-detail-page .table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.form-table th,
-.form-table td {
-  padding: 5px 12px;
+.excel-detail-page .table th {
+    color: white;
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-.form-table input {
-    width: 100%;
-    border:none;
-    font-size: 15px;
-    padding: 3px 0;
+.excel-detail-page .table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #374151;
 }
 
-.form-table tbody tr {
-  border-bottom: 1px solid #ddd;
-  background-color: #f4f4f4;
+.excel-detail-page .table tbody tr:hover {
+    background-color: #f3f4f6;
 }
 
-.form-table tbody tr:nth-of-type(even) {
-  background-color: #EEEEEE		;
+.excel-detail-page .table tbody tr:nth-child(even) {
+    background-color: #fafbfc;
 }
 
-.form-table tbody tr:last-of-type {
-  border-bottom: 2px solid #EEEEEE		;
+/* --- EMPTY STATE --- */
+.excel-detail-page .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
 }
 
-.form-table tbody tr.active-row {
-  font-weight: bold;
-  color: var(--body-color);
+.excel-detail-page .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
 }
 
-.table tbody tr.highlight {
-    background-color: #90EE90 !important; /* xanh lá khi chọn hàng */
-    color: #0f172a;
+/* --- BADGE --- */
+.excel-detail-page .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
 }
 
-#suggestions {
-    list-style-type: none;
-    margin: 0;
-    padding: 5px;
-    border: 1px solid #ddd;
-    background-color: white;
-    position: absolute;
-    z-index: 1000; /* Đảm bảo nó ở trên các phần tử khác */
+.excel-detail-page .items-count {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 500;
 }
 
-#suggestions li {
-    padding: 5px;
-    cursor: pointer;
-}
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    .excel-detail-page .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 30px 20px;
+    }
 
-#suggestions li:hover {
-    background-color: #f0f0f0;
-}
+    .excel-detail-page .header h1 {
+        font-size: 24px;
+    }
 
-.search-row:hover {
-    background-color: #90EE90 !important; /* Màu xanh lá nhạt */
-    cursor: pointer !important;
+    .excel-detail-page .content {
+        padding: 20px;
+    }
+
+    .excel-detail-page .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .excel-detail-page .table {
+        font-size: 12px;
+    }
+
+    .excel-detail-page .table th,
+    .excel-detail-page .table td {
+        padding: 10px;
+    }
 }
