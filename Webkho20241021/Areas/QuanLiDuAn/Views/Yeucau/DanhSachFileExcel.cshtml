@@ -1,7 +1,22 @@
+@using System.IO
+@using System.Linq
 @model List<Webkho_20241021.Models.ExcelFile>
 @{
     ViewData["Title"] = "Danh sách file Excel";
     Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
+    var invalidFileChars = System.IO.Path.GetInvalidFileNameChars();
+    Func<string, string> sanitizeFileName = value =>
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return new string(value
+            .Select(ch => invalidFileChars.Contains(ch) ? '_' : ch)
+            .ToArray());
+    };
+    var currentDownloader = sanitizeFileName(User?.Identity?.Name ?? "nguoi_dung");
 }
 
 <!DOCTYPE html>
@@ -14,7 +29,18 @@
 </head>
 <body>
     <div class="bodyyeucau">
-        <h2>Danh sách file Excel đã upload</h2>
+        <h2>Danh sách file Excel đã tải lên</h2>
+
+        <div class="alert-note">
+            ⚠️ Cân nhắc trước khi xóa file Excel.
+        </div>
+
+        @if (TempData["Success"] != null || TempData["Error"] != null)
+        {
+            <div class="alert @((TempData["Error"] != null) ? "alert-error" : "alert-success")" id="alertMessage">
+                @(TempData["Error"] ?? TempData["Success"])
+            </div>
+        }
 
         @{
             var selectedMaDuan = ViewBag.MaDuan as string;
@@ -60,7 +86,9 @@
                 </thead>
                 <tbody>
                     @{
-                        int stt = 1;
+                        int currentPage = ViewBag.Page ?? 1;
+                        int pageSize = 10;
+                        int stt = (currentPage - 1) * pageSize + 1;
                         var yeucauList = ViewBag.YeucauList as List<Webkho_20241021.Models.yeucau>;
                         var duanList = ViewBag.DuanList as List<Webkho_20241021.Models.duans>;
                     }
@@ -80,11 +108,51 @@
                             <td>@(file.NgayUpload?.ToString("dd/MM/yyyy HH:mm") ?? "")</td>
                             <td>@((file.KichThuocFile ?? 0) / 1024) KB</td>
                             <td>
-                                <a href="@Url.Action("XemFileExcel", "Yeucau", new { area = "QuanLiDuAn", id = file.ID })" class="btn-view">Xem</a>
-                                @if (!string.IsNullOrEmpty(file.DuongDanFile))
-                                {
-                                    <a href="@file.DuongDanFile" target="_blank" class="btn-download">Tải về</a>
-                                }
+                                <div class="action-buttons">
+                                    <a href="@Url.Action("XemFileExcel", "Yeucau", new { area = "QuanLiDuAn", id = file.ID })" class="btn-view">Xem</a>
+                                    @if (!string.IsNullOrEmpty(file.DuongDanFile))
+                                    {
+                                        var originalNameRaw = string.IsNullOrWhiteSpace(file.TenFile)
+                                            ? $"File_{file.ID}"
+                                            : System.IO.Path.GetFileNameWithoutExtension(file.TenFile);
+                                        var originalName = sanitizeFileName(originalNameRaw);
+                                        if (string.IsNullOrEmpty(originalName))
+                                        {
+                                            originalName = $"File_{file.ID}";
+                                        }
+                                        var originalExt = System.IO.Path.GetExtension(file.TenFile);
+                                        if (string.IsNullOrWhiteSpace(originalExt))
+                                        {
+                                            originalExt = ".xlsx";
+                                        }
+                                        var uploaderName = sanitizeFileName(file.NguoiUpload ?? "nguoi_upload");
+                                        if (string.IsNullOrEmpty(uploaderName))
+                                        {
+                                            uploaderName = "nguoi_upload";
+                                        }
+                                        var downloadName = $"{originalName}_{uploaderName}{originalExt}";
+
+                                        <a href="@file.DuongDanFile"
+                                           target="_blank"
+                                           download="@downloadName"
+                                           class="btn-download">
+                                            Tải về
+                                        </a>
+                                    }
+                                    <form id="deleteForm-@file.ID"
+                                          method="post"
+                                          action="@Url.Action("XoaFileExcel", "Yeucau", new { area = "QuanLiDuAn" })"
+                                          class="inline-delete-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@file.ID" />
+                                        <button type="button"
+                                                class="btn-delete"
+                                                data-form="deleteForm-@file.ID"
+                                                data-file="@file.TenFile">
+                                            Xóa
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         stt++;
@@ -173,6 +241,38 @@
             const idsParam = selectedIds.join(',');
             window.location.href = '@Url.Action("SoSanhNhieuFile", "Yeucau", new { area = "QuanLiDuAn" })?ids=' + idsParam;
         }
+
+        document.addEventListener('click', function (event) {
+            if (!event.target.classList.contains('btn-delete')) {
+                return;
+            }
+
+            const button = event.target;
+            const formId = button.getAttribute('data-form');
+            const fileName = button.getAttribute('data-file') || 'file Excel';
+            const message = `Cân nhắc trước khi xóa file "${fileName}". Bạn có chắc muốn xóa?`;
+
+            if (confirm(message)) {
+                const form = document.getElementById(formId);
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+
+        // Tự động ẩn thông báo sau 5 giây
+        document.addEventListener('DOMContentLoaded', function() {
+            const alertMessage = document.getElementById('alertMessage');
+            if (alertMessage) {
+                setTimeout(function() {
+                    alertMessage.style.transition = 'opacity 0.5s ease';
+                    alertMessage.style.opacity = '0';
+                    setTimeout(function() {
+                        alertMessage.style.display = 'none';
+                    }, 500);
+                }, 5000); // 5 giây
+            }
+        });
     </script>
 </body>
 </html>

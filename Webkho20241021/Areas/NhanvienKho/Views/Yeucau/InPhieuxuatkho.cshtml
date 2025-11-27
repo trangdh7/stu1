@@ -19,55 +19,63 @@
 </head>
 <body>
     <div class="print-container">
+        <!-- Header Section -->
         <div class="header">
-            <div class="company-name">CÔNG TY CỔ PHẦN DỊCH VỤ TỰ ĐỘNG HOÁ STU</div>
-            <div class="company-address">SỐ 46, HEM 34/232/18 VĨNH TUY, P.VĨNH TUY, Q.HAI BÀ TRƯNG, TP HÀ NỘI</div>
             <div class="header-top">
-                <div class="header-left"></div>
+                <div class="header-left">
+                    <div class="company-name">CÔNG TY CỔ PHẦN DỊCH VỤ TỰ ĐỘNG HOÁ STU</div>
+                    <div class="company-address">SỐ 46, HEM 34/232/18 VĨNH TUY, P.VĨNH TUY, Q.HAI BÀ TRƯNG, TP HÀ NỘI</div>
+                </div>
                 <div class="header-right">
                     <div class="tax-code">Mã số thuế: 0106421618</div>
                     <div class="form-info">Mẫu số: 02 - VT</div>
-                    <div class="form-info">(Ban hành theo Thông tư số 133/2016/TT-BTC ngày 26/8/2016 của Bộ Tài chính)</div>
-                    <div class="form-number">Số: @(phieuxuatkho?.MaXuatkho ?? "__")</div>
+                    <div class="form-info">(Ban hành theo Thông tư số 133/2016/TT-BTC</div>
+                    <div class="form-info">ngày 26/8/2016 của Bộ Tài chính)</div>
                 </div>
             </div>
         </div>
 
+        <!-- Document Title -->
         <div class="document-title">
             PHIẾU XUẤT KHO
         </div>
 
+        <!-- Document Info -->
         <div class="document-info">
             <div class="document-info-left">
                 <div class="info-row">
-                    <span class="info-label">Ngày:</span>
-                    <span>@(phieuxuatkho?.NgayXuatkho?.ToString("dd") ?? "__") THÁNG @(phieuxuatkho?.NgayXuatkho?.ToString("MM") ?? "__") NĂM @(phieuxuatkho?.NgayXuatkho?.ToString("yyyy") ?? "____")</span>
+                    <span>Ngày @(phieuxuatkho?.NgayXuatkho?.ToString("dd") ?? "__") tháng @(phieuxuatkho?.NgayXuatkho?.ToString("MM") ?? "__") năm @(phieuxuatkho?.NgayXuatkho?.ToString("yyyy") ?? "____")</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Mã dự án:</span>
-                    <span>@(phieuxuatkho?.MaDuan ?? yeucau?.YCMaDuan ?? "")</span>
+                    <span>Số: @(phieuxuatkho?.MaXuatkho ?? "")</span>
                 </div>
             </div>
             <div class="document-info-right">
                 <div class="info-row">
-                    <span class="info-label">Mã yêu cầu:</span>
-                    <span>@(phieuxuatkho?.MaYeucau ?? "")</span>
+                    <span>Nợ: .............</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Người yêu cầu:</span>
-                    <span>@(yeucau?.NguoiYeucau ?? phieuxuatkho?.MaNguoidung ?? "")</span>
+                    <span>Có: .............</span>
                 </div>
             </div>
         </div>
 
+        <!-- Supplier/Delivery Info -->
         <div class="supplier-info">
             <div class="supplier-row">
-                <span class="supplier-label">- Xuất tại kho:</span>
-                <span>KHO STU</span>
+                <span class="supplier-label">- Họ và tên người nhận hàng: ...........................................................................</span>
             </div>
             <div class="supplier-row">
-                <span class="supplier-label">- Người nhận hàng:</span>
-                <span>@(yeucau?.NguoiYeucau ?? "")</span>
+                <span class="supplier-label">- Mã yêu cầu: @(yeucau?.MaYeucau ?? "..................")</span>
+            </div>
+            <div class="supplier-row">
+                <span class="supplier-label">- Người yêu cầu xuất hàng: @(yeucau?.NguoiYeucau ?? "........................................")</span>
+            </div>
+            <div class="supplier-row">
+                <span class="supplier-label">- Theo ........................ số ................... ngày ....... tháng ....... năm ............. của .......................................................................</span>
+            </div>
+            <div class="supplier-row">
+                <span class="supplier-label">- Xuất tại kho: KHO1, địa điểm ...............................................................................................................................................................................</span>
             </div>
         </div>
 
@@ -88,8 +96,8 @@
                         <th></th>
                         <th></th>
                         <th></th>
-                        <th class="col-soluong-sub">YÊU CẦU</th>
-                        <th class="col-soluong-sub">THỰC XUẤT</th>
+                        <th class="col-soluong-sub col-theoctu">YÊU CẦU</th>
+                        <th class="col-soluong-sub col-thucnhap">THỰC XUẤT</th>
                         <th></th>
                         <th></th>
                     </tr>
@@ -116,8 +124,8 @@
                                 <td>@(item.TenSanpham ?? "")</td>
                                 <td class="text-center">@(item.MaSanpham ?? "")</td>
                                 <td class="text-center">@(item.DonVi ?? "")</td>
-                                <td class="text-center">@((item.SL ?? 0).ToString("N0"))</td>
-                                <td class="text-center">@((item.SL ?? 0).ToString("N0"))</td>
+                                <td class="text-center col-theoctu">@((item.SL ?? 0).ToString("N0"))</td>
+                                <td class="text-center col-thucnhap">@((item.SL ?? 0).ToString("N0"))</td>
                                 <td class="text-right">@((donGia).ToString("N0"))</td>
                                 <td class="text-right">@((thanhTien).ToString("N0"))</td>
                             </tr>
@@ -163,23 +171,33 @@
             }
         </div>
 
+        <!-- Signature Section -->
+        <div class="signature-date">Ngày ..... tháng ..... năm ...........</div>
         <div class="signature-section">
             <div class="signature-box">
-                <div class="signature-date">Ngày ..... tháng ..... năm ..... </div>
-                <div class="signature-title">NGƯỜI LẬP PHIẾU</div>
-                <div class="signature-subtitle">(Ký, họ tên)</div>
+                <div class="signature-line">
+                    <div class="signature-title">NGƯỜI LẬP PHIẾU</div>
+                    <div class="signature-subtitle">(Ký, họ tên)</div>
+                </div>
             </div>
             <div class="signature-box">
-                <div class="signature-title">NGƯỜI NHẬN HÀNG</div>
-                <div class="signature-subtitle">(Ký, họ tên)</div>
+                <div class="signature-line">
+                    <div class="signature-title">NGƯỜI NHẬN HÀNG</div>
+                    <div class="signature-subtitle">(Ký, họ tên)</div>
+                </div>
             </div>
             <div class="signature-box">
-                <div class="signature-title">THỦ KHO</div>
-                <div class="signature-subtitle">(Ký, họ tên)</div>
+                <div class="signature-line">
+                    <div class="signature-title">THỦ KHO</div>
+                    <div class="signature-subtitle">(Ký, họ tên)</div>
+                </div>
             </div>
             <div class="signature-box">
-                <div class="signature-title">KẾ TOÁN</div>
-                <div class="signature-subtitle">(Ký, họ tên)</div>
+                <div class="signature-line">
+                    <div class="signature-title">KẾ TOÁN</div>
+                    <div class="signature-subtitle">(Hoặc bộ phận có nhu cầu nhập)</div>
+                    <div class="signature-subtitle">(Ký, họ tên)</div>
+                </div>
             </div>
         </div>
     </div>

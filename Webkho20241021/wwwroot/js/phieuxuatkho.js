@@ -19,6 +19,7 @@ function applyXuatKhoRowHighlight($row) {
         color: ''
     });
     $rows.find('a').css('color', '');
+    $rows.find('i').css('color', '');
 
     if ($row && $row.length) {
         $row.addClass('highlight');
@@ -27,6 +28,7 @@ function applyXuatKhoRowHighlight($row) {
             color: ROW_HIGHLIGHT_TEXT_COLOR
         });
         $row.find('a').css('color', ROW_HIGHLIGHT_TEXT_COLOR);
+        $row.find('i').css('color', ROW_HIGHLIGHT_TEXT_COLOR);
     }
 }
 
@@ -96,7 +98,7 @@ function loadVTData(Maxuatkho, url, area) {
                         <td>${item.nhaCC || 'Không xác định'}</td>
                         <td>${item.sl}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
-                        <td><span style="background-color:${bgColor}; color:white; padding:2px 6px; border-radius:3px; font-size:11px;">${item.trangThai || '-'}</span></td>
+                        <td><span style="background-color:${bgColor}; color:black; padding:2px 6px; border-radius:3px; font-size:11px;">${item.trangThai || '-'}</span></td>
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
                 });

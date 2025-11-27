@@ -40,7 +40,7 @@
                             <td><input type="text" name="MaSanpham[]" placeholder="Mã vật tư" /></td>
                             <td><input type="text" name="HangSX[]" placeholder="Hãng SX" /></td>
                             <td><input type="text" name="NhaCC[]" placeholder="Nhà cung cấp" /></td>
-                            <td><input type="number" name="SL[]" placeholder="Số lượng" /></td>
+                            <td><input type="number" name="SL[]" placeholder="Số lượng" min="0" step="1" oninput="this.value = Math.max(0, parseInt(this.value) || 0)" /></td>
                             <td><input type="text" name="DonVi[]" placeholder="Đơn vị" /></td>
                             <td><input type="date" name="NgayBaohanh[]" placeholder="Ngày bảo hành" /></td>
                             <td><input type="date" name="ThoiGianBH[]" placeholder="Thời gian BH" /></td>

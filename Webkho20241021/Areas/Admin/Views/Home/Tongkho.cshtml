@@ -203,18 +203,23 @@
                     },
                     body: JSON.stringify({ makho: makho })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
                         location.reload();
                     } else {
-                        alert(data.message);
+                        alert('Lỗi: ' + (data.message || 'Không thể xóa vật tư'));
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Có lỗi xảy ra khi xóa vật tư');
+                    alert('Có lỗi xảy ra khi xóa vật tư. Vui lòng thử lại.');
                 });
             }
         }

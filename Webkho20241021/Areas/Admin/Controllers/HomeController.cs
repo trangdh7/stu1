@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System;
 using OfficeOpenXml;
 using Microsoft.AspNetCore.Http;
+using System.Text.Json;
 
 namespace Webkho_20241021.Areas.Admin.Controllers
 {
@@ -195,24 +196,36 @@ namespace Webkho_20241021.Areas.Admin.Controllers
         // Xóa vật tư
         [HttpPost]
         [Microsoft.AspNetCore.Mvc.IgnoreAntiforgeryToken]
-        public IActionResult XoaVatTu([FromBody] dynamic data)
+        public IActionResult XoaVatTu([FromBody] JsonElement data)
         {
-            string makho = data?.makho?.ToString();
-            if (string.IsNullOrEmpty(makho))
+            try
             {
-                return Json(new { success = false, message = "Thiếu mã kho" });
-            }
+                string makho = null;
+                if (data.ValueKind == JsonValueKind.Object && data.TryGetProperty("makho", out JsonElement makhoElement))
+                {
+                    makho = makhoElement.GetString();
+                }
 
-            var item = _context.khotongs.FirstOrDefault(k => k.Makho == makho);
-            if (item == null)
+                if (string.IsNullOrEmpty(makho))
+                {
+                    return Json(new { success = false, message = "Thiếu mã kho" });
+                }
+
+                var item = _context.khotongs.FirstOrDefault(k => k.Makho == makho);
+                if (item == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư" });
+                }
+
+                _context.khotongs.Remove(item);
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = "Xóa vật tư thành công" });
+            }
+            catch (Exception ex)
             {
-                return Json(new { success = false, message = "Không tìm thấy vật tư" });
+                return Json(new { success = false, message = $"Lỗi khi xóa vật tư: {ex.Message}" });
             }
-
-            _context.khotongs.Remove(item);
-            _context.SaveChanges();
-
-            return Json(new { success = true, message = "Xóa vật tư thành công" });
         }
 
         // Import Excel

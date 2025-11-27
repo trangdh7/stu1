@@ -187,6 +187,45 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             return View(excelFiles);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult XoaFileExcel(int id)
+        {
+            var excelFile = _context.ExcelFiles.FirstOrDefault(f => f.ID == id);
+            if (excelFile == null)
+            {
+                TempData["Error"] = "File Excel không tồn tại hoặc đã được xóa.";
+                return RedirectToAction(nameof(DanhSachFileExcel));
+            }
+
+            try
+            {
+                if (!string.IsNullOrEmpty(excelFile.DuongDanFile))
+                {
+                    var relativePath = excelFile.DuongDanFile
+                        .Replace("~", string.Empty)
+                        .TrimStart('/', '\\');
+                    var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath);
+
+                    if (System.IO.File.Exists(physicalPath))
+                    {
+                        System.IO.File.Delete(physicalPath);
+                    }
+                }
+
+                _context.ExcelFiles.Remove(excelFile);
+                _context.SaveChanges();
+
+                TempData["Success"] = $"Đã xóa file \"{excelFile.TenFile ?? excelFile.ID.ToString()}\".";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Không thể xóa file. Chi tiết: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(DanhSachFileExcel));
+        }
+
         public IActionResult XemFileExcel(int id)
         {
             var excelFile = _context.ExcelFiles.FirstOrDefault(f => f.ID == id);
@@ -221,8 +260,17 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             return View(excelFile);
         }
 
-        public IActionResult SoSanhVatTuTheoNgay(DateTime? ngay1, DateTime? ngay2, string? maDuan)
+        public IActionResult SoSanhVatTuTheoNgay(DateTime? ngay1, DateTime? ngay2, string? maDuan, string? searchMaVT, string? searchTenVT, DateTime? searchNgay, string? searchHangSX, int page = 1, int pageSize = 20)
         {
+            if (page < 1)
+            {
+                page = 1;
+            }
+            if (pageSize <= 0)
+            {
+                pageSize = 20;
+            }
+
             var endDate = (ngay2 ?? DateTime.Today).Date;
             var startDate = (ngay1 ?? endDate.AddDays(-7)).Date;
 
@@ -255,6 +303,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
             if (!excelFiles.Any())
             {
+                ViewBag.Page = 1;
+                ViewBag.TotalPages = 1;
                 return View(new List<dynamic>());
             }
 
@@ -297,12 +347,62 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     TongSL = g.Sum(x => x.vt.SL ?? 0),
                     SoLuongFile = g.Select(x => x.file.ID).Distinct().Count()
                 })
+                .ToList();
+
+            // Áp dụng tìm kiếm
+            var summaryQuery = summary.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchMaVT))
+            {
+                var keyword = searchMaVT.Trim().ToLower();
+                summaryQuery = summaryQuery.Where(s => s.MaSanpham != null && s.MaSanpham.ToLower().Contains(keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTenVT))
+            {
+                var keyword = searchTenVT.Trim().ToLower();
+                summaryQuery = summaryQuery.Where(s => s.TenSanpham != null && s.TenSanpham.ToLower().Contains(keyword));
+            }
+
+            if (searchNgay.HasValue)
+            {
+                var searchDate = searchNgay.Value.Date;
+                summaryQuery = summaryQuery.Where(s => s.NgayUpload.Date == searchDate);
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchHangSX))
+            {
+                var keyword = searchHangSX.Trim().ToLower();
+                summaryQuery = summaryQuery.Where(s => s.HangSX != null && s.HangSX.ToLower().Contains(keyword));
+            }
+
+            var summaryList = summaryQuery
                 .OrderBy(g => g.NgayUpload)
                 .ThenBy(g => g.MaSanpham)
                 .Cast<dynamic>()
                 .ToList();
 
-            return View(summary);
+            var totalItems = summaryList.Count;
+            var totalPages = totalItems == 0 ? 1 : (int)Math.Ceiling(totalItems / (double)pageSize);
+            if (page > totalPages)
+            {
+                page = totalPages;
+            }
+
+            var pagedSummary = summaryList
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalItems = totalItems;
+            ViewBag.SearchMaVT = searchMaVT;
+            ViewBag.SearchTenVT = searchTenVT;
+            ViewBag.SearchNgay = searchNgay?.ToString("yyyy-MM-dd");
+            ViewBag.SearchHangSX = searchHangSX;
+
+            return View(pagedSummary);
         }
 
         public IActionResult SoSanhNhieuFile(string ids)
@@ -390,26 +490,81 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 .ThenBy(v => v.TenSanpham)
                 .ToList();
 
+            // Lấy danh sách các mã yêu cầu từ các file excel
+            var maYeucauList = excelFiles
+                .Where(f => !string.IsNullOrEmpty(f.MaYeucau))
+                .Select(f => f.MaYeucau!)
+                .Distinct()
+                .ToList();
+
+            // Lấy tất cả các phiếu xuất kho liên quan đến các mã yêu cầu này
+            var phieuXuatKhoList = maYeucauList.Any()
+                ? _context.phieuxuatkho
+                    .Where(px => maYeucauList.Contains(px.MaYeucau))
+                    .AsNoTracking()
+                    .ToList()
+                : new List<phieuxuatkho>();
+
+            // Lấy danh sách các phiếu xuất kho đã được xác nhận nhận hàng hoặc hoàn thành
+            var phieuXuatKhoDaXacNhan = phieuXuatKhoList
+                .Where(px => px.TrangThai == "Đã xác nhận nhận hàng" || px.TrangThai == "Hoàn thành")
+                .Select(px => px.MaXuatkho)
+                .Where(mx => !string.IsNullOrEmpty(mx))
+                .ToList();
+
+            // Lấy tất cả vật tư đã xuất kho với trạng thái đã xác nhận
+            var vtXuatKhoList = phieuXuatKhoDaXacNhan.Any()
+                ? _context.vtphieuxuatkho
+                    .Where(vt => !string.IsNullOrEmpty(vt.MaXuatkho) && phieuXuatKhoDaXacNhan.Contains(vt.MaXuatkho))
+                    .AsNoTracking()
+                    .ToList()
+                : new List<vtphieuxuatkho>();
+
             int totalDu = 0;
             int totalTonDong = 0;
             foreach (var item in vatTuComparison)
             {
-                var capPhatDetail = item.ChiTiet.FirstOrDefault(c => c.FileID == firstFileId);
-                var tonDongDetail = excelFiles.Count > 1
-                    ? item.ChiTiet.FirstOrDefault(c => c.FileID == lastFileId)
-                    : null;
+                // Tính "Đã cấp phát" = tổng số lượng vật tư đã được xuất kho và xác nhận nhận hàng
+                // Đối chiếu theo MaSanpham và MaYeucau
+                var daCapPhat = 0;
+                
+                // Lấy các mã yêu cầu liên quan đến vật tư này
+                var maYeucauCuaVatTu = item.ChiTiet
+                    .Select(c => c.MaYeucau)
+                    .Where(my => !string.IsNullOrEmpty(my))
+                    .Distinct()
+                    .ToList();
 
-                var capPhat = capPhatDetail?.SL ?? (item.ChiTiet.Any() ? item.ChiTiet.Max(c => c.SL) : 0);
-                var tonDong = excelFiles.Count > 1 ? (tonDongDetail?.SL ?? 0) : 0;
-
-                if (tonDong > capPhat)
+                if (maYeucauCuaVatTu.Any() && !string.IsNullOrEmpty(item.MaSanpham))
                 {
-                    (capPhat, tonDong) = (tonDong, capPhat);
+                    // Lấy các phiếu xuất kho của các mã yêu cầu này đã được xác nhận nhận hàng
+                    var phieuXuatKhoCuaVatTu = phieuXuatKhoList
+                        .Where(px => maYeucauCuaVatTu.Contains(px.MaYeucau) 
+                            && (px.TrangThai == "Đã xác nhận nhận hàng" || px.TrangThai == "Hoàn thành"))
+                        .Select(px => px.MaXuatkho)
+                        .Where(mx => !string.IsNullOrEmpty(mx))
+                        .ToList();
+
+                    if (phieuXuatKhoCuaVatTu.Any())
+                    {
+                        // Tính tổng số lượng vật tư đã xuất kho với mã sản phẩm này
+                        // Chỉ tính các vật tư trong các phiếu đã được xác nhận nhận hàng
+                        daCapPhat = vtXuatKhoList
+                            .Where(vt => phieuXuatKhoCuaVatTu.Contains(vt.MaXuatkho) 
+                                && vt.MaSanpham == item.MaSanpham)
+                            .Sum(vt => vt.SL ?? 0);
+                    }
                 }
 
-                item.CapPhat = capPhat;
+                // Tính "Tồn đọng" = Tổng SL - Đã cấp phát
+                var tonDong = Math.Max(0, item.TongSL - daCapPhat);
+
+                // Tính "Dư" = Đã cấp phát - Tồn đọng (nếu đã cấp phát nhiều hơn tổng số lượng yêu cầu)
+                var du = Math.Max(0, daCapPhat - item.TongSL);
+
+                item.CapPhat = daCapPhat;
                 item.TonDong = tonDong;
-                item.Du = Math.Max(0, capPhat - tonDong);
+                item.Du = du;
 
                 totalTonDong += item.TonDong;
                 totalDu += item.Du;

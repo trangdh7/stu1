@@ -1,3 +1,5 @@
+@using System.IO
+@using System.Linq
 @model Webkho_20241021.Models.ExcelFile
 @{
     ViewData["Title"] = "Chi tiết file Excel";
@@ -5,6 +7,19 @@
     var yeucau = ViewBag.Yeucau as Webkho_20241021.Models.yeucau;
     var duan = ViewBag.Duan as Webkho_20241021.Models.duans;
     var vtyeucau = ViewBag.VTYeucau as List<Webkho_20241021.Models.vtyeucau> ?? new List<Webkho_20241021.Models.vtyeucau>();
+    
+    var invalidFileChars = System.IO.Path.GetInvalidFileNameChars();
+    Func<string, string> sanitizeFileName = value =>
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return new string(value
+            .Select(ch => invalidFileChars.Contains(ch) ? '_' : ch)
+            .ToArray());
+    };
 }
 
 <!DOCTYPE html>
@@ -21,7 +36,30 @@
 
         @if (!string.IsNullOrEmpty(Model.DuongDanFile))
         {
-            <a href="@Model.DuongDanFile" target="_blank" class="btn-download">📥 Tải file Excel</a>
+            var originalNameRaw = string.IsNullOrWhiteSpace(Model.TenFile)
+                ? $"File_{Model.ID}"
+                : System.IO.Path.GetFileNameWithoutExtension(Model.TenFile);
+            var originalName = sanitizeFileName(originalNameRaw);
+            if (string.IsNullOrEmpty(originalName))
+            {
+                originalName = $"File_{Model.ID}";
+            }
+            var originalExt = System.IO.Path.GetExtension(Model.TenFile);
+            if (string.IsNullOrWhiteSpace(originalExt))
+            {
+                originalExt = ".xlsx";
+            }
+            var uploaderName = sanitizeFileName(Model.NguoiUpload ?? "nguoi_upload");
+            if (string.IsNullOrEmpty(uploaderName))
+            {
+                uploaderName = "nguoi_upload";
+            }
+            var downloadName = $"{originalName}_{uploaderName}{originalExt}";
+
+            <a href="@Model.DuongDanFile"
+               target="_blank"
+               download="@downloadName"
+               class="btn-download">📥 Tải file Excel</a>
         }
 
         <div class="info-container">

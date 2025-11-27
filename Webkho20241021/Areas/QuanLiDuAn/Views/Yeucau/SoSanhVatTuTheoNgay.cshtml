@@ -10,88 +10,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>So sánh số liệu vật tư theo ngày</title>
-    <style>
-        .filter-section {
-            background: #f5f5f5;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-        .filter-section input, .filter-section select {
-            padding: 8px;
-            margin-right: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .filter-section button {
-            padding: 8px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .filter-section button:hover {
-            background: #0056b3;
-        }
-        .table-container {
-            overflow-x: auto;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .table th, .table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        .table th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-        }
-        .table tr:hover {
-            background-color: #f5f5f5;
-        }
-        .btn-back {
-            padding: 10px 20px;
-            background: #6c757d;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-        .btn-back:hover {
-            background: #5a6268;
-        }
-        .summary-box {
-            background: #e7f3ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .summary-box h3 {
-            margin-top: 0;
-        }
-    </style>
+    <link rel="stylesheet" href="~/css/sosanhvattutheongay.css" />
 </head>
 <body>
     <div class="bodyyeucau">
-        <a href="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })" class="btn-back">← Quay lại</a>
+        <!-- <div class="header-nav">
+            <a href="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })" class="btn-back">
+                ← Quay lại
+            </a>
+        </div> -->
 
-        <h2>So sánh số liệu vật tư theo ngày upload</h2>
+        <div class="page-header">
+            <h2>So sánh số liệu vật tư</h2>
+            <p>Theo ngày upload dự án</p>
+        </div>
 
         <div class="filter-section">
-            <form method="get" action="@Url.Action("SoSanhVatTuTheoNgay", "Yeucau", new { area = "QuanLiDuAn" })">
-                <label>Từ ngày:</label>
-                <input type="date" name="ngay1" value="@ViewBag.Ngay1" required />
+            <form method="get" action="@Url.Action("SoSanhVatTuTheoNgay", "Yeucau", new { area = "QuanLiDuAn" })" class="filter-form">
+                <input type="hidden" name="page" value="1" />
                 
-                <label>Đến ngày:</label>
-                <input type="date" name="ngay2" value="@ViewBag.Ngay2" required />
+                <input type="date" id="ngay1" name="ngay1" value="@ViewBag.Ngay1" placeholder="Từ ngày" required />
                 
-                <select name="maDuan">
+                <input type="date" id="ngay2" name="ngay2" value="@ViewBag.Ngay2" placeholder="Đến ngày" required />
+                
+                <select id="maDuan" name="maDuan">
                     <option value="">Tất cả dự án</option>
                     @foreach (var duan in ViewBag.Duans)
                     {
@@ -99,60 +41,102 @@
                     }
                 </select>
                 
-                <button type="submit">So sánh</button>
+                @if (!string.IsNullOrEmpty(ViewBag.Ngay1) && !string.IsNullOrEmpty(ViewBag.Ngay2))
+                {
+                    <input type="text" id="searchMaVT" name="searchMaVT" placeholder="Mã vật tư..." value="@ViewBag.SearchMaVT" />
+                    
+                    <input type="text" id="searchTenVT" name="searchTenVT" placeholder="Tên vật tư..." value="@ViewBag.SearchTenVT" />
+                    
+                    <input type="date" id="searchNgay" name="searchNgay" value="@ViewBag.SearchNgay" placeholder="Ngày upload" />
+                    
+                    <input type="text" id="searchHangSX" name="searchHangSX" placeholder="Hãng sản xuất..." value="@ViewBag.SearchHangSX" />
+                }
+                
+                <button type="submit">Tìm kiếm</button>
+                
+                @if (!string.IsNullOrEmpty(ViewBag.Ngay1) || !string.IsNullOrEmpty(ViewBag.SearchMaVT) || !string.IsNullOrEmpty(ViewBag.SearchTenVT) || !string.IsNullOrEmpty(ViewBag.SearchNgay) || !string.IsNullOrEmpty(ViewBag.SearchHangSX) || !string.IsNullOrEmpty(ViewBag.MaDuan))
+                {
+                    <a href="@Url.Action("SoSanhVatTuTheoNgay", "Yeucau", new { area = "QuanLiDuAn" })" class="btn-clear-filter">Xóa bộ lọc</a>
+                }
             </form>
         </div>
 
         @if (Model != null && Model.Count > 0)
         {
             <div class="summary-box">
-                <h3>Tóm tắt</h3>
-                <p><strong>Số file Excel:</strong> @ViewBag.ExcelFiles.Count</p>
-                <p><strong>Số loại vật tư:</strong> @Model.Count</p>
-                <p><strong>Tổng số lượng vật tư:</strong> @Model.Sum(m => m.TongSL)</p>
+                <div class="summary-card">
+                    <h4>Số file Excel</h4>
+                    <div class="value">@ViewBag.ExcelFiles.Count</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Loại vật tư</h4>
+                    <div class="value">@Model.Count</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Tổng số lượng</h4>
+                    <div class="value">@Model.Sum(m => m.TongSL)</div>
+                </div>
             </div>
 
             <div class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>STT</th>
+                            <th style="width: 50px;">STT</th>
                             <th>Ngày upload</th>
                             <th>Mã VT</th>
                             <th>Tên thiết bị/hàng hóa</th>
                             <th>Hãng SX</th>
-                            <th>Tổng SL</th>
-                            <th>Số file</th>
+                            <th style="text-align: right;">Tổng SL</th>
+                            <th style="text-align: right;">Số file</th>
                         </tr>
                     </thead>
                     <tbody>
                         @{
-                            int stt = 1;
+                            int currentPage = ViewBag.Page ?? 1;
+                            int pageSize = 20;
+                            int stt = (currentPage - 1) * pageSize + 1;
                         }
-                        @foreach (var item in Model.OrderBy(m => m.NgayUpload).ThenBy(m => m.MaSanpham))
+                        @foreach (var item in Model)
                         {
                             <tr>
-                                <td>@stt</td>
+                                <td>
+                                    <div class="stt-badge">@stt</div>
+                                </td>
                                 <td>@(((DateTime)item.NgayUpload).ToString("dd/MM/yyyy"))</td>
-                                <td>@item.MaSanpham</td>
+                                <td><strong>@item.MaSanpham</strong></td>
                                 <td>@item.TenSanpham</td>
                                 <td>@item.HangSX</td>
-                                <td>@item.TongSL</td>
-                                <td>@item.SoLuongFile</td>
+                                <td style="text-align: right;">@item.TongSL</td>
+                                <td style="text-align: right;">@item.SoLuongFile</td>
                             </tr>
                             stt++;
                         }
                     </tbody>
                 </table>
             </div>
+
+            @if (ViewBag.TotalPages > 1)
+            {
+                <div class="pagination">
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <a href="@Url.Action("SoSanhVatTuTheoNgay", "Yeucau", new { area = "QuanLiDuAn", page = i, ngay1 = ViewBag.Ngay1, ngay2 = ViewBag.Ngay2, maDuan = ViewBag.MaDuan, searchMaVT = ViewBag.SearchMaVT, searchTenVT = ViewBag.SearchTenVT, searchNgay = ViewBag.SearchNgay, searchHangSX = ViewBag.SearchHangSX })" 
+                           class="@(ViewBag.Page == i ? "active" : "")">@i</a>
+                    }
+                </div>
+            }
         }
         else
         {
-            <div style="text-align: center; padding: 40px; background: #f5f5f5; border-radius: 8px;">
-                <p>Không có dữ liệu để so sánh trong khoảng thời gian đã chọn.</p>
+            <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p>Không có dữ liệu</p>
+                <small>Hãy chọn khoảng thời gian để xem dữ liệu so sánh</small>
             </div>
         }
     </div>
 </body>
 </html>
-

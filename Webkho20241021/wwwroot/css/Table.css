@@ -14,6 +14,59 @@
     font-size: 1.2em;
 }
 
+/* Style for approve and reject buttons */
+.btn-icon {
+    cursor: pointer;
+    
+    margin: 0 4px; 
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background-color: #fff;
+    border: 2px solid currentColor;
+    color: inherit;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.approve-btn {
+    color: #28a745;
+}
+
+.reject-btn {
+    color: #dc3545;
+}
+
+.btn-icon i {
+    color: currentColor !important;
+    font-size: 1.3em;
+}
+
+.btn-icon:hover,
+.btn-icon:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
+    outline: none;
+}
+
+.approve-btn:hover,
+.approve-btn:focus {
+    border-color: #1e7e34;
+}
+
+.reject-btn:hover,
+.reject-btn:focus {
+    border-color: #c82333;
+}
+
+.btn-icon:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    background-color: #f4f4f4;
+}
+
 button {
     align-items: center;
 }
@@ -59,6 +112,71 @@ button {
 
 .table tbody tr:last-of-type {
   border-bottom: 2px solid var(--body-color);
+}
+
+.table tbody tr.highlight,
+.table tbody tr.highlight td {
+  background-color: #2d9f3c !important;
+  color: #ffffff;
+}
+
+.table tbody tr.highlight a {
+  color: #ffffff;
+}
+
+.table tbody tr.highlight i {
+  color: #ffffff !important;
+}
+
+.table tbody tr.highlight .btn-icon {
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.table tbody tr.highlight .approve-btn {
+  color: #28a745 !important;
+  border-color: #28a745 !important;
+}
+
+.table tbody tr.highlight .reject-btn {
+  color: #dc3545 !important;
+  border-color: #dc3545 !important;
+}
+
+.table tbody tr.highlight .btn-icon i {
+  color: inherit !important;
+}
+
+.table tbody tr.highlight .approve-btn i {
+  color: #28a745 !important;
+}
+
+.table tbody tr.highlight .reject-btn i {
+  color: #dc3545 !important;
+}
+
+.table tbody tr.highlight .btn-icon .bx-printer,
+.table tbody tr.highlight .btn-icon i.bx-printer {
+  color: #000000 !important;
+  border-color: #000000 !important;
+}
+.btn-icon:hover .bx-printer,
+.btn-icon:focus .bx-printer {
+  color: #000000 !important;
+}
+
+.tablethietbi tbody tr.highlight,
+.tablethietbi tbody tr.highlight td {
+  background-color: #2d9f3c !important;
+  color: #ffffff;
+}
+
+.tablethietbi tbody tr.highlight a {
+  color: #ffffff;
+}
+
+.tablethietbi tbody tr.highlight i {
+  color: #ffffff !important;
 }
 
 .table tbody tr.active-row {
@@ -108,5 +226,10 @@ button {
 /* Style for print icon in Phieunhapkho */
 .btn-icon .bx-printer,
 .btn-icon i.bx-printer {
+  color: black !important;
+}
+
+/* Keep status span text color black in highlighted rows */
+.tablethietbi tbody tr.highlight td span {
   color: black !important;
 }

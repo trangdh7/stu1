@@ -1306,17 +1306,29 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             }
             else if (Phieuxuatkho.TrangThai == "Đã xác nhận nhận hàng")
             {
-                // Bước 4: Bộ phận kho xác nhận cuối cùng đã giao vật tư và lưu phiếu giao vật tư (không được phép sửa đổi)
-                // Cập nhật tồn kho và thêm vào kho cá nhân
-                if (Phieuxuatkho.MaDuan != null)
+                var allVtConfirmed = VTphieuxuatkho.All(vt =>
+                    vt.TrangThai == "Đã xác nhận nhận hàng" ||
+                    vt.TrangThai == "Đã xuất kho");
+
+                if (!allVtConfirmed)
                 {
-                    // Vật tư cho dự án
-                    foreach (var VTxuatkho in VTphieuxuatkho)
+                    TempData["Error"] = "Không thể hoàn tất phiếu vì vẫn còn vật tư chưa được người yêu cầu xác nhận.";
+                    return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "Giamdoc" });
+                }
+
+                foreach (var VTxuatkho in VTphieuxuatkho)
+                {
+                    var VTphieuxuatkhott = _context.vtphieuxuatkho.FirstOrDefault(vt => vt.ID == VTxuatkho.ID);
+                    if (VTphieuxuatkhott == null)
                     {
-                        var VTphieuxuatkhott = _context.vtphieuxuatkho.FirstOrDefault(vt => vt.MaXuatkho == VTxuatkho.MaXuatkho);
-                        VTphieuxuatkhott.TrangThai = "Đã xuất kho";
-                        _context.vtphieuxuatkho.Update(VTphieuxuatkhott);
-                        
+                        continue;
+                    }
+
+                    VTphieuxuatkhott.TrangThai = "Đã xuất kho";
+                    _context.vtphieuxuatkho.Update(VTphieuxuatkhott);
+
+                    if (!string.IsNullOrEmpty(Phieuxuatkho.MaDuan))
+                    {
                         var VTduan = new khoduans
                         {
                             DAMaDuan = Phieuxuatkho.MaDuan,
@@ -1332,53 +1344,6 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             TrangThai = "Đã xuất kho"
                         };
                         _context.Add(VTduan);
-                    }
-                }
-                else
-                {
-                    // Vật tư cho cá nhân - thêm vào kho cá nhân
-                    foreach (var VTxuatkho in VTphieuxuatkho)
-                    {
-                        var VTphieuxuatkhott = _context.vtphieuxuatkho.FirstOrDefault(vt => vt.MaXuatkho == VTxuatkho.MaXuatkho);
-                        VTphieuxuatkhott.TrangThai = "Đã xuất kho";
-                        _context.vtphieuxuatkho.Update(VTphieuxuatkhott);
-                        
-                        var VTkhonguoidungtt = _context.khonguoidungs.FirstOrDefault(nd => nd.NDMakho == VTxuatkho.Makho && nd.NDMaNguoidung == Phieuxuatkho.MaNguoidung && nd.MaSanpham == VTxuatkho.MaSanpham);
-                        if (VTkhonguoidungtt != null)
-                        {
-                            VTkhonguoidungtt.SL = VTkhonguoidungtt.SL + VTxuatkho.SL;
-                            _context.khonguoidungs.Update(VTkhonguoidungtt);
-                        }
-                        else
-                        {
-                            var VTkhonguoidung = new khonguoidungs
-                            {
-                                NDMaNguoidung = Phieuxuatkho.MaNguoidung,
-                                TenSanpham = VTxuatkho.TenSanpham,
-                                MaSanpham = VTxuatkho.MaSanpham,
-                                NDMakho = VTxuatkho.Makho,
-                                HangSX = VTxuatkho.HangSX,
-                                NhaCC = VTxuatkho.NhaCC,
-                                DonVi = VTxuatkho.DonVi,
-                                SL = VTxuatkho.SL,
-                                NgayNhapkho = DateTime.Now, // Ngày nhập vào kho cá nhân
-                                NgayBaohanh = VTxuatkho.NgayBaohanh,
-                                ThoiGianBH = VTxuatkho.ThoiGianBH,
-                                TrangThai = "Đang sử dụng"
-                            };
-                            _context.Add(VTkhonguoidung);
-                        }
-                    }
-                }
-                
-                // Cập nhật tồn kho tổng
-                foreach (var VTxuatkho in VTphieuxuatkho)
-                {
-                    var khotong = _context.khotongs.FirstOrDefault(k => k.Makho == VTxuatkho.Makho && k.MaSanpham == VTxuatkho.MaSanpham);
-                    if (khotong != null)
-                    {
-                        khotong.SL -= VTxuatkho.SL;
-                        _context.khotongs.Update(khotong);
                     }
                 }
                 

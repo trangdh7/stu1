@@ -76,7 +76,7 @@
 
                     <div>
                         <label class="label-modern">Số lượng<span class="required-star">*</span></label>
-                        <input type="number" name="SL[]" required min="1" placeholder="0" class="input-modern" />
+                        <input type="number" name="SL[]" required min="0" step="1" placeholder="0" class="input-modern" oninput="this.value = Math.max(0, parseInt(this.value) || 0)" />
                     </div>
 
                     <div>
@@ -145,6 +145,22 @@
 
         container.appendChild(newCard);
         updateTotalCount();
+        
+        // Add validation to newly added quantity input
+        var quantityInput = newCard.querySelector('input[name="SL[]"]');
+        if (quantityInput) {
+            quantityInput.addEventListener('input', function() {
+                if (this.value < 0) {
+                    this.value = 0;
+                }
+            });
+            quantityInput.addEventListener('keydown', function(e) {
+                if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                    e.preventDefault();
+                }
+            });
+        }
+        
         newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -168,6 +184,47 @@
     function updateTotalCount() {
         document.getElementById('total-count').textContent = document.querySelectorAll('.item-card').length;
     }
+    
+    // Prevent negative numbers in quantity fields
+    document.addEventListener('DOMContentLoaded', function() {
+        var container = document.getElementById('items-container');
+        if (container) {
+            // Add event listeners to existing quantity inputs
+            container.querySelectorAll('input[name="SL[]"]').forEach(function(input) {
+                input.addEventListener('input', function() {
+                    if (this.value < 0) {
+                        this.value = 0;
+                    }
+                });
+                input.addEventListener('keydown', function(e) {
+                    // Prevent minus key, e, E, +
+                    if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                        e.preventDefault();
+                    }
+                });
+            });
+        }
+    });
+    
+    // Form validation before submit
+    document.addEventListener('DOMContentLoaded', function() {
+        var form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                var quantityInputs = document.querySelectorAll('input[name="SL[]"]');
+                var hasNegative = false;
+                quantityInputs.forEach(function(input) {
+                    if (parseFloat(input.value) < 0) {
+                        hasNegative = true;
+                        input.value = 0;
+                    }
+                });
+                if (hasNegative) {
+                    alert('⚠️ Số lượng không được âm. Đã tự động điều chỉnh về 0.');
+                }
+            });
+        }
+    });
 </script>
 
 </body>

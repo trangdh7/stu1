@@ -43,8 +43,10 @@
 
             <div class="header-note">
                 <small>
-                    ℹ️ <strong>Ghi chú:</strong> Cột "Đã cấp phát" lấy số liệu từ file lên kế hoạch sớm nhất • 
-                    "Tồn đọng" lấy số liệu từ file mới nhất • "Dư" = Đã cấp phát - Tồn đọng
+                    ℹ️ <strong>Ghi chú:</strong> 
+                    <br />• <strong>"Đã cấp phát":</strong> Tổng số lượng vật tư đã được xuất kho và xác nhận nhận hàng thành công.
+                    <br />• <strong>"Tồn đọng":</strong> Số lượng vật tư còn lại chưa được cấp phát = Tổng SL - Đã cấp phát
+                    <br />• <strong>"Dư":</strong> Số lượng dư thừa khi đã cấp phát nhiều hơn tổng số lượng yêu cầu = Đã cấp phát - Tổng SL
                 </small>
             </div>
         </div>
@@ -88,8 +90,8 @@
                                     <small>@(file.NgayUpload?.ToString("dd/MM/yyyy") ?? "")</small>
                                 </th>
                             }
-                            <th class="vat-tu-column">Tổng SL</th>
-                            <th class="vat-tu-column">Đã cấp phát</th>
+                            <th class="vat-tu-column col-tong-sl">Tổng SL</th>
+                            <th class="vat-tu-column col-da-cap-phat">Đã cấp phát</th>
                             <th class="vat-tu-column">Tồn đọng</th>
                             <th class="vat-tu-column">Dư</th>
                         </tr>
@@ -118,18 +120,18 @@
                                         var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.FileID == file.ID);
                                         var sl = chiTiet != null ? chiTiet.SL : 0;
 
-                                        var cellClass = "";
-                                        if (sl == 0) cellClass = "zero-value";
-                                        else if (hasDifference) cellClass = "diff-highlight";
+                                        var cellClass = "file-column";
+                                        if (sl == 0) cellClass += " zero-value";
+                                        else if (hasDifference) cellClass += " diff-highlight";
 
                                         <td class="@cellClass" style="text-align: center;">@sl</td>
                                     }
                                 }
 
-                                <td style="text-align: center; font-weight: bold; color: #60a5fa;">@vatTu.TongSL</td>
-                                <td style="text-align: center;">@vatTu.CapPhat</td>
+                                <td class="col-tong-sl" style="text-align: center;">@vatTu.TongSL</td>
+                                <td class="col-da-cap-phat" style="text-align: center;">@vatTu.CapPhat</td>
                                 <td style="text-align: center;">@vatTu.TonDong</td>
-                                <td style="text-align: center;" class="@(vatTu.Du > 0 ? "surplus-positive" : "surplus-zero")">
+                                <td style="text-align: center;">
                                     @vatTu.Du
                                 </td>
                             </tr>

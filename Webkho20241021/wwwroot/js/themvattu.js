@@ -8,7 +8,38 @@ $(document).ready(function () {
         newRow.find("td:first").text(newIndex); // Cập nhật STT
         $(".form-table tbody").append(newRow); // Thêm hàng mới vào bảng
         console.log("Thêm hàng mới:", newRow); // Ghi log hàng mới
+        
+        // Add validation to newly added quantity input
+        var quantityInput = newRow.find('input[name="SL[]"]');
+        if (quantityInput.length) {
+            quantityInput.attr('min', '0').attr('step', '1');
+            quantityInput.on('input', function() {
+                if ($(this).val() < 0) {
+                    $(this).val(0);
+                }
+            });
+            quantityInput.on('keydown', function(e) {
+                if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                    e.preventDefault();
+                }
+            });
+        }
     }
+
+    // Prevent negative numbers in quantity fields
+    $('input[name="SL[]"]').each(function() {
+        $(this).attr('min', '0').attr('step', '1');
+        $(this).on('input', function() {
+            if ($(this).val() < 0) {
+                $(this).val(0);
+            }
+        });
+        $(this).on('keydown', function(e) {
+            if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                e.preventDefault();
+            }
+        });
+    });
 
     // Sự kiện khi người dùng nhập dữ liệu
     $(document).on("input", "input[type='text'], input[type='number'], input[type='date']", function () {
@@ -29,6 +60,20 @@ $(document).ready(function () {
         // Nếu tất cả ô đã được điền, thêm hàng mới
         if (allFilled) {
             addNewRow(); // Thêm hàng mới
+        }
+    });
+    
+    // Form validation before submit
+    $('form').on('submit', function(e) {
+        var hasNegative = false;
+        $('input[name="SL[]"]').each(function() {
+            if (parseFloat($(this).val()) < 0) {
+                hasNegative = true;
+                $(this).val(0);
+            }
+        });
+        if (hasNegative) {
+            alert('⚠️ Số lượng không được âm. Đã tự động điều chỉnh về 0.');
         }
     });
 });

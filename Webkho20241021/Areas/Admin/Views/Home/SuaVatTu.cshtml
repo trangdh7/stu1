@@ -75,7 +75,7 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen py-12">
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <div class="max-w-5xl mx-auto px-4">
         <!-- Header Card -->
         <div class="bg-white rounded-2xl card-shadow p-8 mb-6">
@@ -260,8 +260,8 @@
                             <select name="loaiCapPhat" 
                                     class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 input-modern input-focus appearance-none bg-white cursor-pointer"
                                     style="background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.5em 1.5em;">
+                                <option value="Không" @(Model.LoaiCapPhat == "Không" || string.IsNullOrEmpty(Model.LoaiCapPhat) ? "selected" : "")>Không</option>
                                 <option value="ChoNhanVienMoi" @(Model.LoaiCapPhat == "ChoNhanVienMoi" ? "selected" : "")>Cho Nhân Viên Mới</option>
-                                <option value="Không" @(Model.LoaiCapPhat == "Không" ? "selected" : "")>Không</option>
                             </select>
                         </div>
                     </div>

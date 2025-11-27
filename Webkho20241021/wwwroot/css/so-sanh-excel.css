@@ -6,7 +6,7 @@
 }
 
 .bodyyeucau {
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
     padding: 20px;
 }
@@ -164,7 +164,7 @@
 /* Table Container */
 .table-container {
     overflow-x: auto;
-    border-radius: 12px;
+    border-radius: 0;
     border: 1px solid #e2e8f0;
     background: #ffffff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -173,28 +173,29 @@
 .table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 14px;
 }
 
     /* Header table với nền tối và chữ trắng nổi bật */
     .table th {
-        padding: 16px 12px;
+        padding: 18px 16px;
         text-align: left;
         background: #1e40af;
         color: #ffffff;
         font-weight: 600;
+        border: 1px solid #1e3a8a;
         border-bottom: 2px solid #1e3a8a;
         position: sticky;
         top: 0;
         z-index: 10;
         text-transform: uppercase;
-        font-size: 11px;
+        font-size: 12px;
         letter-spacing: 0.5px;
     }
 
     .table td {
-        padding: 14px 12px;
-        border-bottom: 1px solid #e2e8f0;
+        padding: 16px 16px;
+        border: 1px solid #e2e8f0;
         color: #334155;
     }
 
@@ -205,34 +206,42 @@
             font-weight: 500;
         }
 
-        /* Tổng SL - nền xanh nhạt */
+        /* Tổng SL - nền xanh nhạt, căn giữa */
         .table th:nth-child(9),
-        .table td:nth-child(9) {
-            background: #dbeafe;
+        .table td:nth-child(9),
+        .table th.col-tong-sl,
+        .table td.col-tong-sl {
+            background: #eff6ff;
             color: #1e40af;
+            font-weight: 600;
+            text-align: center !important;
         }
 
-        /* Đã cấp phát - nền xám nhạt */
+        /* Đã cấp phát - nền xanh lá nhạt, căn giữa */
         .table th:nth-child(10),
-        .table td:nth-child(10) {
-            background: #f3f4f6;
-            color: #374151;
+        .table td:nth-child(10),
+        .table th.col-da-cap-phat,
+        .table td.col-da-cap-phat {
+            background: #f0fdf4;
+            color: #166534;
+            font-weight: 600;
+            text-align: center !important;
         }
 
-        /* Tồn đọng - nền đỏ nhạt (cột quan trọng) */
+        /* Tồn đọng - nền xám nhẹ nhàng */
         .table th:nth-child(11),
         .table td:nth-child(11) {
-            background: #fee2e2;
-            color: #dc2626;
-            font-weight: 600;
+            background: #f1f5f9;
+            color: #475569;
+            text-align: center;
         }
 
-        /* Dư - nền vàng nhạt (cột quan trọng) */
+        /* Dư - nền xám nhẹ nhàng */
         .table th:nth-child(12),
         .table td:nth-child(12) {
-            background: #fef3c7;
-            color: #92400e;
-            font-weight: 600;
+            background: #f1f5f9;
+            color: #475569;
+            text-align: center;
         }
 
     /* Cải thiện responsive cho các cột số */
@@ -247,11 +256,13 @@
         background: #f0f9ff;
     }
 
-    .table .file-column {
-        background: #e0f2fe;
-        color: #0369a1;
-        font-weight: 600;
+    .table th.file-column,
+    .table td.file-column {
+        background: #ffffff;
+        color: #334155;
+        font-weight: 500;
         min-width: 120px;
+        text-align: center;
     }
 
     .table .vat-tu-column {
@@ -266,9 +277,10 @@
 }
 
 .diff-highlight {
-    background-color: #fee2e2 !important;
-    color: #dc2626;
+    background-color: #fef3c7 !important;
+    color: #92400e;
     font-weight: 600;
+    border: 2px solid #f59e0b !important;
 }
 
 .same-value {
@@ -282,13 +294,13 @@
 }
 
 .surplus-positive {
-    color: #dc2626;
-    font-weight: 700;
+    color: #92400e;
+    font-weight: 600;
 }
 
 .surplus-zero {
-    color: #16a34a;
-    font-weight: 700;
+    color: #475569;
+    font-weight: 500;
 }
 
 /* Empty State */
