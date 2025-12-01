@@ -89,7 +89,7 @@
                             <td><input type="text" id="hangSX" name="HangSX" placeholder="Hãng SX" readonly /></td>
                             <td><input type="text" id="nhaCC" name="NhaCC" placeholder="Nhà cung cấp" readonly /></td>
                             <td><span id="borrowedInfo">—</span></td>
-                            <td><input type="number" id="sl" name="SL" placeholder="Số lượng trả" min="1" /></td>
+                            <td><input type="number" id="sl" name="SL" placeholder="Số lượng trả" min="1" step="1" class="quantity-input" /></td>
                             <td><input type="text" id="donVi" name="DonVi" placeholder="Đơn vị" readonly /></td>
                         </tr>
                     </tbody>
@@ -114,6 +114,71 @@
                         }
                     });
                 } catch(e) { console.warn(e); }
+            })();
+            
+            // Validation cho ô số lượng ban đầu
+            (function initQuantityValidation() {
+                const slInput = document.getElementById('sl');
+                if (!slInput) return;
+                
+                // Chặn số âm và ký tự đặc biệt khi nhập
+                slInput.addEventListener('keydown', (e) => {
+                    if ([8, 9, 27, 13, 46, 35, 36, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
+                        (e.keyCode === 65 && e.ctrlKey === true) ||
+                        (e.keyCode === 67 && e.ctrlKey === true) ||
+                        (e.keyCode === 86 && e.ctrlKey === true) ||
+                        (e.keyCode === 88 && e.ctrlKey === true) ||
+                        (e.keyCode >= 48 && e.keyCode <= 57) ||
+                        (e.keyCode >= 96 && e.keyCode <= 105)) {
+                        return;
+                    }
+                    e.preventDefault();
+                });
+                
+                // Chặn paste ký tự đặc biệt
+                slInput.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const paste = (e.clipboardData || window.clipboardData).getData('text');
+                    const numericValue = paste.replace(/[^0-9]/g, '');
+                    if (numericValue) {
+                        let val = parseInt(numericValue, 10);
+                        if (Number.isNaN(val) || val < 1) {
+                            val = 1;
+                        }
+                        const max = Number(slInput.getAttribute('max') || 0);
+                        if (max > 0 && val > max) {
+                            val = max;
+                        }
+                        slInput.value = String(val);
+                    }
+                });
+                
+                // Loại bỏ ký tự không phải số khi nhập
+                slInput.addEventListener('input', () => {
+                    let inputValue = slInput.value.replace(/[^0-9]/g, '');
+                    let val = parseInt(inputValue || '0', 10);
+                    if (Number.isNaN(val) || val < 1) {
+                        val = inputValue ? 1 : 0;
+                    }
+                    const max = Number(slInput.getAttribute('max') || 0);
+                    if (max > 0 && val > max) {
+                        val = max;
+                    }
+                    slInput.value = val > 0 ? String(val) : '';
+                });
+                
+                // Validation khi blur
+                slInput.addEventListener('blur', () => {
+                    let val = parseInt(slInput.value || '0', 10);
+                    if (Number.isNaN(val) || val < 1) {
+                        slInput.value = '';
+                    } else {
+                        const max = Number(slInput.getAttribute('max') || 0);
+                        if (max > 0 && val > max) {
+                            slInput.value = String(max);
+                        }
+                    }
+                });
             })();
 
             // Hàm submit chỉ những item được chọn - Sử dụng AJAX

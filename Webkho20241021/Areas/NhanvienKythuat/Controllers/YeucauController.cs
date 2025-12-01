@@ -1870,8 +1870,15 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                                 foreach (var VTxuatkho in VTPhieuxuatkhoList)
                                 {
                                     var khotong = _context.khotongs.FirstOrDefault(k => k.Makho == VTxuatkho.Makho && k.MaSanpham == VTxuatkho.MaSanpham);
-                                    // Kiểm tra chặt chẽ: không có hàng, số lượng = 0, hoặc không đủ số lượng → không cho xuất
-                                    if (khotong == null || khotong.SL <= 0 || khotong.SL < VTxuatkho.SL)
+                                    
+                                    // Tính số lượng hàng đã cam kết (đã duyệt nhưng chưa giao)
+                                    int soLuongDaCamKet = TinhSoLuongDaCamKet(VTxuatkho.Makho ?? "", VTxuatkho.MaSanpham ?? "", MaXuatkho);
+                                    
+                                    // Số lượng khả dụng = Tồn kho - Số lượng đã cam kết
+                                    int soLuongKhaDung = (khotong?.SL ?? 0) - soLuongDaCamKet;
+                                    
+                                    // Kiểm tra chặt chẽ: không có hàng, số lượng khả dụng <= 0, hoặc không đủ số lượng → không cho xuất
+                                    if (khotong == null || soLuongKhaDung <= 0 || soLuongKhaDung < VTxuatkho.SL)
                                     {
                                         duHang = false;
                                         vatTuThieu.Add(VTxuatkho);
@@ -2155,6 +2162,38 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
 
             return View(model);
         }
+
+        // Helper method: Tính số lượng hàng đã cam kết (committed) từ các phiếu xuất đã duyệt nhưng chưa giao
+        // Các trạng thái được tính: "Đang chuẩn bị hàng", "Chờ người yêu cầu xác nhận"
+        // LƯU Ý: "Đã xác nhận nhận hàng" KHÔNG tính vì đã trừ kho rồi
+        private int TinhSoLuongDaCamKet(string makho, string masanpham, string maXuatkhoHienTai = null)
+        {
+            // Lấy tất cả các phiếu xuất có trạng thái đã duyệt nhưng chưa giao (chưa trừ kho)
+            var cacTrangThaiDaCamKet = new[] { "Đang chuẩn bị hàng", "Chờ người yêu cầu xác nhận" };
+            
+            var phieuXuatDaCamKet = _context.phieuxuatkho
+                .Where(px => cacTrangThaiDaCamKet.Contains(px.TrangThai))
+                .Select(px => px.MaXuatkho)
+                .ToList();
+
+            // Nếu có phiếu xuất hiện tại, loại trừ nó khỏi danh sách (vì đang kiểm tra cho chính nó)
+            if (!string.IsNullOrEmpty(maXuatkhoHienTai))
+            {
+                phieuXuatDaCamKet = phieuXuatDaCamKet
+                    .Where(mx => mx != maXuatkhoHienTai)
+                    .ToList();
+            }
+
+            // Tính tổng số lượng vật tư đã cam kết từ các phiếu xuất này
+            var tongSoLuongDaCamKet = _context.vtphieuxuatkho
+                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho) 
+                    && vt.Makho == makho 
+                    && vt.MaSanpham == masanpham)
+                .Sum(vt => vt.SL ?? 0);
+
+            return tongSoLuongDaCamKet;
+        }
+
         // XÁC NHẬN HÀNG
         [HttpPost]
         public IActionResult XacnhanNhanHang(string MaXuatkho)
@@ -2174,29 +2213,45 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
 
                 foreach (var vt in VTphieuxuatkhoList)
                 {
+                    // Bỏ qua các dòng đã được xác nhận hoặc đã xuất kho trước đó
+                    if (vt.TrangThai == "Đã xác nhận nhận hàng" || vt.TrangThai == "Đã xuất kho")
+                    {
+                        continue;
+                    }
+
                     // Cập nhật trạng thái vật tư thành "Đã xác nhận nhận hàng"
                     vt.TrangThai = "Đã xác nhận nhận hàng";
                     vt.NgayNhapkho = DateTime.Now;
                     _context.vtphieuxuatkho.Update(vt);
                     
                     // Trừ kho tổng khi xác nhận nhận hàng - KIỂM TRA CHẶT CHẼ SỐ LƯỢNG
-                    var khotong = _context.khotongs.FirstOrDefault(k => k.Makho == vt.Makho && k.MaSanpham == vt.MaSanpham);
-                    if (khotong != null)
+                    // Chỉ xử lý nếu số lượng yêu cầu > 0
+                    if ((vt.SL ?? 0) > 0)
                     {
-                        // TUYỆT ĐỐI KHÔNG cho phép xuất nếu hết hàng hoặc không đủ số lượng
-                        if (khotong.SL <= 0 || khotong.SL < vt.SL)
+                        var khotong = _context.khotongs.FirstOrDefault(k => k.Makho == vt.Makho && k.MaSanpham == vt.MaSanpham);
+                        if (khotong != null)
                         {
-                            TempData["ErrorMessage"] = $"Không thể xuất kho: Vật tư {vt.TenSanpham} không đủ số lượng trong kho (Tồn kho: {khotong.SL}, Yêu cầu: {vt.SL})";
+                            // Tính số lượng hàng đã cam kết từ các phiếu xuất khác (loại trừ phiếu hiện tại vì nó đang được xác nhận)
+                            int soLuongDaCamKetKhac = TinhSoLuongDaCamKet(vt.Makho ?? "", vt.MaSanpham ?? "", MaXuatkho);
+                            
+                            // Số lượng khả dụng = Tồn kho - Số lượng đã cam kết từ các phiếu khác
+                            int soLuongKhaDung = (khotong.SL ?? 0) - soLuongDaCamKetKhac;
+                            
+                            // TUYỆT ĐỐI KHÔNG cho phép xuất nếu hết hàng hoặc không đủ số lượng
+                            if (soLuongKhaDung <= 0 || soLuongKhaDung < vt.SL)
+                            {
+                                TempData["ErrorMessage"] = $"Không thể xuất kho: Vật tư {vt.TenSanpham} không đủ số lượng trong kho (Tồn kho: {khotong.SL}, Đã cam kết: {soLuongDaCamKetKhac}, Khả dụng: {soLuongKhaDung}, Yêu cầu: {vt.SL})";
+                                return RedirectToAction("XacnhanNhanHang", "Yeucau", new { area = "NhanvienKythuat" });
+                            }
+                            
+                            khotong.SL -= vt.SL;
+                            _context.khotongs.Update(khotong);
+                        }
+                        else
+                        {
+                            TempData["ErrorMessage"] = $"Không thể xuất kho: Vật tư {vt.TenSanpham} không tồn tại trong kho";
                             return RedirectToAction("XacnhanNhanHang", "Yeucau", new { area = "NhanvienKythuat" });
                         }
-                        
-                        khotong.SL -= vt.SL;
-                        _context.khotongs.Update(khotong);
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = $"Không thể xuất kho: Vật tư {vt.TenSanpham} không tồn tại trong kho";
-                        return RedirectToAction("XacnhanNhanHang", "Yeucau", new { area = "NhanvienKythuat" });
                     }
                     
                     // chỉ xử lý nếu phiếu này không có dự án

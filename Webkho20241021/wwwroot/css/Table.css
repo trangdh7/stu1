@@ -233,3 +233,9 @@ button {
 .tablethietbi tbody tr.highlight td span {
   color: black !important;
 }
+
+/* Change "Đã xác nhận nhận hàng" text to white when row is highlighted/active */
+.table tbody tr.highlight td span.status-waiting,
+.table tbody tr.highlight .status-waiting {
+  color: #ffffff !important;
+}

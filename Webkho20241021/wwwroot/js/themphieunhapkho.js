@@ -194,7 +194,7 @@ function renderTable(items) {
     tableBody.innerHTML = ""; // Xóa nội dung cũ
     
     if (!items || items.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Không có vật tư nào.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Không có vật tư nào.</td></tr>';
         return;
     }
     
@@ -217,9 +217,8 @@ function renderTable(items) {
                 <td><input type="text" name="HangSX" value="${escapeHtml(item.hangSX || '')}" readonly /></td>
                 <td><input type="text" name="NhaCC" value="${escapeHtml(item.nhaCC || '')}" readonly /></td>
                 <td><span class="borrowed-qty">${item.sl || 0}</span></td>
-                <td><input type="number" name="SL" value="" min="1" step="1" max="${item.sl || 0}" placeholder="Nhập số lượng" style="width:100px;" /></td>
+                <td><input type="number" name="SL" value="" min="1" step="1" max="${item.sl || 0}" placeholder="Nhập số lượng" style="width:100px;" class="quantity-input" /></td>
                 <td><input type="text" name="DonVi" value="${escapeHtml(item.donVi || '')}" readonly /></td>
-                <td><input type="number" name="DonGia" value="${item.donGia || ''}" placeholder="Đơn giá" min="0" step="0.01" style="width:120px;" /></td>
             </tr>
         `;
         tableBody.insertAdjacentHTML("beforeend", row);
@@ -256,16 +255,84 @@ function attachRowHandlers() {
         if (!slInput) return;
         // Reset to blank on render
         slInput.value = '';
+        
+        // Validation: Chặn số âm và ký tự đặc biệt
+        slInput.addEventListener('keydown', (e) => {
+            // Cho phép: Backspace, Delete, Tab, Escape, Enter, và các phím điều hướng
+            if ([8, 9, 27, 13, 46, 35, 36, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
+                // Cho phép Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                (e.keyCode === 65 && e.ctrlKey === true) ||
+                (e.keyCode === 67 && e.ctrlKey === true) ||
+                (e.keyCode === 86 && e.ctrlKey === true) ||
+                (e.keyCode === 88 && e.ctrlKey === true) ||
+                // Cho phép phím số (48-57), numpad (96-105)
+                (e.keyCode >= 48 && e.keyCode <= 57) ||
+                (e.keyCode >= 96 && e.keyCode <= 105)) {
+                return;
+            }
+            // Chặn tất cả các ký tự khác
+            e.preventDefault();
+        });
+        
+        // Validation: Chặn paste ký tự đặc biệt
+        slInput.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            const numericValue = paste.replace(/[^0-9]/g, '');
+            if (numericValue) {
+                const max = Number(slInput.getAttribute('max') || 0);
+                let val = parseInt(numericValue, 10);
+                if (Number.isNaN(val) || val < 1) {
+                    val = 1;
+                }
+                if (max > 0 && val > max) {
+                    val = max;
+                }
+                slInput.value = String(val);
+                if (checkbox) {
+                    checkbox.checked = val > 0;
+                }
+            }
+        });
+        
         slInput.addEventListener('input', () => {
             const max = Number(slInput.getAttribute('max') || 0);
-            let val = parseInt(slInput.value || '0', 10);
-            if (Number.isNaN(val)) val = 0;
+            // Loại bỏ tất cả ký tự không phải số
+            let inputValue = slInput.value.replace(/[^0-9]/g, '');
+            let val = parseInt(inputValue || '0', 10);
+            
+            // Đảm bảo giá trị >= 1
+            if (Number.isNaN(val) || val < 1) {
+                val = inputValue ? 1 : 0;
+            }
+            
+            // Đảm bảo không vượt quá max
             if (max > 0 && val > max) {
                 val = max;
-                slInput.value = String(val);
             }
+            
+            // Cập nhật giá trị input
+            slInput.value = val > 0 ? String(val) : '';
+            
             if (checkbox) {
                 checkbox.checked = val > 0;
+            }
+        });
+        
+        // Validation khi blur: đảm bảo giá trị hợp lệ
+        slInput.addEventListener('blur', () => {
+            const max = Number(slInput.getAttribute('max') || 0);
+            let val = parseInt(slInput.value || '0', 10);
+            if (Number.isNaN(val) || val < 1) {
+                slInput.value = '';
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+            } else if (max > 0 && val > max) {
+                slInput.value = String(max);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
             }
         });
     });
