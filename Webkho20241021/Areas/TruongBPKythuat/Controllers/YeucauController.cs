@@ -205,6 +205,126 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
             return Json(PhieumuahangList);
         }
 
+        [HttpPost]
+        public IActionResult XuLyVatTuYeucau(string MaYeucau, string MaSanpham, string action)
+        {
+            try
+            {
+                var vatTu = _context.vtyeucau
+                    .FirstOrDefault(v => v.VTMaYeucau == MaYeucau && v.MaSanpham == MaSanpham);
+
+                if (vatTu == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư." });
+                }
+
+                if (action == "approve")
+                {
+                    // Khi trưởng phòng duyệt, đặt trạng thái "Chờ giám đốc duyệt"
+                    vatTu.TrangThai = "Chờ giám đốc duyệt";
+                }
+                else if (action == "reject")
+                {
+                    vatTu.TrangThai = "Đã từ chối";
+                }
+
+                _context.vtyeucau.Update(vatTu);
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = action == "approve" ? "Đã duyệt vật tư thành công." : "Đã từ chối vật tư." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult XuLyTatCaVatTuYeucau(string MaYeucau, string action)
+        {
+            try
+            {
+                var vatTuList = _context.vtyeucau
+                    .Where(v => v.VTMaYeucau == MaYeucau).ToList();
+
+                if (!vatTuList.Any())
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư nào." });
+                }
+
+                var chucVu = HttpContext.Session.GetString("Chucvu");
+                var boPhan = HttpContext.Session.GetString("Bophan");
+                
+                foreach (var vatTu in vatTuList)
+                {
+                    if (action == "approve")
+                    {
+                        // Khi trưởng phòng duyệt, đặt trạng thái "Chờ giám đốc duyệt"
+                        vatTu.TrangThai = "Chờ giám đốc duyệt";
+                    }
+                    else if (action == "reject")
+                    {
+                        vatTu.TrangThai = "Đã từ chối";
+                    }
+                    _context.vtyeucau.Update(vatTu);
+                }
+
+                // Lưu thay đổi trạng thái vật tư
+                _context.SaveChanges();
+
+                // Cập nhật trạng thái yêu cầu chính nếu Trưởng BP duyệt tất cả vật tư
+                if (action == "approve")
+                {
+                    var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucau != null)
+                    {
+                        // Kiểm tra xem tất cả vật tư đã được trưởng phòng duyệt chưa (trạng thái "Chờ giám đốc duyệt")
+                        var allApprovedByTruongBP = vatTuList.All(v => v.TrangThai == "Chờ giám đốc duyệt");
+                        
+                        if (allApprovedByTruongBP && chucVu == "Trưởng BP" && boPhan == "BP kỹ thuật")
+                        {
+                            // Tất cả vật tư đã được trưởng phòng duyệt, cập nhật trạng thái yêu cầu để chuyển sang Chờ Giám đốc duyệt
+                            yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            _context.yeucau.Update(yeucau);
+                            
+                            // Đồng bộ trạng thái tất cả vật tư - đảm bảo tất cả vật tư đều có trạng thái "Chờ giám đốc duyệt"
+                            var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                            foreach (var vt in allVatTu)
+                            {
+                                // Chỉ cập nhật các vật tư chưa được duyệt hoàn toàn
+                                if (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
+                                    vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
+                                    vt.TrangThai != "Đã nhận hàng")
+                                {
+                                    vt.TrangThai = "Chờ giám đốc duyệt";
+                                    _context.vtyeucau.Update(vt);
+                                }
+                            }
+                            
+                            _context.SaveChanges();
+                        }
+                    }
+                }
+                else if (action == "reject")
+                {
+                    var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucau != null)
+                    {
+                        // Nếu có bất kỳ vật tư nào bị từ chối, yêu cầu chính cũng bị từ chối
+                        yeucau.TrangThai = "Đã từ chối";
+                        _context.yeucau.Update(yeucau);
+                        _context.SaveChanges();
+                    }
+                }
+
+                return Json(new { success = true, message = action == "approve" ? $"Đã duyệt {vatTuList.Count} vật tư thành công." : $"Đã từ chối {vatTuList.Count} vật tư." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
         public IActionResult ThemYeucau()
         {
             var Duanlist = _context.duans
@@ -452,26 +572,26 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kho";
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP mua hàng";
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kế toán")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kế toán";
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kế toán duyệt";
                         }
                     }
                     else
                     {
                         if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
                         }
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
                         {
@@ -479,7 +599,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kho";
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
                         }
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
                         {
@@ -487,7 +607,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP mua hàng";
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
                         }
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
                         {
@@ -503,27 +623,27 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 {
                     if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
                     {
-                        yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
+                        yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
                     {
-                        yeucau.TrangThai = "Giám đốc";
+                        yeucau.TrangThai = "Chờ Giám đốc duyệt";
                     }
                     else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
                     {
-                        yeucau.TrangThai = "Trưởng BP-BP kho";
+                        yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
                     {
-                        yeucau.TrangThai = "Giám đốc";
+                        yeucau.TrangThai = "Chờ Giám đốc duyệt";
                     }
                     else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
                     {
-                        yeucau.TrangThai = "Trưởng BP-BP mua hàng";
+                        yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
                     {
-                        yeucau.TrangThai = "Giám đốc";
+                        yeucau.TrangThai = "Chờ Giám đốc duyệt";
                     }
                     else if (chucVu2 == "Giám đốc")
                     {
@@ -557,6 +677,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
                         newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
                         newVtyeucau.ThoiGianBH = khoMatch.ThoiGianBH;
+                        newVtyeucau.TrangThai = yeucau.TrangThai;
                         _context.vtyeucau.Add(newVtyeucau);
                     }
                     else
@@ -573,6 +694,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         newVtyeucau.NgayNhapkho = null;
                         newVtyeucau.NgayBaohanh = null;
                         newVtyeucau.ThoiGianBH = null;
+                        newVtyeucau.TrangThai = yeucau.TrangThai;
                         _context.vtyeucau.Add(newVtyeucau);
                     }
                     _context.SaveChanges();
@@ -622,6 +744,14 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
 
             if (action == "approve")
             {
+                // Kiểm tra trạng thái hiện tại - chỉ xử lý nếu trạng thái phù hợp với vai trò
+                // Nếu trạng thái đã là "Chờ Giám đốc duyệt" hoặc "Đã duyệt", không xử lý (để giám đốc xử lý)
+                if (Yeucau.TrangThai == "Chờ Giám đốc duyệt" || Yeucau.TrangThai == "Đã duyệt" || Yeucau.TrangThai == "Giám đốc")
+                {
+                    // Trạng thái đã được xử lý bởi giám đốc, không làm gì
+                    return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPKythuat" });
+                }
+
                 if (duan != null)
                 {
                     string maNguoiQLDA = duan.MaNguoiQLDA;
@@ -629,7 +759,20 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     {
                         if (chucVu2 != "Giám đốc")
                         {
-                            Yeucau.TrangThai = "Giám đốc";
+                            Yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            
+                            // Đồng bộ trạng thái tất cả vật tư khi chuyển sang "Chờ Giám đốc duyệt"
+                            var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                            foreach (var vt in allVatTu)
+                            {
+                                if (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
+                                    vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
+                                    vt.TrangThai != "Đã nhận hàng")
+                                {
+                                    vt.TrangThai = "Chờ giám đốc duyệt";
+                                    _context.vtyeucau.Update(vt);
+                                }
+                            }
                         }
                         else
                         {
@@ -667,7 +810,20 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         {
                             if (chucVu2 != "Giám đốc")
                             {
-                                Yeucau.TrangThai = "Giám đốc";
+                                Yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                                
+                                // Đồng bộ trạng thái tất cả vật tư khi chuyển sang "Chờ Giám đốc duyệt"
+                                var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                                foreach (var vt in allVatTu)
+                                {
+                                    if (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
+                                        vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
+                                        vt.TrangThai != "Đã nhận hàng")
+                                    {
+                                        vt.TrangThai = "Chờ giám đốc duyệt";
+                                        _context.vtyeucau.Update(vt);
+                                    }
+                                }
                             }
                             else
                             {
@@ -679,11 +835,30 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 }
                 else
                 {
-                    if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
+                    // Chỉ xử lý nếu trạng thái hiện tại là "Chờ Trưởng BP-BP [tên bộ phận] duyệt"
+                    if ((Yeucau.TrangThai == "Trưởng BP-BP kỹ thuật" || Yeucau.TrangThai == "Chờ Trưởng BP-BP kỹ thuật duyệt") && chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
+                    {
+                        Yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                        
+                        // Đồng bộ trạng thái tất cả vật tư khi chuyển sang "Chờ Giám đốc duyệt"
+                        var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                        foreach (var vt in allVatTu)
+                        {
+                            // Chỉ cập nhật các vật tư chưa được duyệt hoàn toàn
+                            if (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
+                                vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
+                                vt.TrangThai != "Đã nhận hàng")
+                            {
+                                vt.TrangThai = "Chờ giám đốc duyệt";
+                                _context.vtyeucau.Update(vt);
+                            }
+                        }
+                    }
+                    else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
                     {
                         Yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
                     }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
+                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật" && Yeucau.TrangThai == "Trưởng BP-BP kỹ thuật")
                     {
                         Yeucau.TrangThai = "Giám đốc";
                     }
@@ -691,7 +866,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     {
                         Yeucau.TrangThai = "Trưởng BP-BP kho";
                     }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
+                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho" && Yeucau.TrangThai == "Trưởng BP-BP kho")
                     {
                         Yeucau.TrangThai = "Giám đốc";
                     }
@@ -699,7 +874,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     {
                         Yeucau.TrangThai = "Trưởng BP-BP mua hàng";
                     }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
+                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng" && Yeucau.TrangThai == "Trưởng BP-BP mua hàng")
                     {
                         Yeucau.TrangThai = "Giám đốc";
                     }

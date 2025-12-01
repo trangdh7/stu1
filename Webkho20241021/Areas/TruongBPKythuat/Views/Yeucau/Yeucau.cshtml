@@ -76,7 +76,7 @@
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau')">
+                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
                                     @item.MaYeucau
                                 </a>
                             </td>
@@ -86,50 +86,7 @@
                             <td>@item.YCMaDuan</td>
                             <td>@item.NgayYeucau?.ToString("dd/MM/yyyy")</td>
                             <td>
-                                @if (item.TrangThai == "Quản lí dự án" && maNguoiQLDA == maNguoidungSession)
-                                {
-                                    @using (Html.BeginForm("XuLyYeucau", "Yeucau", new { area = "TruongBPKythuat" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaYeucau" value="@item.MaYeucau" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn">
-                                            <i class="bx bxs-x-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else if (item.TrangThai == $"{Context.Session.GetString("Chucvu")}-{Context.Session.GetString("Bophan")}")
-                                {
-                                    @using (Html.BeginForm("XuLyYeucau", "Yeucau", new { area = "TruongBPKythuat" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaYeucau" value="@item.MaYeucau" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn">
-                                            <i class="bx bxs-x-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else if (item.TrangThai == Context.Session.GetString("Chucvu") && Context.Session.GetString("Chucvu") == "Giám đốc")
-                                {
-                                    @using (Html.BeginForm("XuLyYeucau", "Yeucau", new { area = "TruongBPKythuat" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaYeucau" value="@item.MaYeucau" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn">
-                                            <i class="bx bxs-x-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else
-                                {
-                                    @item.TrangThai
-                                    ;
-                                }
+                                @item.TrangThai
                             </td>
                         </tr>
                         STT++;
@@ -137,7 +94,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="action">
+        <div class="action" hidden>
             <ul class="hanhdong">
                 <li>
                     <a href="/TruongBPKythuat/Yeucau/ThemYeucau">Thêm yêu cầu</a>
@@ -146,10 +103,14 @@
         </div>
     </nav>
     <nav class="bodyyeucau-thietbi">
+        <div class="yeucau-info" id="yeucauInfo" style="margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;">
+            <strong id="yeucauInfoText"></strong>
+        </div>
         <div class="Tableyeucau-thietbi-box">
             <table class="tablethietbi">
                 <thead>
                     <tr>
+                        <td><input type="checkbox" id="selectAllVT" /></td>
                         <td>STT</td>
                         <td>Tên vật tư</td>
                         <td>Mã vật tư</td>
@@ -159,15 +120,38 @@
                         <td>Số lượng</td>
                         <td>Đơn vị</td>
                         <td>Trạng thái</td>
+                        <td>Duyệt</td>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="vtYeucauBody">
                     @{
                         int STT2 = 1;
+                        var currentArea = Context.Request.RouteValues["area"]?.ToString() ?? "";
+                        var userRole = Context.Session.GetString("Chucvu") ?? "";
+                        var selectedRole = Context.Session.GetString("SelectedRole") ?? "";
+                        var boPhan = Context.Session.GetString("Bophan") ?? "";
+                        // Trưởng BP có thể duyệt nếu đang ở area Trưởng BP tương ứng
+                        bool canApprove = currentArea == "TruongBPKythuat" || 
+                                        (userRole.Trim() == "Trưởng BP" && boPhan.Trim() == "BP kỹ thuật") || 
+                                        (selectedRole != null && selectedRole.Contains("Trưởng BP"));
+                        // Trạng thái tổng của phiếu yêu cầu (hàng trên cùng)
+                        var headerStatus = Model.Yeucau.FirstOrDefault()?.TrangThai ?? "";
+                        var headerWaitingDirector = (headerStatus ?? "").Trim().ToLower().Contains("giám đốc");
                     }
                     @foreach (var item in Model.VTyeucau)
                     {
-                        <tr>
+                        // Vật tư đã được duyệt nếu có trạng thái "Đã duyệt" hoặc "Đang mua hàng" (đã qua bước duyệt)
+                        var isApproved = item.TrangThai == "Đã duyệt" || 
+                                       item.TrangThai == "Đang mua hàng" || 
+                                       item.TrangThai == "Đã xuất kho" || 
+                                       item.TrangThai == "Đã nhận hàng";
+                        var isRejected = item.TrangThai == "Đã từ chối";
+                        // Chờ giám đốc nếu trạng thái chi tiết hoặc trạng thái phiếu chứa 'giám đốc'
+                        var isWaitingDirector = headerWaitingDirector || (item.TrangThai ?? "").Trim().ToLower().Contains("giám đốc");
+                        var maYeucau = Model.Yeucau.FirstOrDefault()?.MaYeucau ?? "";
+                        var canActOnItem = canApprove && !isApproved && !isRejected && !isWaitingDirector;
+                        <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau">
+                            <td>@if (canActOnItem) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
                             <td>@STT2</td>
                             <td>@item.TenSanpham</td>
                             <td>@item.MaSanpham</td>
@@ -176,19 +160,507 @@
                             <td>@item.NhaCC</td>
                             <td>@item.SL</td>
                             <td>@item.DonVi</td>
+                            <td class="trangthai-vattu">@(item.TrangThai ?? "")</td>
+                            <td class="duyet-column">
+                                @if (canActOnItem)
+                                {
+                                    <button type="button" class="btn-icon approve-btn" onclick="approveSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Duyệt vật tư">
+                                        <i class="bx bxs-check-circle"></i>
+                                    </button>
+                                    <button type="button" class="btn-icon reject-btn" onclick="rejectSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Từ chối vật tư">
+                                        <i class="bx bxs-x-circle"></i>
+                                    </button>
+                                }
+                                else if (isApproved)
+                                {
+                                    @if (item.TrangThai == "Đã duyệt")
+                                    {
+                                        <span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>
+                                    }
+                                    else if (item.TrangThai == "Đang mua hàng")
+                                    {
+                                        <span style="color: #2196f3; font-weight: bold;">Đang mua hàng</span>
+                                    }
+                                    else if (item.TrangThai == "Đã xuất kho")
+                                    {
+                                        <span style="color: #4caf50; font-weight: bold;">Đã xuất kho</span>
+                                    }
+                                    else if (item.TrangThai == "Đã nhận hàng")
+                                    {
+                                        <span style="color: #4caf50; font-weight: bold;">Đã nhận hàng</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>
+                                    }
+                                }
+                                else if (isRejected)
+                                {
+                                    <span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
                         </tr>
                         STT2++;
                     }
                 </tbody>
             </table>
         </div>
+        <div class="action-duyet">
+            @{
+                var canApproveCheck = currentArea == "TruongBPKythuat" || 
+                                    (userRole.Trim() == "Trưởng BP" && boPhan.Trim() == "BP kỹ thuật") || 
+                                    (selectedRole != null && selectedRole.Contains("Trưởng BP"));
+            }
+            @if (canApproveCheck && Model.VTyeucau.Any())
+            {
+                <div class="action-duyet-left">
+                    <button type="button" id="btnDuyetTatCa" class="btn-duyet-tatca" onclick="approveAllVT()">Duyệt tất cả</button>
+                    <button type="button" id="btnTuChoiTatCa" class="btn-tuchoi-tatca" onclick="rejectAllVT()">Từ chối tất cả</button>
+                </div>
+                <div class="action-duyet-right">
+                    <button type="button" id="btnXacNhan" class="btn-xacnhan" style="display:none;" onclick="confirmBulkAction()">Xác nhận</button>
+                    <button type="button" id="btnXoaTatCa" class="btn-xoa-tatca" style="display:none;" onclick="clearBulkAction()">Xóa lựa chọn</button>
+                </div>
+            }
+        </div>
     </nav>
+    @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+    @{
+        var requestToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    }
+    <input type="hidden" id="RequestVerificationToken" name="__RequestVerificationToken" value="@requestToken" />
     <script src="~/js/yeucau.js"></script>
     <script>
+        var currentMaYeucau = '';
+        var currentNguoiYeucau = '';
+        var requestToken = '@requestToken';
+        var pendingBulkAction = null; // 'approve' | 'reject' | null
+
         $(document).ready(function () {
             getThongbaoData();
+            
+            // Select all checkbox for VT
+            $('#selectAllVT').on('change', function() {
+                $('.vt-checkbox').prop('checked', $(this).prop('checked'));
+            });
+
+            // Individual checkbox change
+            $(document).on('change', '.vt-checkbox', function() {
+                var allChecked = $('.vt-checkbox').length === $('.vt-checkbox:checked').length;
+                $('#selectAllVT').prop('checked', allChecked);
+            });
+
+                updateDuyetTatCaButton();
         });
+
+        function updateDuyetTatCaButton() {
+            var hasSelectable = $('.vt-checkbox').length > 0;
+            if (hasSelectable) {
+                $('#btnDuyetTatCa').show();
+                $('#btnTuChoiTatCa').show();
+            } else {
+                $('#btnDuyetTatCa').hide();
+                $('#btnTuChoiTatCa').hide();
+            }
+
+            if (!hasSelectable) {
+                $('#btnXacNhan').hide();
+                $('#btnXoaTatCa').hide();
+                pendingBulkAction = null;
+            }
+        }
+
+        function showVTYeucau(MaYeucau, NguoiYeucau, MaYeucauFull) {
+            currentMaYeucau = MaYeucau;
+            currentNguoiYeucau = NguoiYeucau || '';
+            
+            const pathSegments = window.location.pathname.split('/');
+            const area = pathSegments.length > 1 ? pathSegments[1] : ''; 
+            const url = `/${area}/Yeucau/GetVTYeucau`;
+
+            $('.bodyyeucau-thietbi').show();
+            $('.tablethietbi').show();
+
+            // Hiển thị thông tin yêu cầu
+            if (currentNguoiYeucau) {
+                $('#yeucauInfo').show();
+                $('#yeucauInfoText').text('Yêu cầu số ' + MaYeucau + ' của ' + currentNguoiYeucau);
+            } else {
+                $('#yeucauInfo').hide();
+            }
+
+            // Lấy trạng thái tổng của phiếu yêu cầu (từ bảng trên)
+            let headerStatus = '';
+            $('.table tbody tr').each(function () {
+                var rowMaYeucau = $(this).find('td').eq(2).find('a').text().trim();
+                if (rowMaYeucau === MaYeucau) {
+                    headerStatus = ($(this).find('td').eq(8).text() || '').trim();
+                    return false;
+                }
+            });
+
+            $.ajax({
+                url: url, 
+                method: 'GET',
+                data: { MaYeucau: MaYeucau }, 
+                success: function (data) {
+                    $('#vtYeucauBody').empty();
+                    $('#selectAllVT').prop('checked', false);
+
+                    if (data && data.length > 0) {
+                        let STT = 1;
+                        
+                        // Kiểm tra xem có thể duyệt không
+                        var userRole = '@Context.Session.GetString("Chucvu")' || '';
+                        var selectedRole = '@Context.Session.GetString("SelectedRole")' || '';
+                        var boPhan = '@Context.Session.GetString("Bophan")' || '';
+                        var currentArea = '@Context.Request.RouteValues["area"]' || '';
+                        
+                        // Trưởng BP có thể duyệt nếu đang ở area Trưởng BP tương ứng
+                        var canApproveYeucau = currentArea === 'TruongBPKythuat' || 
+                                             (userRole.trim() === 'Trưởng BP' && boPhan.trim() === 'BP kỹ thuật') || 
+                                             (selectedRole && selectedRole.includes('Trưởng BP'));
+                        
+                        data.forEach(function (item) {
+                            var maVatTu = item.maSanpham || '';
+                            var trangThai = item.trangThai || '';
+                            // Vật tư đã được duyệt nếu có trạng thái "Đã duyệt" hoặc "Đang mua hàng" (đã qua bước duyệt)
+                            var isApproved = trangThai === 'Đã duyệt' || 
+                                           trangThai === 'Đang mua hàng' || 
+                                           trangThai === 'Đã xuất kho' || 
+                                           trangThai === 'Đã nhận hàng';
+                            var isRejected = trangThai === 'Đã từ chối';
+                            // Chờ giám đốc nếu trạng thái phiếu hoặc trạng thái dòng chứa 'giám đốc'
+                            var waitingByHeader = (headerStatus || '').toLowerCase().includes('giám đốc');
+                            var waitingByItem = (trangThai || '').toLowerCase().includes('giám đốc');
+                            var isWaitingDirector = waitingByHeader || waitingByItem;
+                            var canActOnItem = canApproveYeucau && !isApproved && !isRejected && !isWaitingDirector;
+                            
+                            // Escape single quotes trong mã vật tư để tránh lỗi JavaScript
+                            var maVatTuEscaped = maVatTu.replace(/'/g, "\\'");
+                            var MaYeucauEscaped = MaYeucau.replace(/'/g, "\\'");
+                            
+                            var row = `<tr data-mavattu="${maVatTu}" data-mayeucau="${MaYeucau}">
+                                <td>${canActOnItem ? '<input type="checkbox" class="vt-checkbox" value="' + maVatTuEscaped + '" data-mayeucau="' + MaYeucauEscaped + '" data-mavattu="' + maVatTuEscaped + '" />' : ''}</td>
+                                <td>${STT++}</td>
+                                <td>${item.tenSanpham || ''}</td>
+                                <td>${maVatTu}</td>
+                                <td>${item.ycMakho || ''}</td>
+                                <td>${item.hangSX || ''}</td>
+                                <td>${item.nhaCC || ''}</td>
+                                <td>${item.sl || 0}</td>
+                                <td>${item.donVi || ''}</td>
+                                <td class="trangthai-vattu">${trangThai}</td>
+                                <td class="duyet-column">`;
+                            
+                            // Hiển thị nút duyệt nếu là Trưởng BP và vật tư chưa được duyệt/từ chối
+                            if (isApproved) {
+                                // Hiển thị trạng thái tương ứng
+                                if (trangThai === 'Đã duyệt') {
+                                    row += '<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>';
+                                } else if (trangThai === 'Đang mua hàng') {
+                                    row += '<span style="color: #2196f3; font-weight: bold;">Đang mua hàng</span>';
+                                } else if (trangThai === 'Đã xuất kho') {
+                                    row += '<span style="color: #4caf50; font-weight: bold;">Đã xuất kho</span>';
+                                } else if (trangThai === 'Đã nhận hàng') {
+                                    row += '<span style="color: #4caf50; font-weight: bold;">Đã nhận hàng</span>';
+                                } else {
+                                    row += '<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>';
+                                }
+                            } else if (isRejected) {
+                                row += '<span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>';
+                            } else if (canActOnItem) {
+                                // Hiển thị nút duyệt/từ chối cho Trưởng BP
+                                row += `<button type="button" class="btn-icon approve-btn" onclick="approveSingleVatTu('${MaYeucauEscaped}', '${maVatTuEscaped}')" title="Duyệt vật tư">
+                                    <i class="bx bxs-check-circle"></i>
+                                </button>
+                                <button type="button" class="btn-icon reject-btn" onclick="rejectSingleVatTu('${MaYeucauEscaped}', '${maVatTuEscaped}')" title="Từ chối vật tư">
+                                    <i class="bx bxs-x-circle"></i>
+                                </button>`;
+                            } else {
+                                row += '<span>-</span>';
+                            }
+                            
+                            row += `</td></tr>`;
+                            $('#vtYeucauBody').append(row);
+                        });
+                        
+                        // Hiển thị/ẩn nút duyệt tất cả dựa vào số vật tư có thể duyệt
+                        updateDuyetTatCaButton();
+                    } else {
+                        $('#vtYeucauBody').append(
+                            `<tr><td colspan="11" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                        );
+                    }
+
+                    // Highlight hàng tương ứng trong bảng chính
+                    let $rowToHighlight = $();
+                    $('.table tbody tr').each(function () {
+                        var rowMaYeucau = $(this).find('td').eq(2).find('a').text().trim();
+                        if (rowMaYeucau === MaYeucau) {
+                            $rowToHighlight = $(this);
+                            return false;
+                        }
+                    });
+                    applyTableRowHighlight($rowToHighlight);
+                },
+                error: function (xhr, status, error) {
+                    console.error("Lỗi:", error);
+                    alert("Không thể lấy dữ liệu vật tư. Lỗi: " + error);
+                }
+            });
+        }
+
+        function approveSingleVatTu(maYeucau, maVatTu) {
+            if (confirm('Bạn có chắc chắn muốn duyệt vật tư ' + maVatTu + '?')) {
+                submitApprovalVatTu(maYeucau, maVatTu, 'approve');
+            }
+        }
+
+        function rejectSingleVatTu(maYeucau, maVatTu) {
+            if (confirm('Bạn có chắc chắn muốn từ chối vật tư ' + maVatTu + '?')) {
+                submitApprovalVatTu(maYeucau, maVatTu, 'reject');
+            }
+        }
+
+        function approveAllVT() {
+            if (!currentMaYeucau) {
+                alert('Vui lòng chọn một yêu cầu để xem chi tiết.');
+                return;
+            }
+
+            var selectableCount = $('.vt-checkbox').length;
+            if (selectableCount === 0) {
+                alert('Không có vật tư nào cần duyệt.');
+                return;
+            }
+
+            $('.vt-checkbox').prop('checked', true);
+            $('#selectAllVT').prop('checked', true);
+
+            pendingBulkAction = 'approve';
+            $('.vt-checkbox').each(function () {
+                var $row = $(this).closest('tr');
+                $row.addClass('pending-approval');
+            });
+
+            $('#btnXacNhan').show();
+            $('#btnXoaTatCa').show();
+        }
+
+        function rejectAllVT() {
+            if (!currentMaYeucau) {
+                alert('Vui lòng chọn một yêu cầu để xem chi tiết.');
+                return;
+            }
+
+            var selectableCount = $('.vt-checkbox').length;
+            if (selectableCount === 0) {
+                alert('Không có vật tư nào để từ chối.');
+                return;
+            }
+
+            $('.vt-checkbox').prop('checked', true);
+            $('#selectAllVT').prop('checked', true);
+
+            pendingBulkAction = 'reject';
+            $('.vt-checkbox').each(function () {
+                var $row = $(this).closest('tr');
+                $row.addClass('pending-approval');
+            });
+
+            $('#btnXacNhan').show();
+            $('#btnXoaTatCa').show();
+        }
+
+        function confirmBulkAction() {
+            if (!currentMaYeucau) {
+                alert('Vui lòng chọn một yêu cầu để xem chi tiết.');
+                return;
+            }
+
+            if (!pendingBulkAction) {
+                alert('Không có hành động nào cần xác nhận.');
+                return;
+            }
+
+            var selectableCount = $('.vt-checkbox').length;
+            if (selectableCount === 0) {
+                alert('Không có vật tư nào để xử lý.');
+                return;
+            }
+
+            submitApprovalTatCaVatTu(currentMaYeucau, pendingBulkAction);
+        }
+
+        function clearBulkAction() {
+            $('.vt-checkbox').prop('checked', false);
+            $('#selectAllVT').prop('checked', false);
+
+            $('.tablethietbi tbody tr').removeClass('pending-approval');
+
+            $('#btnXacNhan').hide();
+            $('#btnXoaTatCa').hide();
+            pendingBulkAction = null;
+        }
+
+        function submitApprovalVatTu(maYeucau, maVatTu, action) {
+            const pathSegments = window.location.pathname.split('/');
+            const area = pathSegments.length > 1 ? pathSegments[1] : '';
+            
+            $.ajax({
+                url: `/${area}/Yeucau/XuLyVatTuYeucau`,
+                method: 'POST',
+                data: {
+                    MaYeucau: maYeucau,
+                    MaSanpham: maVatTu,
+                    action: action,
+                    __RequestVerificationToken: requestToken
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        // Cập nhật trạng thái trong bảng
+                        var $row = $(`tr[data-mayeucau="${maYeucau}"][data-mavattu="${maVatTu}"]`);
+                        var $trangThaiCell = $row.find('.trangthai-vattu');
+                        var $duyetCell = $row.find('.duyet-column');
+                        
+                        if (action === 'approve') {
+                            $trangThaiCell.text('Đã duyệt');
+                            $duyetCell.html('<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>');
+                        } else {
+                            $trangThaiCell.text('Đã từ chối');
+                            $duyetCell.html('<span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>');
+                        }
+                    } else {
+                        alert(response.message || 'Có lỗi xảy ra.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Có lỗi xảy ra khi duyệt vật tư: ' + error);
+                }
+            });
+        }
+
+        function submitApprovalTatCaVatTu(maYeucau, action) {
+            const pathSegments = window.location.pathname.split('/');
+            const area = pathSegments.length > 1 ? pathSegments[1] : '';
+            
+            $.ajax({
+                url: `/${area}/Yeucau/XuLyTatCaVatTuYeucau`,
+                method: 'POST',
+                data: {
+                    MaYeucau: maYeucau,
+                    action: action,
+                    __RequestVerificationToken: requestToken
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        // Reload lại trang để cập nhật trạng thái yêu cầu trong bảng chính
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Có lỗi xảy ra.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Có lỗi xảy ra khi duyệt tất cả vật tư: ' + error);
+                }
+            });
+        }
     </script>
+    <style>
+        .duyet-column {
+            text-align: center;
+            white-space: nowrap;
+        }
+        .duyet-column .btn-icon {
+            margin: 0 3px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            font-size: 20px;
+        }
+        .duyet-column .approve-btn {
+            color: #4caf50;
+        }
+        .duyet-column .approve-btn:hover {
+            color: #45a049;
+        }
+        .duyet-column .reject-btn {
+            color: #f44336;
+        }
+        .duyet-column .reject-btn:hover {
+            color: #da190b;
+        }
+        .action-duyet {
+            margin-top: 15px;
+            padding: 10px 0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 16px;
+        }
+        .action-duyet-left,
+        .action-duyet-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-duyet-tatca,
+        .btn-tuchoi-tatca,
+        .btn-xacnhan,
+        .btn-xoa-tatca {
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            border: none;
+            min-width: 110px;
+        }
+        .btn-duyet-tatca {
+            background-color: #4caf50;
+            color: #fff;
+        }
+        .btn-duyet-tatca:hover {
+            background-color: #45a049;
+        }
+        .btn-tuchoi-tatca {
+            background-color: #f44336;
+            color: #fff;
+        }
+        .btn-tuchoi-tatca:hover {
+            background-color: #d32f2f;
+        }
+        .btn-xacnhan {
+            background-color: #1976d2;
+            color: #fff;
+        }
+        .btn-xacnhan:hover {
+            background-color: #1565c0;
+        }
+        .btn-xoa-tatca {
+            background-color: #9e9e9e;
+            color: #fff;
+        }
+        .btn-xoa-tatca:hover {
+            background-color: #757575;
+        }
+        .vt-checkbox {
+            cursor: pointer;
+        }
+        .pending-approval {
+            background-color: #fff9c4 !important;
+        }
+        .yeucau-info {
+            font-size: 16px;
+            color: #333;
+        }
+    </style>
 </body>
 </html>
 

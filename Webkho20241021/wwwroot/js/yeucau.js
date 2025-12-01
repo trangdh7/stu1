@@ -1,9 +1,13 @@
 $(document).ready(function () {
-    // Gọi hàm showVTYeucau với mã yêu cầu của hàng đầu tiên khi trang được tải
-    const firstRow = $('.table tbody tr').first(); // Lấy hàng đầu tiên trong bảng
+    initializeYeucauFilters();
+
+    // Gọi hàm showVTYeucau với mã yêu cầu của hàng đầu tiên (sau khi filter áp dụng)
+    const firstRow = $('.table tbody tr:visible').first();
     if (firstRow.length > 0) {
-        const MaYeucau = firstRow.find('td').eq(2).text().trim(); // Lấy mã yêu cầu từ cột đầu tiên
-        showVTYeucau(MaYeucau); // Gọi hàm hiển thị thiết bị
+        const MaYeucau = firstRow.find('td').eq(2).text().trim();
+        if (MaYeucau) {
+            showVTYeucau(MaYeucau);
+        }
     }
 
     // Gọi hàm thông báo ngay khi trang load
@@ -207,4 +211,60 @@ function setActiveMenu() {
 $(document).ready(function () {
     getThongbaoData();
 });
+
+function initializeYeucauFilters() {
+    const $searchInput = $('#timkiem');
+    const $statusFilter = $('#statusFilter');
+
+    if (!$searchInput.length && !$statusFilter.length) {
+        return;
+    }
+
+    const triggerFilter = function () {
+        filterYeucauTable();
+    };
+
+    if ($searchInput.length) {
+        $searchInput.on('input', triggerFilter);
+    }
+    if ($statusFilter.length) {
+        $statusFilter.on('change', triggerFilter);
+    }
+
+    filterYeucauTable();
+}
+
+function filterYeucauTable() {
+    const keyword = ($('#timkiem').val() || '').toLowerCase().trim();
+    const statusValue = ($('#statusFilter').val() || '').toLowerCase().trim();
+    let visibleCount = 0;
+
+    $('.table tbody tr').each(function () {
+        const $row = $(this);
+        const rowText = $row.text().toLowerCase();
+        const statusText = $row.find('td').eq(8).text().toLowerCase();
+
+        const matchesKeyword = !keyword || rowText.includes(keyword);
+        const matchesStatus = !statusValue || statusText.indexOf(statusValue) !== -1;
+
+        const shouldShow = matchesKeyword && matchesStatus;
+        $row.toggle(shouldShow);
+
+        if (shouldShow) {
+            visibleCount++;
+        }
+    });
+
+    const hasData = visibleCount > 0;
+    $('#noYeucauMessage').toggle(!hasData);
+
+    if (!hasData) {
+        applyTableRowHighlight($());
+    } else {
+        const $currentHighlight = $('.table tbody tr.highlight:visible').first();
+        if (!$currentHighlight.length) {
+            applyTableRowHighlight($('.table tbody tr:visible').first());
+        }
+    }
+}
 

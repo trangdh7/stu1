@@ -28,6 +28,7 @@
     <Folder Include="Areas\NhanvienKythuat\Models\" />
     <Folder Include="Areas\TruongBPKythuat\Data\" />
     <Folder Include="Areas\TruongBPMuahang\Data\" />
+    <Folder Include="wwwroot\uploads\excel\" />
   </ItemGroup>
 
   <ItemGroup>

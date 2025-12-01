@@ -215,6 +215,105 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             return Json(vatTuList);
         }
 
+        [HttpPost]
+        public IActionResult XuLyVatTuYeucau(string MaYeucau, string MaSanpham, string action)
+        {
+            try
+            {
+                var vatTu = _context.vtyeucau
+                    .FirstOrDefault(v => v.VTMaYeucau == MaYeucau && v.MaSanpham == MaSanpham);
+
+                if (vatTu == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư." });
+                }
+
+                if (action == "approve")
+                {
+                    vatTu.TrangThai = "Chờ giám đốc duyệt";
+                }
+                else if (action == "reject")
+                {
+                    vatTu.TrangThai = "Đã từ chối";
+                }
+
+                _context.vtyeucau.Update(vatTu);
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = action == "approve" ? "Đã duyệt vật tư thành công." : "Đã từ chối vật tư." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult XuLyTatCaVatTuYeucau(string MaYeucau, string action)
+        {
+            try
+            {
+                var vatTuList = _context.vtyeucau
+                    .Where(v => v.VTMaYeucau == MaYeucau).ToList();
+
+                if (!vatTuList.Any())
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư nào." });
+                }
+
+                foreach (var vatTu in vatTuList)
+                {
+                    if (action == "approve")
+                    {
+                        vatTu.TrangThai = "Chờ giám đốc duyệt";
+                    }
+                    else if (action == "reject")
+                    {
+                        vatTu.TrangThai = "Đã từ chối";
+                    }
+                    _context.vtyeucau.Update(vatTu);
+                }
+
+                // Lưu thay đổi trạng thái vật tư
+                _context.SaveChanges();
+
+                // Cập nhật trạng thái yêu cầu chính nếu Trưởng BP duyệt tất cả vật tư
+                if (action == "approve")
+                {
+                    var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucau != null)
+                    {
+                        var chucVu = HttpContext.Session.GetString("Chucvu");
+                        var boPhan = HttpContext.Session.GetString("Bophan");
+                        
+                        // Kiểm tra xem tất cả vật tư đã được duyệt chưa (không có vật tư nào bị từ chối)
+                        var allApproved = vatTuList.All(v => v.TrangThai == "Chờ giám đốc duyệt");
+                        
+                        if (allApproved && chucVu == "Trưởng BP" && boPhan == "BP kho")
+                        {
+                            // Tất cả vật tư đã được duyệt, cập nhật trạng thái yêu cầu để chuyển sang Giám đốc
+                            yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            _context.yeucau.Update(yeucau);
+                            _context.SaveChanges();
+                        }
+                        else if (action == "reject")
+                        {
+                            // Nếu có bất kỳ vật tư nào bị từ chối, yêu cầu chính cũng bị từ chối
+                            yeucau.TrangThai = "Đã từ chối";
+                            _context.yeucau.Update(yeucau);
+                            _context.SaveChanges();
+                        }
+                    }
+                }
+
+                return Json(new { success = true, message = action == "approve" ? $"Đã duyệt {vatTuList.Count} vật tư thành công." : $"Đã từ chối {vatTuList.Count} vật tư." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
         [HttpGet]
         public IActionResult GetVTPhieuxuatkho(string MaXuatkho)
         {
