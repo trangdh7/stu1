@@ -26,6 +26,22 @@
                 </div>
             </div>
 
+            <!-- Error Messages -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="error-alert">
+                    <div class="error-alert-header">
+                        <strong>⚠️ Có lỗi xảy ra:</strong>
+                    </div>
+                    <ul class="error-list">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                </div>
+            }
+
             <!-- Multi-step form -->
             <form id="signupForm" method="post" asp-action="CreateUser" novalidate>
                 <!-- Step 1 -->
@@ -210,6 +226,18 @@
             input.insertAdjacentElement('afterend', error);
 
             setTimeout(() => input.classList.remove('error'), 1500);
+        }
+
+        // Tự động ẩn thông báo lỗi sau 5 giây
+        const errorAlert = document.querySelector('.error-alert');
+        if (errorAlert) {
+            setTimeout(() => {
+                errorAlert.style.transition = 'opacity 0.5s ease-out';
+                errorAlert.style.opacity = '0';
+                setTimeout(() => {
+                    errorAlert.style.display = 'none';
+                }, 500);
+            }, 5000);
         }
 
         

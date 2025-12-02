@@ -141,8 +141,8 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 .Where(d => d.MaNguoiQLDA == maNv)
                 .Select(d => d.MaDuan)
                 .ToList();
-            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Quản lí dự án" && Maduanquanli.Contains(p.YCMaDuan));
-            int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == (chucVu + "-" + boPhan));
+            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Chờ quản lý dự án duyệt" && Maduanquanli.Contains(p.YCMaDuan));
+            int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == ("Chờ Trưởng BP-" + boPhan + " duyệt"));
             int thongbaoyeucaucount = Duyetyeucaucount + QLDAyeucaucount;
 
             // Thông báo xác nhận nhận hàng - đếm phiếu xuất kho chờ xác nhận
@@ -484,46 +484,46 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kho";
+                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kho duyệt";
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP mua hàng";
+                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP mua hàng duyệt";
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kế toán")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kế toán";
+                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kế toán duyệt";
                         }
                     }
                     else
                     {
                         if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
                         }
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
                         {
-                            yeucau.TrangThai = "Quản lí dự án";
+                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kho";
+                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kho duyệt";
                         }
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
                         {
-                            yeucau.TrangThai = "Quản lí dự án";
+                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP mua hàng";
+                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP mua hàng duyệt";
                         }
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
                         {
-                            yeucau.TrangThai = "Quản lí dự án";
+                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
                         }
                         else if (chucVu2 == "Giám đốc")
                         {
@@ -535,7 +535,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 {
                     if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
                     {
-                        yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
+                        yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
                     {
@@ -543,7 +543,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     }
                     else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
                     {
-                        yeucau.TrangThai = "Trưởng BP-BP kho";
+                        yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kho duyệt";
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
                     {
@@ -551,7 +551,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     }
                     else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
                     {
-                        yeucau.TrangThai = "Trưởng BP-BP mua hàng";
+                        yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP mua hàng duyệt";
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
                     {

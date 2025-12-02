@@ -166,7 +166,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 // Đếm phiếu xuất kho đang chờ kho xác nhận và xử lý
                 int phieuxuatkhocount = _context.phieuxuatkho.Count(p => p.TrangThai == "Chờ xác nhận");
                 // Đếm yêu cầu chờ duyệt của kho (nếu có)
-                int yeucauchoduyetcount = _context.yeucau.Count(p => p.TrangThai == (chucVu + "-" + boPhan));
+                int yeucauchoduyetcount = _context.yeucau.Count(p => p.TrangThai == ("Chờ Trưởng Phòng bộ phận " + boPhan + " duyệt"));
                 thongbaoyeucaucount = phieuxuatkhocount + yeucauchoduyetcount;
             }
             else
@@ -176,8 +176,8 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     .Where(d => d.MaNguoiQLDA == maNv)
                     .Select(d => d.MaDuan)
                     .ToList();
-                int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Quản lí dự án" && Maduanquanli.Contains(p.YCMaDuan));
-                int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == (chucVu + "-" + boPhan));
+                int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Chờ quản lý dự án duyệt" && Maduanquanli.Contains(p.YCMaDuan));
+                int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == ("Chờ Trưởng Phòng bộ phận " + boPhan + " duyệt"));
                 thongbaoyeucaucount = Duyetyeucaucount + QLDAyeucaucount;
             }
 
@@ -2904,7 +2904,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 // Đếm phiếu xuất kho đang chờ kho xác nhận và xử lý
                 int phieuxuatkhocount = _context.phieuxuatkho.Count(p => p.TrangThai == "Chờ xác nhận");
                 // Đếm yêu cầu chờ duyệt của kho (nếu có)
-                int yeucauchoduyetcount = _context.yeucau.Count(p => p.TrangThai == (chucVu + "-" + boPhan));
+                int yeucauchoduyetcount = _context.yeucau.Count(p => p.TrangThai == ("Chờ Trưởng Phòng bộ phận " + boPhan + " duyệt"));
                 thongbaoyeucaucount = phieuxuatkhocount + yeucauchoduyetcount;
             }
             else

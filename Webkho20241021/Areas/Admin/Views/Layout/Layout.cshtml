@@ -96,11 +96,63 @@
     </nav>
     <nav class="bodylayout">
         <div>
+            <!-- Error Messages -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="error-alert">
+                    <div class="error-alert-header">
+                        <strong>⚠️ Có lỗi xảy ra:</strong>
+                    </div>
+                    <ul class="error-list">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <!-- Success Messages -->
+            @if (TempData["Success"] != null)
+            {
+                <div class="success-alert">
+                    <div class="success-alert-header">
+                        <strong>✅ Thành công:</strong>
+                    </div>
+                    <p>@TempData["Success"]</p>
+                </div>
+            }
+
             @RenderBody()
         </div>
     </nav>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="~/js/layout.js"></script>
+    <script>
+        // Tự động ẩn thông báo lỗi và thành công sau 5 giây
+        const errorAlert = document.querySelector('.error-alert');
+        const successAlert = document.querySelector('.success-alert');
+        
+        if (errorAlert) {
+            setTimeout(() => {
+                errorAlert.style.transition = 'opacity 0.5s ease-out';
+                errorAlert.style.opacity = '0';
+                setTimeout(() => {
+                    errorAlert.style.display = 'none';
+                }, 500);
+            }, 5000);
+        }
+        
+        if (successAlert) {
+            setTimeout(() => {
+                successAlert.style.transition = 'opacity 0.5s ease-out';
+                successAlert.style.opacity = '0';
+                setTimeout(() => {
+                    successAlert.style.display = 'none';
+                }, 500);
+            }, 5000);
+        }
+    </script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

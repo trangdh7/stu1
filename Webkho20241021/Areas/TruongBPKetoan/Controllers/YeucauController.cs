@@ -136,8 +136,8 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 .Where(d => d.MaNguoiQLDA == maNv)
                 .Select(d => d.MaDuan)
                 .ToList();
-            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Quản lí dự án" && Maduanquanli.Contains(p.YCMaDuan));
-            int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == (chucVu + "-" + boPhan));
+            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Chờ quản lý dự án duyệt" && Maduanquanli.Contains(p.YCMaDuan));
+            int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == ("Chờ Trưởng Phòng bộ phận " + boPhan + " duyệt"));
             int thongbaoyeucaucount = Duyetyeucaucount + QLDAyeucaucount;
 
             // Thông báo xác nhận nhận hàng - đếm phiếu xuất kho chờ xác nhận

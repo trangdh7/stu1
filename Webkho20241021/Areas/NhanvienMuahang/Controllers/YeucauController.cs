@@ -139,7 +139,7 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                 .Select(d => d.MaDuan)
                 .ToList();
             int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Qu?n l� d? �n" && Maduanquanli.Contains(p.YCMaDuan));
-            int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == (chucVu + "-" + boPhan));
+            int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == ("Chờ Trưởng Phòng bộ phận " + boPhan + " duyệt"));
             int thongbaoyeucaucount = Duyetyeucaucount + QLDAyeucaucount;
 
             // Th�ng b�o x�c nh?n nh?n h�ng - d?m phi?u xu?t kho ch? x�c nh?n
@@ -509,11 +509,11 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                         }
                         else if (chucVu2 == "Nh�n vi�n" && boPhan2 == "BP k? thu?t")
                         {
-                            yeucau.TrangThai = "Tru?ng BP-BP k? thu?t";
+                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kỹ thuật duyệt";
                         }
                         else if (chucVu2 == "Nh�n vi�n" && boPhan2 == "BP kho")
                         {
-                            yeucau.TrangThai = "Tru?ng BP-BP kho";
+                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kho duyệt";
                         }
                         else if (chucVu2 == "Nh�n vi�n" && boPhan2 == "BP mua h�ng")
                         {
@@ -528,7 +528,7 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     {
                         if (chucVu2 == "Nh�n vi�n" && boPhan2 == "BP k? thu?t")
                         {
-                            yeucau.TrangThai = "Tru?ng BP-BP k? thu?t";
+                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kỹ thuật duyệt";
                         }
                         else if (chucVu2 == "Tru?ng BP" && boPhan2 == "BP k? thu?t")
                         {
@@ -536,7 +536,7 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                         }
                         else if (chucVu2 == "Nh�n vi�n" && boPhan2 == "BP kho")
                         {
-                            yeucau.TrangThai = "Tru?ng BP-BP kho";
+                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kho duyệt";
                         }
                         else if (chucVu2 == "Tru?ng BP" && boPhan2 == "BP kho")
                         {
@@ -560,7 +560,7 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                 {
                     if (chucVu2 == "Nh�n vi�n" && boPhan2 == "BP k? thu?t")
                     {
-                        yeucau.TrangThai = "Tru?ng BP-BP k? thu?t";
+                        yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kỹ thuật duyệt";
                     }
                     else if (chucVu2 == "Tru?ng BP" && boPhan2 == "BP k? thu?t")
                     {
@@ -568,7 +568,7 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     }
                     else if (chucVu2 == "Nh�n vi�n" && boPhan2 == "BP kho")
                     {
-                        yeucau.TrangThai = "Tru?ng BP-BP kho";
+                        yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kho duyệt";
                     }
                     else if (chucVu2 == "Tru?ng BP" && boPhan2 == "BP kho")
                     {

@@ -39,16 +39,6 @@
                     <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
                     <a href="/Admin/User/DanhSachUser" class="btn btn-secondary">Hủy</a>
                 </div>
-
-                @if (ViewData.ModelState.ErrorCount > 0)
-                {
-                    <div class="alert alert-danger">
-                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                        {
-                            <p>@error.ErrorMessage</p>
-                        }
-                    </div>
-                }
             }
         </div>
 

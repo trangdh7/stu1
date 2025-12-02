@@ -188,7 +188,8 @@
                         var isAwaitingDirector = isAwaitingDirectorStatusFunc(item.TrangThai);
                         var maYeucau = Model.Yeucau.FirstOrDefault()?.MaYeucau ?? "";
                         var canSelectForBulk = canApprove && isAwaitingDirector;
-                        var canActOnItem = canApprove && !isApproved && !isRejected;
+                        // Chỉ hiển thị nút duyệt khi trạng thái là "Chờ giám đốc duyệt"
+                        var canActOnItem = canApprove && isAwaitingDirector && !isApproved && !isRejected;
                         <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau">
                             <td>@if (canSelectForBulk) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
                             <td>@STT2</td>
@@ -394,7 +395,8 @@
                             // Được phép chọn hàng loạt khi đúng bước "Chờ giám đốc duyệt"
                             var isAwaitingDirector = isAwaitingDirectorStatus(trangThai);
                             var canSelectForBulk = canApproveYeucau && isAwaitingDirector;
-                            var canActOnItem = canApproveYeucau && !isApproved && !isRejected;
+                            // Chỉ hiển thị nút duyệt khi trạng thái là "Chờ giám đốc duyệt"
+                            var canActOnItem = canApproveYeucau && isAwaitingDirector && !isApproved && !isRejected;
                             
                             // Escape single quotes trong mã vật tư để tránh lỗi JavaScript
                             var maVatTuEscaped = maVatTu.replace(/'/g, "\\'");
