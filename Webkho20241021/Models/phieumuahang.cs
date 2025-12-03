@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Webkho_20241021.Models
 {
@@ -12,5 +13,9 @@ namespace Webkho_20241021.Models
         public DateTime? NgayTao { get; set; }
         public string? TrangThai { get; set; }
         public string? GhiChu { get; set; }
+
+        // Không map vào DB, dùng để hiển thị tên đầy đủ Người yêu cầu
+        [NotMapped]
+        public string? TenNguoiyeucau { get; set; }
     }
 }

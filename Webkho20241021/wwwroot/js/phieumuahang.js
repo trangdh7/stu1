@@ -2,8 +2,8 @@ $(document).ready(function () {
     const pathSegments = window.location.pathname.split('/');
     const area = pathSegments.length > 1 ? pathSegments[1] : '';
     
-    // Ẩn nút "Gửi báo giá" nếu không phải area TruongBPMuahang
-    if (area !== 'TruongBPMuahang') {
+    // Ẩn nút "Gửi báo giá" nếu không phải area mua hàng (Trưởng BP hoặc Nhân viên mua hàng)
+    if (area !== 'TruongBPMuahang' && area !== 'NhanvienMuahang') {
         $('#submitPhieumuahang').hide();
     }
 
@@ -229,19 +229,16 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
     const area = pathSegments.length > 1 ? pathSegments[1] : '';
     const url = `/${area}/Yeucau/GetVTPhieumuahang`;
 
-    // Nếu không có trạng thái được truyền vào, lấy từ data attribute của link
+    // Nếu không có trạng thái được truyền vào, lấy từ data attribute của link hoặc từ cột trạng thái
     if (!trangThaiPhieu) {
         $('.table tbody tr').each(function() {
             const link = $(this).find('td').eq(1).find('a');
             if (link.text().trim() === Mamuahang) {
                 trangThaiPhieu = link.data('trangthai') || '';
                 if (!trangThaiPhieu) {
-                    // Nếu không có data attribute, thử lấy từ cột trạng thái
+                    // Lấy từ cột trạng thái (cột cuối cùng)
                     const trangThaiCell = $(this).find('td').last();
-                    const buttons = trangThaiCell.find('button');
-                    if (buttons.length === 0) {
-                        trangThaiPhieu = trangThaiCell.text().trim();
-                    }
+                    trangThaiPhieu = trangThaiCell.text().trim();
                 }
             }
         });
@@ -251,12 +248,68 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
         url: url,
         method: 'GET',
         data: { Mamuahang: Mamuahang },
-        success: function (data) {
+        success: function (response) {
             $('.tablethietbi tbody').empty();
+            
+            // Xử lý response mới (có items) hoặc cũ (mảng trực tiếp)
+            let data = response.items || response;
+            let tenNguoiYeuCau = response.tenNguoiYeuCau || '';
+            
+            // Hiển thị header text (chỉ cho Giamdoc area)
+            if (area === 'Giamdoc') {
+                if (Mamuahang && tenNguoiYeuCau) {
+                    $('#phieumuahang-header').text(`Phiếu mua hàng ${Mamuahang} của ${tenNguoiYeuCau}`).show();
+                } else if (Mamuahang) {
+                    $('#phieumuahang-header').text(`Phiếu mua hàng ${Mamuahang}`).show();
+                } else {
+                    $('#phieumuahang-header').hide();
+                }
+            }
+            
+            // Hiển thị action buttons dựa trên điều kiện
+            const isGiamdoc = area === 'Giamdoc';
+            const isBPMuahang = area === 'TruongBPMuahang' || area === 'NhanvienMuahang';
+            
+            // Hiển thị nút "Gửi báo giá" cho BP mua hàng
+            if (isBPMuahang && data && data.length > 0 && 
+                (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')))) {
+                $('#submitPhieumuahang').show();
+            } else {
+                $('#submitPhieumuahang').hide();
+            }
+            
+            // Hiển thị nút duyệt/từ chối CHỈ cho Giám đốc khi trạng thái là "Đã báo giá"
+            if (isGiamdoc) {
+                if (data && data.length > 0 && trangThaiPhieu === 'Đã báo giá') {
+                    $('#approvePhieumuahang').show();
+                    $('#rejectPhieumuahang').show();
+                    $('#action-buttons').show();
+                } else {
+                    $('#approvePhieumuahang').hide();
+                    $('#rejectPhieumuahang').hide();
+                    // Chỉ hiển thị action-buttons nếu có nút "Gửi báo giá"
+                    if ($('#submitPhieumuahang').is(':visible')) {
+                        $('#action-buttons').show();
+                    } else {
+                        $('#action-buttons').hide();
+                    }
+                }
+            } else {
+                // Với các area khác, chỉ hiển thị nút "Gửi báo giá" nếu có
+                $('#approvePhieumuahang').hide();
+                $('#rejectPhieumuahang').hide();
+                if ($('#submitPhieumuahang').is(':visible')) {
+                    $('#action-buttons').show();
+                } else {
+                    $('#action-buttons').hide();
+                }
+            }
+            
             if (data && data.length > 0) {
                 // Kiểm tra xem có thể nhập đơn giá không
-                // Cho phép nhập khi: area = TruongBPMuahang và (trạng thái phiếu = "Đang chờ báo giá" hoặc chứa "Đã từ chối")
-                const canInputPrice = area === 'TruongBPMuahang' && 
+                // Cho phép nhập khi: area là mua hàng (Trưởng BP hoặc Nhân viên) và (trạng thái phiếu = "Đang chờ báo giá" hoặc chứa "Đã từ chối")
+                const isPurchaseArea = (area === 'TruongBPMuahang' || area === 'NhanvienMuahang');
+                const canInputPrice = isPurchaseArea && 
                     (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
 
                 let STT = 1;
@@ -323,6 +376,7 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         <td colspan="11" style="text-align:center;">Không có dữ liệu vật tư.</td>
                     </tr>
                 `);
+                $('#action-buttons').hide();
             }
 
             let $rowToHighlight = $();
@@ -519,3 +573,97 @@ function inPhieuMuaHang() {
     
     window.open(url, '_blank');
 }
+
+// Xử lý nút duyệt phiếu mua hàng
+$(document).on('click', '#approvePhieumuahang', function() {
+    if (!selectedMamuahang) {
+        alert("Vui lòng chọn mã mua hàng trước khi duyệt.");
+        return;
+    }
+    
+    if (!confirm("Bạn có chắc chắn muốn duyệt phiếu mua hàng này?")) {
+        return;
+    }
+    
+    const pathSegments = window.location.pathname.split('/');
+    const area = pathSegments.length > 1 ? pathSegments[1] : '';
+    const url = `/${area}/Yeucau/XuLyPhieumuahang`;
+    
+    // Tạo form để submit
+    const form = $('<form>', {
+        method: 'POST',
+        action: url
+    });
+    
+    form.append($('<input>', {
+        type: 'hidden',
+        name: 'MaMuahang',
+        value: selectedMamuahang
+    }));
+    
+    form.append($('<input>', {
+        type: 'hidden',
+        name: 'action',
+        value: 'approve'
+    }));
+    
+    // Thêm token chống CSRF nếu có
+    const token = $('input[name="__RequestVerificationToken"]').val();
+    if (token) {
+        form.append($('<input>', {
+            type: 'hidden',
+            name: '__RequestVerificationToken',
+            value: token
+        }));
+    }
+    
+    $('body').append(form);
+    form.submit();
+});
+
+// Xử lý nút từ chối phiếu mua hàng
+$(document).on('click', '#rejectPhieumuahang', function() {
+    if (!selectedMamuahang) {
+        alert("Vui lòng chọn mã mua hàng trước khi từ chối.");
+        return;
+    }
+    
+    if (!confirm("Bạn có chắc chắn muốn từ chối phiếu mua hàng này?")) {
+        return;
+    }
+    
+    const pathSegments = window.location.pathname.split('/');
+    const area = pathSegments.length > 1 ? pathSegments[1] : '';
+    const url = `/${area}/Yeucau/XuLyPhieumuahang`;
+    
+    // Tạo form để submit
+    const form = $('<form>', {
+        method: 'POST',
+        action: url
+    });
+    
+    form.append($('<input>', {
+        type: 'hidden',
+        name: 'MaMuahang',
+        value: selectedMamuahang
+    }));
+    
+    form.append($('<input>', {
+        type: 'hidden',
+        name: 'action',
+        value: 'reject'
+    }));
+    
+    // Thêm token chống CSRF nếu có
+    const token = $('input[name="__RequestVerificationToken"]').val();
+    if (token) {
+        form.append($('<input>', {
+            type: 'hidden',
+            name: '__RequestVerificationToken',
+            value: token
+        }));
+    }
+    
+    $('body').append(form);
+    form.submit();
+});

@@ -98,6 +98,15 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             var Phieumuahanglist = _context.phieumuahang
             .OrderByDescending(y => y.NgayMuahang)
             .ToList();
+            // Gán tên Người yêu cầu cho từng phiếu mua hàng
+            var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
+            foreach (var phieu in Phieumuahanglist)
+            {
+                if (!string.IsNullOrEmpty(phieu.MaNguoidung) && nguoiDungDict.TryGetValue(phieu.MaNguoidung, out var ten))
+                {
+                    phieu.TenNguoiyeucau = ten;
+                }
+            }
             var VTphieumuahanglist = _context.vtphieumuahang.ToList();
             var model = new Phieumuahangviewmodel
             {

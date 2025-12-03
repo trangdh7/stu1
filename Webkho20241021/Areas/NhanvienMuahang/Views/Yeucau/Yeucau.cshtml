@@ -19,13 +19,13 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/NhanvienMuahang/Yeucau/Yeucau">Chưa duyệt</a>
+                    <a href="/NhanvienMuahang/Yeucau/Yeucau">Vật tư yêu cầu</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
-                <li class="menu-xuatkho">
-                    <a href="/NhanvienMuahang/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
+                <li class="menu-muahang">
+                    <a href="/NhanvienMuahang/Yeucau/Phieumuahang">Vật tư mua hàng</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -36,12 +36,13 @@
                         <span class="notification"></span>
                     </span>
                 </li>
-                <li class="menu-muahang">
-                    <a href="/NhanvienMuahang/Yeucau/Phieumuahang">Phiếu mua hàng</a>
+                <li class="menu-xuatkho">
+                    <a href="/NhanvienMuahang/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
+               
             </ul>
             <ul>
                 <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
@@ -84,7 +85,7 @@
                             <td>@item.Bophan</td>
                             <td>@item.YCMaNguoidung</td>
                             <td>@item.YCMaDuan</td>
-                            <td>@item.NgayYeucau?.ToString("dd/MM/yyyy")</td>
+                            <td>@item.NgayYeucau?.ToString("dd/MM/yyyy HH:mm:ss")</td>
                             <td>
                                 @if (item.TrangThai == "Quản lí dự án" && maNguoiQLDA == maNguoidungSession)
                                 {

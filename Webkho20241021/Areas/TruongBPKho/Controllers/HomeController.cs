@@ -8,6 +8,7 @@ using OfficeOpenXml;
 using Microsoft.AspNetCore.Http;
 using Webkho_20241021.Models.ViewModels;
 using Webkho_20241021.Services;
+using Webkho_20241021.Helpers;
 
 namespace Webkho_20241021.Areas.TruongBPKho.Controllers
 {
@@ -100,7 +101,11 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             }.Min();
 
             // Tập hợp mã kho đã sử dụng (bao gồm dữ liệu hiện có và các bản ghi đang thêm trong batch này)
-            var usedMakho = new HashSet<string>(_context.khotongs.Select(k => k.Makho));
+            var usedMakho = new HashSet<string>(
+                _context.khotongs
+                    .Select(k => k.Makho)
+                    .Where(m => !string.IsNullOrWhiteSpace(m)),
+                StringComparer.OrdinalIgnoreCase);
 
             for (int i = 0; i < count; i++)
             {
@@ -125,25 +130,13 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 }
                 else
                 {
-                    // === Sinh mã kho mới theo format: MãSP-HãngSX-Ngày ===
-                    string safeHangSX = HangSX[i]?.Replace(" ", "").Replace("/", "-") ?? "NA";
-                    string Makho = $"{MaSanpham[i]}-{safeHangSX}-{DateTime.Now:yyyyMMdd}";
-
-                    int suffix = 1;
-                    // Đảm bảo duy nhất cả ở DB lẫn các entity đang Add trong DbContext hiện tại
-                    while (_context.khotongs.Any(k => k.Makho == Makho) ||
-                           _context.khotongs.Local.Any(k => k.Makho == Makho) ||
-                           usedMakho.Contains(Makho))
-                    {
-                        Makho = $"{MaSanpham[i]}-{safeHangSX}-{DateTime.Now:yyyyMMdd}-{suffix}";
-                        suffix++;
-                    }
-
-                    // Giới hạn độ dài tối đa 50 ký tự
-                    if (Makho.Length > 50)
-                    {
-                        Makho = Makho.Substring(0, 50);
-                    }
+                    var ngayNhap = DateTime.Now;
+                    var makho = MakhoHelper.BuildUniqueOfficialCode(
+                        _context,
+                        MaSanpham[i],
+                        HangSX[i],
+                        ngayNhap,
+                        usedMakho);
 
                     var khotongs = new khotongs
                     {
@@ -157,13 +150,13 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         NgayBaohanh = (NgayBaohanh != null && i < NgayBaohanh.Length) ? NgayBaohanh[i] : null,
                         ThoiGianBH = (ThoiGianBH != null && i < ThoiGianBH.Length) ? ThoiGianBH[i] : null,
                         DuAn = (DuAn != null && i < DuAn.Length && !string.IsNullOrWhiteSpace(DuAn[i])) ? DuAn[i] : null,
-                        Makho = Makho,
-                        NgayNhapkho = DateTime.Now,
+                        Makho = makho,
+                        NgayNhapkho = ngayNhap,
                         TrangThai = "Tồn kho"
                     };
 
                     _context.khotongs.Add(khotongs);
-                    usedMakho.Add(Makho);
+                    usedMakho.Add(makho);
                 }
             }
 
@@ -199,7 +192,11 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             int updated = 0;
 
             // Tập hợp mã kho đã sử dụng (bao gồm dữ liệu hiện có và các bản ghi đang thêm trong batch này)
-            var usedMakho = new HashSet<string>(_context.khotongs.Select(k => k.Makho));
+            var usedMakho = new HashSet<string>(
+                _context.khotongs
+                    .Select(k => k.Makho)
+                    .Where(m => !string.IsNullOrWhiteSpace(m)),
+                StringComparer.OrdinalIgnoreCase);
 
             for (int i = 0; i < count; i++)
             {
@@ -227,25 +224,13 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 }
                 else
                 {
-                    // === Sinh mã kho mới theo format: MãSP-HãngSX-Ngày ===
-                    string safeHangSX = HangSX[i]?.Replace(" ", "").Replace("/", "-") ?? "NA";
-                    string Makho = $"{MaSanpham[i]}-{safeHangSX}-{DateTime.Now:yyyyMMdd}";
-
-                    int suffix = 1;
-                    // Đảm bảo duy nhất cả ở DB lẫn các entity đang Add trong DbContext hiện tại
-                    while (_context.khotongs.Any(k => k.Makho == Makho) ||
-                           _context.khotongs.Local.Any(k => k.Makho == Makho) ||
-                           usedMakho.Contains(Makho))
-                    {
-                        Makho = $"{MaSanpham[i]}-{safeHangSX}-{DateTime.Now:yyyyMMdd}-{suffix}";
-                        suffix++;
-                    }
-
-                    // Giới hạn độ dài tối đa 50 ký tự
-                    if (Makho.Length > 50)
-                    {
-                        Makho = Makho.Substring(0, 50);
-                    }
+                    var ngayNhap = DateTime.Now;
+                    var makho = MakhoHelper.BuildUniqueOfficialCode(
+                        _context,
+                        MaSanpham[i],
+                        HangSX[i],
+                        ngayNhap,
+                        usedMakho);
 
                     var newKhotong = new khotongs
                     {
@@ -259,13 +244,13 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         NgayBaohanh = (NgayBaohanh != null && i < NgayBaohanh.Length) ? NgayBaohanh[i] : null,
                         ThoiGianBH = (ThoiGianBH != null && i < ThoiGianBH.Length) ? ThoiGianBH[i] : null,
                         DuAn = (DuAn != null && i < DuAn.Length && !string.IsNullOrWhiteSpace(DuAn[i])) ? DuAn[i] : null,
-                        Makho = Makho,
-                        NgayNhapkho = DateTime.Now,
+                        Makho = makho,
+                        NgayNhapkho = ngayNhap,
                         TrangThai = "Tồn kho"
                     };
 
                     _context.khotongs.Add(newKhotong);
-                    usedMakho.Add(Makho);
+                    usedMakho.Add(makho);
                     added++;
                 }
             }

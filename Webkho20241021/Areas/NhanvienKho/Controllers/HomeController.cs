@@ -7,6 +7,7 @@ using System;
 using OfficeOpenXml;
 using Webkho_20241021.Models.ViewModels;
 using Webkho_20241021.Services;
+using Webkho_20241021.Helpers;
 
 namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 {
@@ -84,9 +85,12 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
         public IActionResult ThemvattuSQL(string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, DateTime?[] NgayBaohanh, DateTime?[] ThoiGianBH)
         {
             int count = TenSanpham.Length;
-            var MakhoPrefix = "STU";
+            var reservedCodes = new HashSet<string>(
+                _context.khotongs
+                    .Select(k => k.Makho)
+                    .Where(m => !string.IsNullOrWhiteSpace(m)),
+                StringComparer.OrdinalIgnoreCase);
 
-            // Tạo một danh sách để lưu các mục hợp lệ
             List<khotongs> validKhotongs = new List<khotongs>();
 
             for (int i = 0; i < count; i++)
@@ -97,15 +101,13 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                     continue;
                 }
 
-                string Makho;
-                int index = _context.khotongs.Count() + i + 1; // Khởi tạo index bắt đầu từ số lượng hiện tại + i
-
-                do
-                {
-                    Makho = $"{MakhoPrefix}{index}";
-                    index++;
-                }
-                while (_context.khotongs.Any(k => k.Makho == Makho));
+                var ngayNhap = DateTime.Now;
+                var makho = MakhoHelper.BuildUniqueOfficialCode(
+                    _context,
+                    MaSanpham[i],
+                    HangSX[i],
+                    ngayNhap,
+                    reservedCodes);
 
                 var khotongs = new khotongs
                 {
@@ -117,12 +119,13 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                     DonVi = DonVi[i],
                     NgayBaohanh = NgayBaohanh[i],
                     ThoiGianBH = ThoiGianBH[i],
-                    Makho = Makho,
-                    NgayNhapkho = DateTime.Now,
+                    Makho = makho,
+                    NgayNhapkho = ngayNhap,
                     TrangThai = "Tồn kho"
                 };
 
                 validKhotongs.Add(khotongs);
+                reservedCodes.Add(makho);
             }
 
             if (validKhotongs.Count > 0)
@@ -161,9 +164,12 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
         public IActionResult ImportSQL(string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, DateTime?[] NgayBaohanh, DateTime?[] ThoiGianBH)
         {
             int count = TenSanpham.Length;
-            var MakhoPrefix = "STU";
+            var reservedCodes = new HashSet<string>(
+                _context.khotongs
+                    .Select(k => k.Makho)
+                    .Where(m => !string.IsNullOrWhiteSpace(m)),
+                StringComparer.OrdinalIgnoreCase);
 
-            // Tạo một danh sách để lưu các mục hợp lệ
             List<khotongs> validKhotongs = new List<khotongs>();
 
             for (int i = 0; i < count; i++)
@@ -174,15 +180,13 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                     continue;
                 }
 
-                string Makho;
-                int index = _context.khotongs.Count() + i + 1; // Khởi tạo index bắt đầu từ số lượng hiện tại + i
-
-                do
-                {
-                    Makho = $"{MakhoPrefix}{index}";
-                    index++;
-                }
-                while (_context.khotongs.Any(k => k.Makho == Makho));
+                var ngayNhap = DateTime.Now;
+                var makho = MakhoHelper.BuildUniqueOfficialCode(
+                    _context,
+                    MaSanpham[i],
+                    HangSX[i],
+                    ngayNhap,
+                    reservedCodes);
 
                 var khotongs = new khotongs
                 {
@@ -194,12 +198,13 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                     DonVi = DonVi[i],
                     NgayBaohanh = NgayBaohanh[i],
                     ThoiGianBH = ThoiGianBH[i],
-                    Makho = Makho,
-                    NgayNhapkho = DateTime.Now,
+                    Makho = makho,
+                    NgayNhapkho = ngayNhap,
                     TrangThai = "Tồn kho"
                 };
 
                 validKhotongs.Add(khotongs);
+                reservedCodes.Add(makho);
             }
 
             if (validKhotongs.Count > 0)

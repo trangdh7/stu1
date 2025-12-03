@@ -38,25 +38,26 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/Giamdoc/Yeucau/Yeucau">Phiếu yêu cầu</a>
+                    <a href="/Giamdoc/Yeucau/Yeucau">Vật tư yêu cầu</a>
                     <span class="badge">
                         <span class="notification"></span> 
                     </span>
                 </li>
-                <li class="menu-xuatkho">
-                    <a href="/Giamdoc/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
+                <li class="menu-muahang">
+                    <a href="/Giamdoc/Yeucau/Phieumuahang">Vật tư mua hàng</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
+                
                 <li class="menu-nhapkho">
                     <a href="/Giamdoc/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
-                <li class="menu-muahang">
-                    <a href="/Giamdoc/Yeucau/Phieumuahang">Phiếu mua hàng</a>
+                <li class="menu-xuatkho">
+                    <a href="/Giamdoc/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -91,6 +92,7 @@
                         <td>Mã dự án</td>
                         <td>Ngày yêu cầu</td>
                         <td>Trạng thái</td>
+                        <td>Ngày duyệt</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,6 +107,11 @@
                         var trangThaiYeucau = string.IsNullOrWhiteSpace(item.TrangThai) ? "Chờ giám đốc duyệt" : item.TrangThai.Trim();
                         var yeucauAwaiting = isAwaitingDirectorStatusFunc(item.TrangThai);
                         var yeucauRowClass = yeucauAwaiting ? "awaiting-director" : "";
+                        // Tính ngày duyệt sớm nhất từ các vật tư trong yêu cầu
+                        var ngayDuyetSomNhat = Model.VTyeucau
+                            .Where(vt => vt.VTMaYeucau == item.MaYeucau && vt.NgayDuyet.HasValue)
+                            .OrderBy(vt => vt.NgayDuyet)
+                            .FirstOrDefault()?.NgayDuyet;
                         <tr class="@yeucauRowClass">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
@@ -117,8 +124,18 @@
                             <td>@item.Bophan</td>
                             <td>@item.YCMaNguoidung</td>
                             <td>@item.YCMaDuan</td>
-                            <td>@item.NgayYeucau?.ToString("dd/MM/yyyy")</td>
+                            <td>@item.NgayYeucau?.ToString("dd/MM/yyyy HH:mm:ss")</td>
                             <td>@trangThaiYeucau</td>
+                            <td>
+                                @if (ngayDuyetSomNhat.HasValue)
+                                {
+                                    <span>@ngayDuyetSomNhat.Value.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #999;">-</span>
+                                }
+                            </td>
                         </tr>
                         STT++;
                     }
@@ -154,6 +171,7 @@
                         <td>Số lượng</td>
                         <td>Đơn vị</td>
                         <td>Trạng thái</td>
+                        <td>Ngày duyệt</td>
                         <td>Duyệt</td>
                     </tr>
                 </thead>
@@ -188,7 +206,7 @@
                         var isAwaitingDirector = isAwaitingDirectorStatusFunc(item.TrangThai);
                         var maYeucau = Model.Yeucau.FirstOrDefault()?.MaYeucau ?? "";
                         var canSelectForBulk = canApprove && isAwaitingDirector;
-                        // Chỉ hiển thị nút duyệt khi trạng thái là "Chờ giám đốc duyệt"
+                        // Chỉ hiển thị nút duyệt khi trạng thái là "Chờ giám đốc duyệt"    
                         var canActOnItem = canApprove && isAwaitingDirector && !isApproved && !isRejected;
                         <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau">
                             <td>@if (canSelectForBulk) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
@@ -200,7 +218,34 @@
                             <td>@item.NhaCC</td>
                             <td>@item.SL</td>
                             <td>@item.DonVi</td>
-                            <td class="trangthai-vattu">@trangThai</td>
+                            <td class="trangthai-vattu">
+                                @{
+                                    string trangThaiColor = "";
+                                    if (trangThai == "Đang mua hàng")
+                                    {
+                                        trangThaiColor = "color: #2196f3; font-weight: bold;";
+                                    }
+                                    else if (trangThai == "Đã xuất kho" || trangThai == "Đã duyệt")
+                                    {
+                                        trangThaiColor = "color: #4caf50; font-weight: bold;";
+                                    }
+                                    else if (trangThai.Contains("Đã từ chối") || trangThai.Contains("từ chối"))
+                                    {
+                                        trangThaiColor = "color: #8b0000; font-weight: bold;";
+                                    }
+                                }
+                                <span style="@trangThaiColor">@trangThai</span>
+                            </td>
+                            <td>
+                                @if (item.NgayDuyet.HasValue)
+                                {
+                                    <span>@item.NgayDuyet.Value.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #999;">-</span>
+                                }
+                            </td>
                             <td class="duyet-column">
                                 @if (canActOnItem)
                                 {
@@ -210,37 +255,6 @@
                                     <button type="button" class="btn-icon reject-btn" onclick="rejectSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Từ chối vật tư">
                                         <i class="bx bxs-x-circle"></i>
                                     </button>
-                                }
-                                else if (isApproved)
-                                {
-                                    @if (item.TrangThai == "Đã duyệt")
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>
-                                    }
-                                    else if (item.TrangThai == "Đang mua hàng")
-                                    {
-                                        <span style="color: #2196f3; font-weight: bold;">Đang mua hàng</span>
-                                    }
-                                    else if (item.TrangThai == "Đã xuất kho")
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">Đã xuất kho</span>
-                                    }
-                                    else if (item.TrangThai == "Đã nhận hàng")
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">Đã nhận hàng</span>
-                                    }
-                                    else
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>
-                                    }
-                                }
-                                else if (isRejected)
-                                {
-                                    <span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>
-                                }
-                                else
-                                {
-                                    <span>-</span>
                                 }
                             </td>
                         </tr>
@@ -280,6 +294,18 @@
                 return 'Chờ giám đốc duyệt';
             }
             return value.trim();
+        }
+
+        function getTrangThaiWithColor(trangThai) {
+            var color = '';
+            if (trangThai === 'Đang mua hàng') {
+                color = 'color: #2196f3; font-weight: bold;';
+            } else if (trangThai === 'Đã xuất kho' || trangThai === 'Đã duyệt') {
+                color = 'color: #4caf50; font-weight: bold;';
+            } else if (trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) {
+                color = 'color: #8b0000; font-weight: bold;';
+            }
+            return '<span style="' + color + '">' + trangThai + '</span>';
         }
 
         function isAwaitingDirectorStatus(status) {
@@ -412,26 +438,40 @@
                                 <td>${item.nhaCC || ''}</td>
                                 <td>${item.sl || 0}</td>
                                 <td>${item.donVi || ''}</td>
-                                <td class="trangthai-vattu">${trangThai}</td>
+                                <td class="trangthai-vattu">`;
+                            
+                            // Thêm màu sắc cho trạng thái
+                            var trangThaiColor = '';
+                            if (trangThai === 'Đang mua hàng') {
+                                trangThaiColor = 'color: #2196f3; font-weight: bold;';
+                            } else if (trangThai === 'Đã xuất kho' || trangThai === 'Đã duyệt') {
+                                trangThaiColor = 'color: #4caf50; font-weight: bold;';
+                            } else if (trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) {
+                                trangThaiColor = 'color: #8b0000; font-weight: bold;';
+                            }
+                            row += `<span style="${trangThaiColor}">${trangThai}</span></td>
+                                <td>`;
+                            
+                            // Hiển thị ngày duyệt
+                            if (item.ngayDuyet) {
+                                var ngayDuyetDate = new Date(item.ngayDuyet);
+                                var day = String(ngayDuyetDate.getDate()).padStart(2, '0');
+                                var month = String(ngayDuyetDate.getMonth() + 1).padStart(2, '0');
+                                var year = ngayDuyetDate.getFullYear();
+                                var hours = String(ngayDuyetDate.getHours()).padStart(2, '0');
+                                var minutes = String(ngayDuyetDate.getMinutes()).padStart(2, '0');
+                                var seconds = String(ngayDuyetDate.getSeconds()).padStart(2, '0');
+                                var ngayDuyetFormatted = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+                                row += `<span>${ngayDuyetFormatted}</span>`;
+                            } else {
+                                row += `<span style="color: #999;">-</span>`;
+                            }
+                            
+                            row += `</td>
                                 <td class="duyet-column">`;
                             
                             // Hiển thị nút duyệt nếu là Giám đốc và vật tư chưa được duyệt/từ chối
-                            if (isApproved) {
-                                // Hiển thị trạng thái tương ứng
-                                if (trangThai === 'Đã duyệt') {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>';
-                                } else if (trangThai === 'Đang mua hàng') {
-                                    row += '<span style="color: #2196f3; font-weight: bold;">Đang mua hàng</span>';
-                                } else if (trangThai === 'Đã xuất kho') {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">Đã xuất kho</span>';
-                                } else if (trangThai === 'Đã nhận hàng') {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">Đã nhận hàng</span>';
-                                } else {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>';
-                                }
-                            } else if (isRejected) {
-                                row += '<span style="color: #f44336; font-weight: bold;">✗ ' + (trangThai || 'Đã từ chối') + '</span>';
-                            } else if (canActOnItem) {
+                            if (canActOnItem) {
                                 // Hiển thị nút duyệt/từ chối cho Giám đốc
                                 row += `<button type="button" class="btn-icon approve-btn" onclick="approveSingleVatTu('${MaYeucauEscaped}', '${maVatTuEscaped}')" title="Duyệt vật tư">
                                     <i class="bx bxs-check-circle"></i>
@@ -439,8 +479,6 @@
                                 <button type="button" class="btn-icon reject-btn" onclick="rejectSingleVatTu('${MaYeucauEscaped}', '${maVatTuEscaped}')" title="Từ chối vật tư">
                                     <i class="bx bxs-x-circle"></i>
                                 </button>`;
-                            } else {
-                                row += '<span>-</span>';
                             }
                             
                             row += `</td></tr>`;
@@ -450,7 +488,7 @@
                         updateDuyetTatCaButton();
                     } else {
                         $('#vtYeucauBody').append(
-                            `<tr><td colspan="11" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                            `<tr><td colspan="12" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                         );
                         updateDuyetTatCaButton();
                     }
@@ -610,11 +648,16 @@
                         var $duyetCell = $row.find('.duyet-column');
                         
                         if (action === 'approve') {
-                            $trangThaiCell.text('Đã duyệt');
-                            $duyetCell.html('<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>');
+                            // Cập nhật trạng thái dựa trên response từ server
+                            var newTrangThai = response.trangThai || 'Đã duyệt';
+                            $trangThaiCell.html(getTrangThaiWithColor(newTrangThai));
+                            // Xóa nút duyệt/từ chối khỏi cột duyệt
+                            $duyetCell.html('');
                         } else {
-                            $trangThaiCell.text('Giám đốc - Đã từ chối');
-                            $duyetCell.html('<span style="color: #f44336; font-weight: bold;">✗ Giám đốc - Đã từ chối</span>');
+                            var newTrangThai = 'Giám đốc - Đã từ chối';
+                            $trangThaiCell.html(getTrangThaiWithColor(newTrangThai));
+                            // Xóa nút duyệt/từ chối khỏi cột duyệt
+                            $duyetCell.html('');
                         }
                     } else {
                         alert(response.message || 'Có lỗi xảy ra.');

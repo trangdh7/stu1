@@ -17,25 +17,26 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/Giamdoc/Yeucau/Yeucau">Phiếu yêu cầu</a>
+                    <a href="/Giamdoc/Yeucau/Yeucau">Vật tư yêu cầu</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
-                <li class="menu-xuatkho">
-                    <a href="/Giamdoc/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
+                <li class="menu-muahang">
+                    <a href="/Giamdoc/Yeucau/Phieumuahang">Vật tư mua hàng</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
+                
                 <li class="menu-nhapkho">
                     <a href="/Giamdoc/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
-                <li class="menu-muahang">
-                    <a href="/Giamdoc/Yeucau/Phieumuahang">Phiếu mua hàng</a>
+                <li class="menu-xuatkho">
+                    <a href="/Giamdoc/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -51,11 +52,11 @@
                     <thead>
                         <tr>
                             <td>STT</td>
-                            <td>Mã xuất kho</td>
+                            <td>Mã mua hàng</td>
                             <td>Mã yêu cầu</td>
                             <td>Mã dự án</td>
                             <td>Người yêu cầu</td>
-                            <td>Ngày xuất kho</td>
+                            <td>Ngày mua hàng</td>
                             <td>Trạng thái</td>
                         </tr>
                     </thead>
@@ -76,27 +77,10 @@
                                 </td>
                                 <td>@item.MaYeucau</td>
                                 <td>@item.MaDuan</td>
-                                <td>@item.MaNguoidung</td>
+                                <td>@(string.IsNullOrEmpty(item.TenNguoiyeucau) ? item.MaNguoidung : item.TenNguoiyeucau)</td>
                                 <td>@item.NgayMuahang?.ToString("dd/MM/yyyy")</td>
                                 <td>
-                                    @if ((item.TrangThai == "Đã báo giá" && ChucvuSession == "Giám đốc") ||
-                                          (item.TrangThai == "Chờ thanh toán" && BophanSession == "BP kế toán"))
-                                    {
-                                        @using (Html.BeginForm("XuLyPhieumuahang", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
-                                        {
-                                            <input type="hidden" name="MaMuahang" value="@item.MaMuahang" />
-                                            <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
-                                                <i class="bx bxs-check-circle"></i>
-                                            </button>
-                                            <button type="submit" name="action" value="reject" class="btn-icon reject-btn">
-                                                <i class="bx bxs-x-circle"></i>
-                                            </button>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        @item.TrangThai;
-                                    }
+                                    @item.TrangThai
                                 </td>
                             </tr>
                             STT++;
@@ -109,6 +93,8 @@
         <nav class="bodyyeucau-thietbi">
             <!-- This part is for the "Thietbi" section, using the MaMuahang from the current context -->
             <input type="hidden" id="selectedMamuahang" name="MaMuahang" value="@Model.Phieumuahang.FirstOrDefault()?.MaMuahang" />
+            <div id="phieumuahang-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+            </div>
             <div class="Tableyeucau-thietbi-box">
                 <table class="tablethietbi">
                     <thead>
@@ -130,10 +116,23 @@
                     </tbody>
                 </table>
             </div>
-            <div class="action">
+            <div class="action" style="justify-content: flex-end; display: none;" id="action-buttons">
                 @if (Context.Session.GetString("Bophan") == "BP mua hàng")
                 {
                     <button type="button" id="submitPhieumuahang">Gửi báo giá</button>
+                }
+                @* Chỉ hiển thị nút duyệt/từ chối cho Giám đốc - chỉ trong area Giamdoc *@
+                @{
+                    var currentArea = Context.Request.RouteValues["area"]?.ToString() ?? "";
+                }
+                @if (Context.Session.GetString("Chucvu") == "Giám đốc" && currentArea == "Giamdoc")
+                {
+                    <button type="button" id="approvePhieumuahang" class="btn-icon approve-btn" style="margin-left: 10px; display: none;">
+                        <i class="bx bxs-check-circle"></i> Duyệt
+                    </button>
+                    <button type="button" id="rejectPhieumuahang" class="btn-icon reject-btn" style="margin-left: 10px; display: none;">
+                        <i class="bx bxs-x-circle"></i> Từ chối
+                    </button>
                 }
             </div>
         </nav>

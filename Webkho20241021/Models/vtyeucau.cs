@@ -18,6 +18,7 @@ namespace Webkho_20241021.Models
         public DateTime? NgayNhapkho { get; set; }
         public DateTime? NgayBaohanh { get; set; }
         public DateTime? ThoiGianBH { get; set; }
+        public DateTime? NgayDuyet { get; set; }
         public string? TrangThai { get; set; }
     }
 }

@@ -8,6 +8,7 @@ using System.Linq;
 using Webkho_20241021.Areas.NhanvienKho.Data;
 using Webkho_20241021.Models;
 using Webkho_20241021.Services;
+using Webkho_20241021.Helpers;
 
 namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 {
@@ -105,6 +106,15 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
             var Phieumuahanglist = _context.phieumuahang
             .OrderByDescending(y => y.NgayMuahang)
             .ToList();
+            // Gán tên Người yêu cầu cho từng phiếu mua hàng
+            var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
+            foreach (var phieu in Phieumuahanglist)
+            {
+                if (!string.IsNullOrEmpty(phieu.MaNguoidung) && nguoiDungDict.TryGetValue(phieu.MaNguoidung, out var ten))
+                {
+                    phieu.TenNguoiyeucau = ten;
+                }
+            }
             var VTphieumuahanglist = _context.vtphieumuahang.ToList();
             var model = new Phieumuahangviewmodel
             {
@@ -729,12 +739,12 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 
                 while (true)
                 {
-                    phieunhapkho.MaNhapkho = $"PNK{nextNumber}";
-
+                    var candidate = PhieuHelper.ChuanHoaMaPhieu($"PNK{nextNumber}");
                     var existingEntry = _context.phieunhapkho
-                                                .FirstOrDefault(y => y.MaNhapkho == phieunhapkho.MaNhapkho);
+                                                .FirstOrDefault(y => y.MaNhapkho == candidate);
                     if (existingEntry == null)
                     {
+                        phieunhapkho.MaNhapkho = candidate;
                         break;
                     }
                     nextNumber++;
@@ -1359,12 +1369,13 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
             // Tạo mã phiếu nhập kho duy nhất
             while (true)
             {
-                MaNhapkho = $"PNK{STT}";
+                var candidate = PhieuHelper.ChuanHoaMaPhieu($"PNK{STT}");
                 var existingEntry = _context.phieunhapkho
-                                           .FirstOrDefault(y => y.MaNhapkho == MaNhapkho);
+                                           .FirstOrDefault(y => y.MaNhapkho == candidate);
 
                 if (existingEntry == null)
                 {
+                    MaNhapkho = candidate;
                     break;
                 }
                 STT++;
@@ -1425,11 +1436,18 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 
         private string EnsureKhoTongForNhapKho(vtphieumuahang vtPhieumuahang)
         {
-            var requestedMakho = NormalizeMakhoValue(vtPhieumuahang);
+            var ngayNhap = vtPhieumuahang.NgayNhapkho ?? DateTime.Now;
+            var requestedMakho = NormalizeMakhoValue(vtPhieumuahang, ngayNhap);
             var existingKho = _context.khotongs.FirstOrDefault(k => k.Makho == requestedMakho);
 
             if (existingKho == null)
             {
+                requestedMakho = MakhoHelper.BuildUniqueOfficialCode(
+                    _context,
+                    vtPhieumuahang.MaSanpham,
+                    vtPhieumuahang.HangSX,
+                    ngayNhap);
+
                 var newKhoTong = new khotongs
                 {
                     Makho = requestedMakho,
@@ -1439,12 +1457,12 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                     NhaCC = vtPhieumuahang.NhaCC,
                     DonVi = vtPhieumuahang.DonVi,
                     SL = 0,
-                    NgayNhapkho = DateTime.Now,
+                    NgayNhapkho = ngayNhap,
                     TrangThai = "Chờ nhập kho",
                     LoaiCapPhat = "Kho tổng"
                 };
                 _context.khotongs.Add(newKhoTong);
-                _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại khi tạo vtphieunhapkho
+                _context.SaveChanges();
             }
 
             // Đảm bảo vtyeucau có YCMakho tương ứng với requestedMakho
@@ -1498,40 +1516,20 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
             return requestedMakho;
         }
 
-        private string NormalizeMakhoValue(vtphieumuahang vtPhieumuahang)
+        private string NormalizeMakhoValue(vtphieumuahang vtPhieumuahang, DateTime ngayNhap)
         {
-            var makho = vtPhieumuahang.Makho;
-            if (!string.IsNullOrWhiteSpace(makho) && !makho.Equals("VT mới", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(vtPhieumuahang.Makho) &&
+                !vtPhieumuahang.Makho.Equals("VT mới", StringComparison.OrdinalIgnoreCase))
             {
-                return makho.Trim();
+                var normalizedInput = vtPhieumuahang.Makho.Trim().ToUpperInvariant();
+                var existing = _context.khotongs.FirstOrDefault(k => k.Makho == normalizedInput);
+                if (existing != null)
+                {
+                    return existing.Makho;
+                }
             }
 
-            return GenerateUniqueMakho(vtPhieumuahang);
-        }
-
-        private string GenerateUniqueMakho(vtphieumuahang vtPhieumuahang)
-        {
-            string Sanitize(string? value, string fallback)
-            {
-                var raw = string.IsNullOrWhiteSpace(value) ? fallback : value;
-                var cleaned = new string(raw.Where(char.IsLetterOrDigit).ToArray());
-                return string.IsNullOrWhiteSpace(cleaned) ? fallback : cleaned.ToUpper();
-            }
-
-            var maSp = Sanitize(vtPhieumuahang.MaSanpham, "VT");
-            var hangSx = Sanitize(vtPhieumuahang.HangSX, "HSX");
-            var ngayNhap = (vtPhieumuahang.NgayNhapkho ?? DateTime.Now).ToString("yyyyMMdd");
-            var baseCode = $"{maSp}-{hangSx}-{ngayNhap}";
-
-            var candidate = baseCode;
-            var suffix = 1;
-            while (_context.khotongs.Any(k => k.Makho == candidate))
-            {
-                candidate = $"{baseCode}-{suffix:D2}";
-                suffix++;
-            }
-
-            return candidate;
+            return MakhoHelper.BuildOfficialCode(vtPhieumuahang.MaSanpham, vtPhieumuahang.HangSX, ngayNhap);
         }
 
         [HttpGet]
@@ -1612,12 +1610,13 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                 // Tạo mã phiếu nhập kho duy nhất
                 while (true)
                 {
-                    MaNhapkho = $"PNK{STT}";
+                    var candidate = PhieuHelper.ChuanHoaMaPhieu($"PNK{STT}");
                     var existingEntry = _context.phieunhapkho
-                                               .FirstOrDefault(y => y.MaNhapkho == MaNhapkho);
+                                               .FirstOrDefault(y => y.MaNhapkho == candidate);
 
                     if (existingEntry == null)
                     {
+                        MaNhapkho = candidate;
                         break;
                     }
                     STT++;
@@ -1911,9 +1910,13 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                         }
                         else
                         {
-                            // Kiểm tra xem có entity với cùng Makho và NhaCC đang được track không
+                            // Kiểm tra xem có entity với cùng MaSanpham, Makho, HangSX, NhaCC đang được track không
+                            // (không cần TenSanpham vì có thể khác nhau nhưng vẫn là cùng vật tư)
                             var existingTracked = _context.khotongs.Local
-                                .FirstOrDefault(k => k.Makho == VTPhieunhapkho.Makho &&
+                                .FirstOrDefault(k => 
+                                    k.MaSanpham == VTPhieunhapkho.MaSanpham &&
+                                    k.Makho == VTPhieunhapkho.Makho &&
+                                    k.HangSX == VTPhieunhapkho.HangSX &&
                                     (k.NhaCC == VTPhieunhapkho.NhaCC || 
                                      (string.IsNullOrWhiteSpace(k.NhaCC) && string.IsNullOrWhiteSpace(VTPhieunhapkho.NhaCC))));
                             
@@ -1924,57 +1927,77 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                             }
                             else
                             {
-                                // Kiểm tra xem có record với cùng Makho nhưng khác NhaCC không
-                                var existingInDbSameMakho = _context.khotongs
+                                // Kiểm tra lại trong database với điều kiện đầy đủ (không cần TenSanpham)
+                                var existingInDb = _context.khotongs
                                     .AsNoTracking()
-                                    .FirstOrDefault(k => k.Makho == VTPhieunhapkho.Makho);
+                                    .FirstOrDefault(k => 
+                                        k.MaSanpham == VTPhieunhapkho.MaSanpham &&
+                                        k.Makho == VTPhieunhapkho.Makho &&
+                                        k.HangSX == VTPhieunhapkho.HangSX &&
+                                        (k.NhaCC == VTPhieunhapkho.NhaCC || 
+                                         (string.IsNullOrWhiteSpace(k.NhaCC) && string.IsNullOrWhiteSpace(VTPhieunhapkho.NhaCC))));
                                 
-                                if (existingInDbSameMakho != null)
+                                if (existingInDb != null)
                                 {
-                                    // Cùng Makho nhưng khác NhaCC (hoặc ngược lại) → tạo Makho mới với suffix
-                                    string baseMakho = VTPhieunhapkho.Makho;
-                                    int suffix = 1;
-                                    string newMakho;
-                                    
-                                    do
-                                    {
-                                        newMakho = $"{baseMakho}-{suffix:D2}";
-                                        suffix++;
-                                    }
-                                    while (_context.khotongs.Any(k => k.Makho == newMakho) ||
-                                           _context.khotongs.Local.Any(k => k.Makho == newMakho));
-                                    
-                                    // Tạo mới với Makho mới
-                                    var newKhotong = new khotongs
-                                    {
-                                        TenSanpham = VTPhieunhapkho.TenSanpham,
-                                        MaSanpham = VTPhieunhapkho.MaSanpham,
-                                        HangSX = VTPhieunhapkho.HangSX,
-                                        NhaCC = VTPhieunhapkho.NhaCC,
-                                        SL = VTPhieunhapkho.SL ?? 0,
-                                        DonVi = VTPhieunhapkho.DonVi,
-                                        Makho = newMakho,
-                                        NgayNhapkho = DateTime.Now,
-                                        TrangThai = "Tồn kho"
-                                    };
-                                    _context.khotongs.Add(newKhotong);
+                                    // Tìm thấy record phù hợp, cập nhật số lượng
+                                    existingInDb.SL += VTPhieunhapkho.SL ?? 0;
+                                    _context.khotongs.Attach(existingInDb);
+                                    _context.Entry(existingInDb).State = EntityState.Modified;
                                 }
                                 else
                                 {
-                                    // Tạo mới vật tư trong tồn kho nếu chưa có
-                                    var newKhotong = new khotongs
+                                    // Kiểm tra xem có record với cùng Makho nhưng khác NhaCC/HangSX không
+                                    var existingInDbSameMakho = _context.khotongs
+                                        .AsNoTracking()
+                                        .FirstOrDefault(k => k.Makho == VTPhieunhapkho.Makho);
+                                    
+                                    if (existingInDbSameMakho != null)
                                     {
-                                        TenSanpham = VTPhieunhapkho.TenSanpham,
-                                        MaSanpham = VTPhieunhapkho.MaSanpham,
-                                        HangSX = VTPhieunhapkho.HangSX,
-                                        NhaCC = VTPhieunhapkho.NhaCC,
-                                        SL = VTPhieunhapkho.SL ?? 0,
-                                        DonVi = VTPhieunhapkho.DonVi,
-                                        Makho = VTPhieunhapkho.Makho,
-                                        NgayNhapkho = DateTime.Now,
-                                        TrangThai = "Tồn kho"
-                                    };
-                                    _context.khotongs.Add(newKhotong);
+                                        // Cùng Makho nhưng khác NhaCC/HangSX → tạo Makho mới với suffix
+                                        string baseMakho = VTPhieunhapkho.Makho;
+                                        int suffix = 1;
+                                        string newMakho;
+                                        
+                                        do
+                                        {
+                                            newMakho = $"{baseMakho}-{suffix:D2}";
+                                            suffix++;
+                                        }
+                                        while (_context.khotongs.Any(k => k.Makho == newMakho) ||
+                                               _context.khotongs.Local.Any(k => k.Makho == newMakho));
+                                        
+                                        // Tạo mới với Makho mới
+                                        var newKhotong = new khotongs
+                                        {
+                                            TenSanpham = VTPhieunhapkho.TenSanpham,
+                                            MaSanpham = VTPhieunhapkho.MaSanpham,
+                                            HangSX = VTPhieunhapkho.HangSX,
+                                            NhaCC = VTPhieunhapkho.NhaCC,
+                                            SL = VTPhieunhapkho.SL ?? 0,
+                                            DonVi = VTPhieunhapkho.DonVi,
+                                            Makho = newMakho,
+                                            NgayNhapkho = DateTime.Now,
+                                            TrangThai = "Tồn kho"
+                                        };
+                                        _context.khotongs.Add(newKhotong);
+                                    }
+                                    else
+                                    {
+                                        // Tạo mới vật tư trong tồn kho nếu chưa có
+                                        var newKhotong = new khotongs
+                                        {
+                                            TenSanpham = VTPhieunhapkho.TenSanpham,
+                                            MaSanpham = VTPhieunhapkho.MaSanpham,
+                                            HangSX = VTPhieunhapkho.HangSX,
+                                            NhaCC = VTPhieunhapkho.NhaCC,
+                                            SL = VTPhieunhapkho.SL ?? 0,
+                                            DonVi = VTPhieunhapkho.DonVi,
+                                            Makho = VTPhieunhapkho.Makho,
+                                            NgayNhapkho = DateTime.Now,
+                                            TrangThai = "Tồn kho"
+                                        };
+                                        _context.khotongs.Add(newKhotong);
+                                    }
                                 }
                             }
                         }

@@ -1,9 +1,9 @@
 ﻿
 @{
     ViewData["Title"] = "Phieunhapkho";
-    Layout = "~/Areas/NhanvienKythuat/Views/Layout/Layout.cshtml";
+    Layout = "~/Areas/NhanvienKetoan/Views/Layout/Layout.cshtml";
 }
-@model Webkho_20241021.Areas.NhanvienKythuat.Data.Phieunhapkhoviewmodel
+@model Webkho_20241021.Areas.NhanvienKetoan.Data.Phieunhapkhoviewmodel
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,25 +18,26 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/NhanvienKythuat/Yeucau/Yeucau">Chưa duyệt</a>
-                    <span class="badge">
-                        <span class="notification"></span>
-                    </span>
-                </li>
-                <li class="menu-xuatkho">
-                    <a href="/NhanvienKythuat/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
-                    <span class="badge">
-                        <span class="notification"></span>
-                    </span>
-                </li>
-                <li class="menu-nhapkho">
-                    <a href="/NhanvienKythuat/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
+                    <a href="/NhanvienKetoan/Yeucau/Yeucau">Vật tư yêu cầu</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
                 <li class="menu-muahang">
-                    <a href="/NhanvienKythuat/Yeucau/Phieumuahang">Phiếu mua hàng</a>
+                    <a href="/NhanvienKetoan/Yeucau/Phieumuahang">Vật tư mua hàng</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+
+                <li class="menu-nhapkho">
+                    <a href="/NhanvienKetoan/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-xuatkho">
+                    <a href="/NhanvienKetoan/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -52,7 +53,7 @@
                 <thead>
                     <tr>
                         <td>STT</td>
-                        <td>Mã xuất kho</td>
+                        <td>Mã nhập kho</td>
                         <td>Mã yêu cầu</td>
                         <td>Mã dự án</td>
                         <td>Người yêu cầu</td>
@@ -92,7 +93,7 @@
                                 
                                 @if (item.TrangThai == "Quản lí dự án" && isQLDA)
                                 {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "NhanvienKythuat" }, FormMethod.Post))
+                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "NhanvienKetoan" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
                                         <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
@@ -105,7 +106,7 @@
                                 }
                                 else if (item.TrangThai == "Giám đốc" && isGiamDoc)
                                 {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "NhanvienKythuat" }, FormMethod.Post))
+                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "NhanvienKetoan" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
                                         <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
@@ -118,7 +119,7 @@
                                 }
                                 else if (item.TrangThai == "Chờ nhập kho" && isKho)
                                 {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "NhanvienKythuat" }, FormMethod.Post))
+                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "NhanvienKetoan" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
                                         <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Xác nhận nhập kho">
@@ -148,7 +149,7 @@
         <div class="action">
             <ul class="hanhdong">
                 <li>
-                    <a href="/NhanvienKythuat/Yeucau/ThemPhieunhapkho">Thêm phiếu nhập kho</a>
+                    <a href="/NhanvienKetoan/Yeucau/ThemPhieunhapkho">Thêm phiếu nhập kho</a>
                 </li>
             </ul>
         </div>

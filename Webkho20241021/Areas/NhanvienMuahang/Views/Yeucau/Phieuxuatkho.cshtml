@@ -1,9 +1,9 @@
 ﻿
 @{
     ViewData["Title"] = "Phieuxuatkho";
-    Layout = "~/Areas/NhanvienKythuat/Views/Layout/Layout.cshtml";
+    Layout = "~/Areas/NhanvienMuahang/Views/Layout/Layout.cshtml";
 }
-@model Webkho_20241021.Areas.NhanvienKythuat.Data.Phieuxuatkhoviewmodel
+@model Webkho_20241021.Areas.NhanvienMuahang.Data.Phieuxuatkhoviewmodel
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,25 +18,25 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/NhanvienKythuat/Yeucau/Yeucau">Chưa duyệt</a>
-                    <span class="badge">
-                        <span class="notification"></span>
-                    </span>
-                </li>
-                <li class="menu-xuatkho">
-                    <a href="/NhanvienKythuat/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
-                    <span class="badge">
-                        <span class="notification"></span>
-                    </span>
-                </li>
-                <li class="menu-nhapkho">
-                    <a href="/NhanvienKythuat/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
+                    <a href="/NhanvienMuahang/Yeucau/Yeucau">Vật tư yêu cầu</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
                 <li class="menu-muahang">
-                    <a href="/NhanvienKythuat/Yeucau/Phieumuahang">Phiếu mua hàng</a>
+                    <a href="/NhanvienMuahang/Yeucau/Phieumuahang">Vật tư mua hàng</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-nhapkho">
+                    <a href="/NhanvienMuahang/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-xuatkho">
+                    <a href="/NhanvienMuahang/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -82,7 +82,7 @@
                             <td>
                                 @if (item.TrangThai == "Đang chuẩn bị hàng" && BophanSession == "BP kho")
                                 {
-                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "NhanvienKythuat" }, FormMethod.Post))
+                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "NhanvienMuahang" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
                                         <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
@@ -92,7 +92,7 @@
                                 }
                                 else if (item.TrangThai == "Chờ lấy hàng" && BophanSession == "BP kho")
                                 {
-                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "NhanvienKythuat" }, FormMethod.Post))
+                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "NhanvienMuahang" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
                                         <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
@@ -102,7 +102,7 @@
                                 }
                                 else if (item.TrangThai == "Đã lấy hàng" && BophanSession == "BP kho")
                                 {
-                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "NhanvienKythuat" }, FormMethod.Post))
+                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "NhanvienMuahang" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
                                         <button type="submit" name="action" value="approve" class="btn-icon approve-btn">

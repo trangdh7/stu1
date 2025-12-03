@@ -95,6 +95,15 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             var Phieumuahanglist = _context.phieumuahang
             .OrderByDescending(y => y.NgayMuahang)
             .ToList();
+            // Gán tên Người yêu cầu cho từng phiếu mua hàng
+            var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
+            foreach (var phieu in Phieumuahanglist)
+            {
+                if (!string.IsNullOrEmpty(phieu.MaNguoidung) && nguoiDungDict.TryGetValue(phieu.MaNguoidung, out var ten))
+                {
+                    phieu.TenNguoiyeucau = ten;
+                }
+            }
             var VTphieumuahanglist = _context.vtphieumuahang.ToList();
             var model = new Phieumuahangviewmodel
             {
@@ -112,44 +121,44 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             var maNv = HttpContext.Session.GetString("MaNguoidung");
 
             int thongbaomuahangcount = 0;
-            if (boPhan == "BP mua h�ng")
+            if (boPhan == "BP mua hàng")
             {
-                thongbaomuahangcount = _context.phieumuahang.Count(p => p.TrangThai == "�ang ch? b�o gi�");
+                thongbaomuahangcount = _context.phieumuahang.Count(p => p.TrangThai == "Đang chờ báo giá");
             }
-            else if (boPhan == "BP k? to�n")
+            else if (boPhan == "BP kế toán")
             {
-                thongbaomuahangcount = _context.phieumuahang.Count(p => p.TrangThai == "Ch? thanh to�n");
+                thongbaomuahangcount = _context.phieumuahang.Count(p => p.TrangThai == "Chờ thanh toán");
             }
 
-            // Xu?t kho - ch? d?m c�c tr?ng th�i c�n c?n x? l� (kh�ng d?m "Ho�n th�nh" v� "�� x�c nh?n nh?n h�ng")
+            // Xuất kho - chỉ đếm các trạng thái còn cần xử lý (không đếm "Hoàn thành" và "Đã xác nhận nhận hàng")
             int thongbaoxuatkhocount = 0;
             if (boPhan == "BP kho")
             {
-                thongbaoxuatkhocount = _context.phieuxuatkho.Count(p => p.TrangThai != "Ho�n th�nh" && p.TrangThai != "�� x�c nh?n nh?n h�ng");
+                thongbaoxuatkhocount = _context.phieuxuatkho.Count(p => p.TrangThai != "Hoàn thành" && p.TrangThai != "Đã xác nhận nhận hàng");
             }
 
             int thongbaonhapkhocount = 0;
             if (boPhan == "BP kho")
             {
-                thongbaonhapkhocount = _context.phieunhapkho.Count(p => p.TrangThai == "Ch? nh?p kho" || p.TrangThai == "S?n s�ng nh?p kho");
+                thongbaonhapkhocount = _context.phieunhapkho.Count(p => p.TrangThai == "Chờ nhập kho" || p.TrangThai == "Sẵn sàng nhập kho");
             }
 
             var Maduanquanli = _context.duans
                 .Where(d => d.MaNguoiQLDA == maNv)
                 .Select(d => d.MaDuan)
                 .ToList();
-            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Qu?n l� d? �n" && Maduanquanli.Contains(p.YCMaDuan));
+            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Chờ quản lý dự án duyệt" && Maduanquanli.Contains(p.YCMaDuan));
             int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == ("Chờ Trưởng Phòng bộ phận " + boPhan + " duyệt"));
             int thongbaoyeucaucount = Duyetyeucaucount + QLDAyeucaucount;
 
-            // Th�ng b�o x�c nh?n nh?n h�ng - d?m phi?u xu?t kho ch? x�c nh?n
+            // Thông báo xác nhận nhận hàng - đếm phiếu xuất kho chờ xác nhận
             int thongbaoxacnhannhanhangcount = 0;
             var yeuCauList = _context.yeucau
                 .Where(y => y.YCMaNguoidung == maNv)
                 .Select(y => y.MaYeucau)
                 .ToList();
             thongbaoxacnhannhanhangcount = _context.phieuxuatkho
-                .Count(p => yeuCauList.Contains(p.MaYeucau) && p.TrangThai == "Ch? ngu?i y�u c?u x�c nh?n");
+                .Count(p => yeuCauList.Contains(p.MaYeucau) && p.TrangThai == "Chờ người yêu cầu xác nhận");
 
             return Json(new
             {
@@ -1067,11 +1076,11 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                                             .FirstOrDefault(y => y.MaMuahang == MaMuahang);
                 if (Phieumuahang == null)
                 {
-                    Console.WriteLine("Kh�ng t�m th?y Phieumuahang.");
-                    return Json(new { success = false, message = "M� mua h�ng kh�ng t?n t?i!" });
+                    Console.WriteLine("Không tìm thấy Phieumuahang.");
+                    return Json(new { success = false, message = "Mã mua hàng không tồn tại!" });
                 }
 
-                Phieumuahang.TrangThai = "�� b�o gi�";
+                Phieumuahang.TrangThai = "Đang chờ báo giá";
                 _context.phieumuahang.Update(Phieumuahang);
 
                 var VTPhieumuahanglist = _context.vtphieumuahang

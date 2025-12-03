@@ -19,25 +19,26 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/TruongBPKho/Yeucau/Yeucau">Chưa duyệt</a>
+                    <a href="/TruongBPKho/Yeucau/Yeucau">Yêu cầu vật tư</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
-                <li class="menu-xuatkho">
-                    <a href="/TruongBPKho/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
+                <li class="menu-muahang">
+                    <a href="/TruongBPKho/Yeucau/Phieumuahang">Yêu cầu mua hàng</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
+                
                 <li class="menu-nhapkho">
                     <a href="/TruongBPKho/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
-                <li class="menu-muahang">
-                    <a href="/TruongBPKho/Yeucau/Phieumuahang">Phiếu mua hàng</a>
+                <li class="menu-xuatkho">
+                    <a href="/TruongBPKho/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -84,7 +85,7 @@
                             <td>@item.Bophan</td>
                             <td>@item.YCMaNguoidung</td>
                             <td>@item.YCMaDuan</td>
-                            <td>@item.NgayYeucau?.ToString("dd/MM/yyyy")</td>
+                            <td>@item.NgayYeucau?.ToString("dd/MM/yyyy HH:mm:ss")</td>
                             <td>
                                     @item.TrangThai
                             </td>

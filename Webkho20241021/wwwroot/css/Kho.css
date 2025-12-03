@@ -24,7 +24,7 @@
         background-color: aliceblue;
         border-color: black;
         height: 25px;
-        width: 125px;
+        width: 140px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -132,17 +132,18 @@
     height: 20px;
     border-radius: 50%;
     position: absolute;
-    top: 0px;
-    right: 0px;
+    top: 5px;
+    right: 5px;
     text-align: center;
     justify-content: center;
     align-items: center;
     font-weight: bold;
     transition: transform 0.2s ease, opacity 0.2s ease;
+    z-index: 10;
 }
 
     .badge.show {
-        display: inline-block;
+        display: inline-flex;
         opacity: 1;
     }
 

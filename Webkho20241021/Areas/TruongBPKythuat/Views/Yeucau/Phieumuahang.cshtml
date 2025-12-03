@@ -17,30 +17,31 @@
         <nav class="bodyyeucau">
             <div class="menu-kho">
                 <ul class="timkiem">
-                    <li class="menu-yeucau">
-                        <a href="/TruongBPKythuat/Yeucau/Yeucau">Chưa duyệt</a>
-                        <span class="badge">
-                            <span class="notification"></span>
-                        </span>
-                    </li>
-                    <li class="menu-xuatkho">
-                        <a href="/TruongBPKythuat/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
-                        <span class="badge">
-                            <span class="notification"></span>
-                        </span>
-                    </li>
-                    <li class="menu-nhapkho">
-                        <a href="/TruongBPKythuat/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
-                        <span class="badge">
-                            <span class="notification"></span>
-                        </span>
-                    </li>
-                    <li class="menu-muahang">
-                        <a href="/TruongBPKythuat/Yeucau/Phieumuahang">Phiếu mua hàng</a>
-                        <span class="badge">
-                            <span class="notification"></span>
-                        </span>
-                    </li>
+                <li class="menu-yeucau">
+                    <a href="/TruongBPKythuat/Yeucau/Yeucau">Yêu cầu vật tư</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-muahang">
+                    <a href="/TruongBPKythuat/Yeucau/Phieumuahang">Yêu cầu mua hàng</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+
+                <li class="menu-nhapkho">
+                    <a href="/TruongBPKythuat/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-xuatkho">
+                    <a href="/TruongBPKythuat/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
                 </ul>
                 <ul>
                     <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
@@ -52,11 +53,11 @@
                     <thead>
                         <tr>
                             <td>STT</td>
-                            <td>Mã xuất kho</td>
+                            <td>Mã mua hàng</td>
                             <td>Mã yêu cầu</td>
                             <td>Mã dự án</td>
                             <td>Người yêu cầu</td>
-                            <td>Ngày xuất kho</td>
+                            <td>Ngày mua hàng</td>
                             <td>Trạng thái</td>
                         </tr>
                     </thead>
@@ -77,7 +78,7 @@
                                 </td>
                                 <td>@item.MaYeucau</td>
                                 <td>@item.MaDuan</td>
-                                <td>@item.MaNguoidung</td>
+                                <td>@(string.IsNullOrEmpty(item.TenNguoiyeucau) ? item.MaNguoidung : item.TenNguoiyeucau)</td>
                                 <td>@item.NgayMuahang?.ToString("dd/MM/yyyy")</td>
                                 <td>
                                     @if ((item.TrangThai == "Đã báo giá" && ChucvuSession == "Giám đốc") ||

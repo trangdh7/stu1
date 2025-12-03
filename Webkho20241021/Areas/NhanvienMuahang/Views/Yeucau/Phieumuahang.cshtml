@@ -1,8 +1,8 @@
 ﻿@{
-    ViewData["Title"] = "Phieuxuatkho";
-    Layout = "~/Areas/NhanvienKythuat/Views/Layout/Layout.cshtml";
+    ViewData["Title"] = "Phieumuahang";
+    Layout = "~/Areas/NhanvienMuahang/Views/Layout/Layout.cshtml";
 }
-@model Webkho_20241021.Areas.NhanvienKythuat.Data.Phieumuahangviewmodel
+@model Webkho_20241021.Areas.NhanvienMuahang.Data.Phieumuahangviewmodel
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,30 +17,30 @@
         <nav class="bodyyeucau">
             <div class="menu-kho">
                 <ul class="timkiem">
-                    <li class="menu-yeucau">
-                        <a href="/NhanvienKythuat/Yeucau/Yeucau">Chưa duyệt</a>
-                        <span class="badge">
-                            <span class="notification"></span>
-                        </span>
-                    </li>
-                    <li class="menu-xuatkho">
-                        <a href="/NhanvienKythuat/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
-                        <span class="badge">
-                            <span class="notification"></span>
-                        </span>
-                    </li>
-                    <li class="menu-nhapkho">
-                        <a href="/NhanvienKythuat/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
-                        <span class="badge">
-                            <span class="notification"></span>
-                        </span>
-                    </li>
-                    <li class="menu-muahang">
-                        <a href="/NhanvienKythuat/Yeucau/Phieumuahang">Phiếu mua hàng</a>
-                        <span class="badge">
-                            <span class="notification"></span>
-                        </span>
-                    </li>
+                <li class="menu-yeucau">
+                    <a href="/NhanvienMuahang/Yeucau/Yeucau">Vật tư yêu cầu</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-muahang">
+                    <a href="/NhanvienMuahang/Yeucau/Phieumuahang">Vật tư mua hàng</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-nhapkho">
+                    <a href="/NhanvienMuahang/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
+                <li class="menu-xuatkho">
+                    <a href="/NhanvienMuahang/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
+                    <span class="badge">
+                        <span class="notification"></span>
+                    </span>
+                </li>
                 </ul>
                 <ul>
                     <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
@@ -52,11 +52,11 @@
                     <thead>
                         <tr>
                             <td>STT</td>
-                            <td>Mã xuất kho</td>
+                            <td>Mã mua hàng</td>
                             <td>Mã yêu cầu</td>
                             <td>Mã dự án</td>
                             <td>Người yêu cầu</td>
-                            <td>Ngày xuất kho</td>
+                            <td>Ngày mua hàng</td>
                             <td>Trạng thái</td>
                         </tr>
                     </thead>
@@ -77,13 +77,13 @@
                                 </td>
                                 <td>@item.MaYeucau</td>
                                 <td>@item.MaDuan</td>
-                                <td>@item.MaNguoidung</td>
+                                <td>@(string.IsNullOrEmpty(item.TenNguoiyeucau) ? item.MaNguoidung : item.TenNguoiyeucau)</td>
                                 <td>@item.NgayMuahang?.ToString("dd/MM/yyyy")</td>
                                 <td>
                                     @if ((item.TrangThai == "Đã báo giá" && ChucvuSession == "Giám đốc") ||
                                           (item.TrangThai == "Chờ thanh toán" && BophanSession == "BP kế toán"))
                                     {
-                                        @using (Html.BeginForm("XuLyPhieumuahang", "Yeucau", new { area = "NhanvienKythuat" }, FormMethod.Post))
+                                        @using (Html.BeginForm("XuLyPhieumuahang", "Yeucau", new { area = "NhanvienMuahang" }, FormMethod.Post))
                                         {
                                             <input type="hidden" name="MaMuahang" value="@item.MaMuahang" />
                                             <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
@@ -131,7 +131,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="action">
+            <div class="action" style="justify-content: flex-end;">
                 @if (Context.Session.GetString("Bophan") == "BP mua hàng")
                 {
                     <button type="button" id="submitPhieumuahang">Gửi báo giá</button>
