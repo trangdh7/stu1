@@ -1595,7 +1595,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 }
                 else
                 {
-                    phieunhapkho.TrangThai = "Giám đốc";
+                    phieunhapkho.TrangThai = "Chờ Giám đốc duyệt";
                 }
 
                 if (string.IsNullOrEmpty(phieunhapkho.MaYeucau))
@@ -1658,7 +1658,11 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                             Bophan = boPhanNguoiDung,
                             YCMaDuan = ycMaDuan,
                             NgayYeucau = DateTime.Now,
-                            TrangThai = "Đã duyệt"
+                            TrangThai = (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                                ? "Chờ quản lý dự án duyệt"
+                                : (LoaiNhapkho == "canhan"
+                                    ? "Chờ Giám đốc duyệt"
+                                    : "Đã duyệt")
                         };
                         _context.yeucau.Add(newYeucauDacBiet);
                         _context.SaveChanges();

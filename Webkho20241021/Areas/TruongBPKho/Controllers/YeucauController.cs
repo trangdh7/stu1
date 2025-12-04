@@ -1447,23 +1447,42 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
 
                 if (!string.IsNullOrEmpty(Phieuxuatkho.MaDuan))
                 {
-                    var VTduan = new khoduans
-                    {
-                        DAMaDuan = Phieuxuatkho.MaDuan,
-                        TenSanpham = VTxuatkho.TenSanpham,
-                        MaSanpham = VTxuatkho.MaSanpham,
-                        DAMakho = VTxuatkho.Makho,
-                        HangSX = VTxuatkho.HangSX,
-                        NhaCC = VTxuatkho.NhaCC,
-                        DonVi = VTxuatkho.DonVi,
-                        SL = VTxuatkho.SL,
-                        NgayBaohanh = VTxuatkho.NgayBaohanh,
-                        ThoiGianBH = VTxuatkho.ThoiGianBH,
-                        TrangThai = "Đã xuất kho"
-                    };
+                    // tìm xem sản phẩm này đã xuất cho dự án trước đó chưa
+                    var existingDU = _context.khoduans.FirstOrDefault(x =>
+                        x.DAMaDuan == Phieuxuatkho.MaDuan &&
+                        x.MaSanpham == VTxuatkho.MaSanpham &&
+                        x.DAMakho == VTxuatkho.Makho
+                    );
 
-                    _context.khoduans.Add(VTduan);
+                    if (existingDU != null)
+                    {
+                        // cập nhật SL tăng thêm
+                        existingDU.SL = (existingDU.SL ?? 0) + (VTxuatkho.SL ?? 0);
+                        existingDU.TrangThai = "Đã xuất kho";
+                        _context.khoduans.Update(existingDU);
+                    }
+                    else
+                    {
+                        // lần đầu xuất SP này cho dự án → thêm mới
+                        var VTduan = new khoduans
+                        {
+                            DAMaDuan = Phieuxuatkho.MaDuan,
+                            TenSanpham = VTxuatkho.TenSanpham,
+                            MaSanpham = VTxuatkho.MaSanpham,
+                            DAMakho = VTxuatkho.Makho,
+                            HangSX = VTxuatkho.HangSX,
+                            NhaCC = VTxuatkho.NhaCC,
+                            DonVi = VTxuatkho.DonVi,
+                            SL = VTxuatkho.SL,
+                            NgayBaohanh = VTxuatkho.NgayBaohanh,
+                            ThoiGianBH = VTxuatkho.ThoiGianBH,
+                            TrangThai = "Đã xuất kho"
+                        };
+
+                        _context.khoduans.Add(VTduan);
+                    }
                 }
+
                 else if (!string.IsNullOrEmpty(Phieuxuatkho.MaNguoidung))
                 {
                     // Nếu KHÔNG có mã dự án thì cấp phát thẳng về kho cá nhân (khonguoidungs)
@@ -2118,11 +2137,11 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
 
                 if (!string.IsNullOrEmpty(phieunhapkho.MaDuan))
                 {
-                    phieunhapkho.TrangThai = "Quản lí dự án";
+                    phieunhapkho.TrangThai = "Chờ quản lý dự án duyệt";
                 }
                 else
                 {
-                    phieunhapkho.TrangThai = "Giám đốc";
+                    phieunhapkho.TrangThai = "Chờ Giám đốc duyệt";
                 }
 
                 if (string.IsNullOrEmpty(phieunhapkho.MaYeucau))
@@ -2185,7 +2204,11 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                             Bophan = boPhanNguoiDung,
                             YCMaDuan = ycMaDuan,
                             NgayYeucau = DateTime.Now,
-                            TrangThai = "Đã duyệt"
+                            TrangThai = (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                                ? "Chờ quản lý dự án duyệt"
+                                : (LoaiNhapkho == "canhan"
+                                    ? "Chờ Giám đốc duyệt"
+                                    : "Đã duyệt")
                         };
                         _context.yeucau.Add(newYeucauDacBiet);
                         _context.SaveChanges();

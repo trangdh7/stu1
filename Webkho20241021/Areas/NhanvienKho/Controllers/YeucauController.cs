@@ -1656,15 +1656,15 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                 phieunhapkho.NgayNhapkho = DateTime.Now;
                 
                 // Thiết lập trạng thái ban đầu theo quy trình duyệt
-                // Nếu có dự án: gửi đến Trưởng dự án
-                // Nếu không có dự án (cá nhân): gửi đến Giám đốc
+                // Nếu có dự án: chờ quản lý dự án duyệt
+                // Nếu không có dự án (cá nhân): chờ Giám đốc duyệt
                 if (!string.IsNullOrEmpty(phieunhapkho.MaDuan))
                 {
-                    phieunhapkho.TrangThai = "Quản lí dự án"; // Trưởng dự án duyệt
+                    phieunhapkho.TrangThai = "Chờ quản lý dự án duyệt";
                 }
                 else
                 {
-                    phieunhapkho.TrangThai = "Giám đốc"; // Giám đốc duyệt
+                    phieunhapkho.TrangThai = "Chờ Giám đốc duyệt";
                 }
 
                 // Tạo hoặc lấy mã yêu cầu đặc biệt cho phiếu nhập kho từ dự án/cá nhân
@@ -1741,7 +1741,11 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                             Bophan = boPhanNguoiDung,
                             YCMaDuan = ycMaDuan, // NULL nếu không có hoặc không tồn tại trong duans
                             NgayYeucau = DateTime.Now,
-                            TrangThai = "Đã duyệt" // Trạng thái đã duyệt để không hiển thị trong danh sách yêu cầu thường
+                            TrangThai = (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                                ? "Chờ quản lý dự án duyệt"
+                                : (LoaiNhapkho == "canhan"
+                                    ? "Chờ Giám đốc duyệt"
+                                    : "Đã duyệt") // Giữ nguyên với các luồng khác (TUDO, v.v.)
                         };
                         _context.yeucau.Add(newYeucauDacBiet);
                         _context.SaveChanges();

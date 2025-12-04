@@ -1355,11 +1355,11 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                 // N?u kh�ng c� d? �n (c� nh�n): g?i d?n Gi�m d?c
                 if (!string.IsNullOrEmpty(phieunhapkho.MaDuan))
                 {
-                    phieunhapkho.TrangThai = "Qu?n l� d? �n"; // Tru?ng d? �n duy?t
+                    phieunhapkho.TrangThai = "Chờ quản lý dự án duyệt"; // Trưởng dự án duyệt
                 }
                 else
                 {
-                    phieunhapkho.TrangThai = "Gi�m d?c"; // Gi�m d?c duy?t
+                    phieunhapkho.TrangThai = "Chờ Giám đốc duyệt"; // Giám đốc duyệt
                 }
 
                 // T?o ho?c l?y m� y�u c?u d?c bi?t cho phi?u nh?p kho t? d? �n/c� nh�n
@@ -1430,13 +1430,17 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                         var newYeucauDacBiet = new yeucau
                         {
                             MaYeucau = maYeucauDacBiet,
-                            TenYeucau = "Y�u c?u nh?p kho",
+                            TenYeucau = "Yêu cầu nhập kho",
                             YCMaNguoidung = maNv,
                             NguoiYeucau = tenNguoiDung,
                             Bophan = boPhanNguoiDung,
                             YCMaDuan = ycMaDuan, // NULL n?u kh�ng c� ho?c kh�ng t?n t?i trong duans
                             NgayYeucau = DateTime.Now,
-                            TrangThai = "�� duy?t" // Tr?ng th�i d� duy?t d? kh�ng hi?n th? trong danh s�ch y�u c?u thu?ng
+                            TrangThai = (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                                ? "Chờ quản lý dự án duyệt"
+                                : (LoaiNhapkho == "canhan"
+                                    ? "Chờ Giám đốc duyệt"
+                                    : "Đã duyệt") // Giữ nguyên với các luồng khác
                         };
                         _context.yeucau.Add(newYeucauDacBiet);
                         _context.SaveChanges();
