@@ -69,7 +69,7 @@
                     {
                         string ChucvuSession = Context.Session.GetString("Chucvu");
                         string BophanSession = Context.Session.GetString("Bophan");
-                        <tr>
+                        <tr class="clickable-row" data-manhapkho="@item.MaNhapkho" onclick="showVTnhapkho('@item.MaNhapkho')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>
                                 <a href="javascript:void(0);" onclick="showVTnhapkho('@item.MaNhapkho')">
@@ -146,8 +146,8 @@
         </div>
     </nav>
     <nav class="bodyyeucau-thietbi">
-        <div id="phieunhapkho-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
-            <span id="phieunhapkho-header-text"></span>
+        <div id="phieunhapkho-header" class="yeucau-info" style="margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;">
+            <strong id="phieunhapkho-header-text"></strong>
         </div>
         <div class="Tableyeucau-thietbi-box">
             <table class="tablethietbi">

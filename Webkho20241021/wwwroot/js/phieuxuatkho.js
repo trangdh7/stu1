@@ -157,13 +157,22 @@ function loadVTData(Maxuatkho, url, area) {
             // Xử lý response mới (có items) hoặc cũ (mảng trực tiếp)
             let data = response.items || response;
             let tenNguoiYeuCau = response.tenNguoiYeuCau || '';
+            let maYeucau = response.maYeucau || '';
             
             // Hiển thị header text cho tất cả areas
-            if (Maxuatkho && tenNguoiYeuCau) {
-                $('#phieuxuatkho-header-text').text(`Phiếu xuất kho ${Maxuatkho} của ${tenNguoiYeuCau}`);
+            // Ưu tiên hiển thị theo mã yêu cầu giống màn Yeucau: "Yêu cầu vật tư [MaYeucau] của [Người]"
+            if (maYeucau && tenNguoiYeuCau) {
+                $('#phieuxuatkho-header-text').text(`Yêu cầu vật tư ${maYeucau} của ${tenNguoiYeuCau}`);
+                $('#phieuxuatkho-header').show();
+            } else if (maYeucau) {
+                $('#phieuxuatkho-header-text').text(`Yêu cầu vật tư ${maYeucau}`);
+                $('#phieuxuatkho-header').show();
+            } else if (Maxuatkho && tenNguoiYeuCau) {
+                // Fallback: nếu không có mã yêu cầu thì dùng mã xuất kho
+                $('#phieuxuatkho-header-text').text(`Yêu cầu xuất kho ${Maxuatkho} của ${tenNguoiYeuCau}`);
                 $('#phieuxuatkho-header').show();
             } else if (Maxuatkho) {
-                $('#phieuxuatkho-header-text').text(`Phiếu xuất kho ${Maxuatkho}`);
+                $('#phieuxuatkho-header-text').text(`Yêu cầu xuất kho ${Maxuatkho}`);
                 $('#phieuxuatkho-header').show();
             } else {
                 $('#phieuxuatkho-header').hide();

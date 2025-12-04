@@ -70,7 +70,7 @@
                         {
                             string ChucvuSession = Context.Session.GetString("Chucvu");
                             string BophanSession = Context.Session.GetString("Bophan");
-                            <tr onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" style="cursor: pointer;">
+                            <tr class="clickable-row" data-mamuahang="@item.MaMuahang" onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" style="cursor: pointer;">
                                 <td>@STT</td>
                                 <td>
                                     <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
@@ -103,6 +103,7 @@
             <!-- This part is for the "Thietbi" section, using the MaMuahang from the current context -->
             <input type="hidden" id="selectedMamuahang" name="MaMuahang" value="@Model.Phieumuahang.FirstOrDefault()?.MaMuahang" />
             <div id="phieumuahang-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+                <strong id="phieumuahang-header-text"></strong>
             </div>
             <div class="Tableyeucau-thietbi-box">
                 <table class="tablethietbi">

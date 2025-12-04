@@ -489,13 +489,17 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             var PhieuxuatkhoList = _context.vtphieuxuatkho
                                  .Where(v => v.MaXuatkho == MaXuatkho).ToList();
             
-            // Lấy thông tin phiếu xuất kho để lấy tên người yêu cầu
+            // Lấy thông tin phiếu xuất kho để lấy tên người yêu cầu và mã yêu cầu
             var phieuxuatkho = _context.phieuxuatkho
                 .FirstOrDefault(p => p.MaXuatkho == MaXuatkho);
             
             string tenNguoiYeuCau = "";
+            string maYeucau = "";
             if (phieuxuatkho != null && !string.IsNullOrEmpty(phieuxuatkho.MaNguoidung))
             {
+                // Lưu lại mã yêu cầu để hiển thị giống màn Yeucau
+                maYeucau = phieuxuatkho.MaYeucau ?? "";
+
                 var nguoidung = _context.nguoidungs
                     .FirstOrDefault(n => n.MaNguoidung == phieuxuatkho.MaNguoidung);
                 if (nguoidung != null)
@@ -508,7 +512,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             {
                 items = PhieuxuatkhoList,
                 maXuatkho = MaXuatkho,
-                tenNguoiYeuCau = tenNguoiYeuCau
+                tenNguoiYeuCau = tenNguoiYeuCau,
+                maYeucau = maYeucau
             });
         }
 

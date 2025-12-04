@@ -88,10 +88,10 @@ function showVTnhapkho(Manhapkho) {
             
             // Hiển thị header text cho tất cả areas
             if (Manhapkho && tenNguoiYeuCau) {
-                $('#phieunhapkho-header-text').text(`Phiếu nhập kho ${Manhapkho} của ${tenNguoiYeuCau}`);
+                $('#phieunhapkho-header-text').text(`Yêu cầu nhập kho ${Manhapkho} của ${tenNguoiYeuCau}`);
                 $('#phieunhapkho-header').show();
             } else if (Manhapkho) {
-                $('#phieunhapkho-header-text').text(`Phiếu nhập kho ${Manhapkho}`);
+                $('#phieunhapkho-header-text').text(`Yêu cầu nhập kho ${Manhapkho}`);
                 $('#phieunhapkho-header').show();
             } else {
                 $('#phieunhapkho-header').hide();

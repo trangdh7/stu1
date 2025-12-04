@@ -1464,6 +1464,41 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
 
                     _context.khoduans.Add(VTduan);
                 }
+                else if (!string.IsNullOrEmpty(Phieuxuatkho.MaNguoidung))
+                {
+                    // Nếu KHÔNG có mã dự án thì cấp phát thẳng về kho cá nhân (khonguoidungs)
+                    var existingItem = _context.khonguoidungs
+                        .FirstOrDefault(k =>
+                            k.NDMaNguoidung == Phieuxuatkho.MaNguoidung &&
+                            k.MaSanpham == VTxuatkho.MaSanpham);
+
+                    if (existingItem != null)
+                    {
+                        existingItem.SL = (existingItem.SL ?? 0) + (VTxuatkho.SL ?? 0);
+                        existingItem.TrangThai = "Đang mượn";
+                        existingItem.NgayNhapkho = DateTime.Now;
+                        _context.khonguoidungs.Update(existingItem);
+                    }
+                    else
+                    {
+                        var newItem = new khonguoidungs
+                        {
+                            NDMaNguoidung = Phieuxuatkho.MaNguoidung,
+                            TenSanpham = VTxuatkho.TenSanpham,
+                            MaSanpham = VTxuatkho.MaSanpham,
+                            NDMakho = VTxuatkho.Makho,
+                            HangSX = VTxuatkho.HangSX,
+                            NhaCC = VTxuatkho.NhaCC,
+                            DonVi = VTxuatkho.DonVi,
+                            SL = VTxuatkho.SL,
+                            NgayBaohanh = VTxuatkho.NgayBaohanh,
+                            ThoiGianBH = VTxuatkho.ThoiGianBH,
+                            TrangThai = "Đang mượn",
+                            NgayNhapkho = DateTime.Now
+                        };
+                        _context.khonguoidungs.Add(newItem);
+                    }
+                }
             }
 
             Phieuxuatkho.TrangThai = "Hoàn thành";
