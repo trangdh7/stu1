@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -93,7 +93,8 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
         public IActionResult Phieumuahang()
         {
             var Phieumuahanglist = _context.phieumuahang
-            .OrderByDescending(y => y.NgayMuahang)
+            .OrderByDescending(y => y.TrangThai == "Đang chờ báo giá")
+            .ThenByDescending(y => y.NgayMuahang)
             .ToList();
             // Gán tên Người yêu cầu cho từng phiếu mua hàng
             var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
@@ -187,7 +188,23 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
         {
             var vatTuList = _context.vtyeucau
                                  .Where(v => v.VTMaYeucau == MaYeucau).ToList();
-            return Json(vatTuList);
+            
+            // Lấy thông tin yêu cầu để lấy tên người yêu cầu
+            var yeucau = _context.yeucau
+                .FirstOrDefault(y => y.MaYeucau == MaYeucau);
+            
+            string tenNguoiYeuCau = "";
+            if (yeucau != null)
+            {
+                tenNguoiYeuCau = yeucau.NguoiYeucau ?? "";
+            }
+            
+            return Json(new
+            {
+                items = vatTuList,
+                maYeucau = MaYeucau,
+                tenNguoiYeuCau = tenNguoiYeuCau
+            });
         }
 
         [HttpGet]
@@ -2028,10 +2045,15 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             }
 
             // Tính tổng số lượng vật tư đã cam kết từ các phiếu xuất này
+            // Ưu tiên khớp chính xác Makho; nếu không có thì cho phép khớp linh hoạt theo tiền tố/hậu tố
             var tongSoLuongDaCamKet = _context.vtphieuxuatkho
-                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho) 
-                    && vt.Makho == makho 
-                    && vt.MaSanpham == masanpham)
+                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho)
+                    && vt.MaSanpham == masanpham
+                    && (
+                        vt.Makho == makho
+                        || ((vt.Makho ?? "") != "" && (makho ?? "") != "" &&
+                            (((vt.Makho ?? "").StartsWith(makho ?? "")) || ((makho ?? "").StartsWith(vt.Makho ?? ""))))
+                    ))
                 .Sum(vt => vt.SL ?? 0);
 
             return tongSoLuongDaCamKet;

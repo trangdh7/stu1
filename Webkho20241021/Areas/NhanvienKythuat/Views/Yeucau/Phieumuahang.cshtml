@@ -111,6 +111,9 @@
         <nav class="bodyyeucau-thietbi">
             <!-- This part is for the "Thietbi" section, using the MaMuahang from the current context -->
             <input type="hidden" id="selectedMamuahang" name="MaMuahang" value="@Model.Phieumuahang.FirstOrDefault()?.MaMuahang" />
+            <div id="phieumuahang-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+                <span id="phieumuahang-header-text"></span>
+            </div>
             <div class="Tableyeucau-thietbi-box">
                 <table class="tablethietbi">
                     <thead>

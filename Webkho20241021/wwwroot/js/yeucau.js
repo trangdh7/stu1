@@ -4,9 +4,10 @@ $(document).ready(function () {
     // Gọi hàm showVTYeucau với mã yêu cầu của hàng đầu tiên (sau khi filter áp dụng)
     const firstRow = $('.table tbody tr:visible').first();
     if (firstRow.length > 0) {
-        const MaYeucau = firstRow.find('td').eq(2).text().trim();
+        const MaYeucau = firstRow.find('td').eq(2).find('a').text().trim() || firstRow.find('td').eq(2).text().trim();
+        const NguoiYeucau = firstRow.find('td').eq(3).text().trim();
         if (MaYeucau) {
-            showVTYeucau(MaYeucau);
+            showVTYeucau(MaYeucau, NguoiYeucau);
         }
     }
 
@@ -43,7 +44,7 @@ function applyTableRowHighlight($row) {
     }
 }
 
-function showVTYeucau(MaYeucau) {
+function showVTYeucau(MaYeucau, NguoiYeucau) {
     console.log("Mã yêu cầu được chọn:", MaYeucau); // Kiểm tra mã yêu cầu
 
     const pathSegments = window.location.pathname.split('/');
@@ -59,14 +60,34 @@ function showVTYeucau(MaYeucau) {
         url: url, 
         method: 'GET',
         data: { MaYeucau: MaYeucau }, 
-        success: function (data) {
-            console.log(data); // Kiểm tra dữ liệu nhận được
+        success: function (response) {
+            console.log(response); // Kiểm tra dữ liệu nhận được
+
+            // Xử lý response mới (có items) hoặc cũ (mảng trực tiếp)
+            let data = response.items || response;
+            let tenNguoiYeuCau = response.tenNguoiYeuCau || NguoiYeucau || '';
+            
+            // Hiển thị thông tin yêu cầu
+            if (MaYeucau && tenNguoiYeuCau) {
+                $('#yeucauInfo').show();
+                $('#yeucauInfoText').text('Yêu cầu vật tư ' + MaYeucau + ' của ' + tenNguoiYeuCau);
+            } else if (MaYeucau) {
+                $('#yeucauInfo').show();
+                $('#yeucauInfoText').text('Yêu cầu vật tư ' + MaYeucau);
+            } else {
+                $('#yeucauInfo').hide();
+            }
 
             $('.tablethietbi tbody').empty();
 
             if (data && data.length > 0) {
                 let STT = 1;
                 data.forEach(function (item) {
+                    // Xác định màu cho ghi chú (đỏ nếu bị từ chối)
+                    var ghiChuColor = (item.trangThai && (item.trangThai.indexOf('Đã từ chối') !== -1 || item.trangThai.indexOf('từ chối') !== -1)) ? '#f44336' : 'inherit';
+                    // Hỗ trợ cả camelCase và PascalCase
+                    var ghiChu = item.ghiChu || item.GhiChu || '-';
+                    
                     // Tạo một dòng mới
                     let row = `<tr>
                         <td>${STT++}</td>
@@ -77,7 +98,8 @@ function showVTYeucau(MaYeucau) {
                         <td>${item.nhaCC || ''}</td>
                         <td>${item.sl}</td>
                         <td>${item.donVi || ''}</td>
-                        <td>${item.trangThai}</td>
+                        <td>${item.trangThai || ''}</td>
+                        <td style="color: ${ghiChuColor};">${ghiChu}</td>
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
                 });
@@ -85,7 +107,7 @@ function showVTYeucau(MaYeucau) {
                 // Hiển thị thông báo nếu không có dữ liệu
                 $('.tablethietbi tbody').append(
                     `<tr>
-                        <td colspan="9" style="text-align:center;">Không có dữ liệu vật tư.</td>
+                        <td colspan="10" style="text-align:center;">Không có dữ liệu vật tư.</td>
                     </tr>`
                 );
             }

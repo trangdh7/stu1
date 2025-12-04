@@ -69,10 +69,10 @@
                     {
                         string ChucvuSession = Context.Session.GetString("Chucvu");
                         string BophanSession = Context.Session.GetString("Bophan");
-                        <tr>
+                        <tr onclick="showVTnhapkho('@item.MaNhapkho')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTnhapkho('@item.MaNhapkho')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTnhapkho('@item.MaNhapkho')">
                                     @item.MaNhapkho
                                 </a>
                             </td>
@@ -95,10 +95,10 @@
                                     @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt" onclick="event.stopPropagation();">
                                             <i class="bx bxs-check-circle"></i>
                                         </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối">
+                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối" onclick="event.stopPropagation();">
                                             <i class="bx bxs-x-circle"></i>
                                         </button>
                                     }
@@ -108,10 +108,10 @@
                                     @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt" onclick="event.stopPropagation();">
                                             <i class="bx bxs-check-circle"></i>
                                         </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối">
+                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối" onclick="event.stopPropagation();">
                                             <i class="bx bxs-x-circle"></i>
                                         </button>
                                     }
@@ -121,7 +121,7 @@
                                     @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Xác nhận nhập kho">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Xác nhận nhập kho" onclick="event.stopPropagation();">
                                             <i class="bx bxs-check-circle"></i>
                                         </button>
                                     }
@@ -146,6 +146,9 @@
         </div>
     </nav>
     <nav class="bodyyeucau-thietbi">
+        <div id="phieunhapkho-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+            <span id="phieunhapkho-header-text"></span>
+        </div>
         <div class="Tableyeucau-thietbi-box">
             <table class="tablethietbi">
                 <thead>
@@ -187,6 +190,22 @@
     <script>
         $(document).ready(function () {
             getThongbaoData();
+            
+            // Chức năng tìm kiếm
+            $('#timkiem').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $('.table tbody tr').filter(function() {
+                    var match = false;
+                    $(this).find('td').each(function() {
+                        var text = $(this).text().toLowerCase();
+                        if (text.indexOf(value) > -1) {
+                            match = true;
+                            return false; // break loop
+                        }
+                    });
+                    $(this).toggle(match);
+                });
+            });
         });
     </script>
 </body>

@@ -58,6 +58,7 @@
                             <td>Người yêu cầu</td>
                             <td>Ngày mua hàng</td>
                             <td>Trạng thái</td>
+                            <td>Hành động</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -66,12 +67,10 @@
                         }
                         @foreach (var item in Model.Phieumuahang)
                         {
-                            string ChucvuSession = Context.Session.GetString("Chucvu");
-                            string BophanSession = Context.Session.GetString("Bophan");
-                            <tr>
+                            <tr onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" style="cursor: pointer;">
                                 <td>@STT</td>
                                 <td>
-                                    <a href="javascript:void(0);" onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
+                                    <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
                                         @item.MaMuahang
                                     </a>
                                 </td>
@@ -80,24 +79,16 @@
                                 <td>@item.MaNguoidung</td>
                                 <td>@item.NgayMuahang?.ToString("dd/MM/yyyy")</td>
                                 <td>
-                                    @if ((item.TrangThai == "Đã báo giá" && ChucvuSession == "Giám đốc") ||
-                                          (item.TrangThai == "Chờ thanh toán" && BophanSession == "BP kế toán"))
-                                    {
-                                        @using (Html.BeginForm("XuLyPhieumuahang", "Yeucau", new { area = "TruongBPKetoan" }, FormMethod.Post))
-                                        {
-                                            <input type="hidden" name="MaMuahang" value="@item.MaMuahang" />
-                                            <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
-                                                <i class="bx bxs-check-circle"></i>
-                                            </button>
-                                            <button type="submit" name="action" value="reject" class="btn-icon reject-btn">
-                                                <i class="bx bxs-x-circle"></i>
-                                            </button>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        @item.TrangThai;
-                                    }
+                                    @item.TrangThai
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("InPhieumuahang", "Yeucau", new { area = "TruongBPKetoan", MaMuahang = item.MaMuahang })" 
+                                       target="_blank" 
+                                       class="btn-icon" 
+                                       title="In phiếu"
+                                       onclick="event.stopPropagation();">
+                                        <i class="bx bx-printer"></i>
+                                    </a>
                                 </td>
                             </tr>
                             STT++;
@@ -110,6 +101,9 @@
         <nav class="bodyyeucau-thietbi">
             <!-- This part is for the "Thietbi" section, using the MaMuahang from the current context -->
             <input type="hidden" id="selectedMamuahang" name="MaMuahang" value="@Model.Phieumuahang.FirstOrDefault()?.MaMuahang" />
+            <div class="phieumuahang-info" id="phieumuahang-header" style="margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;">
+                <strong></strong>
+            </div>
             <div class="Tableyeucau-thietbi-box">
                 <table class="tablethietbi">
                     <thead>
@@ -131,16 +125,53 @@
                     </tbody>
                 </table>
             </div>
-            <div class="action" style="text-align: right;">
-                <button type="button" id="btnInPhieu" onclick="inPhieuMuaHang()" style="margin-left: 10px;">
-                    <i class='bx bx-printer'></i> In phiếu mua hàng
-                </button>
+            <div class="action" style="margin-top: 15px; display: flex; justify-content: flex-end;">
+                @{
+                    string ChucvuSession = Context.Session.GetString("Chucvu");
+                    string BophanSession = Context.Session.GetString("Bophan");
+                }
+                <div id="approveRejectButtons" style="display: none; gap: 10px;">
+                    <form id="approveRejectForm" method="post" action="@Url.Action("XuLyPhieumuahang", "Yeucau", new { area = "TruongBPKetoan" })" style="display: flex; gap: 10px;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="MaMuahang" id="hiddenMaMuahang" value="" />
+                        <button type="button" id="btnApprove" class="btn-icon" style="background-color: #336600; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="bx bxs-check-circle"></i> Duyệt
+                        </button>
+                        <button type="button" id="btnReject" class="btn-icon" style="background-color: #336600; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="bx bxs-x-circle"></i> Từ chối
+                        </button>
+                    </form>
+                </div>
             </div>
         </nav>
         <script src="~/js/phieumuahang.js"></script>
         <script>
             $(document).ready(function () {
                 getThongbaoData();
+                
+                // Xử lý nút duyệt
+                $('#btnApprove').on('click', function() {
+                    if (!confirm('Bạn có chắc chắn muốn duyệt phiếu mua hàng này?')) {
+                        return;
+                    }
+                    $('#hiddenMaMuahang').val(selectedMamuahang);
+                    var form = $('#approveRejectForm');
+                    var actionInput = $('<input>').attr('type', 'hidden').attr('name', 'action').val('approve');
+                    form.append(actionInput);
+                    form.submit();
+                });
+                
+                // Xử lý nút từ chối
+                $('#btnReject').on('click', function() {
+                    if (!confirm('Bạn có chắc chắn muốn từ chối phiếu mua hàng này?')) {
+                        return;
+                    }
+                    $('#hiddenMaMuahang').val(selectedMamuahang);
+                    var form = $('#approveRejectForm');
+                    var actionInput = $('<input>').attr('type', 'hidden').attr('name', 'action').val('reject');
+                    form.append(actionInput);
+                    form.submit();
+                });
             });
         </script>
     </body>

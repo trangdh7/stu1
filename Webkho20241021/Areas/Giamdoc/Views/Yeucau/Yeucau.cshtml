@@ -1,4 +1,4 @@
-﻿@model Webkho_20241021.Areas.Giamdoc.Data.Yeucauviewmodel
+@model Webkho_20241021.Areas.Giamdoc.Data.Yeucauviewmodel
 
 
 @{
@@ -15,10 +15,6 @@
     <link rel="stylesheet" href="~/css/yeucau.css" />
 </head>
 <body>
-<div style="margin: 10px 10px; padding: 10px; background-color:rgb(225, 233, 71); border-left: 4px solid #2196f3; border-radius: 4px;">
-            <strong style="color:rgb(1, 1, 1);">📌 Lưu ý:</strong> 
-            <span style="color: #333;">Ấn vào <strong style="color:rgb(0, 0, 0);">Mã yêu cầu</strong> trong bảng để xem chi tiết vật tư.</span>
-        </div>
     @{
         Func<string, bool> isAwaitingDirectorStatusFunc = status =>
         {
@@ -112,11 +108,11 @@
                             .Where(vt => vt.VTMaYeucau == item.MaYeucau && vt.NgayDuyet.HasValue)
                             .OrderBy(vt => vt.NgayDuyet)
                             .FirstOrDefault()?.NgayDuyet;
-                        <tr class="@yeucauRowClass">
+                        <tr class="@yeucauRowClass" onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
                                     @item.MaYeucau
                                 </a>
                             </td>
@@ -171,6 +167,7 @@
                         <td>Số lượng</td>
                         <td>Đơn vị</td>
                         <td>Trạng thái</td>
+                        <td>Ghi chú</td>
                         <td>Ngày duyệt</td>
                         <td>Duyệt</td>
                     </tr>
@@ -235,6 +232,9 @@
                                     }
                                 }
                                 <span style="@trangThaiColor">@trangThai</span>
+                            </td>
+                            <td class="ghichu-column" style="color: @(trangThai.Contains("Đã từ chối") || trangThai.Contains("từ chối") ? "#f44336" : "inherit");">
+                                @(item.GhiChu ?? "-")
                             </td>
                             <td>
                                 @if (item.NgayDuyet.HasValue)
@@ -367,7 +367,7 @@
             // Hiển thị thông tin yêu cầu
             if (currentNguoiYeucau) {
                 $('#yeucauInfo').show();
-                $('#yeucauInfoText').text('Yêu cầu số ' + MaYeucau + ' của ' + currentNguoiYeucau);
+                $('#yeucauInfoText').text('Yêu cầu vật tư ' + MaYeucau + ' của ' + currentNguoiYeucau);
             } else {
                 $('#yeucauInfo').hide();
             }
@@ -450,6 +450,9 @@
                                 trangThaiColor = 'color: #8b0000; font-weight: bold;';
                             }
                             row += `<span style="${trangThaiColor}">${trangThai}</span></td>
+                                <td class="ghichu-column" style="color: ${(trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) ? '#f44336' : 'inherit'};">
+                                    ${item.ghiChu || '-'}
+                                </td>
                                 <td>`;
                             
                             // Hiển thị ngày duyệt
@@ -488,7 +491,7 @@
                         updateDuyetTatCaButton();
                     } else {
                         $('#vtYeucauBody').append(
-                            `<tr><td colspan="12" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                            `<tr><td colspan="13" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                         );
                         updateDuyetTatCaButton();
                     }
@@ -530,8 +533,12 @@
         }
 
         function rejectSingleVatTu(maYeucau, maVatTu) {
-            if (confirm('Bạn có chắc chắn muốn từ chối vật tư ' + maVatTu + '?')) {
-                submitApprovalVatTu(maYeucau, maVatTu, 'reject');
+            // Hiển thị modal để nhập lý do từ chối
+            var ghiChu = prompt('Vui lòng nhập lý do từ chối vật tư ' + maVatTu + ':', '');
+            if (ghiChu !== null) {
+                if (confirm('Bạn có chắc chắn muốn từ chối vật tư ' + maVatTu + '?')) {
+                    submitApprovalVatTu(maYeucau, maVatTu, 'reject', ghiChu);
+                }
             }
         }
 
@@ -626,19 +633,25 @@
             pendingBulkAction = null;
         }
 
-        function submitApprovalVatTu(maYeucau, maVatTu, action) {
+        function submitApprovalVatTu(maYeucau, maVatTu, action, ghiChu = null) {
             const pathSegments = window.location.pathname.split('/');
             const area = pathSegments.length > 1 ? pathSegments[1] : '';
+            
+            var data = {
+                MaYeucau: maYeucau,
+                MaSanpham: maVatTu,
+                action: action,
+                __RequestVerificationToken: requestToken
+            };
+            
+            if (action === 'reject' && ghiChu) {
+                data.GhiChu = ghiChu;
+            }
             
             $.ajax({
                 url: `/${area}/Yeucau/XuLyVatTuYeucau`,
                 method: 'POST',
-                data: {
-                    MaYeucau: maYeucau,
-                    MaSanpham: maVatTu,
-                    action: action,
-                    __RequestVerificationToken: requestToken
-                },
+                data: data,
                 success: function(response) {
                     if (response.success) {
                         alert(response.message);
@@ -656,6 +669,11 @@
                         } else {
                             var newTrangThai = 'Giám đốc - Đã từ chối';
                             $trangThaiCell.html(getTrangThaiWithColor(newTrangThai));
+                            // Cập nhật cột ghi chú
+                            var $ghichuCell = $row.find('.ghichu-column');
+                            if ($ghichuCell.length) {
+                                $ghichuCell.text(response.ghiChu || '-').css('color', '#f44336');
+                            }
                             // Xóa nút duyệt/từ chối khỏi cột duyệt
                             $duyetCell.html('');
                         }

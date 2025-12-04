@@ -8,6 +8,7 @@ namespace Webkho_20241021.Helpers
 {
     public static class MakhoHelper
     {
+        private const string PlaceholderCode = "VT mới";
         private const int MaxLength = 50;
         private static readonly Regex InvalidCharsRegex = new(@"[^A-Z0-9]", RegexOptions.Compiled);
 
@@ -72,6 +73,37 @@ namespace Webkho_20241021.Helpers
 
             reservedSet.Add(candidate);
             return candidate;
+        }
+
+        public static khotongs EnsurePlaceholderKho(ApplicationDbContext context)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            var existing = context.khotongs.FirstOrDefault(k => k.Makho == PlaceholderCode);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var placeholder = new khotongs
+            {
+                Makho = PlaceholderCode,
+                TenSanpham = "Vật tư mới",
+                MaSanpham = "VT-MOI",
+                HangSX = "Chưa xác định",
+                NhaCC = "Chưa xác định",
+                DuAn = "N/A",
+                SL = 0,
+                DonVi = "Cái",
+                TrangThai = PlaceholderCode
+            };
+
+            context.khotongs.Add(placeholder);
+            context.SaveChanges();
+            return placeholder;
         }
     }
 }

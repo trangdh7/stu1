@@ -1,4 +1,4 @@
-﻿@model Webkho_20241021.Areas.TruongBPMuahang.Data.Yeucauviewmodel
+@model Webkho_20241021.Areas.TruongBPMuahang.Data.Yeucauviewmodel
 
 
 @{
@@ -73,11 +73,11 @@
                         var duan = Model.Duans.FirstOrDefault(d => d.MaDuan == item.YCMaDuan);
                         string maNguoiQLDA = duan?.MaNguoiQLDA;
                         string maNguoidungSession = Context.Session.GetString("MaNguoidung");
-                        <tr>
+                        <tr onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
                                     @item.MaYeucau
                                 </a>
                             </td>
@@ -288,7 +288,7 @@
             // Hiển thị thông tin yêu cầu
             if (currentNguoiYeucau) {
                 $('#yeucauInfo').show();
-                $('#yeucauInfoText').text('Yêu cầu số ' + MaYeucau + ' của ' + currentNguoiYeucau);
+                $('#yeucauInfoText').text('Yêu cầu vật tư ' + MaYeucau + ' của ' + currentNguoiYeucau);
             } else {
                 $('#yeucauInfo').hide();
             }

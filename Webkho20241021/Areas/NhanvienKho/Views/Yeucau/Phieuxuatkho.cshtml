@@ -4,6 +4,10 @@
     Layout = "~/Areas/NhanvienKho/Views/Layout/Layout.cshtml";
 }
 @model Webkho_20241021.Areas.NhanvienKho.Data.Phieuxuatkhoviewmodel
+@using System.Text.Json
+@{
+    var errorMessage = TempData["Error"] as string;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -140,7 +144,16 @@
         </div>
     </nav>
     <nav class="bodyyeucau-thietbi">
+        <div id="phieuxuatkho-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+            <span id="phieuxuatkho-header-text"></span>
+        </div>
         <div class="Tableyeucau-thietbi-box">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" style="margin-bottom:10px;">
+                    @errorMessage
+                </div>
+            }
             <table class="tablethietbi">
                 <thead>
                     <tr>
@@ -183,6 +196,12 @@
             getThongbaoData();
         });
     </script>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            console.error('Xuất kho (Nhân viên kho) lỗi:', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(errorMessage)));
+        </script>
+    }
 </body>
 </html>
 

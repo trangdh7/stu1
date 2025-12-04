@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -95,7 +95,8 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
         public IActionResult Phieumuahang()
         {
             var Phieumuahanglist = _context.phieumuahang
-            .OrderByDescending(y => y.NgayMuahang)
+            .OrderByDescending(y => y.TrangThai == "Đang chờ báo giá")
+            .ThenByDescending(y => y.NgayMuahang)
             .ToList();
             // Gán tên Người yêu cầu cho từng phiếu mua hàng
             var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
@@ -2123,10 +2124,15 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
             }
 
             // Tính tổng số lượng vật tư đã cam kết từ các phiếu xuất này
+            // Ưu tiên khớp chính xác Makho; nếu không có thì cho phép khớp linh hoạt theo tiền tố/hậu tố
             var tongSoLuongDaCamKet = _context.vtphieuxuatkho
-                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho) 
-                    && vt.Makho == makho 
-                    && vt.MaSanpham == masanpham)
+                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho)
+                    && vt.MaSanpham == masanpham
+                    && (
+                        vt.Makho == makho
+                        || ((vt.Makho ?? "") != "" && (makho ?? "") != "" &&
+                            (((vt.Makho ?? "").StartsWith(makho ?? "")) || ((makho ?? "").StartsWith(vt.Makho ?? ""))))
+                    ))
                 .Sum(vt => vt.SL ?? 0);
 
             return tongSoLuongDaCamKet;

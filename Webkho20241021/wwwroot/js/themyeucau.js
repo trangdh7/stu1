@@ -40,7 +40,8 @@ document.addEventListener("DOMContentLoaded", function () {
         slcu: ["slcu", "cu", "soluongcu", "old"],
         slmoi: ["slmoi", "moi", "soluongmoi", "new"],
         nhacc: ["nhacungcap", "ncc"],
-        ngay: ["ngaycanhang", "ngaycan", "ngaynhan", "ngaycan"]
+        ngay: ["ngaycanhang", "ngaycan", "ngaynhan", "ngaycan"],
+        ghichu: ["ghichu", "note", "lydo", "mota", "chuthich"]
     };
     
     
@@ -213,7 +214,8 @@ document.addEventListener("DOMContentLoaded", function () {
             "slcu",
             "slmoi",
             "ngay",
-            "nhacc"
+            "nhacc",
+            "ghichu"
         ];
 
         let lastKnownColumn = undefined;
@@ -329,6 +331,7 @@ document.addEventListener("DOMContentLoaded", function () {
         appendHiddenInput("SL", finalQuantity);
         appendHiddenInput("NhaCC", rowData.NhaCC);
         appendHiddenInput("VTNgayCanHang", rowData.NgayCanHang);
+        appendHiddenInput("GhiChu", rowData.GhiChu || "");
     }
 
     function renderRows(rows, updateState = true) {
@@ -346,7 +349,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td>${escapeHtml(finalQuantity)}</td>
                 <td>${escapeHtml(row.NgayCanHang)}</td>
                 <td>${escapeHtml(row.NhaCC)}</td>
+                <td><input type="text" class="ghichu-input" data-index="${index}" value="${escapeHtml(row.GhiChu || '')}" placeholder="Nhập ghi chú (tùy chọn)" style="width: 100%; padding: 4px;" /></td>
             `;
+            
+            // Thêm event listener cho input ghi chú
+            const ghiChuInput = tr.querySelector('.ghichu-input');
+            if (ghiChuInput) {
+                ghiChuInput.addEventListener('change', function() {
+                    const rowIndex = parseInt(this.getAttribute('data-index'));
+                    if (currentRows[rowIndex]) {
+                        currentRows[rowIndex].GhiChu = this.value;
+                        // Cập nhật hidden input
+                        const hiddenInputs = hiddenInputsWrapper.querySelectorAll(`input[name="GhiChu"]`);
+                        if (hiddenInputs[rowIndex]) {
+                            hiddenInputs[rowIndex].value = this.value;
+                        }
+                    }
+                });
+            }
             tableBody.appendChild(tr);
             appendRowHiddenInputs(row);
         });
@@ -486,6 +506,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     SLMoi: parseQuantity(getValue("slmoi")),
                     NhaCC: (getValue("nhacc") || "").toString().trim(),
                     NgayCanHang: parsedDate,
+                    GhiChu: (getValue("ghichu") || "").toString().trim(),
                     YCMakho: "",
                     hasManualDate: Boolean(getValue("ngay"))
                 };

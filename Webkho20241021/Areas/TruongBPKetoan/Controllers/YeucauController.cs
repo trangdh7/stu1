@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -91,7 +91,8 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
         public IActionResult Phieumuahang()
         {
             var Phieumuahanglist = _context.phieumuahang
-            .OrderByDescending(y => y.NgayMuahang)
+            .OrderByDescending(y => y.TrangThai == "Chờ thanh toán")
+            .ThenByDescending(y => y.NgayMuahang)
             .ToList();
             // Gán tên Người yêu cầu cho từng phiếu mua hàng
             var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
@@ -185,7 +186,23 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
         {
             var vatTuList = _context.vtyeucau
                                  .Where(v => v.VTMaYeucau == MaYeucau).ToList();
-            return Json(vatTuList);
+            
+            // Lấy thông tin yêu cầu để lấy tên người yêu cầu
+            var yeucau = _context.yeucau
+                .FirstOrDefault(y => y.MaYeucau == MaYeucau);
+            
+            string tenNguoiYeuCau = "";
+            if (yeucau != null)
+            {
+                tenNguoiYeuCau = yeucau.NguoiYeucau ?? "";
+            }
+            
+            return Json(new
+            {
+                items = vatTuList,
+                maYeucau = MaYeucau,
+                tenNguoiYeuCau = tenNguoiYeuCau
+            });
         }
 
         [HttpGet]
@@ -193,7 +210,28 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
         {
             var PhieuxuatkhoList = _context.vtphieuxuatkho
                                  .Where(v => v.MaXuatkho == MaXuatkho).ToList();
-            return Json(PhieuxuatkhoList);
+            
+            // Lấy thông tin phiếu xuất kho để lấy tên người yêu cầu
+            var phieuxuatkho = _context.phieuxuatkho
+                .FirstOrDefault(p => p.MaXuatkho == MaXuatkho);
+            
+            string tenNguoiYeuCau = "";
+            if (phieuxuatkho != null && !string.IsNullOrEmpty(phieuxuatkho.MaNguoidung))
+            {
+                var nguoidung = _context.nguoidungs
+                    .FirstOrDefault(n => n.MaNguoidung == phieuxuatkho.MaNguoidung);
+                if (nguoidung != null)
+                {
+                    tenNguoiYeuCau = nguoidung.TenNguoidung ?? "";
+                }
+            }
+            
+            return Json(new
+            {
+                items = PhieuxuatkhoList,
+                maXuatkho = MaXuatkho,
+                tenNguoiYeuCau = tenNguoiYeuCau
+            });
         }
 
         [HttpGet]
@@ -201,7 +239,28 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
         {
             var PhieunhapkhoList = _context.vtphieunhapkho
                                  .Where(v => v.MaNhapkho == MaNhapkho).ToList();
-            return Json(PhieunhapkhoList);
+            
+            // Lấy thông tin phiếu nhập kho để lấy tên người yêu cầu
+            var phieunhapkho = _context.phieunhapkho
+                .FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
+            
+            string tenNguoiYeuCau = "";
+            if (phieunhapkho != null && !string.IsNullOrEmpty(phieunhapkho.MaNguoidung))
+            {
+                var nguoidung = _context.nguoidungs
+                    .FirstOrDefault(n => n.MaNguoidung == phieunhapkho.MaNguoidung);
+                if (nguoidung != null)
+                {
+                    tenNguoiYeuCau = nguoidung.TenNguoidung ?? "";
+                }
+            }
+            
+            return Json(new
+            {
+                items = PhieunhapkhoList,
+                maNhapkho = MaNhapkho,
+                tenNguoiYeuCau = tenNguoiYeuCau
+            });
         }
 
         [HttpGet]
@@ -209,7 +268,28 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
         {
             var PhieumuahangList = _context.vtphieumuahang
                                  .Where(v => v.MaMuahang == MaMuahang).ToList();
-            return Json(PhieumuahangList);
+            
+            // Lấy thông tin phiếu mua hàng để lấy tên người yêu cầu
+            var phieumuahang = _context.phieumuahang
+                .FirstOrDefault(p => p.MaMuahang == MaMuahang);
+            
+            string tenNguoiYeuCau = "";
+            if (phieumuahang != null && !string.IsNullOrEmpty(phieumuahang.MaNguoidung))
+            {
+                var nguoidung = _context.nguoidungs
+                    .FirstOrDefault(n => n.MaNguoidung == phieumuahang.MaNguoidung);
+                if (nguoidung != null)
+                {
+                    tenNguoiYeuCau = nguoidung.TenNguoidung ?? "";
+                }
+            }
+            
+            return Json(new
+            {
+                items = PhieumuahangList,
+                maMuahang = MaMuahang,
+                tenNguoiYeuCau = tenNguoiYeuCau
+            });
         }
 
         [HttpPost]
@@ -1939,10 +2019,15 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
             }
 
             // Tính tổng số lượng vật tư đã cam kết từ các phiếu xuất này
+            // Ưu tiên khớp chính xác Makho; nếu không có thì cho phép khớp linh hoạt theo tiền tố/hậu tố
             var tongSoLuongDaCamKet = _context.vtphieuxuatkho
-                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho) 
-                    && vt.Makho == makho 
-                    && vt.MaSanpham == masanpham)
+                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho)
+                    && vt.MaSanpham == masanpham
+                    && (
+                        vt.Makho == makho
+                        || ((vt.Makho ?? "") != "" && (makho ?? "") != "" &&
+                            (((vt.Makho ?? "").StartsWith(makho ?? "")) || ((makho ?? "").StartsWith(vt.Makho ?? ""))))
+                    ))
                 .Sum(vt => vt.SL ?? 0);
 
             return tongSoLuongDaCamKet;

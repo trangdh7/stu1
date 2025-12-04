@@ -3,6 +3,10 @@
     Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
 }
 @model Webkho_20241021.Areas.TruongBPKho.Data.Phieuxuatkhoviewmodel
+@using System.Text.Json
+@{
+    var errorMessage = TempData["Error"] as string;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,10 +73,10 @@
                     {
                         string ChucvuSession = Context.Session.GetString("Chucvu");
                         string BophanSession = Context.Session.GetString("Bophan");
-                        <tr>
+                        <tr class="clickable-row" data-maxuatkho="@item.MaXuatkho" data-trangthai="@item.TrangThai" data-bophan="@BophanSession" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTxuatkho('@item.MaXuatkho')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTxuatkho('@item.MaXuatkho')">
                                     @item.MaXuatkho
                                 </a>
                             </td>
@@ -83,33 +87,15 @@
                             <td>
                                 @if (item.TrangThai == "Chờ xác nhận" && BophanSession == "BP kho")
                                 {
-                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt xuất kho">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                    }
+                                    <span data-has-button="true" data-ma-xuatkho="@item.MaXuatkho" data-action="approve">@item.TrangThai</span>
                                 }
                                 else if (item.TrangThai == "Đang chuẩn bị hàng" && BophanSession == "BP kho")
                                 {
-                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                    }
+                                    <span data-has-button="true" data-ma-xuatkho="@item.MaXuatkho" data-action="approve">@item.TrangThai</span>
                                 }
                                 else if (item.TrangThai == "Chờ lấy hàng" && BophanSession == "BP kho")
                                 {
-                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Xác nhận hàng đã sẵn sàng">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                    }
+                                    <span data-has-button="true" data-ma-xuatkho="@item.MaXuatkho" data-action="approve">@item.TrangThai</span>
                                 }
                                 else if (item.TrangThai == "Chờ xác nhận nhận hàng" && BophanSession == "BP kho")
                                 {
@@ -125,27 +111,17 @@
                                 }
                                 else if (item.TrangThai == "Đã lấy hàng" && BophanSession == "BP kho")
                                 {
-                                    @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon complete-btn" title="Hoàn thành xuất kho">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                    }
+                                    <span data-has-button="true" data-ma-xuatkho="@item.MaXuatkho" data-action="approve">@item.TrangThai</span>
                                 }
                                 else
                                 {
                                     @item.TrangThai
-                                    ;
                                 }
                             </td>
                             <td>
-                                @if (item.TrangThai == "Đã xác nhận nhận hàng")
-                                {
-                                    <a class="btn-icon" target="_blank" href='@Url.Action("InPhieuxuatkho", "Yeucau", new { area = "TruongBPKho", MaXuatkho = item.MaXuatkho })' title="In phiếu xuất kho">
-                                        <i class="bx bx-printer"></i>
-                                    </a>
-                                }
+                                <a class="btn-icon" target="_blank" href='@Url.Action("InPhieuxuatkho", "Yeucau", new { area = "TruongBPKho", MaXuatkho = item.MaXuatkho })' title="In phiếu xuất kho">
+                                    <i class="bx bx-printer"></i>
+                                </a>
                             </td>
                         </tr>
                         STT++;
@@ -153,9 +129,18 @@
                 </tbody>
             </table>
         </div>
+        <div id="phieuxuatkho-header" style="font-size: 18px; font-weight: bold; margin: 20px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none; text-align: left;">
+            <span id="phieuxuatkho-header-text"></span>
+        </div>
     </nav>
     <nav class="bodyyeucau-thietbi">
         <div class="Tableyeucau-thietbi-box">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" style="margin-bottom:10px;">
+                    @errorMessage
+                </div>
+            }
             <table class="tablethietbi">
                 <thead>
                     <tr>
@@ -191,6 +176,9 @@
                 </tbody>
             </table>
         </div>
+        <div id="xuatkho-button-container" style="margin-top: 20px; text-align: right; padding-right: 20px; display: none;">
+            <div id="xuatkho-button-content"></div>
+        </div>
     </nav>
     <script src="~/js/phieuxuatkho.js"></script>
     <script>
@@ -198,6 +186,12 @@
             getThongbaoData();
         });
     </script>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            console.error('Xuất kho (Trưởng BP Kho) lỗi:', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(errorMessage)));
+        </script>
+    }
 </body>
 </html>
 

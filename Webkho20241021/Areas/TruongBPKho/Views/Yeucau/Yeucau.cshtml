@@ -1,4 +1,4 @@
-﻿@model Webkho_20241021.Areas.TruongBPKho.Data.Yeucauviewmodel
+@model Webkho_20241021.Areas.TruongBPKho.Data.Yeucauviewmodel
 
 
 @{
@@ -73,11 +73,11 @@
                         var duan = Model.Duans.FirstOrDefault(d => d.MaDuan == item.YCMaDuan);
                         string maNguoiQLDA = duan?.MaNguoiQLDA;
                         string maNguoidungSession = Context.Session.GetString("MaNguoidung");
-                        <tr>
+                        <tr onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
                                     @item.MaYeucau
                                 </a>
                             </td>
@@ -135,20 +135,13 @@
                         bool canApprove = currentArea == "TruongBPKho" || 
                                         (userRole.Trim() == "Trưởng BP" && boPhan.Trim() == "BP kho") || 
                                         (selectedRole != null && selectedRole.Contains("Trưởng BP"));
-                        var headerStatus = Model.Yeucau.FirstOrDefault()?.TrangThai ?? "";
-                        var headerWaitingDirector = (headerStatus ?? "").Trim().ToLower().Contains("giám đốc");
                     }
                     @foreach (var item in Model.VTyeucau)
                     {
-                        // Vật tư đã được duyệt nếu có trạng thái "Đã duyệt" hoặc "Đang mua hàng" (đã qua bước duyệt)
-                        var isApproved = item.TrangThai == "Đã duyệt" || 
-                                       item.TrangThai == "Đang mua hàng" || 
-                                       item.TrangThai == "Đã xuất kho" || 
-                                       item.TrangThai == "Đã nhận hàng";
-                        var isRejected = item.TrangThai == "Đã từ chối";
-                        var isWaitingDirector = headerWaitingDirector || (item.TrangThai ?? "").Trim().ToLower().Contains("giám đốc");
+                        // Chỉ hiển thị nút duyệt khi trạng thái đúng là "Chờ TrưởngBP-Kho duyệt"
+                        var isWaitingTruongBPKho = (item.TrangThai ?? "").Trim() == "Chờ TrưởngBP-Kho duyệt";
                         var maYeucau = Model.Yeucau.FirstOrDefault()?.MaYeucau ?? "";
-                        var canActOnItem = canApprove && !isApproved && !isRejected && !isWaitingDirector;
+                        var canActOnItem = canApprove && isWaitingTruongBPKho;
                         <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau">
                             <td>@if (canActOnItem) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
                             <td>@STT2</td>
@@ -166,36 +159,6 @@
                                     <button type="button" class="btn-icon approve-btn" onclick="approveSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Duyệt vật tư">
                                         <i class="bx bxs-check-circle"></i>
                                     </button>
-                                    <button type="button" class="btn-icon reject-btn" onclick="rejectSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Từ chối vật tư">
-                                        <i class="bx bxs-x-circle"></i>
-                                    </button>
-                                }
-                                else if (isApproved)
-                                {
-                                    @if (item.TrangThai == "Đã duyệt")
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>
-                                    }
-                                    else if (item.TrangThai == "Đang mua hàng")
-                                    {
-                                        <span style="color: #2196f3; font-weight: bold;">Đang mua hàng</span>
-                                    }
-                                    else if (item.TrangThai == "Đã xuất kho")
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">Đã xuất kho</span>
-                                    }
-                                    else if (item.TrangThai == "Đã nhận hàng")
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">Đã nhận hàng</span>
-                                    }
-                                    else
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>
-                                    }
-                                }
-                                else if (isRejected)
-                                {
-                                    <span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>
                                 }
                                 else
                                 {
@@ -288,7 +251,7 @@
             // Hiển thị thông tin yêu cầu
             if (currentNguoiYeucau) {
                 $('#yeucauInfo').show();
-                $('#yeucauInfoText').text('Yêu cầu số ' + MaYeucau + ' của ' + currentNguoiYeucau);
+                $('#yeucauInfoText').text('Yêu cầu vật tư ' + MaYeucau + ' của ' + currentNguoiYeucau);
             } else {
                 $('#yeucauInfo').hide();
             }
@@ -327,16 +290,9 @@
                         data.forEach(function (item) {
                             var maVatTu = item.maSanpham || '';
                             var trangThai = item.trangThai || '';
-                            // Vật tư đã được duyệt nếu có trạng thái "Đã duyệt" hoặc "Đang mua hàng" (đã qua bước duyệt)
-                            var isApproved = trangThai === 'Đã duyệt' || 
-                                           trangThai === 'Đang mua hàng' || 
-                                           trangThai === 'Đã xuất kho' || 
-                                           trangThai === 'Đã nhận hàng';
-                            var isRejected = trangThai === 'Đã từ chối';
-                            var waitingByHeader = (headerStatus || '').toLowerCase().includes('giám đốc');
-                            var waitingByItem = (trangThai || '').toLowerCase().includes('giám đốc');
-                            var isWaitingDirector = waitingByHeader || waitingByItem;
-                            var canActOnItem = canApproveYeucau && !isApproved && !isRejected && !isWaitingDirector;
+                            // Chỉ hiển thị nút duyệt khi trạng thái đúng là "Chờ TrưởngBP-Kho duyệt"
+                            var isWaitingTruongBPKho = (trangThai || '').trim() === 'Chờ TrưởngBP-Kho duyệt';
+                            var canActOnItem = canApproveYeucau && isWaitingTruongBPKho;
                             
                             // Escape single quotes trong mã vật tư để tránh lỗi JavaScript
                             var maVatTuEscaped = maVatTu.replace(/'/g, "\\'");
@@ -355,29 +311,10 @@
                                 <td class="trangthai-vattu">${trangThai}</td>
                                 <td class="duyet-column">`;
                             
-                            // Hiển thị nút duyệt nếu là Trưởng BP và vật tư chưa được duyệt/từ chối
-                            if (isApproved) {
-                                // Hiển thị trạng thái tương ứng
-                                if (trangThai === 'Đã duyệt') {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>';
-                                } else if (trangThai === 'Đang mua hàng') {
-                                    row += '<span style="color: #2196f3; font-weight: bold;">Đang mua hàng</span>';
-                                } else if (trangThai === 'Đã xuất kho') {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">Đã xuất kho</span>';
-                                } else if (trangThai === 'Đã nhận hàng') {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">Đã nhận hàng</span>';
-                                } else {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>';
-                                }
-                            } else if (isRejected) {
-                                row += '<span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>';
-                            } else if (canActOnItem) {
-                                // Hiển thị nút duyệt/từ chối cho Trưởng BP
+                            // Chỉ hiển thị nút duyệt cho Trưởng BP khi đúng trạng thái "Chờ TrưởngBP-Kho duyệt"
+                            if (canActOnItem) {
                                 row += `<button type="button" class="btn-icon approve-btn" onclick="approveSingleVatTu('${MaYeucauEscaped}', '${maVatTuEscaped}')" title="Duyệt vật tư">
                                     <i class="bx bxs-check-circle"></i>
-                                </button>
-                                <button type="button" class="btn-icon reject-btn" onclick="rejectSingleVatTu('${MaYeucauEscaped}', '${maVatTuEscaped}')" title="Từ chối vật tư">
-                                    <i class="bx bxs-x-circle"></i>
                                 </button>`;
                             } else {
                                 row += '<span>-</span>';
@@ -529,11 +466,11 @@
                         
                         if (action === 'approve') {
                             $trangThaiCell.text('Đã duyệt');
-                            $duyetCell.html('<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>');
                         } else {
                             $trangThaiCell.text('Đã từ chối');
-                            $duyetCell.html('<span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>');
                         }
+                        // Sau khi duyệt / từ chối thì ẩn nút duyệt, chỉ để dấu gạch
+                        $duyetCell.html('<span>-</span>');
                     } else {
                         alert(response.message || 'Có lỗi xảy ra.');
                     }

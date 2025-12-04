@@ -1,4 +1,4 @@
-﻿@model Webkho_20241021.Areas.TruongBPKythuat.Data.Yeucauviewmodel
+@model Webkho_20241021.Areas.TruongBPKythuat.Data.Yeucauviewmodel
 
 
 @{
@@ -108,11 +108,11 @@
                         var trangThaiYeucau = string.IsNullOrWhiteSpace(item.TrangThai) ? "" : item.TrangThai.Trim();
                         var yeucauAwaiting = isAwaitingTruongBPStatusFunc(item.TrangThai);
                         var yeucauRowClass = yeucauAwaiting ? "awaiting-director" : "";
-                        <tr class="@yeucauRowClass">
+                        <tr class="@yeucauRowClass clickable-row" onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
                                     @item.MaYeucau
                                 </a>
                             </td>
@@ -157,6 +157,7 @@
                         <td>Số lượng</td>
                         <td>Đơn vị</td>
                         <td>Trạng thái</td>
+                        <td>Ghi chú</td>
                         <td>Duyệt</td>
                     </tr>
                 </thead>
@@ -211,8 +212,8 @@
                         var canSelectForBulk = canApprove && isAwaitingTruongBP;
                         // Chỉ hiển thị nút duyệt khi trạng thái là "Chờ Trưởng BP duyệt"
                         var canActOnItem = canApprove && isAwaitingTruongBP && !isApproved && !isRejected;
-                        <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau">
-                            <td>@if (canSelectForBulk) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
+                        <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau" class="clickable-vt-row" style="cursor: pointer;" onclick="showVTYeucau('@maYeucau', '@(yeucauItem?.NguoiYeucau ?? "")', '@maYeucau')">
+                            <td onclick="event.stopPropagation();">@if (canSelectForBulk) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
                             <td>@STT2</td>
                             <td>@item.TenSanpham</td>
                             <td>@item.MaSanpham</td>
@@ -222,42 +223,16 @@
                             <td>@item.SL</td>
                             <td>@item.DonVi</td>
                             <td class="trangthai-vattu">@trangThai</td>
+                            <td class="ghichu-column">@(item.GhiChu ?? "-")</td>
                             <td class="duyet-column">
                                 @if (canActOnItem)
                                 {
-                                    <button type="button" class="btn-icon approve-btn" onclick="approveSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Duyệt vật tư">
+                                    <button type="button" class="btn-icon approve-btn" onclick="event.stopPropagation(); approveSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Duyệt vật tư">
                                         <i class="bx bxs-check-circle"></i>
                                     </button>
-                                    <button type="button" class="btn-icon reject-btn" onclick="rejectSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Từ chối vật tư">
+                                    <button type="button" class="btn-icon reject-btn" onclick="event.stopPropagation(); rejectSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Từ chối vật tư">
                                         <i class="bx bxs-x-circle"></i>
                                     </button>
-                                }
-                                else if (isApproved)
-                                {
-                                    @if (item.TrangThai == "Đã duyệt")
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>
-                                    }
-                                    else if (item.TrangThai == "Đang mua hàng")
-                                    {
-                                        <span style="color: #2196f3; font-weight: bold;">Đang mua hàng</span>
-                                    }
-                                    else if (item.TrangThai == "Đã xuất kho")
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">Đã xuất kho</span>
-                                    }
-                                    else if (item.TrangThai == "Đã nhận hàng")
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">Đã nhận hàng</span>
-                                    }
-                                    else
-                                    {
-                                        <span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>
-                                    }
-                                }
-                                else if (isRejected)
-                                {
-                                    <span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>
                                 }
                                 else
                                 {
@@ -363,7 +338,7 @@
             // Hiển thị thông tin yêu cầu
             if (currentNguoiYeucau) {
                 $('#yeucauInfo').show();
-                $('#yeucauInfoText').text('Yêu cầu số ' + MaYeucau + ' của ' + currentNguoiYeucau);
+                $('#yeucauInfoText').text('Yêu cầu vật tư ' + MaYeucau + ' của ' + currentNguoiYeucau);
             } else {
                 $('#yeucauInfo').hide();
             }
@@ -436,8 +411,9 @@
                             var maVatTuEscaped = maVatTu.replace(/'/g, "\\'");
                             var MaYeucauEscaped = MaYeucau.replace(/'/g, "\\'");
                             
-                            var row = `<tr data-mavattu="${maVatTu}" data-mayeucau="${MaYeucau}">
-                                <td>${canSelectForBulk ? '<input type="checkbox" class="vt-checkbox" value="' + maVatTuEscaped + '" data-mayeucau="' + MaYeucauEscaped + '" data-mavattu="' + maVatTuEscaped + '" />' : ''}</td>
+                            var ghiChu = item.ghiChu || '-';
+                            var row = `<tr data-mavattu="${maVatTu}" data-mayeucau="${MaYeucau}" class="clickable-vt-row" style="cursor: pointer;" onclick="showVTYeucau('${MaYeucauEscaped}', '${currentNguoiYeucau || ''}', '${MaYeucauEscaped}')">
+                                <td onclick="event.stopPropagation();">${canSelectForBulk ? '<input type="checkbox" class="vt-checkbox" value="' + maVatTuEscaped + '" data-mayeucau="' + MaYeucauEscaped + '" data-mavattu="' + maVatTuEscaped + '" />' : ''}</td>
                                 <td>${STT++}</td>
                                 <td>${item.tenSanpham || ''}</td>
                                 <td>${maVatTu}</td>
@@ -447,23 +423,10 @@
                                 <td>${item.sl || 0}</td>
                                 <td>${item.donVi || ''}</td>
                                 <td class="trangthai-vattu">${trangThai}</td>
-                                <td class="duyet-column">`;
+                                <td class="ghichu-column">${ghiChu}</td>
+                                <td class="duyet-column" onclick="event.stopPropagation();">`;
                             
-                            if (isApproved) {
-                                if (trangThai === 'Đã duyệt') {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>';
-                                } else if (trangThai === 'Đang mua hàng') {
-                                    row += '<span style="color: #2196f3; font-weight: bold;">Đang mua hàng</span>';
-                                } else if (trangThai === 'Đã xuất kho') {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">Đã xuất kho</span>';
-                                } else if (trangThai === 'Đã nhận hàng') {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">Đã nhận hàng</span>';
-                                } else {
-                                    row += '<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>';
-                                }
-                            } else if (isRejected) {
-                                row += '<span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>';
-                            } else if (canActOnItem) {
+                            if (canActOnItem) {
                                 row += `<button type="button" class="btn-icon approve-btn" onclick="approveSingleVatTu('${MaYeucauEscaped}', '${maVatTuEscaped}')" title="Duyệt vật tư">
                                     <i class="bx bxs-check-circle"></i>
                                 </button>
@@ -481,7 +444,7 @@
                         updateDuyetTatCaButton();
                     } else {
                         $('#vtYeucauBody').append(
-                            `<tr><td colspan="11" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                            `<tr><td colspan="12" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                         );
                         updateDuyetTatCaButton();
                     }
@@ -505,14 +468,28 @@
         }
 
         function approveSingleVatTu(maYeucau, maVatTu) {
+            // Clear any pending bulk action to prevent interference
+            pendingBulkAction = null;
+            $('#btnXacNhan').hide();
+            $('#btnXoaTatCa').hide();
+            
             if (confirm('Bạn có chắc chắn muốn duyệt vật tư ' + maVatTu + '?')) {
                 submitApprovalVatTu(maYeucau, maVatTu, 'approve');
             }
         }
 
         function rejectSingleVatTu(maYeucau, maVatTu) {
-            if (confirm('Bạn có chắc chắn muốn từ chối vật tư ' + maVatTu + '?')) {
-                submitApprovalVatTu(maYeucau, maVatTu, 'reject');
+            // Clear any pending bulk action to prevent interference
+            pendingBulkAction = null;
+            $('#btnXacNhan').hide();
+            $('#btnXoaTatCa').hide();
+            
+            // Hiển thị modal để nhập lý do từ chối
+            var ghiChu = prompt('Vui lòng nhập lý do từ chối vật tư ' + maVatTu + ':', '');
+            if (ghiChu !== null) {
+                if (confirm('Bạn có chắc chắn muốn từ chối vật tư ' + maVatTu + '?')) {
+                    submitApprovalVatTu(maYeucau, maVatTu, 'reject', ghiChu);
+                }
             }
         }
 
@@ -577,13 +554,44 @@
                 return;
             }
 
-            var selectableCount = $('.vt-checkbox').length;
-            if (selectableCount === 0) {
-                alert('Không có vật tư nào để xử lý.');
+            var selectedCheckboxes = $('.vt-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                alert('Vui lòng chọn ít nhất một vật tư để xử lý.');
                 return;
             }
 
-            submitApprovalTatCaVatTu(currentMaYeucau, pendingBulkAction);
+            // Lấy danh sách vật tư được chọn
+            var selectedVatTu = [];
+            var ghiChuList = {};
+            
+            if (pendingBulkAction === 'reject') {
+                // Nếu là từ chối, cần nhập ghi chú cho từng vật tư
+                var allHaveNote = true;
+                selectedCheckboxes.each(function() {
+                    var maVatTu = $(this).val();
+                    var tenVatTu = $(this).closest('tr').find('td').eq(2).text().trim();
+                    var ghiChu = prompt('Vui lòng nhập lý do từ chối vật tư ' + tenVatTu + ' (' + maVatTu + '):', '');
+                    if (ghiChu === null) {
+                        allHaveNote = false;
+                        return false; // break
+                    }
+                    selectedVatTu.push(maVatTu);
+                    if (ghiChu.trim()) {
+                        ghiChuList[maVatTu] = ghiChu.trim();
+                    }
+                });
+                
+                if (!allHaveNote) {
+                    return; // Người dùng hủy
+                }
+            } else {
+                // Nếu là duyệt, chỉ cần danh sách vật tư
+                selectedCheckboxes.each(function() {
+                    selectedVatTu.push($(this).val());
+                });
+            }
+
+            submitApprovalTatCaVatTu(currentMaYeucau, pendingBulkAction, selectedVatTu, ghiChuList);
         }
 
         function clearBulkAction() {
@@ -597,19 +605,25 @@
             pendingBulkAction = null;
         }
 
-        function submitApprovalVatTu(maYeucau, maVatTu, action) {
+        function submitApprovalVatTu(maYeucau, maVatTu, action, ghiChu = null) {
             const pathSegments = window.location.pathname.split('/');
             const area = pathSegments.length > 1 ? pathSegments[1] : '';
+            
+            var data = {
+                MaYeucau: maYeucau,
+                MaSanpham: maVatTu,
+                action: action,
+                __RequestVerificationToken: requestToken
+            };
+            
+            if (action === 'reject' && ghiChu) {
+                data.GhiChu = ghiChu;
+            }
             
             $.ajax({
                 url: `/${area}/Yeucau/XuLyVatTuYeucau`,
                 method: 'POST',
-                data: {
-                    MaYeucau: maYeucau,
-                    MaSanpham: maVatTu,
-                    action: action,
-                    __RequestVerificationToken: requestToken
-                },
+                data: data,
                 success: function(response) {
                     if (response.success) {
                         alert(response.message);
@@ -632,10 +646,15 @@
                             });
                             var nextTrangThai = hasMaDuan ? 'Chờ quản lý dự án duyệt' : 'Chờ giám đốc duyệt';
                             $trangThaiCell.text(nextTrangThai);
-                            $duyetCell.html('<span style="color: #4caf50; font-weight: bold;">✓ Đã duyệt</span>');
+                            $duyetCell.html('<span>-</span>');
                         } else {
                             $trangThaiCell.text('Đã từ chối');
-                            $duyetCell.html('<span style="color: #f44336; font-weight: bold;">✗ Đã từ chối</span>');
+                            $duyetCell.html('<span>-</span>');
+                            // Cập nhật cột ghi chú
+                            var $ghichuCell = $row.find('.ghichu-column');
+                            if ($ghichuCell.length) {
+                                $ghichuCell.text(response.ghiChu || '-');
+                            }
                         }
                     } else {
                         alert(response.message || 'Có lỗi xảy ra.');
@@ -647,18 +666,29 @@
             });
         }
 
-        function submitApprovalTatCaVatTu(maYeucau, action) {
+        function submitApprovalTatCaVatTu(maYeucau, action, selectedVatTu, ghiChuList) {
             const pathSegments = window.location.pathname.split('/');
             const area = pathSegments.length > 1 ? pathSegments[1] : '';
+            
+            var data = {
+                MaYeucau: maYeucau,
+                action: action,
+                __RequestVerificationToken: requestToken
+            };
+            
+            // Gửi danh sách vật tư được chọn và ghi chú
+            if (selectedVatTu && selectedVatTu.length > 0) {
+                data.selectedVatTu = selectedVatTu;
+            }
+            if (ghiChuList && Object.keys(ghiChuList).length > 0) {
+                data.ghiChuList = ghiChuList;
+            }
             
             $.ajax({
                 url: `/${area}/Yeucau/XuLyTatCaVatTuYeucau`,
                 method: 'POST',
-                data: {
-                    MaYeucau: maYeucau,
-                    action: action,
-                    __RequestVerificationToken: requestToken
-                },
+                contentType: 'application/json',
+                data: JSON.stringify(data),
                 success: function(response) {
                     if (response.success) {
                         alert(response.message);
@@ -767,6 +797,13 @@
         /* Đảm bảo chỉ hiển thị text trong cột Trạng thái của bảng yêu cầu */
         .Tableyeucau .table tbody tr td.trangthai-yeucau-column {
             text-align: left;
+        }
+        /* Style cho các hàng có thể click */
+        .clickable-row:hover {
+            background-color: #f5f5f5 !important;
+        }
+        .clickable-vt-row:hover {
+            background-color: #f5f5f5 !important;
         }
     </style>
 </body>

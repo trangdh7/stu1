@@ -1,4 +1,4 @@
-﻿@model Webkho_20241021.Areas.NhanvienKythuat.Data.Yeucauviewmodel
+@model Webkho_20241021.Areas.NhanvienKythuat.Data.Yeucauviewmodel
 
 
 @{
@@ -73,11 +73,11 @@
                         var duan = Model.Duans.FirstOrDefault(d => d.MaDuan == item.YCMaDuan);
                         string maNguoiQLDA = duan?.MaNguoiQLDA;
                         string maNguoidungSession = Context.Session.GetString("MaNguoidung");
-                        <tr>
+                        <tr onclick="showVTYeucau('@item.MaYeucau')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTYeucau('@item.MaYeucau')">
                                     @item.MaYeucau
                                 </a>
                             </td>
@@ -160,6 +160,7 @@
                         <td>Số lượng</td>
                         <td>Đơn vị</td>
                         <td>Trạng thái</td>
+                        <td>Ghi chú</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -177,6 +178,10 @@
                             <td>@item.NhaCC</td>
                             <td>@item.SL</td>
                             <td>@item.DonVi</td>
+                            <td>@(item.TrangThai ?? "")</td>
+                            <td style="color: @(item.TrangThai?.Contains("Đã từ chối") == true ? "#f44336" : "inherit");">
+                                @(item.GhiChu ?? "-")
+                            </td>
                         </tr>
                         STT2++;
                     }

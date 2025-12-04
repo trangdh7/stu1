@@ -69,13 +69,14 @@
                     {
                         string ChucvuSession = Context.Session.GetString("Chucvu");
                         string BophanSession = Context.Session.GetString("Bophan");
-                        <tr>
+                        <tr class="clickable-row" data-manhapkho="@item.MaNhapkho" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>
                                 <a href="/TruongBPKho/Yeucau/XemPhieunhapkho?MaNhapkho=@item.MaNhapkho" 
                                    title="Click để xem vật tư, Double-click để xem chi tiết phiếu nhập kho" 
                                    class="manhapkho-link"
-                                   data-manhapkho="@item.MaNhapkho">
+                                   data-manhapkho="@item.MaNhapkho"
+                                   onclick="event.stopPropagation();">
                                     @item.MaNhapkho
                                 </a>
                             </td>
@@ -87,29 +88,13 @@
                                 <span>@item.TrangThai</span>
                             </td>
                             <td>
-                                @{
-                                    bool isKhoUser = string.Equals(BophanSession, "BP kho", StringComparison.OrdinalIgnoreCase);
-                                }
-                                @if (isKhoUser && item.TrangThai == "Chờ nhập kho")
-                                {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt nhập kho">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                    }
-                                }
-
-                                @if (item.TrangThai == "Đã nhập kho")
-                                {
                                     <a href="@Url.Action("InPhieunhapkho", "Yeucau", new { area = "TruongBPKho", MaNhapkho = item.MaNhapkho })" 
                                        target="_blank" 
                                        class="btn-icon" 
-                                       title="In phiếu">
+                                   title="In phiếu"
+                                   onclick="event.stopPropagation();">
                                         <i class="bx bx-printer"></i>
                                     </a>
-                                }
                             </td>
                         </tr>
                         STT++;
@@ -123,6 +108,9 @@
                     <a href="/TruongBPKho/Yeucau/ThemPhieunhapkho">Thêm phiếu nhập kho</a>
                 </li>
             </ul>
+        </div>
+        <div id="phieunhapkho-header" style="font-size: 18px; font-weight: bold; margin: 20px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none; text-align: left;">
+            <span id="phieunhapkho-header-text"></span>
         </div>
     </nav>
     <nav class="bodyyeucau-thietbi">
@@ -172,6 +160,12 @@
                 </tbody>
             </table>
         </div>
+        <div style="text-align: right; margin-top: 15px; padding-right: 0;">
+            <button id="btn-nhapkho" type="button" style="background-color: #336600; color: white; border: none; padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: bold; display: none; float: right; margin-right: 20px;">
+                Nhập kho
+            </button>
+        </div>
+        <div style="clear: both;"></div>
     </nav>
     <script src="~/js/phieunhapkho.js"></script>
     <script>

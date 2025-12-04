@@ -1,4 +1,4 @@
-﻿
+
 @{
     ViewData["Title"] = "Phieunhapkho";
     Layout = "~/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml";
@@ -69,10 +69,10 @@
                     {
                         string ChucvuSession = Context.Session.GetString("Chucvu");
                         string BophanSession = Context.Session.GetString("Bophan");
-                        <tr>
+                        <tr onclick="showVTnhapkho('@item.MaNhapkho')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTnhapkho('@item.MaNhapkho')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTnhapkho('@item.MaNhapkho')">
                                     @item.MaNhapkho
                                 </a>
                             </td>
@@ -132,6 +132,8 @@
         </div>
     </nav>
     <nav class="bodyyeucau-thietbi">
+        <div id="phieunhapkho-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+        </div>
         <div class="Tableyeucau-thietbi-box">
             <table class="tablethietbi">
                 <thead>

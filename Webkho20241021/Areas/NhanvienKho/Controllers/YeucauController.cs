@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -104,7 +104,8 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
         public IActionResult Phieumuahang()
         {
             var Phieumuahanglist = _context.phieumuahang
-            .OrderByDescending(y => y.NgayMuahang)
+            .OrderByDescending(y => y.TrangThai == "Đang chờ báo giá")
+            .ThenByDescending(y => y.NgayMuahang)
             .ToList();
             // Gán tên Người yêu cầu cho từng phiếu mua hàng
             var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
@@ -1153,88 +1154,117 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                                           .Where(vt => vt.MaXuatkho == MaXuatkho)
                                           .ToList();
 
+            var vatTuCanXuat = VTphieuxuatkho
+                .Where(vt => vt.TrangThai != "Đã xuất kho" && vt.TrangThai != "Đã xác nhận nhận hàng")
+                .ToList();
+
             var Phieuxuatkho = _context.phieuxuatkho
                                         .FirstOrDefault(yc => yc.MaXuatkho == MaXuatkho);
 
 
-            if (Phieuxuatkho.TrangThai == "Đang chuẩn bị hàng")
+            if (Phieuxuatkho == null)
             {
-                Phieuxuatkho.TrangThai = "Chờ lấy hàng";
-                _context.phieuxuatkho.Update(Phieuxuatkho);
-                _context.SaveChanges();
+                TempData["Error"] = "Không tìm thấy phiếu xuất kho!";
+                return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "NhanvienKho" });
             }
-            else if (Phieuxuatkho.TrangThai == "Chờ lấy hàng")
+
+            if (Phieuxuatkho.TrangThai != "Đang chuẩn bị hàng")
             {
-                if (Phieuxuatkho.MaDuan != null)
+                TempData["Error"] = "Chỉ xử lý xuất kho khi phiếu đang ở trạng thái 'Đang chuẩn bị hàng'.";
+                return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "NhanvienKho" });
+            }
+
+            if (!vatTuCanXuat.Any())
+            {
+                TempData["Info"] = "Tất cả vật tư trong phiếu này đã được xuất trước đó.";
+                return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "NhanvienKho" });
+            }
+
+            foreach (var VTxuatkho in vatTuCanXuat)
+            {
+                var khoTong = _context.khotongs
+                    .FirstOrDefault(k => k.Makho == VTxuatkho.Makho && k.MaSanpham == VTxuatkho.MaSanpham);
+
+                if (khoTong == null)
                 {
-                    foreach (var VTxuatkho in VTphieuxuatkho)
+                    TempData["Error"] = $"Vật tư {VTxuatkho.TenSanpham} không tồn tại trong kho tổng.";
+                    return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "NhanvienKho" });
+                }
+
+                int tonKho = khoTong.SL ?? 0;
+                int soLuongXuat = VTxuatkho.SL ?? 0;
+
+                if (tonKho < soLuongXuat)
+                {
+                    TempData["Error"] = $"Không đủ tồn kho để xuất vật tư {VTxuatkho.TenSanpham}.";
+                    return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "NhanvienKho" });
+                }
+
+                khoTong.SL = tonKho - soLuongXuat;
+                _context.khotongs.Update(khoTong);
+
+                VTxuatkho.TrangThai = "Đã xuất kho";
+                _context.vtphieuxuatkho.Update(VTxuatkho);
+
+                if (!string.IsNullOrEmpty(Phieuxuatkho.MaDuan))
+                {
+                    var VTduan = new khoduans
                     {
-                        var VTphieuxuatkhott = _context.vtphieuxuatkho.FirstOrDefault(vt => vt.MaXuatkho == VTxuatkho.MaXuatkho);
-                        VTphieuxuatkhott.TrangThai = "Đã xuất kho";
-                        _context.vtphieuxuatkho.Update(VTphieuxuatkhott);
-                        var VTduan = new khoduans
+                        DAMaDuan = Phieuxuatkho.MaDuan,
+                        TenSanpham = VTxuatkho.TenSanpham,
+                        MaSanpham = VTxuatkho.MaSanpham,
+                        DAMakho = VTxuatkho.Makho,
+                        HangSX = VTxuatkho.HangSX,
+                        NhaCC = VTxuatkho.NhaCC,
+                        DonVi = VTxuatkho.DonVi,
+                        SL = VTxuatkho.SL,
+                        NgayBaohanh = VTxuatkho.NgayBaohanh,
+                        ThoiGianBH = VTxuatkho.ThoiGianBH,
+                        TrangThai = "Đã xuất kho"
+                    };
+                    _context.khoduans.Add(VTduan);
+                }
+                else
+                {
+                    var vatTuNguoiDung = _context.khonguoidungs
+                        .FirstOrDefault(nd => nd.NDMakho == VTxuatkho.Makho && nd.NDMaNguoidung == Phieuxuatkho.MaNguoidung && nd.MaSanpham == VTxuatkho.MaSanpham);
+
+                    if (vatTuNguoiDung != null)
+                    {
+                        vatTuNguoiDung.SL = (vatTuNguoiDung.SL ?? 0) + (VTxuatkho.SL ?? 0);
+                        _context.khonguoidungs.Update(vatTuNguoiDung);
+                    }
+                    else
+                    {
+                        var VTkhonguoidung = new khonguoidungs
                         {
-                            DAMaDuan = Phieuxuatkho.MaDuan,
+                            NDMaNguoidung = Phieuxuatkho.MaNguoidung,
                             TenSanpham = VTxuatkho.TenSanpham,
                             MaSanpham = VTxuatkho.MaSanpham,
-                            DAMakho = VTxuatkho.Makho,
+                            NDMakho = VTxuatkho.Makho,
                             HangSX = VTxuatkho.HangSX,
                             NhaCC = VTxuatkho.NhaCC,
                             DonVi = VTxuatkho.DonVi,
                             SL = VTxuatkho.SL,
                             NgayBaohanh = VTxuatkho.NgayBaohanh,
                             ThoiGianBH = VTxuatkho.ThoiGianBH,
-                            TrangThai = "Đã xuất kho"
+                            TrangThai = "Đang mượn"
                         };
-                        _context.Add(VTduan);
+                        _context.khonguoidungs.Add(VTkhonguoidung);
                     }
-                    _context.SaveChanges();
                 }
-                else
-                {
-                    foreach (var VTxuatkho in VTphieuxuatkho)
-                    {
-                        var VTphieuxuatkhott = _context.vtphieuxuatkho.FirstOrDefault(vt => vt.MaXuatkho == VTxuatkho.MaXuatkho);
-                        VTphieuxuatkhott.TrangThai = "Đã xuất kho";
-                        _context.vtphieuxuatkho.Update(VTphieuxuatkhott);
-                        var VTkhonguoidungtt = _context.khonguoidungs.FirstOrDefault(nd => nd.NDMakho == VTxuatkho.Makho && nd.NDMaNguoidung == Phieuxuatkho.MaNguoidung);
-                        if (VTkhonguoidungtt != null)
-                        {
-                            VTkhonguoidungtt.SL = VTkhonguoidungtt.SL + VTxuatkho.SL;
-                            _context.khonguoidungs.Update(VTkhonguoidungtt);
-                        }
-                        else
-                        {
-                            var VTkhonguoidung = new khonguoidungs
-                            {
-                                NDMaNguoidung = Phieuxuatkho.MaNguoidung,
-                                TenSanpham = VTxuatkho.TenSanpham,
-                                MaSanpham = VTxuatkho.MaSanpham,
-                                NDMakho = VTxuatkho.Makho,
-                                HangSX = VTxuatkho.HangSX,
-                                NhaCC = VTxuatkho.NhaCC,
-                                DonVi = VTxuatkho.DonVi,
-                                SL = VTxuatkho.SL,
-                                NgayBaohanh = VTxuatkho.NgayBaohanh,
-                                ThoiGianBH = VTxuatkho.ThoiGianBH,
-                                TrangThai = "Đang mượn"
-                            };
-                            _context.Add(VTkhonguoidung);
-                        }
+            }
 
-                    }
-                }
-                Phieuxuatkho.TrangThai = "Đã lấy hàng";
-                _context.phieuxuatkho.Update(Phieuxuatkho);
-                _context.SaveChanges();
-            }
-            else if (Phieuxuatkho.TrangThai == "Đã lấy hàng")
-            {
-                Phieuxuatkho.TrangThai = "Hoàn thành";
-                _context.phieuxuatkho.Update(Phieuxuatkho);
-                _context.SaveChanges();
-            }
-                return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "NhanvienKho" });
+            Phieuxuatkho.TrangThai = "Hoàn thành";
+            Phieuxuatkho.NgayHoanThanh = DateTime.Now;
+            Phieuxuatkho.NgayXuatkho = DateTime.Now;
+            Phieuxuatkho.GhiChu = "Phiếu được kho nhân viên hoàn tất ngay khi xuất.";
+            _context.phieuxuatkho.Update(Phieuxuatkho);
+
+            _context.SaveChanges();
+            TempData["Success"] = "Xuất kho thành công! Phiếu đã hoàn thành và được khóa.";
+
+            return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "NhanvienKho" });
         }
 
         [HttpPost]
@@ -2010,13 +2040,14 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                     // Logic này áp dụng cho CẢ vật tư dự án VÀ vật tư cá nhân
                     if (!string.IsNullOrEmpty(Phieunhapkho.MaYeucau))
                     {
-                        // Kiểm tra xem đã có phiếu xuất kho cho yêu cầu này chưa
-                        var existingPhieuxuatkho = _context.phieuxuatkho
-                            .FirstOrDefault(px => px.MaYeucau == Phieunhapkho.MaYeucau);
+                        // Lấy tất cả phiếu xuất kho liên quan đến yêu cầu này (có thể >1 phiếu)
+                        var phieuXuatLienQuan = _context.phieuxuatkho
+                            .Where(px => px.MaYeucau == Phieunhapkho.MaYeucau)
+                            .ToList();
+
+                        var phieuXuatCanCapNhatList = new List<phieuxuatkho>(phieuXuatLienQuan);
                         
-                        phieuxuatkho phieuXuatCanCapNhat = existingPhieuxuatkho;
-                        
-                        if (existingPhieuxuatkho == null)
+                        if (!phieuXuatLienQuan.Any())
                         {
                             // Lấy thông tin yêu cầu ban đầu
                             var yeucauBanDau = _context.yeucau
@@ -2152,13 +2183,15 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                                     Console.WriteLine($"Đã tự động tạo phiếu xuất kho {MaXuatkho} cho yêu cầu {Phieunhapkho.MaYeucau} nhưng thiếu hàng");
                                 }
                                 
-                                phieuXuatCanCapNhat = newPhieuxuatkho;
+                                phieuXuatCanCapNhatList.Add(newPhieuxuatkho);
                             }
                         }
 
-                        if (phieuXuatCanCapNhat != null)
+                        foreach (var pxCapNhat in phieuXuatCanCapNhatList
+                                     .GroupBy(px => px.MaXuatkho)
+                                     .Select(g => g.First()))
                         {
-                            CapNhatPhieuXuatSauNhapHang(phieuXuatCanCapNhat, VTPhieunhapkholist);
+                            CapNhatPhieuXuatSauNhapHang(pxCapNhat, VTPhieunhapkholist);
                         }
                     }
                 }
@@ -2437,10 +2470,15 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
             }
 
             // Tính tổng số lượng vật tư đã cam kết từ các phiếu xuất này
+            // Ưu tiên khớp chính xác Makho; nếu không có thì cho phép khớp linh hoạt theo tiền tố/hậu tố
             var tongSoLuongDaCamKet = _context.vtphieuxuatkho
-                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho) 
-                    && vt.Makho == makho 
-                    && vt.MaSanpham == masanpham)
+                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho)
+                    && vt.MaSanpham == masanpham
+                    && (
+                        vt.Makho == makho
+                        || ((vt.Makho ?? "") != "" && (makho ?? "") != "" &&
+                            (((vt.Makho ?? "").StartsWith(makho ?? "")) || ((makho ?? "").StartsWith(vt.Makho ?? ""))))
+                    ))
                 .Sum(vt => vt.SL ?? 0);
 
             return tongSoLuongDaCamKet;
@@ -2481,6 +2519,19 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                     if ((vt.SL ?? 0) > 0)
                     {
                         var khotong = _context.khotongs.FirstOrDefault(k => k.Makho == vt.Makho && k.MaSanpham == vt.MaSanpham);
+                        // Nếu không tìm thấy đúng Makho (do có hậu tố / tiền tố mới), thử khớp linh hoạt hơn theo cùng mã sản phẩm
+                        if (khotong == null)
+                        {
+                            string makho = vt.Makho ?? "";
+                            khotong = _context.khotongs
+                                .FirstOrDefault(k =>
+                                    k.MaSanpham == vt.MaSanpham &&
+                                    (
+                                        k.Makho == makho ||
+                                        ((k.Makho ?? "") != "" && makho != "" &&
+                                         (k.Makho.StartsWith(makho) || makho.StartsWith(k.Makho)))
+                                    ));
+                        }
                         if (khotong != null)
                         {
                             // Tính số lượng hàng đã cam kết từ các phiếu xuất khác (loại trừ phiếu hiện tại vì nó đang được xác nhận)

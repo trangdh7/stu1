@@ -16,6 +16,16 @@ $(document).ready(function () {
     }
     getThongbaoData();
     setActiveMenu();
+    
+    // Xử lý click vào hàng
+    $(document).on('click', '.clickable-row', function() {
+        const MaMuahang = $(this).data('mamuahang');
+        const link = $(this).find('td').eq(1).find('a');
+        const trangThai = link.data('trangthai') || '';
+        if (MaMuahang) {
+            showVTmuahang(MaMuahang, trangThai);
+        }
+    });
 });
 
 const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
@@ -68,7 +78,7 @@ $('#submitPhieumuahang').click(function () {
     });
 
     const vtmuahangData = [];
-    let missingRequiredData = [];
+    let itemsWithoutPrice = [];
     
     $('.tablethietbi tbody tr').each(function () {
         // Bỏ qua hàng tổng tiền
@@ -96,19 +106,7 @@ $('#submitPhieumuahang').click(function () {
                 return;
             }
             
-            // Tất cả vật tư có số lượng > 0 đều bắt buộc phải nhập đơn giá > 0
-            if (SL > 0) {
-                if (!inputValue || inputValue.trim() === '' || DonGia <= 0 || isNaN(DonGia)) {
-                    missingRequiredData.push({
-                        ten: TenSanpham || MaSanpham,
-                        ma: MaSanpham,
-                        sl: SL
-                    });
-                    return;
-                }
-            }
-
-            // Chỉ thêm vào dữ liệu nếu có giá hợp lệ
+            // Chỉ thêm vào dữ liệu nếu có giá hợp lệ (cho phép báo giá một phần)
             if (DonGia > 0 && SL > 0) {
                 const ThanhTien = SL * DonGia;
                 vtmuahangData.push({
@@ -117,28 +115,37 @@ $('#submitPhieumuahang').click(function () {
                     DonGia: DonGia,
                     ThanhTien: ThanhTien
                 });
+            } else if (SL > 0) {
+                // Ghi nhận các mục chưa có giá (để thông báo)
+                itemsWithoutPrice.push({
+                    ten: TenSanpham || MaSanpham,
+                    ma: MaSanpham,
+                    sl: SL
+                });
             }
         }
     });
     
-    // Kiểm tra nếu có mục chưa nhập đủ
-    if (missingRequiredData.length > 0) {
-        const missingList = missingRequiredData.map(item => 
-            `- ${item.ten} (Mã: ${item.ma}, Số lượng: ${item.sl})`
-        ).join('\n');
-        alert("Vui lòng nhập đầy đủ đơn giá cho tất cả vật tư trước khi gửi!\n\nCác vật tư còn thiếu:\n" + missingList);
+    // Kiểm tra nếu không có dữ liệu nào để gửi
+    if (vtmuahangData.length === 0) {
+        alert("Vui lòng nhập ít nhất một đơn giá trước khi gửi!");
         return;
     }
     
-    // Kiểm tra nếu không có dữ liệu nào để gửi
-    if (vtmuahangData.length === 0) {
-        alert("Không có dữ liệu để gửi. Vui lòng kiểm tra lại!");
-        return;
+    // Thông báo nếu có mục chưa nhập giá (nhưng vẫn cho phép gửi)
+    if (itemsWithoutPrice.length > 0) {
+        const missingList = itemsWithoutPrice.map(item => 
+            `- ${item.ten} (Mã: ${item.ma}, Số lượng: ${item.sl})`
+        ).join('\n');
+        const confirmMessage = `Bạn đang gửi báo giá cho ${vtmuahangData.length} vật tư.\n\nCác vật tư chưa có giá (có thể bổ sung sau):\n${missingList}\n\nBạn có muốn tiếp tục gửi báo giá một phần không?`;
+        if (!confirm(confirmMessage)) {
+            return;
+        }
     }
 
     const Phieumuahangviewmodel = {
         MaMuahang: selectedMamuahang,
-        Vtphieumuahang: vtmuahangData
+        VTphieumuahang: vtmuahangData
     };
 
     const pathSegments = window.location.pathname.split('/');
@@ -255,35 +262,93 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
             let data = response.items || response;
             let tenNguoiYeuCau = response.tenNguoiYeuCau || '';
             
-            // Hiển thị header text (chỉ cho Giamdoc area)
-            if (area === 'Giamdoc') {
-                if (Mamuahang && tenNguoiYeuCau) {
-                    $('#phieumuahang-header').text(`Phiếu mua hàng ${Mamuahang} của ${tenNguoiYeuCau}`).show();
-                } else if (Mamuahang) {
-                    $('#phieumuahang-header').text(`Phiếu mua hàng ${Mamuahang}`).show();
-                } else {
-                    $('#phieumuahang-header').hide();
-                }
+            // Hiển thị header text cho tất cả areas
+            if (Mamuahang && tenNguoiYeuCau) {
+                $('#phieumuahang-header-text').text(`Yêu cầu mua hàng ${Mamuahang} của ${tenNguoiYeuCau}`);
+                $('#phieumuahang-header').show();
+            } else if (Mamuahang) {
+                $('#phieumuahang-header-text').text(`Yêu cầu mua hàng ${Mamuahang}`);
+                $('#phieumuahang-header').show();
+            } else {
+                $('#phieumuahang-header').hide();
             }
             
             // Hiển thị action buttons dựa trên điều kiện
             const isGiamdoc = area === 'Giamdoc';
             const isBPMuahang = area === 'TruongBPMuahang' || area === 'NhanvienMuahang';
+            const isBPKetoan = area === 'TruongBPKetoan' || area === 'NhanvienKetoan';
             
-            // Hiển thị nút "Gửi báo giá" cho BP mua hàng
+            // Hiển thị nút "Gửi báo giá" cho BP mua hàng khi:
+            // - Trạng thái phiếu = "Đang chờ báo giá" hoặc chứa "Đã từ chối"
+            // - Hoặc có ít nhất một mục có trạng thái "Đang chờ báo giá" (cho phép bổ sung báo giá)
+            const hasItemsAwaitingQuote = data && data.some(item => {
+                const itemTrangThai = (item.trangThai || '').trim();
+                return itemTrangThai === 'Đang chờ báo giá';
+            });
             if (isBPMuahang && data && data.length > 0 && 
-                (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')))) {
+                (trangThaiPhieu === 'Đang chờ báo giá' || 
+                 (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')) ||
+                 hasItemsAwaitingQuote)) {
                 $('#submitPhieumuahang').show();
             } else {
                 $('#submitPhieumuahang').hide();
             }
             
-            // Hiển thị nút duyệt/từ chối CHỈ cho Giám đốc khi trạng thái là "Đã báo giá"
+            // Hiển thị nút duyệt/từ chối CHỈ cho Giám đốc khi có ít nhất một mục đã báo giá
+            let hasItemsWithQuote = false;
             if (isGiamdoc) {
-                if (data && data.length > 0 && trangThaiPhieu === 'Đã báo giá') {
-                    $('#approvePhieumuahang').show();
-                    $('#rejectPhieumuahang').show();
-                    $('#action-buttons').show();
+                // Kiểm tra xem có mục nào đã báo giá không
+                // Xử lý cả camelCase và PascalCase property names
+                hasItemsWithQuote = data && data.length > 0 && data.some(item => {
+                    // Kiểm tra trạng thái (cả camelCase và PascalCase)
+                    const itemTrangThai = (item.trangThai || item.TrangThai || '').toString().trim();
+                    
+                    // Kiểm tra đơn giá (cả camelCase và PascalCase)
+                    const donGiaRaw = item.donGia != null ? item.donGia : item.DonGia;
+                    const donGia = donGiaRaw != null ? parseFloat(donGiaRaw) : null;
+                    const hasPrice = donGia != null && !isNaN(donGia) && donGia > 0;
+                    
+                    // Kiểm tra trạng thái
+                    const isQuoted = itemTrangThai === 'Đã báo giá';
+                    
+                    const result = isQuoted && hasPrice;
+                    
+                    // Debug log cho các mục có trạng thái hoặc giá
+                    if (isQuoted || hasPrice || itemTrangThai) {
+                        console.log('Item check:', {
+                            maSanpham: item.maSanpham || item.MaSanpham,
+                            trangThai: itemTrangThai,
+                            donGiaRaw: donGiaRaw,
+                            donGia: donGia,
+                            isQuoted: isQuoted,
+                            hasPrice: hasPrice,
+                            result: result
+                        });
+                    }
+                    
+                    return result;
+                });
+                
+                console.log('Giamdoc check:', {
+                    isGiamdoc: isGiamdoc,
+                    area: area,
+                    dataLength: data ? data.length : 0,
+                    trangThaiPhieu: trangThaiPhieu,
+                    hasItemsWithQuote: hasItemsWithQuote,
+                    shouldShow: data && data.length > 0 && (trangThaiPhieu === 'Đã báo giá' || hasItemsWithQuote),
+                    approveButtonExists: $('#approvePhieumuahang').length > 0
+                });
+                
+                // Cho phép duyệt khi: trạng thái phiếu = "Đã báo giá" HOẶC có ít nhất một mục đã báo giá
+                if (data && data.length > 0 && (trangThaiPhieu === 'Đã báo giá' || hasItemsWithQuote)) {
+                    if ($('#approvePhieumuahang').length > 0) {
+                        $('#approvePhieumuahang').show();
+                        $('#rejectPhieumuahang').show();
+                        $('#action-buttons').show();
+                        console.log('✓ Showing approve/reject buttons for Giamdoc');
+                    } else {
+                        console.warn('⚠ Approve button not found in DOM');
+                    }
                 } else {
                     $('#approvePhieumuahang').hide();
                     $('#rejectPhieumuahang').hide();
@@ -293,8 +358,62 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                     } else {
                         $('#action-buttons').hide();
                     }
+                    console.log('✗ Hiding approve/reject buttons for Giamdoc');
                 }
-            } else {
+            }
+            
+            // Hiển thị nút duyệt/từ chối cho BP kế toán
+            if (isBPKetoan) {
+                // Lấy trạng thái từ cột trạng thái trong bảng chính
+                let trangThaiFromTable = '';
+                $('.table tbody tr').each(function() {
+                    const link = $(this).find('td').eq(1).find('a');
+                    if (link.text().trim() === Mamuahang) {
+                        // Lấy từ cột trạng thái (cột thứ 7, index 6)
+                        const trangThaiCell = $(this).find('td').eq(6);
+                        trangThaiFromTable = trangThaiCell.text().trim();
+                        return false;
+                    }
+                });
+                
+                // Cho BP kế toán: hiển thị khi trạng thái = "Chờ thanh toán"
+                if (trangThaiFromTable === 'Chờ thanh toán') {
+                    if ($('#approveRejectButtons').length > 0) {
+                        $('#approveRejectButtons').css('display', 'flex');
+                    }
+                } else {
+                    $('#approveRejectButtons').hide();
+                }
+            }
+            // Hiển thị nút duyệt/từ chối cho Trưởng BP mua hàng
+            else if (area === 'TruongBPMuahang') {
+                // Lấy trạng thái từ cột trạng thái trong bảng chính
+                let trangThaiFromTable = '';
+                $('.table tbody tr').each(function() {
+                    const link = $(this).find('td').eq(1).find('a');
+                    if (link.text().trim() === Mamuahang) {
+                        // Lấy từ cột trạng thái (cột thứ 7, index 6)
+                        const trangThaiCell = $(this).find('td').eq(6);
+                        trangThaiFromTable = trangThaiCell.text().trim();
+                        return false;
+                    }
+                });
+                
+                // Cho Trưởng BP mua hàng: hiển thị khi trạng thái = "Đã thanh toán"
+                if (trangThaiFromTable === 'Đã thanh toán') {
+                    $('#approvePhieumuahang').show();
+                    $('#rejectPhieumuahang').show();
+                    $('#action-buttons').show();
+                } else {
+                    $('#approvePhieumuahang').hide();
+                    $('#rejectPhieumuahang').hide();
+                    if ($('#submitPhieumuahang').is(':visible')) {
+                        $('#action-buttons').show();
+                    } else {
+                        $('#action-buttons').hide();
+                    }
+                }
+            } else if (!isGiamdoc) {
                 // Với các area khác, chỉ hiển thị nút "Gửi báo giá" nếu có
                 $('#approvePhieumuahang').hide();
                 $('#rejectPhieumuahang').hide();
@@ -309,20 +428,25 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                 // Kiểm tra xem có thể nhập đơn giá không
                 // Cho phép nhập khi: area là mua hàng (Trưởng BP hoặc Nhân viên) và (trạng thái phiếu = "Đang chờ báo giá" hoặc chứa "Đã từ chối")
                 const isPurchaseArea = (area === 'TruongBPMuahang' || area === 'NhanvienMuahang');
-                const canInputPrice = isPurchaseArea && 
+                const canInputPriceForPhieu = isPurchaseArea && 
                     (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
 
                 let STT = 1;
                 data.forEach(function (item) {
-                    // Chỉ cho phép nhập khi điều kiện đúng, ngược lại hiển thị số hoặc disabled
-                    // canInputPrice đã kiểm tra area và trạng thái phiếu, nên chỉ cần kiểm tra canInputPrice
+                    // Cho phép nhập giá cho từng mục nếu:
+                    // 1. Area là mua hàng VÀ
+                    // 2. (Trạng thái phiếu = "Đang chờ báo giá" HOẶC mục này có trạng thái "Đang chờ báo giá")
+                    const itemTrangThai = (item.trangThai || '').trim();
+                    const canInputPriceForItem = isPurchaseArea && 
+                        (canInputPriceForPhieu || itemTrangThai === 'Đang chờ báo giá');
+                    
                     let donGiaCell = '';
                     // Kiểm tra xem có giá trị đã lưu không (để restore khi rebuild table)
                     const savedValue = savedInputValuesForRestore[item.maSanpham];
                     const displayValue = savedValue !== undefined ? savedValue : (item.donGia != null ? item.donGia : null);
                     
-                    if (canInputPrice) {
-                        // Cho phép nhập đơn giá khi area = TruongBPMuahang và trạng thái phiếu = "Đang chờ báo giá"
+                    if (canInputPriceForItem) {
+                        // Cho phép nhập đơn giá
                         if (displayValue != null) {
                             // Format lại giá trị nếu là số
                             const formattedValue = typeof displayValue === 'string' ? displayValue : displayValue.toLocaleString('vi-VN');
@@ -331,7 +455,7 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                             donGiaCell = `<span class="DonGia"><input type="text" placeholder="Nhập giá" class="form-control" data-sl="${item.sl}" /></span>`;
                         }
                     } else {
-                        // Hiển thị số (read-only) khi không phải area TruongBPMuahang hoặc không phải trạng thái "Đang chờ báo giá"
+                        // Hiển thị số (read-only) khi không được phép nhập
                         if (displayValue != null) {
                             const formattedValue = typeof displayValue === 'string' ? displayValue : displayValue.toLocaleString('vi-VN');
                             donGiaCell = `<span class="DonGia">${formattedValue}</span>`;

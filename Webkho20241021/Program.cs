@@ -6,6 +6,7 @@ using Webkho_20241021.Models;
 using OfficeOpenXml;
 using System.Linq;
 using System.Security.Claims;
+using Webkho_20241021.Helpers;
 
 // Cấu hình license cho EPPlus 8+
 ExcelPackage.License.SetNonCommercialPersonal("Webkho Management System");
@@ -113,7 +114,7 @@ app.MapControllerRoute(
 
 // ✅ Kiểm tra kết nối MySQL khi khởi động ứng dụng
 using (var scope = app.Services.CreateScope())
-{
+{       
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     try
     {
@@ -121,6 +122,8 @@ using (var scope = app.Services.CreateScope())
             Console.WriteLine("✅ Đã kết nối thành công tới MySQL!");
         else
             Console.WriteLine("❌ Không thể kết nối tới MySQL!");
+
+        MakhoHelper.EnsurePlaceholderKho(db);
     }
     catch (Exception ex)
     {

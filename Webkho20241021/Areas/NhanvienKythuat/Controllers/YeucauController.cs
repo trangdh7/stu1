@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -96,7 +96,8 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
         public IActionResult Phieumuahang()
         {
             var Phieumuahanglist = _context.phieumuahang
-            .OrderByDescending(y => y.NgayMuahang)
+            .OrderByDescending(y => y.TrangThai == "Đang chờ báo giá")
+            .ThenByDescending(y => y.NgayMuahang)
             .ToList();
             // Gán tên Người yêu cầu cho từng phiếu mua hàng
             var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
@@ -434,7 +435,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                                            duans duans, phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, List<string> YCMaKho,
                                            List<string> TenSanpham, List<string> MaSanpham,
                                            List<string> HangSX, List<string> NhaCC, List<int> SL,
-                                           List<string> DonVi, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
+                                           List<string> DonVi, List<string> GhiChu, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
         {
             DateTime? GetNgayCanHangAt(int index)
             {
@@ -632,7 +633,8 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     NhaCC?.Count ?? 0,
                     SL?.Count ?? 0,
                     DonVi?.Count ?? 0,
-                    YCMaKho?.Count ?? 0
+                    YCMaKho?.Count ?? 0,
+                    GhiChu?.Count ?? 0
                 }.Max();
 
                 for (int i = 0; i < rowCount; i++)
@@ -649,6 +651,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     var nhaCcValue = (NhaCC != null && i < NhaCC.Count) ? NhaCC[i] : null;
                     var donViValue = (DonVi != null && i < DonVi.Count) ? DonVi[i] : null;
                     var slValue = (SL != null && i < SL.Count) ? SL[i] : 0;
+                    var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
 
                     var khoMatch = _context.khotongs.FirstOrDefault(p => p.Makho == maKhoValue);
                     if (khoMatch != null)
@@ -666,6 +669,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
                         newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
                         newVtyeucau.ThoiGianBH = khoMatch.ThoiGianBH;
+                        newVtyeucau.GhiChu = ghiChuValue;
                         _context.vtyeucau.Add(newVtyeucau);
                     }
                     else
@@ -705,6 +709,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         newVtyeucau.NgayNhapkho = null;
                         newVtyeucau.NgayBaohanh = null;
                         newVtyeucau.ThoiGianBH = null;
+                        newVtyeucau.GhiChu = ghiChuValue;
                         _context.vtyeucau.Add(newVtyeucau);
                     }
                     _context.SaveChanges();
@@ -2194,10 +2199,15 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
             }
 
             // Tính tổng số lượng vật tư đã cam kết từ các phiếu xuất này
+            // Ưu tiên khớp chính xác Makho; nếu không có thì cho phép khớp linh hoạt theo tiền tố/hậu tố
             var tongSoLuongDaCamKet = _context.vtphieuxuatkho
-                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho) 
-                    && vt.Makho == makho 
-                    && vt.MaSanpham == masanpham)
+                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho)
+                    && vt.MaSanpham == masanpham
+                    && (
+                        vt.Makho == makho
+                        || ((vt.Makho ?? "") != "" && (makho ?? "") != "" &&
+                            (((vt.Makho ?? "").StartsWith(makho ?? "")) || ((makho ?? "").StartsWith(vt.Makho ?? ""))))
+                    ))
                 .Sum(vt => vt.SL ?? 0);
 
             return tongSoLuongDaCamKet;

@@ -1,11 +1,21 @@
 $(document).ready(function () {
     const firstRow = $('.table tbody tr').first(); 
     if (firstRow.length > 0) {
-        const Maxuatkho = firstRow.find('td').eq(1).text().trim();
-        showVTxuatkho(Maxuatkho); 
+        const Maxuatkho = firstRow.find('td').eq(1).find('a').text().trim() || firstRow.find('td').eq(1).text().trim();
+        if (Maxuatkho) {
+            showVTxuatkho(Maxuatkho); 
+        }
     }
     getThongbaoData();
     setActiveMenu();
+    
+    // Xử lý click vào hàng
+    $(document).on('click', '.clickable-row', function() {
+        const MaXuatkho = $(this).data('maxuatkho');
+        if (MaXuatkho) {
+            showVTxuatkho(MaXuatkho);
+        }
+    });
 });
 
 const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
@@ -39,6 +49,33 @@ function showVTxuatkho(Maxuatkho) {
     const pathSegments = window.location.pathname.split('/');
     const area = pathSegments.length > 1 ? pathSegments[1] : ''; // Giả sử area là segment đầu tiên sau dấu '/'
 
+    // Tìm hàng tương ứng và lấy thông tin trạng thái
+    let $selectedRow = $('.clickable-row').filter(function() {
+        return $(this).data('maxuatkho') === Maxuatkho;
+    });
+    
+    // Lấy trạng thái từ cột trạng thái trong bảng
+    const $trangThaiCell = $selectedRow.find('td').eq(6); // Cột thứ 7 (index 6) là cột Trạng thái
+    let trangThaiText = '';
+    let hasButton = false;
+    
+    // Kiểm tra xem có nút không
+    if ($trangThaiCell.find('button').length > 0) {
+        hasButton = true;
+        // Lấy text từ span hoặc từ button title
+        const $span = $trangThaiCell.find('span.status-waiting');
+        if ($span.length > 0) {
+            trangThaiText = $span.text().trim();
+        } else {
+            trangThaiText = $trangThaiCell.find('button').attr('title') || '';
+        }
+    } else {
+        trangThaiText = $trangThaiCell.text().trim();
+    }
+    
+    // Hiển thị nút xuất kho dưới bảng chi tiết
+    displayXuatKhoButton(Maxuatkho, $selectedRow, area);
+
     // Đồng bộ trạng thái vật tư trước khi hiển thị
     const syncUrl = `/${area}/Yeucau/DongsBoTrangThaiVatTu`;
     const url = `/${area}/Yeucau/GetVTPhieuxuatkho`;
@@ -63,16 +100,74 @@ function showVTxuatkho(Maxuatkho) {
     });
 }
 
+// Hàm hiển thị nút xuất kho dưới bảng chi tiết
+function displayXuatKhoButton(MaXuatkho, $row, area) {
+    const $buttonContainer = $('#xuatkho-button-container');
+    const $buttonContent = $('#xuatkho-button-content');
+    
+    // Lấy thông tin từ data attributes
+    const trangThai = $row.data('trangthai') || '';
+    const bophan = $row.data('bophan') || '';
+    
+    // Lấy cột trạng thái để kiểm tra có nút không
+    const $trangThaiCell = $row.find('td').eq(6); // Cột Trạng thái
+    const $spanWithButton = $trangThaiCell.find('span[data-has-button="true"]');
+    const $statusSpan = $trangThaiCell.find('span.status-waiting');
+    
+    let html = '';
+    
+    // Kiểm tra xem có cần hiển thị nút không
+    if ($spanWithButton.length > 0 && bophan == "BP kho") {
+        const maXuatKho = $spanWithButton.data('ma-xuatkho') || MaXuatkho;
+        const action = $spanWithButton.data('action') || 'approve';
+        
+        // Tạo form với nút có text "Xuất Kho"
+        html = `
+            <form action="/${area}/Yeucau/Xuliphieuxuatkho" method="post" style="display: inline-block;">
+                <input type="hidden" name="MaXuatkho" value="${maXuatKho}" />
+                <button type="submit" name="action" value="${action}" class="btn-icon approve-btn" style="padding: 15px 30px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; font-weight: bold; min-width: 150px; white-space: nowrap;">
+                    <i class="bx bxs-check-circle" style="font-size: 20px; vertical-align: middle;"></i> Xuất Kho
+                </button>
+            </form>
+        `;
+    } else if ($statusSpan.length > 0) {
+        // Hiển thị trạng thái dạng text
+        html = `<span style="color: ${$statusSpan.css('color')}; font-weight: bold; font-size: 16px;">${$statusSpan.text()}</span>`;
+    } else {
+        // Hiển thị text trạng thái thông thường
+        const trangThaiText = $trangThaiCell.text().trim();
+        html = `<span style="color: #666; font-size: 16px;">${trangThaiText}</span>`;
+    }
+    
+    $buttonContent.html(html);
+    $buttonContainer.show();
+}
+
 // Hàm load dữ liệu vật tư
 function loadVTData(Maxuatkho, url, area) {
     $.ajax({
         url: url,
         method: 'GET',
         data: { MaXuatkho: Maxuatkho }, // Sử dụng đúng tên tham số
-        success: function (data) {
-            console.log(data); // Kiểm tra dữ liệu nhận được
+        success: function (response) {
+            console.log(response); // Kiểm tra dữ liệu nhận được
 
             $('.tablethietbi tbody').empty();
+            
+            // Xử lý response mới (có items) hoặc cũ (mảng trực tiếp)
+            let data = response.items || response;
+            let tenNguoiYeuCau = response.tenNguoiYeuCau || '';
+            
+            // Hiển thị header text cho tất cả areas
+            if (Maxuatkho && tenNguoiYeuCau) {
+                $('#phieuxuatkho-header-text').text(`Phiếu xuất kho ${Maxuatkho} của ${tenNguoiYeuCau}`);
+                $('#phieuxuatkho-header').show();
+            } else if (Maxuatkho) {
+                $('#phieuxuatkho-header-text').text(`Phiếu xuất kho ${Maxuatkho}`);
+                $('#phieuxuatkho-header').show();
+            } else {
+                $('#phieuxuatkho-header').hide();
+            }
 
             if (data && data.length > 0) {
                 let STT = 1;
@@ -113,12 +208,19 @@ function loadVTData(Maxuatkho, url, area) {
 
             let $rowToHighlight = $();
             $('.table tbody tr').each(function () {
-                if ($(this).find('td').eq(1).text().trim() === Maxuatkho) {
+                const $link = $(this).find('td').eq(1).find('a');
+                const maXuatKhoText = $link.length > 0 ? $link.text().trim() : $(this).find('td').eq(1).text().trim();
+                if (maXuatKhoText === Maxuatkho) {
                     $rowToHighlight = $(this);
                     return false;
                 }
             });
             applyXuatKhoRowHighlight($rowToHighlight);
+            
+            // Cập nhật nút xuất kho khi load lại dữ liệu
+            if ($rowToHighlight.length > 0) {
+                displayXuatKhoButton(Maxuatkho, $rowToHighlight, area);
+            }
         },
         error: function (xhr, status, error) {
             console.error("Lỗi:", error); 

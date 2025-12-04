@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -91,7 +91,9 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         public IActionResult Phieumuahang()
         {
             var Phieumuahanglist = _context.phieumuahang
-            .OrderByDescending(y => y.NgayMuahang)
+            .OrderByDescending(y => y.TrangThai == "Đã thanh toán")
+            .ThenByDescending(y => y.TrangThai == "Đang chờ báo giá")
+            .ThenByDescending(y => y.NgayMuahang)
             .ToList();
             // Gán tên Người yêu cầu cho từng phiếu mua hàng
             var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
@@ -198,7 +200,28 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         {
             var PhieuxuatkhoList = _context.vtphieuxuatkho
                                  .Where(v => v.MaXuatkho == MaXuatkho).ToList();
-            return Json(PhieuxuatkhoList);
+            
+            // Lấy thông tin phiếu xuất kho để lấy tên người yêu cầu
+            var phieuxuatkho = _context.phieuxuatkho
+                .FirstOrDefault(p => p.MaXuatkho == MaXuatkho);
+            
+            string tenNguoiYeuCau = "";
+            if (phieuxuatkho != null && !string.IsNullOrEmpty(phieuxuatkho.MaNguoidung))
+            {
+                var nguoidung = _context.nguoidungs
+                    .FirstOrDefault(n => n.MaNguoidung == phieuxuatkho.MaNguoidung);
+                if (nguoidung != null)
+                {
+                    tenNguoiYeuCau = nguoidung.TenNguoidung ?? "";
+                }
+            }
+            
+            return Json(new
+            {
+                items = PhieuxuatkhoList,
+                maXuatkho = MaXuatkho,
+                tenNguoiYeuCau = tenNguoiYeuCau
+            });
         }
 
         [HttpGet]
@@ -206,7 +229,28 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         {
             var PhieunhapkhoList = _context.vtphieunhapkho
                                  .Where(v => v.MaNhapkho == MaNhapkho).ToList();
-            return Json(PhieunhapkhoList);
+            
+            // Lấy thông tin phiếu nhập kho để lấy tên người yêu cầu
+            var phieunhapkho = _context.phieunhapkho
+                .FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
+            
+            string tenNguoiYeuCau = "";
+            if (phieunhapkho != null && !string.IsNullOrEmpty(phieunhapkho.MaNguoidung))
+            {
+                var nguoidung = _context.nguoidungs
+                    .FirstOrDefault(n => n.MaNguoidung == phieunhapkho.MaNguoidung);
+                if (nguoidung != null)
+                {
+                    tenNguoiYeuCau = nguoidung.TenNguoidung ?? "";
+                }
+            }
+            
+            return Json(new
+            {
+                items = PhieunhapkhoList,
+                maNhapkho = MaNhapkho,
+                tenNguoiYeuCau = tenNguoiYeuCau
+            });
         }
 
         [HttpGet]
@@ -214,7 +258,28 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         {
             var PhieumuahangList = _context.vtphieumuahang
                                  .Where(v => v.MaMuahang == MaMuahang).ToList();
-            return Json(PhieumuahangList);
+            
+            // Lấy thông tin phiếu mua hàng để lấy tên người yêu cầu
+            var phieumuahang = _context.phieumuahang
+                .FirstOrDefault(p => p.MaMuahang == MaMuahang);
+            
+            string tenNguoiYeuCau = "";
+            if (phieumuahang != null && !string.IsNullOrEmpty(phieumuahang.MaNguoidung))
+            {
+                var nguoidung = _context.nguoidungs
+                    .FirstOrDefault(n => n.MaNguoidung == phieumuahang.MaNguoidung);
+                if (nguoidung != null)
+                {
+                    tenNguoiYeuCau = nguoidung.TenNguoidung ?? "";
+                }
+            }
+            
+            return Json(new
+            {
+                items = PhieumuahangList,
+                maMuahang = MaMuahang,
+                tenNguoiYeuCau = tenNguoiYeuCau
+            });
         }
 
         [HttpPost]
@@ -1327,9 +1392,6 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     return Json(new { success = false, message = "Mã mua hàng không tồn tại!" });
                 }
 
-                Phieumuahang.TrangThai = "Đã báo giá";
-                _context.phieumuahang.Update(Phieumuahang);
-
                 var VTPhieumuahanglist = _context.vtphieumuahang
                                                   .Where(kt => kt.MaMuahang == MaMuahang)
                                                   .ToList();
@@ -1337,83 +1399,89 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 Console.WriteLine($"Số vật tư được tìm thấy: {VTPhieumuahanglist.Count}");
                 Console.WriteLine($"Số lượng phần tử trong VTphieumuahang: {model.VTphieumuahang?.Count ?? 0}");
 
-                // Validation: Kiểm tra các vật tư có SL = 1 phải có đơn giá
-                var missingData = new List<string>();
-                for (int i = 0; i < VTPhieumuahanglist.Count; i++)
+                // Tạo dictionary để tìm nhanh vật tư theo MaSanpham
+                var vtmuahangDict = new Dictionary<string, vtphieumuahang>();
+                foreach (var vt in VTPhieumuahanglist)
                 {
-                    var VTmuahang = VTPhieumuahanglist[i];
-                    
-                    // Nếu số lượng = 0, không cần nhập, bỏ qua
+                    if (!string.IsNullOrEmpty(vt.MaSanpham))
+                    {
+                        vtmuahangDict[vt.MaSanpham] = vt;
+                    }
+                }
+
+                // Cập nhật chỉ các vật tư có giá trong dữ liệu gửi lên
+                int updatedCount = 0;
+                if (model.VTphieumuahang != null)
+                {
+                    foreach (var updatedVTmuahang in model.VTphieumuahang)
+                    {
+                        // Chỉ cập nhật nếu có MaSanpham và có giá hợp lệ
+                        if (!string.IsNullOrEmpty(updatedVTmuahang.MaSanpham) &&
+                            updatedVTmuahang.DonGia != null && updatedVTmuahang.DonGia > 0)
+                        {
+                            if (vtmuahangDict.TryGetValue(updatedVTmuahang.MaSanpham, out var VTmuahang))
+                            {
+                                Console.WriteLine($"Cập nhật VTmuahang: {updatedVTmuahang.MaSanpham}");
+
+                                // Cập nhật giá trị DonGia và ThanhTien
+                                VTmuahang.DonGia = updatedVTmuahang.DonGia;
+                                VTmuahang.ThanhTien = updatedVTmuahang.ThanhTien;
+
+                                Console.WriteLine($"Đơn giá là: {updatedVTmuahang.DonGia}");
+                                Console.WriteLine($"Thành tiền là: {updatedVTmuahang.ThanhTien}");
+
+                                VTmuahang.TrangThai = "Đã báo giá";
+                                _context.vtphieumuahang.Update(VTmuahang);
+                                updatedCount++;
+                            }
+                        }
+                    }
+                }
+
+                // Kiểm tra xem tất cả vật tư (có SL > 0) đã có giá chưa
+                bool allItemsHavePrice = true;
+                foreach (var VTmuahang in VTPhieumuahanglist)
+                {
+                    // Bỏ qua các vật tư có số lượng = 0
                     if (VTmuahang.SL == 0)
                     {
                         continue;
                     }
                     
-                    // Nếu số lượng = 1, bắt buộc phải có đơn giá
-                    if (VTmuahang.SL == 1)
+                    // Kiểm tra xem vật tư này đã có giá và trạng thái "Đã báo giá" chưa
+                    if (VTmuahang.DonGia == null || VTmuahang.DonGia <= 0 || 
+                        VTmuahang.TrangThai != "Đã báo giá")
                     {
-                        bool hasPrice = false;
-                        if (model.VTphieumuahang != null && i < model.VTphieumuahang.Count)
-                        {
-                            var updatedVTmuahang = model.VTphieumuahang[i];
-                            if (updatedVTmuahang.DonGia != null && updatedVTmuahang.DonGia > 0)
-                            {
-                                hasPrice = true;
-                            }
-                        }
-                        
-                        if (!hasPrice)
-                        {
-                            missingData.Add(VTmuahang.TenSanpham ?? VTmuahang.MaSanpham ?? $"Vật tư {i + 1}");
-                        }
+                        allItemsHavePrice = false;
+                        break;
                     }
+                }
+
+                // Cập nhật trạng thái phiếu mua hàng
+                if (allItemsHavePrice)
+                {
+                    Phieumuahang.TrangThai = "Đã báo giá";
+                }
+                else
+                {
+                    // Giữ nguyên trạng thái "Đang chờ báo giá" nếu còn mục chưa có giá
+                    // Hoặc có thể đặt trạng thái mới như "Đang báo giá một phần" nếu cần
+                    if (Phieumuahang.TrangThai == "Đã báo giá")
+                    {
+                        // Nếu trước đó đã "Đã báo giá" nhưng giờ có mục mới chưa có giá, giữ nguyên
+                        // (trường hợp này ít xảy ra, nhưng để an toàn)
+                    }
+                    // Nếu đang "Đang chờ báo giá", giữ nguyên
                 }
                 
-                if (missingData.Count > 0)
-                {
-                    return Json(new { success = false, message = "Bạn chưa nhập xong hết số liệu. Vui lòng nhập đơn giá cho các vật tư có số lượng = 1:\n" + string.Join("\n", missingData) });
-                }
-
-                for (int i = 0; i < VTPhieumuahanglist.Count; i++)
-                {
-                    var VTmuahang = VTPhieumuahanglist[i];
-
-                    // Kiểm tra nếu trong model.VTphieumuahang có phần tử tại cùng vị trí
-                    if (i < model.VTphieumuahang.Count)
-                    {
-                        var updatedVTmuahang = model.VTphieumuahang[i];
-
-                        Console.WriteLine($"Cập nhật VTmuahang: {updatedVTmuahang.MaMuahang}");
-
-                        // Cập nhật giá trị DonGia và ThanhTien
-                        VTmuahang.DonGia = updatedVTmuahang.DonGia;
-                        VTmuahang.ThanhTien = updatedVTmuahang.ThanhTien;
-
-                        Console.WriteLine($"Đơn giá là: {updatedVTmuahang.DonGia}");
-                        Console.WriteLine($"Thành tiền là: {updatedVTmuahang.ThanhTien}");
-
-                        VTmuahang.TrangThai = "Đã báo giá";
-                        _context.vtphieumuahang.Update(VTmuahang);
-                    }
-                    else
-                    {
-                        // Nếu số lượng = 0, không cần cập nhật giá
-                        if (VTmuahang.SL == 0)
-                        {
-                            Console.WriteLine($"Vật tư {VTmuahang.TenSanpham} có số lượng = 0, bỏ qua cập nhật giá");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Không có dữ liệu tương ứng trong model cho VTmuahang tại index: {i}");
-                        }
-                    }
-                }
-
+                _context.phieumuahang.Update(Phieumuahang);
                 _context.SaveChanges();
 
+                string message = updatedCount > 0 
+                    ? $"Đã cập nhật báo giá cho {updatedCount} vật tư thành công!" 
+                    : "Không có dữ liệu nào được cập nhật.";
 
-
-                return Json(new { success = true, message = "Dữ liệu đã được gửi thành công!" });
+                return Json(new { success = true, message = message });
             }
             catch (Exception ex)
             {
@@ -1452,19 +1520,24 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 }
                 foreach (var VTPhieumuahang in VTPhieumuahanglist)
                 {
-                    if (chucVu2 == "Giám đốc")
+                    // Chỉ cập nhật trạng thái các mục đã báo giá (có đơn giá)
+                    // Các mục chưa báo giá giữ nguyên trạng thái "Đang chờ báo giá"
+                    if (VTPhieumuahang.TrangThai == "Đã báo giá" && VTPhieumuahang.DonGia != null && VTPhieumuahang.DonGia > 0)
                     {
-                        VTPhieumuahang.TrangThai = "Chờ thanh toán";
+                        if (chucVu2 == "Giám đốc")
+                        {
+                            VTPhieumuahang.TrangThai = "Chờ thanh toán";
+                        }
+                        else if (boPhan2 == "BP kế toán")
+                        {
+                            VTPhieumuahang.TrangThai = "Đã thanh toán";
+                        }
+                        else if (boPhan2 == "BP mua hàng")
+                        {
+                            VTPhieumuahang.TrangThai = "Đã nhận hàng";
+                        }
+                        _context.vtphieumuahang.Update(VTPhieumuahang);
                     }
-                    else if (boPhan2 == "BP kế toán")
-                    {
-                        VTPhieumuahang.TrangThai = "Đã thanh toán";
-                    }
-                    else if (boPhan2 == "BP mua hàng")
-                    {
-                        VTPhieumuahang.TrangThai = "Đã nhận hàng";
-                    }
-                    _context.vtphieumuahang.Update(VTPhieumuahang);
                 }
                 _context.phieumuahang.Update(Phieumuahang);
             }
@@ -2057,10 +2130,15 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
             }
 
             // Tính tổng số lượng vật tư đã cam kết từ các phiếu xuất này
+            // Ưu tiên khớp chính xác Makho; nếu không có thì cho phép khớp linh hoạt theo tiền tố/hậu tố
             var tongSoLuongDaCamKet = _context.vtphieuxuatkho
-                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho) 
-                    && vt.Makho == makho 
-                    && vt.MaSanpham == masanpham)
+                .Where(vt => phieuXuatDaCamKet.Contains(vt.MaXuatkho)
+                    && vt.MaSanpham == masanpham
+                    && (
+                        vt.Makho == makho
+                        || ((vt.Makho ?? "") != "" && (makho ?? "") != "" &&
+                            (((vt.Makho ?? "").StartsWith(makho ?? "")) || ((makho ?? "").StartsWith(vt.Makho ?? ""))))
+                    ))
                 .Sum(vt => vt.SL ?? 0);
 
             return tongSoLuongDaCamKet;

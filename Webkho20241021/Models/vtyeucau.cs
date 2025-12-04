@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Webkho_20241021.Models
 {
@@ -20,5 +20,6 @@ namespace Webkho_20241021.Models
         public DateTime? ThoiGianBH { get; set; }
         public DateTime? NgayDuyet { get; set; }
         public string? TrangThai { get; set; }
+        public string? GhiChu { get; set; }
     }
 }

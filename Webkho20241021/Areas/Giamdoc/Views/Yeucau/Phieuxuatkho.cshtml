@@ -69,10 +69,10 @@
                     {
                         string ChucvuSession = Context.Session.GetString("Chucvu");
                         string BophanSession = Context.Session.GetString("Bophan");
-                        <tr>
+                        <tr onclick="showVTxuatkho('@item.MaXuatkho')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTxuatkho('@item.MaXuatkho')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTxuatkho('@item.MaXuatkho')">
                                     @item.MaXuatkho
                                 </a>
                             </td>
@@ -86,7 +86,7 @@
                                     @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" onclick="event.stopPropagation();">
                                             <i class="bx bxs-check-circle"></i>
                                         </button>
                                     }
@@ -96,7 +96,7 @@
                                     @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" onclick="event.stopPropagation();">
                                             <i class="bx bxs-check-circle"></i>
                                         </button>
                                     }
@@ -106,7 +106,7 @@
                                     @using (Html.BeginForm("Xuliphieuxuatkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
                                     {
                                         <input type="hidden" name="MaXuatkho" value="@item.MaXuatkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
+                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" onclick="event.stopPropagation();">
                                             <i class="bx bxs-check-circle"></i>
                                         </button>
                                     }
@@ -124,6 +124,9 @@
         </div>
     </nav>
     <nav class="bodyyeucau-thietbi">
+        <div id="phieuxuatkho-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+            <span id="phieuxuatkho-header-text"></span>
+        </div>
         <div class="Tableyeucau-thietbi-box">
             <table class="tablethietbi">
                 <thead>
@@ -165,6 +168,22 @@
     <script>
         $(document).ready(function () {
             getThongbaoData();
+            
+            // Chức năng tìm kiếm
+            $('#timkiem').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $('.table tbody tr').filter(function() {
+                    var match = false;
+                    $(this).find('td').each(function() {
+                        var text = $(this).text().toLowerCase();
+                        if (text.indexOf(value) > -1) {
+                            match = true;
+                            return false; // break loop
+                        }
+                    });
+                    $(this).toggle(match);
+                });
+            });
         });
     </script>
 </body>

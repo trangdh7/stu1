@@ -68,10 +68,10 @@
                         {
                             string ChucvuSession = Context.Session.GetString("Chucvu");
                             string BophanSession = Context.Session.GetString("Bophan");
-                            <tr>
+                            <tr onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" style="cursor: pointer;">
                                 <td>@STT</td>
                                 <td>
-                                    <a href="javascript:void(0);" onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
+                                    <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
                                         @item.MaMuahang
                                     </a>
                                 </td>
@@ -94,6 +94,7 @@
             <!-- This part is for the "Thietbi" section, using the MaMuahang from the current context -->
             <input type="hidden" id="selectedMamuahang" name="MaMuahang" value="@Model.Phieumuahang.FirstOrDefault()?.MaMuahang" />
             <div id="phieumuahang-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+                <span id="phieumuahang-header-text"></span>
             </div>
             <div class="Tableyeucau-thietbi-box">
                 <table class="tablethietbi">
@@ -140,6 +141,22 @@
         <script>
             $(document).ready(function () {
                 getThongbaoData();
+                
+                // Chức năng tìm kiếm
+                $('#timkiem').on('keyup', function() {
+                    var value = $(this).val().toLowerCase();
+                    $('.table tbody tr').filter(function() {
+                        var match = false;
+                        $(this).find('td').each(function() {
+                            var text = $(this).text().toLowerCase();
+                            if (text.indexOf(value) > -1) {
+                                match = true;
+                                return false; // break loop
+                            }
+                        });
+                        $(this).toggle(match);
+                    });
+                });
             });
         </script>
     </body>

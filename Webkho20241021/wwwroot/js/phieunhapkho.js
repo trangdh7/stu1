@@ -6,22 +6,12 @@ $(document).ready(function () {
         console.log("Số hàng tìm thấy:", firstRow.length);
         
         if (firstRow.length > 0) {
-            const ManhapkhoLink = firstRow.find('.manhapkho-link');
-            console.log("Tìm thấy link:", ManhapkhoLink.length);
-            
-            if (ManhapkhoLink.length > 0) {
-                const Manhapkho = ManhapkhoLink.data('manhapkho') || ManhapkhoLink.text().trim();
-                console.log("Mã nhập kho từ link:", Manhapkho);
-                if (Manhapkho) {
-                    showVTnhapkho(Manhapkho); 
-                }
-            } else {
-                // Nếu không tìm thấy link, thử lấy từ cột thứ 2 (cột mã nhập kho)
-                const manhapkhoText = firstRow.find('td').eq(1).text().trim();
-                console.log("Mã nhập kho từ text:", manhapkhoText);
-                if (manhapkhoText) {
-                    showVTnhapkho(manhapkhoText);
-                }
+            // Lấy mã nhập kho từ link trong cột thứ 2 (td:eq(1))
+            const link = firstRow.find('td').eq(1).find('a');
+            const Manhapkho = link.length > 0 ? link.text().trim() : firstRow.find('td').eq(1).text().trim();
+            console.log("Mã nhập kho từ text:", Manhapkho);
+            if (Manhapkho) {
+                showVTnhapkho(Manhapkho);
             }
         } else {
             console.log("Không tìm thấy hàng nào trong bảng");
@@ -31,22 +21,11 @@ $(document).ready(function () {
     getThongbaoData();
     setActiveMenu();
     
-    // Thêm event handler cho click vào mã nhập kho - load dữ liệu và highlight row
-    $(document).on('click', '.manhapkho-link', function(e) {
-        e.preventDefault(); // Ngăn navigation ngay lập tức để load dữ liệu trước
-        const Manhapkho = $(this).data('manhapkho') || $(this).text().trim();
-        
-        if (Manhapkho) {
-            // Load dữ liệu vật tư
-            showVTnhapkho(Manhapkho);
-        }
-    });
-    
-    // Thêm event handler cho double-click để xem chi tiết
-    $(document).on('dblclick', '.manhapkho-link', function(e) {
-        const href = $(this).attr('href');
-        if (href) {
-            window.location.href = href;
+    // Xử lý click vào hàng
+    $(document).on('click', '.clickable-row', function() {
+        const MaNhapkho = $(this).data('manhapkho');
+        if (MaNhapkho) {
+            showVTnhapkho(MaNhapkho);
         }
     });
 });
@@ -62,6 +41,7 @@ function applyNhapKhoRowHighlight($row) {
         color: ''
     });
     $rows.find('a').css('color', '');
+    $rows.find('i').css('color', '');
 
     if ($row && $row.length) {
         $row.addClass('highlight');
@@ -70,8 +50,11 @@ function applyNhapKhoRowHighlight($row) {
             color: ROW_HIGHLIGHT_TEXT_COLOR
         });
         $row.find('a').css('color', ROW_HIGHLIGHT_TEXT_COLOR);
+        $row.find('i').css('color', ROW_HIGHLIGHT_TEXT_COLOR);
     }
 }
+
+let selectedManhapkho = "";
 
 function showVTnhapkho(Manhapkho) {
     if (!Manhapkho || Manhapkho.trim() === '') {
@@ -80,6 +63,7 @@ function showVTnhapkho(Manhapkho) {
         return;
     }
 
+    selectedManhapkho = Manhapkho;
     console.log("Mã nhập kho được chọn:", Manhapkho); 
 
     const pathSegments = window.location.pathname.split('/');   
@@ -93,9 +77,25 @@ function showVTnhapkho(Manhapkho) {
         url: url, // Sử dụng URL động
         method: 'GET',
         data: { MaNhapkho: Manhapkho }, // Sửa tên tham số để khớp với controller
-        success: function (data) {
-            console.log("Dữ liệu nhận được từ API:", data); 
-            console.log("Số lượng vật tư:", data ? data.length : 0);
+        success: function (response) {
+            console.log("Dữ liệu nhận được từ API:", response); 
+            
+            // Xử lý response mới (có items) hoặc cũ (mảng trực tiếp)
+            let data = response.items || response;
+            let tenNguoiYeuCau = response.tenNguoiYeuCau || '';
+            
+            console.log("Số lượng vật tư:", data ? (Array.isArray(data) ? data.length : 0) : 0);
+            
+            // Hiển thị header text cho tất cả areas
+            if (Manhapkho && tenNguoiYeuCau) {
+                $('#phieunhapkho-header-text').text(`Phiếu nhập kho ${Manhapkho} của ${tenNguoiYeuCau}`);
+                $('#phieunhapkho-header').show();
+            } else if (Manhapkho) {
+                $('#phieunhapkho-header-text').text(`Phiếu nhập kho ${Manhapkho}`);
+                $('#phieunhapkho-header').show();
+            } else {
+                $('#phieunhapkho-header').hide();
+            }
 
             $('.tablethietbi tbody').empty();
 
@@ -207,14 +207,27 @@ function showVTnhapkho(Manhapkho) {
             }
 
             let $rowToHighlight = $();
+            let trangThaiPhieu = "";
             $('.table tbody tr').each(function () {
-                const linkText = $(this).find('.manhapkho-link').text().trim();
+                // Tìm link trong cột thứ 2 (td:eq(1)) và so sánh text
+                const link = $(this).find('td').eq(1).find('a');
+                const linkText = link.length > 0 ? link.text().trim() : $(this).find('td').eq(1).text().trim();
                 if (linkText === Manhapkho) {
                     $rowToHighlight = $(this);
+                    // Lấy trạng thái từ cột trạng thái (cột thứ 7, index 6)
+                    const trangThaiCell = $(this).find('td').eq(6);
+                    trangThaiPhieu = trangThaiCell.find('span').text().trim() || trangThaiCell.text().trim();
                     return false;
                 }
             });
             applyNhapKhoRowHighlight($rowToHighlight);
+            
+            // Hiển thị/ẩn nút "Nhập kho" dựa trên trạng thái
+            if (trangThaiPhieu === "Chờ nhập kho") {
+                $('#btn-nhapkho').show();
+            } else {
+                $('#btn-nhapkho').hide();
+            }
         },
         error: function (xhr, status, error) {
             console.error("Lỗi khi gọi API:", error);
@@ -318,7 +331,56 @@ function setActiveMenu() {
     }
 }
 
+// Xử lý nút "Nhập kho"
+$(document).on('click', '#btn-nhapkho', function() {
+    if (!selectedManhapkho) {
+        alert("Vui lòng chọn phiếu nhập kho trước.");
+        return;
+    }
+    
+    if (!confirm("Bạn có chắc chắn muốn duyệt nhập kho cho phiếu " + selectedManhapkho + "?")) {
+        return;
+    }
+    
+    const pathSegments = window.location.pathname.split('/');
+    const area = pathSegments.length > 1 ? pathSegments[1] : '';
+    const url = `/${area}/Yeucau/Xuliphieunhapkho`;
+    
+    // Tạo form để submit
+    const form = $('<form>', {
+        method: 'POST',
+        action: url
+    });
+    
+    form.append($('<input>', {
+        type: 'hidden',
+        name: 'MaNhapkho',
+        value: selectedManhapkho
+    }));
+    
+    form.append($('<input>', {
+        type: 'hidden',
+        name: 'action',
+        value: 'approve'
+    }));
+    
+    // Thêm token chống CSRF nếu có
+    const token = $('input[name="__RequestVerificationToken"]').val();
+    if (token) {
+        form.append($('<input>', {
+            type: 'hidden',
+            name: '__RequestVerificationToken',
+            value: token
+        }));
+    }
+    
+    $('body').append(form);
+    form.submit();
+});
+
 // Gọi hàm getThongbaoData khi trang được tải
 $(document).ready(function () {
     getThongbaoData();
+    // Ẩn nút "Nhập kho" ban đầu
+    $('#btn-nhapkho').hide();
 });

@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Phieuxuatkho";
     Layout = "~/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml";
 }
@@ -53,12 +53,13 @@
                     <thead>
                         <tr>
                             <td>STT</td>
-                            <td>Mã xuất kho</td>
+                            <td>Mã mua hàng</td>
                             <td>Mã yêu cầu</td>
                             <td>Mã dự án</td>
                             <td>Người yêu cầu</td>
                             <td>Ngày mua hàng</td>
                             <td>Trạng thái</td>
+                            <td>Hành động</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -69,10 +70,10 @@
                         {
                             string ChucvuSession = Context.Session.GetString("Chucvu");
                             string BophanSession = Context.Session.GetString("Bophan");
-                            <tr>
+                            <tr onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" style="cursor: pointer;">
                                 <td>@STT</td>
                                 <td>
-                                    <a href="javascript:void(0);" onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
+                                    <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
                                         @item.MaMuahang
                                     </a>
                                 </td>
@@ -80,26 +81,15 @@
                                 <td>@item.MaDuan</td>
                                 <td>@(string.IsNullOrEmpty(item.TenNguoiyeucau) ? item.MaNguoidung : item.TenNguoiyeucau)</td>
                                 <td>@item.NgayMuahang?.ToString("dd/MM/yyyy")</td>
+                                <td>@item.TrangThai</td>
                                 <td>
-                                    @if ((item.TrangThai == "Đã báo giá" && ChucvuSession == "Giám đốc") ||
-                                          (item.TrangThai == "Chờ thanh toán" && BophanSession == "BP kế toán")||
-                                            (item.TrangThai == "Đã thanh toán" && BophanSession == "BP mua hàng"))
-                                    {
-                                        @using (Html.BeginForm("XuLyPhieumuahang", "Yeucau", new { area = "TruongBPMuahang" }, FormMethod.Post))
-                                        {
-                                            <input type="hidden" name="MaMuahang" value="@item.MaMuahang" />
-                                            <button type="submit" name="action" value="approve" class="btn-icon approve-btn">
-                                                <i class="bx bxs-check-circle"></i>
-                                            </button>
-                                            <button type="submit" name="action" value="reject" class="btn-icon reject-btn">
-                                                <i class="bx bxs-x-circle"></i>
-                                            </button>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        @item.TrangThai;
-                                    }
+                                    <a href="@Url.Action("InPhieumuahang", "Yeucau", new { area = "TruongBPMuahang", MaMuahang = item.MaMuahang })" 
+                                       target="_blank" 
+                                       class="btn-icon" 
+                                       title="In phiếu"
+                                       onclick="event.stopPropagation();">
+                                        <i class="bx bx-printer"></i>
+                                    </a>
                                 </td>
                             </tr>
                             STT++;
@@ -112,6 +102,8 @@
         <nav class="bodyyeucau-thietbi">
             <!-- This part is for the "Thietbi" section, using the MaMuahang from the current context -->
             <input type="hidden" id="selectedMamuahang" name="MaMuahang" value="@Model.Phieumuahang.FirstOrDefault()?.MaMuahang" />
+            <div id="phieumuahang-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+            </div>
             <div class="Tableyeucau-thietbi-box">
                 <table class="tablethietbi">
                     <thead>
@@ -133,10 +125,13 @@
                     </tbody>
                 </table>
             </div>
-            <div class="action" style="justify-content: flex-end;">
+            <div class="action" id="action-buttons" style="justify-content: flex-end;">
                 <button type="button" id="submitPhieumuahang">Gửi báo giá</button>
-                <button type="button" id="btnInPhieu" onclick="inPhieuMuaHang()" style="margin-left: 10px;">
-                    <i class='bx bx-printer'></i> In phiếu mua hàng
+                <button type="button" id="approvePhieumuahang" style="display: none; margin-left: 10px; background-color: #336600; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                    <i class='bx bxs-check-circle'></i> Duyệt
+                </button>
+                <button type="button" id="rejectPhieumuahang" style="display: none; margin-left: 10px; background-color: #336600; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                    <i class='bx bxs-x-circle'></i> Từ chối
                 </button>
             </div>
         </nav>

@@ -170,18 +170,24 @@ namespace Webkho_20241021.Services
 
             if (duHang)
             {
-                phieuXuat.TrangThai = "Chờ xác nhận";
+                phieuXuat.TrangThai = "Đang chuẩn bị hàng";
+                phieuXuat.NgayChuanBi = DateTime.Now;
                 phieuXuat.GhiChu = null;
                 context.phieuxuatkho.Update(phieuXuat);
 
                 foreach (var vtLine in vtPhieuXuatList)
                 {
-                    if (string.IsNullOrEmpty(vtLine.TrangThai) ||
-                        vtLine.TrangThai.Contains("thiếu", StringComparison.OrdinalIgnoreCase) ||
-                        vtLine.TrangThai.Contains("mua", StringComparison.OrdinalIgnoreCase))
+                    bool laTrangThaiCuoi = string.Equals(vtLine.TrangThai, "Đã xuất kho", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(vtLine.TrangThai, "Hoàn thành", StringComparison.OrdinalIgnoreCase);
+
+                    if (!laTrangThaiCuoi)
                     {
                         vtLine.TrangThai = "Đang chuẩn bị hàng";
-                        context.vtphieuxuatkho.Update(vtLine);
+                        // Nếu record mới thêm (chưa có ID), EF đã tracking ở trạng thái Added nên không cần gọi Update
+                        if (vtLine.ID > 0)
+                        {
+                            context.vtphieuxuatkho.Update(vtLine);
+                        }
                     }
                 }
             }

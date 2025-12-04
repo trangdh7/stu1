@@ -1,4 +1,4 @@
-﻿@model Webkho_20241021.Areas.NhanvienKho.Data.Yeucauviewmodel
+@model Webkho_20241021.Areas.NhanvienKho.Data.Yeucauviewmodel
 
 
 @{
@@ -72,11 +72,11 @@
                         var duan = Model.Duans.FirstOrDefault(d => d.MaDuan == item.YCMaDuan);
                         string maNguoiQLDA = duan?.MaNguoiQLDA;
                         string maNguoidungSession = Context.Session.GetString("MaNguoidung");
-                        <tr>
+                        <tr onclick="showVTYeucau('@item.MaYeucau')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTYeucau('@item.MaYeucau')">
                                     @item.MaYeucau
                                 </a>
                             </td>

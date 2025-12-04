@@ -1,10 +1,11 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using Webkho_20241021.Areas.TruongBPKythuat.Data;
 using Webkho_20241021.Models;
 
@@ -41,7 +42,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
             _context.SaveChanges();
 
             var SortedYeucaulist = Yeucaulist
-                .OrderByDescending(y => y.TrangThai == userRole)
+                .OrderByDescending(y => y.TrangThai != null && y.TrangThai.Trim().Equals("Chờ Trưởng BP-BP kỹ thuật duyệt", StringComparison.OrdinalIgnoreCase))
                 .ThenByDescending(y => y.NgayYeucau)
                 .ToList();
 
@@ -215,7 +216,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
         }
 
         [HttpPost]
-        public IActionResult XuLyVatTuYeucau(string MaYeucau, string MaSanpham, string action)
+        public IActionResult XuLyVatTuYeucau(string MaYeucau, string MaSanpham, string action, string? GhiChu = null)
         {
             try
             {
@@ -239,10 +240,12 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 {
                     // Khi trưởng phòng duyệt, đặt trạng thái dựa trên việc có mã dự án hay không
                     vatTu.TrangThai = nextTrangThaiVT;
+                    vatTu.GhiChu = null; // Xóa ghi chú khi duyệt
                 }
                 else if (action == "reject")
                 {
                     vatTu.TrangThai = "Đã từ chối";
+                    vatTu.GhiChu = GhiChu; // Lưu ghi chú khi từ chối
                 }
 
                 _context.vtyeucau.Update(vatTu);
@@ -272,7 +275,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     }
                 }
 
-                return Json(new { success = true, message = action == "approve" ? "Đã duyệt vật tư thành công." : "Đã từ chối vật tư." });
+                return Json(new { success = true, message = action == "approve" ? "Đã duyệt vật tư thành công." : "Đã từ chối vật tư.", ghiChu = vatTu.GhiChu });
             }
             catch (Exception ex)
             {
@@ -280,13 +283,44 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
             }
         }
 
+        public class BulkActionRequest
+        {
+            public string MaYeucau { get; set; } = "";
+            public string action { get; set; } = "";
+            public List<string>? selectedVatTu { get; set; }
+            public Dictionary<string, string>? ghiChuList { get; set; }
+        }
+
         [HttpPost]
-        public IActionResult XuLyTatCaVatTuYeucau(string MaYeucau, string action)
+        public IActionResult XuLyTatCaVatTuYeucau([FromBody] BulkActionRequest requestData)
         {
             try
             {
-                var vatTuList = _context.vtyeucau
-                    .Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                if (requestData == null)
+                {
+                    return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                }
+                
+                string MaYeucau = requestData.MaYeucau ?? "";
+                string action = requestData.action ?? "";
+                List<string>? selectedVatTu = requestData.selectedVatTu;
+                Dictionary<string, string>? ghiChuList = requestData.ghiChuList;
+                
+                // Nếu có danh sách vật tư được chọn, chỉ xử lý những cái đó
+                // Nếu không, lấy tất cả (để tương thích với code cũ)
+                List<vtyeucau> vatTuList;
+                if (selectedVatTu != null && selectedVatTu.Any())
+                {
+                    vatTuList = _context.vtyeucau
+                        .Where(v => v.VTMaYeucau == MaYeucau && selectedVatTu.Contains(v.MaSanpham))
+                        .ToList();
+                }
+                else
+                {
+                    vatTuList = _context.vtyeucau
+                        .Where(v => v.VTMaYeucau == MaYeucau)
+                        .ToList();
+                }
 
                 if (!vatTuList.Any())
                 {
@@ -310,10 +344,16 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     {
                         // Khi trưởng phòng duyệt, đặt trạng thái dựa trên việc có mã dự án hay không
                         vatTu.TrangThai = nextTrangThaiVT;
+                        vatTu.GhiChu = null; // Xóa ghi chú khi duyệt
                     }
                     else if (action == "reject")
                     {
                         vatTu.TrangThai = "Đã từ chối";
+                        // Lấy ghi chú từ dictionary nếu có
+                        if (ghiChuList != null && ghiChuList.ContainsKey(vatTu.MaSanpham))
+                        {
+                            vatTu.GhiChu = ghiChuList[vatTu.MaSanpham];
+                        }
                     }
                     _context.vtyeucau.Update(vatTu);
                 }

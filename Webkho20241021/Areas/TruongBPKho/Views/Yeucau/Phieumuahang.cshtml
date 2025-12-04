@@ -69,10 +69,10 @@
                         {
                             string ChucvuSession = Context.Session.GetString("Chucvu");
                             string BophanSession = Context.Session.GetString("Bophan");
-                            <tr>
+                            <tr class="clickable-row" data-mamuahang="@item.MaMuahang" style="cursor: pointer;">
                                 <td>@STT</td>
                                 <td>
-                                    <a href="javascript:void(0);" onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
+                                    <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
                                         @item.MaMuahang
                                     </a>
                                 </td>
@@ -105,6 +105,9 @@
                         }
                     </tbody>
                 </table>
+            </div>
+            <div id="phieumuahang-header" style="font-size: 18px; font-weight: bold; margin: 20px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none; text-align: left;">
+                <span id="phieumuahang-header-text"></span>
             </div>
         </nav>
 

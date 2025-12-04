@@ -1,4 +1,4 @@
-﻿@model Webkho_20241021.Areas.NhanvienKetoan.Data.Yeucauviewmodel
+@model Webkho_20241021.Areas.NhanvienKetoan.Data.Yeucauviewmodel
 
 
 @{
@@ -73,11 +73,11 @@
                         var duan = Model.Duans.FirstOrDefault(d => d.MaDuan == item.YCMaDuan);
                         string maNguoiQLDA = duan?.MaNguoiQLDA;
                         string maNguoidungSession = Context.Session.GetString("MaNguoidung");
-                        <tr>
+                        <tr onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showVTYeucau('@item.MaYeucau')">
+                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau')">
                                     @item.MaYeucau
                                 </a>
                             </td>
@@ -147,6 +147,9 @@
         </div>
     </nav>
     <nav class="bodyyeucau-thietbi">
+        <div class="yeucau-info" id="yeucauInfo" style="margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;">
+            <strong id="yeucauInfoText"></strong>
+        </div>
         <div class="Tableyeucau-thietbi-box">
             <table class="tablethietbi">
                 <thead>
