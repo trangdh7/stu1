@@ -81,55 +81,7 @@
                             <td>@item.MaNguoidung</td>
                             <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
                             <td>
-                                @{
-                                    // Hiển thị trạng thái và nút duyệt theo quyền
-                                    var duan = Model.Duans?.FirstOrDefault(d => d.MaDuan == item.MaDuan);
-                                    var maQLDA = duan?.MaNguoiQLDA;
-                                    var isQLDA = !string.IsNullOrEmpty(maQLDA) && maQLDA == Context.Session.GetString("MaNguoidung");
-                                    var isGiamDoc = ChucvuSession == "Giám đốc";
-                                    var isKho = BophanSession == "BP kho";
-                                }
-                                
-                                @if (item.TrangThai == "Quản lí dự án" && isQLDA)
-                                {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối">
-                                            <i class="bx bxs-x-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else if (item.TrangThai == "Giám đốc" && isGiamDoc)
-                                {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối">
-                                            <i class="bx bxs-x-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else if (item.TrangThai == "Chờ nhập kho" && isKho)
-                                {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Xác nhận nhập kho">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else
-                                {
-                                    <span>@item.TrangThai</span>
-                                }
+                                <span>@item.TrangThai</span>
                             </td>
                         </tr>
                         STT++;
@@ -185,11 +137,123 @@
                 </tbody>
             </table>
         </div>
+        @{
+            // Kiểm tra xem người dùng có phải là QLDA không
+            var maNguoiDung = Context.Session.GetString("MaNguoidung");
+            var isQLDA = false;
+            if (Model.Duans != null && Model.Phieunhapkho != null)
+            {
+                // Kiểm tra xem có phiếu nhập kho nào thuộc dự án mà người dùng là QLDA không
+                foreach (var item in Model.Phieunhapkho)
+                {
+                    if (!string.IsNullOrEmpty(item.MaDuan))
+                    {
+                        var duan = Model.Duans.FirstOrDefault(d => d.MaDuan == item.MaDuan);
+                        if (duan != null && duan.MaNguoiQLDA == maNguoiDung)
+                        {
+                            isQLDA = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        <div id="approve-buttons-container" style="display: none; text-align: right; margin-top: 20px; padding-right: 20px;" data-is-qlda="@(isQLDA ? "true" : "false")">
+            <form asp-action="Xuliphieunhapkho" asp-controller="Yeucau" asp-area="QuanLiDuAn" method="post" id="form-approve-phieunhapkho">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="MaNhapkho" id="hidden-manhapkho" value="" />
+                <button type="submit" name="action" value="approve" class="btn btn-success" style="margin-right: 10px; padding: 10px 20px; font-size: 16px; background-color: #28a745; border-color: #28a745; color: white;">
+                    <i class="bx bxs-check-circle"></i> Duyệt
+                </button>
+                <button type="submit" name="action" value="reject" class="btn btn-danger" style="padding: 10px 20px; font-size: 16px; background-color: #dc3545; border-color: #dc3545; color: white;">
+                    <i class="bx bxs-x-circle"></i> Từ chối
+                </button>
+            </form>
+        </div>
     </nav>
     <script src="~/js/phieunhapkho.js"></script>
     <script>
         $(document).ready(function () {
             getThongbaoData();
+        });
+
+        // Hàm để cập nhật hiển thị nút duyệt dựa trên trạng thái
+        function updateApproveButtons(manhapkho, trangThai) {
+            console.log("[QLDA DEBUG] updateApproveButtons called:", { manhapkho, trangThai });
+            
+            // Kiểm tra xem người dùng có phải là QLDA không
+            var isQLDA = $('#approve-buttons-container').data('is-qlda') === true || $('#approve-buttons-container').data('is-qlda') === 'true';
+            console.log("[QLDA DEBUG] isQLDA:", isQLDA);
+            
+            // Kiểm tra xem phiếu nhập kho có thuộc dự án mà người dùng là QLDA không
+            var maDuan = "";
+            $('.table tbody tr').each(function () {
+                const link = $(this).find('td').eq(1).find('a');
+                const linkText = link.length > 0 ? link.text().trim() : $(this).find('td').eq(1).text().trim();
+                if (linkText === manhapkho) {
+                    maDuan = $(this).find('td').eq(3).text().trim();
+                    return false;
+                }
+            });
+            console.log("[QLDA DEBUG] maDuan:", maDuan);
+            
+            // Chỉ hiển thị nút nếu:
+            // 1. Trạng thái là "Chờ quản lý dự án duyệt"
+            // 2. Người dùng là QLDA (đã kiểm tra ở server-side)
+            // 3. Phiếu có mã dự án (không phải cá nhân)
+            var shouldShow = trangThai === "Chờ quản lý dự án duyệt" && isQLDA && maDuan && maDuan.trim() !== "";
+            console.log("[QLDA DEBUG] shouldShow:", shouldShow, {
+                trangThaiMatch: trangThai === "Chờ quản lý dự án duyệt",
+                isQLDA: isQLDA,
+                hasMaDuan: maDuan && maDuan.trim() !== ""
+            });
+            
+            if (shouldShow) {
+                $('#hidden-manhapkho').val(manhapkho);
+                $('#approve-buttons-container').show();
+                console.log("[QLDA DEBUG] Buttons shown for:", manhapkho);
+            } else {
+                $('#approve-buttons-container').hide();
+                console.log("[QLDA DEBUG] Buttons hidden");
+            }
+        }
+
+        // Override hàm showVTnhapkho để cập nhật nút duyệt
+        var originalShowVTnhapkho = window.showVTnhapkho;
+        window.showVTnhapkho = function(Manhapkho) {
+            if (originalShowVTnhapkho) {
+                originalShowVTnhapkho(Manhapkho);
+            }
+            
+            // Lấy trạng thái từ hàng được chọn
+            var trangThai = "";
+            $('.table tbody tr').each(function () {
+                const link = $(this).find('td').eq(1).find('a');
+                const linkText = link.length > 0 ? link.text().trim() : $(this).find('td').eq(1).text().trim();
+                if (linkText === Manhapkho) {
+                    const trangThaiCell = $(this).find('td').eq(6);
+                    trangThai = trangThaiCell.find('span').text().trim() || trangThaiCell.text().trim();
+                    return false;
+                }
+            });
+            
+            updateApproveButtons(Manhapkho, trangThai);
+        };
+
+        // Thêm event handler cho form submit để debug
+        $('#form-approve-phieunhapkho').on('submit', function(e) {
+            var manhapkho = $('#hidden-manhapkho').val();
+            var action = $('button[type="submit"]:focus').attr('name') === 'action' ? $('button[type="submit"]:focus').val() : 'approve';
+            console.log("[QLDA DEBUG] Form submit triggered:", { manhapkho, action });
+            console.log("[QLDA DEBUG] Form action URL:", $(this).attr('action'));
+            console.log("[QLDA DEBUG] Form method:", $(this).attr('method'));
+            
+            if (!manhapkho || manhapkho.trim() === '') {
+                console.error("[QLDA DEBUG] ERROR: MaNhapkho is empty!");
+                alert('Lỗi: Mã nhập kho không được để trống!');
+                e.preventDefault();
+                return false;
+            }
         });
     </script>
 </body>

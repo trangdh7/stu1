@@ -86,9 +86,11 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
 
         public IActionResult Phieunhapkho()
         {
+            // Sắp xếp: đưa các phiếu có trạng thái "Chờ Giám đốc duyệt" lên đầu
             var Phieunhapkholist = _context.phieunhapkho
-            .OrderByDescending(y => y.NgayNhapkho)
-            .ToList();              
+                .OrderByDescending(y => y.TrangThai == "Chờ Giám đốc duyệt")
+                .ThenByDescending(y => y.NgayNhapkho)
+                .ToList();              
             var VTphieunhapkholist = _context.vtphieunhapkho.ToList();
             var Duanslist = _context.duans.ToList();
             var model = new Phieunhapkhoviewmodel
@@ -193,16 +195,16 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             }
             else if (chucVu == "Giám đốc")
             {
-                // Giám đốc xem tất cả phiếu nhập kho chờ xử lý
-                thongbaonhapkhocount = _context.phieunhapkho.Count(p => p.TrangThai == "Chờ nhập kho" || p.TrangThai == "Sẵn sàng nhập kho" || p.TrangThai == "Giám đốc");
+                // Giám đốc xem các phiếu nhập kho chờ Giám đốc duyệt
+                thongbaonhapkhocount = _context.phieunhapkho.Count(p => p.TrangThai == "Chờ Giám đốc duyệt");
             }
 
-            var Maduanquanli = _context.duans
+            var MaduanquanliMain = _context.duans
                 .Where(da => da.MaNguoiQLDA == maNv)
                 .Select(da => da.MaDuan)
                 .ToList();
 
-            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Quản lí dự án" && Maduanquanli.Contains(p.YCMaDuan));
+            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Quản lí dự án" && MaduanquanliMain.Contains(p.YCMaDuan));
             int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == (chucVu + "-" + boPhan));
 
             // Yêu cầu ở bước Giám đốc: gồm cả trạng thái cũ "Giám đốc" và trạng thái mới "Chờ giám đốc duyệt"
@@ -305,16 +307,16 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             }
             else if (chucVu == "Giám đốc")
             {
-                // Giám đốc xem tất cả phiếu nhập kho chờ xử lý
-                thongbaonhapkhocount = _context.phieunhapkho.Count(p => p.TrangThai == "Chờ nhập kho" || p.TrangThai == "Sẵn sàng nhập kho" || p.TrangThai == "Giám đốc");
+                // Giám đốc xem các phiếu nhập kho chờ Giám đốc duyệt
+                thongbaonhapkhocount = _context.phieunhapkho.Count(p => p.TrangThai == "Chờ Giám đốc duyệt");
             }
 
-            var Maduanquanli = _context.duans
+            var MaduanquanliLayout = _context.duans
                 .Where(da => da.MaNguoiQLDA == maNv)
                 .Select(da => da.MaDuan)
                 .ToList();
 
-            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Quản lí dự án" && Maduanquanli.Contains(p.YCMaDuan));
+            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Quản lí dự án" && MaduanquanliLayout.Contains(p.YCMaDuan));
             int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == (chucVu + "-" + boPhan));
             // Trạng thái bước Giám đốc: gồm cả "Giám đốc" và "Chờ giám đốc duyệt"
             int Giamdocyeucaucount = _context.yeucau.Count(p =>
@@ -413,16 +415,16 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             }
             else if (chucVu == "Giám đốc")
             {
-                // Giám đốc xem tất cả phiếu nhập kho chờ xử lý
-                thongbaonhapkhocount = _context.phieunhapkho.Count(p => p.TrangThai == "Chờ nhập kho" || p.TrangThai == "Sẵn sàng nhập kho" || p.TrangThai == "Giám đốc");
+                // Giám đốc xem các phiếu nhập kho chờ Giám đốc duyệt
+                thongbaonhapkhocount = _context.phieunhapkho.Count(p => p.TrangThai == "Chờ Giám đốc duyệt");
             }
 
-            var Maduanquanli = _context.duans
+            var MaduanquanliTrangchu = _context.duans
                 .Where(da => da.MaNguoiQLDA == maNv)
                 .Select(da => da.MaDuan)
                 .ToList();
 
-            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Quản lí dự án" && Maduanquanli.Contains(p.YCMaDuan));
+            int QLDAyeucaucount = _context.yeucau.Count(p => p.TrangThai == "Quản lí dự án" && MaduanquanliTrangchu.Contains(p.YCMaDuan));
             int Duyetyeucaucount = _context.yeucau.Count(p => p.TrangThai == (chucVu + "-" + boPhan));
             // Yêu cầu ở bước Giám đốc: gồm cả trạng thái cũ "Giám đốc" và trạng thái mới "Chờ giám đốc duyệt"
             int Giamdocyeucaucount = _context.yeucau.Count(p =>
@@ -3134,17 +3136,28 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                 phieuxuatkho phieunhapkho,
                                 vtphieuxuatkho vtphieunhapkho, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho)
         {
+            Console.WriteLine("===========================================");
+            Console.WriteLine("[GIAMDOC DEBUG] Xuliphieunhapkho called");
+            Console.WriteLine($"[GIAMDOC DEBUG] MaNhapkho: {MaNhapkho}");
+            Console.WriteLine($"[GIAMDOC DEBUG] action: {action}");
+            
             var chucVu2 = HttpContext.Session.GetString("Chucvu");
             var boPhan2 = HttpContext.Session.GetString("Bophan");
             var maNv2 = HttpContext.Session.GetString("MaNguoidung");
+            
+            Console.WriteLine($"[GIAMDOC DEBUG] Session - Chucvu: {chucVu2}, Bophan: {boPhan2}, MaNguoidung: {maNv2}");
 
             var Phieunhapkho = _context.phieunhapkho.FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
             if (Phieunhapkho == null)
             {
+                Console.WriteLine($"[GIAMDOC DEBUG] ERROR: Không tìm thấy phiếu nhập kho với MaNhapkho: {MaNhapkho}");
                 return NotFound();
             }
 
+            Console.WriteLine($"[GIAMDOC DEBUG] Phieunhapkho found - TrangThai: {Phieunhapkho.TrangThai}, MaDuan: {Phieunhapkho.MaDuan}");
+
             var VTPhieunhapkholist = _context.vtphieunhapkho.Where(vt => vt.MaNhapkho == MaNhapkho).ToList();
+            Console.WriteLine($"[GIAMDOC DEBUG] Số lượng vật tư: {VTPhieunhapkholist.Count}");
 
             if (action == "approve")
             {
@@ -3168,8 +3181,13 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                         _context.vtphieunhapkho.Update(vt);
                     }
                 }
-                else if (Phieunhapkho.TrangThai == "Giám đốc" && chucVu2 == "Giám đốc")
+                else if ((Phieunhapkho.TrangThai == "Giám đốc" || 
+                         Phieunhapkho.TrangThai == "Chờ Giám đốc duyệt" ||
+                         Phieunhapkho.TrangThai?.Trim().Equals("Chờ Giám đốc duyệt", StringComparison.OrdinalIgnoreCase) == true) 
+                         && chucVu2 == "Giám đốc")
                 {
+                    Console.WriteLine("[GIAMDOC DEBUG] Trạng thái là 'Giám đốc' hoặc 'Chờ Giám đốc duyệt' và chucVu2 == 'Giám đốc'");
+                    Console.WriteLine("[GIAMDOC DEBUG] Điều kiện thỏa mãn - Chuyển trạng thái sang 'Chờ nhập kho'");
                     // Giám đốc duyệt
                     Phieunhapkho.TrangThai = "Chờ nhập kho";
                     foreach (var vt in VTPhieunhapkholist)
@@ -3321,11 +3339,16 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                         }
                     }
                 }
+                else
+                {
+                    Console.WriteLine($"[GIAMDOC DEBUG] Không khớp điều kiện nào - TrangThai: {Phieunhapkho.TrangThai}, chucVu2: {chucVu2}, boPhan2: {boPhan2}");
+                }
 
                 _context.phieunhapkho.Update(Phieunhapkho);
             }
             else if (action == "reject")
             {
+                Console.WriteLine("[GIAMDOC DEBUG] Action là 'reject'");
                 Phieunhapkho.TrangThai = $"{chucVu2} - Đã từ chối";
                 foreach (var vt in VTPhieunhapkholist)
                 {
@@ -3335,7 +3358,11 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 _context.phieunhapkho.Update(Phieunhapkho);
             }
             
+            Console.WriteLine($"[GIAMDOC DEBUG] Trạng thái sau khi xử lý: {Phieunhapkho.TrangThai}");
+            Console.WriteLine("[GIAMDOC DEBUG] Đang lưu thay đổi...");
             _context.SaveChanges();
+            Console.WriteLine("[GIAMDOC DEBUG] Đã lưu thành công. Redirecting...");
+            Console.WriteLine("===========================================");
             return RedirectToAction("Phieunhapkho", "Yeucau", new { area = "Giamdoc" });
         }
 

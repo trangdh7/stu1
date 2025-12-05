@@ -81,55 +81,7 @@
                             <td>@item.MaNguoidung</td>
                             <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
                             <td>
-                                @{
-                                    // Hiển thị trạng thái và nút duyệt theo quyền
-                                    var duan = Model.Duans?.FirstOrDefault(d => d.MaDuan == item.MaDuan);
-                                    var maQLDA = duan?.MaNguoiQLDA;
-                                    var isQLDA = !string.IsNullOrEmpty(maQLDA) && maQLDA == Context.Session.GetString("MaNguoidung");
-                                    var isGiamDoc = ChucvuSession == "Giám đốc";
-                                    var isKho = BophanSession == "BP kho";
-                                }
-                                
-                                @if (item.TrangThai == "Quản lí dự án" && isQLDA && isGiamDoc)
-                                {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt" onclick="event.stopPropagation();">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối" onclick="event.stopPropagation();">
-                                            <i class="bx bxs-x-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else if (item.TrangThai == "Giám đốc" && isGiamDoc)
-                                {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Duyệt" onclick="event.stopPropagation();">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="reject" class="btn-icon reject-btn" title="Từ chối" onclick="event.stopPropagation();">
-                                            <i class="bx bxs-x-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else if (item.TrangThai == "Chờ nhập kho" && isKho)
-                                {
-                                    @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "Giamdoc" }, FormMethod.Post))
-                                    {
-                                        <input type="hidden" name="MaNhapkho" value="@item.MaNhapkho" />
-                                        <button type="submit" name="action" value="approve" class="btn-icon approve-btn" title="Xác nhận nhập kho" onclick="event.stopPropagation();">
-                                            <i class="bx bxs-check-circle"></i>
-                                        </button>
-                                    }
-                                }
-                                else
-                                {
-                                    <span>@item.TrangThai</span>
-                                }
+                                <span>@item.TrangThai</span>
                             </td>
                         </tr>
                         STT++;
@@ -185,6 +137,18 @@
                 </tbody>
             </table>
         </div>
+        <div id="approve-buttons-container" style="display: none; text-align: right; margin-top: 20px; padding-right: 20px;">
+            <form asp-action="Xuliphieunhapkho" asp-controller="Yeucau" asp-area="Giamdoc" method="post" id="form-approve-phieunhapkho">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="MaNhapkho" id="hidden-manhapkho" value="" />
+                <button type="submit" name="action" value="approve" class="btn btn-success" style="margin-right: 10px; padding: 10px 20px; font-size: 16px; background-color: #28a745; border-color: #28a745; color: white;">
+                    <i class="bx bxs-check-circle"></i> Duyệt
+                </button>
+                <button type="submit" name="action" value="reject" class="btn btn-danger" style="padding: 10px 20px; font-size: 16px; background-color: #dc3545; border-color: #dc3545; color: white;">
+                    <i class="bx bxs-x-circle"></i> Từ chối
+                </button>
+            </form>
+        </div>
     </nav>
     <script src="~/js/phieunhapkho.js"></script>
     <script>
@@ -206,6 +170,68 @@
                     $(this).toggle(match);
                 });
             });
+        });
+
+        // Hàm để cập nhật hiển thị nút duyệt dựa trên trạng thái
+        function updateApproveButtons(manhapkho, trangThai) {
+            console.log("[GIAMDOC DEBUG] updateApproveButtons called:", { manhapkho, trangThai });
+            
+            var isGiamDoc = '@(Context.Session.GetString("Chucvu") == "Giám đốc")' === 'True';
+            console.log("[GIAMDOC DEBUG] isGiamDoc:", isGiamDoc);
+            
+            var shouldShow = isGiamDoc && (trangThai === "Chờ Giám đốc duyệt");
+            console.log("[GIAMDOC DEBUG] shouldShow:", shouldShow, {
+                isGiamDoc: isGiamDoc,
+                trangThaiMatch: trangThai === "Chờ Giám đốc duyệt",
+                trangThai: trangThai
+            });
+            
+            if (shouldShow) {
+                $('#hidden-manhapkho').val(manhapkho);
+                $('#approve-buttons-container').show();
+                console.log("[GIAMDOC DEBUG] Buttons shown for:", manhapkho);
+            } else {
+                $('#approve-buttons-container').hide();
+                console.log("[GIAMDOC DEBUG] Buttons hidden");
+            }
+        }
+
+        // Override hàm showVTnhapkho để cập nhật nút duyệt
+        var originalShowVTnhapkho = window.showVTnhapkho;
+        window.showVTnhapkho = function(Manhapkho) {
+            if (originalShowVTnhapkho) {
+                originalShowVTnhapkho(Manhapkho);
+            }
+            
+            // Lấy trạng thái từ hàng được chọn
+            var trangThai = "";
+            $('.table tbody tr').each(function () {
+                const link = $(this).find('td').eq(1).find('a');
+                const linkText = link.length > 0 ? link.text().trim() : $(this).find('td').eq(1).text().trim();
+                if (linkText === Manhapkho) {
+                    const trangThaiCell = $(this).find('td').eq(6);
+                    trangThai = trangThaiCell.find('span').text().trim() || trangThaiCell.text().trim();
+                    return false;
+                }
+            });
+            
+            updateApproveButtons(Manhapkho, trangThai);
+        };
+
+        // Thêm event handler cho form submit để debug
+        $('#form-approve-phieunhapkho').on('submit', function(e) {
+            var manhapkho = $('#hidden-manhapkho').val();
+            var action = $('button[type="submit"]:focus').attr('name') === 'action' ? $('button[type="submit"]:focus').val() : 'approve';
+            console.log("[GIAMDOC DEBUG] Form submit triggered:", { manhapkho, action });
+            console.log("[GIAMDOC DEBUG] Form action URL:", $(this).attr('action'));
+            console.log("[GIAMDOC DEBUG] Form method:", $(this).attr('method'));
+            
+            if (!manhapkho || manhapkho.trim() === '') {
+                console.error("[GIAMDOC DEBUG] ERROR: MaNhapkho is empty!");
+                alert('Lỗi: Mã nhập kho không được để trống!');
+                e.preventDefault();
+                return false;
+            }
         });
     </script>
 </body>

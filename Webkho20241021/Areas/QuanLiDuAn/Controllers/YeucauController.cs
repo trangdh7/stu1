@@ -31,9 +31,47 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
             foreach (var yeucau in Yeucaulist)
             {
+                // Kiểm tra và cập nhật trạng thái dựa trên vật tư trước
+                var vatTus = _context.vtyeucau.Where(v => v.VTMaYeucau == yeucau.MaYeucau).ToList();
+                
+                // Nếu có vật tư, kiểm tra trạng thái
+                if (vatTus.Any())
+                {
+                    // Kiểm tra xem còn vật tư nào đang chờ quản lý dự án duyệt không
+                    var hasAwaitingQLDA = vatTus.Any(v => IsAwaitingProjectManagerApproval(v.TrangThai));
+                    
+                    // Nếu không còn vật tư nào chờ QLDA duyệt và có ít nhất một vật tư đã được duyệt
+                    if (!hasAwaitingQLDA)
+                    {
+                        var hasApproved = vatTus.Any(v => IsPostProjectManagerStatus(v.TrangThai));
+                        var hasRejected = vatTus.Any(v => (v.TrangThai ?? string.Empty).Trim() == "Đã từ chối");
+                        
+                        // Chỉ cập nhật nếu trạng thái hiện tại không phải là các trạng thái bất biến
+                        var immutableStatuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                        {
+                            "Đang mua hàng",
+                            "Đã xuất kho",
+                            "Đã nhận hàng"
+                        };
+                        
+                        if (!immutableStatuses.Contains((yeucau.TrangThai ?? string.Empty).Trim()))
+                        {
+                            if (hasApproved)
+                            {
+                                yeucau.TrangThai = "Chờ giám đốc duyệt";
+                            }
+                            else if (hasRejected && !hasApproved)
+                            {
+                                yeucau.TrangThai = "Đã từ chối";
+                            }
+                        }
+                    }
+                }
+                
+                // Sau đó mới kiểm tra trạng thái "Đang mua hàng" (chỉ nếu chưa phải "Chờ giám đốc duyệt")
                 var phieus = PhieuMuaHangList.Where(p => p.MaYeucau == yeucau.MaYeucau).ToList();
-
-                if (phieus.Any(p => p.TrangThai != "Đã nhận hàng"))
+                if (phieus.Any(p => p.TrangThai != "Đã nhận hàng") && 
+                    !string.Equals(yeucau.TrangThai, "Chờ giám đốc duyệt", StringComparison.OrdinalIgnoreCase))
                 {
                     yeucau.TrangThai = "Đang mua hàng";
                 }
@@ -79,9 +117,17 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
         public IActionResult Phieunhapkho()
         {
+            var maNv = HttpContext.Session.GetString("MaNguoidung");
+            var Maduanquanli = _context.duans
+                .Where(d => d.MaNguoiQLDA == maNv)
+                .Select(d => d.MaDuan)
+                .ToList();
+            
+            // Sắp xếp: đưa các phiếu có trạng thái "Chờ quản lý dự án duyệt" và thuộc dự án quản lý lên đầu
             var Phieunhapkholist = _context.phieunhapkho
-            .OrderByDescending(y => y.NgayNhapkho)
-            .ToList();
+                .OrderByDescending(y => y.TrangThai == "Chờ quản lý dự án duyệt" && !string.IsNullOrEmpty(y.MaDuan) && Maduanquanli.Contains(y.MaDuan))
+                .ThenByDescending(y => y.NgayNhapkho)
+                .ToList();
             var VTphieunhapkholist = _context.vtphieunhapkho.ToList();
             var Duanslist = _context.duans.ToList();
             var model = new Phieunhapkhoviewmodel
@@ -810,6 +856,12 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             var boPhan = HttpContext.Session.GetString("Bophan");
             var maNv = HttpContext.Session.GetString("MaNguoidung");
 
+            // Lấy danh sách mã dự án mà người dùng là QLDA
+            var Maduanquanli = _context.duans
+                .Where(d => d.MaNguoiQLDA == maNv)
+                .Select(d => d.MaDuan)
+                .ToList();
+
             int thongbaomuahangcount = 0;
             if (boPhan == "BP mua hàng")
             {
@@ -832,11 +884,14 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             {
                 thongbaonhapkhocount = _context.phieunhapkho.Count(p => p.TrangThai == "Chờ nhập kho" || p.TrangThai == "Sẵn sàng nhập kho");
             }
-
-            var Maduanquanli = _context.duans
-                .Where(d => d.MaNguoiQLDA == maNv)
-                .Select(d => d.MaDuan)
-                .ToList();
+            else
+            {
+                // QLDA đếm các phiếu nhập kho có trạng thái "Chờ quản lý dự án duyệt" thuộc các dự án quản lý
+                thongbaonhapkhocount = _context.phieunhapkho.Count(p => 
+                    p.TrangThai == "Chờ quản lý dự án duyệt" && 
+                    !string.IsNullOrEmpty(p.MaDuan) && 
+                    Maduanquanli.Contains(p.MaDuan));
+            }
             // Đếm yêu cầu có trạng thái "Chờ quản lý dự án duyệt" thuộc các dự án quản lý
             int QLDAyeucaucount = _context.yeucau.Count(p => 
                 p.TrangThai == "Chờ quản lý dự án duyệt" && 
@@ -1179,7 +1234,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                 if (laBoPhanDuAn || laChucVuQLDA || laQLDADuAn)
                 {
-                    yeucau.TrangThai = laGiamdoc ? "Đã duyệt" : "Giám đốc";
+                    yeucau.TrangThai = laGiamdoc ? "Đã duyệt" : "Chờ giám đốc duyệt";
                 }
                 else if (duan != null)
                 {
@@ -2383,31 +2438,66 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                 phieuxuatkho phieunhapkho,
                                 vtphieuxuatkho vtphieunhapkho, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho)
         {
+            Console.WriteLine("===========================================");
+            Console.WriteLine("[QLDA DEBUG] Xuliphieunhapkho called");
+            Console.WriteLine($"[QLDA DEBUG] MaNhapkho: {MaNhapkho}");
+            Console.WriteLine($"[QLDA DEBUG] action: {action}");
+            
             var chucVu2 = HttpContext.Session.GetString("Chucvu");
             var boPhan2 = HttpContext.Session.GetString("Bophan");
             var maNv2 = HttpContext.Session.GetString("MaNguoidung");
+            
+            Console.WriteLine($"[QLDA DEBUG] Session - Chucvu: {chucVu2}, Bophan: {boPhan2}, MaNguoidung: {maNv2}");
 
             var Phieunhapkho = _context.phieunhapkho.FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
             if (Phieunhapkho == null)
             {
+                Console.WriteLine($"[QLDA DEBUG] ERROR: Không tìm thấy phiếu nhập kho với MaNhapkho: {MaNhapkho}");
                 return NotFound();
             }
 
+            Console.WriteLine($"[QLDA DEBUG] Phieunhapkho found - TrangThai: {Phieunhapkho.TrangThai}, MaDuan: {Phieunhapkho.MaDuan}");
+
             var VTPhieunhapkholist = _context.vtphieunhapkho.Where(vt => vt.MaNhapkho == MaNhapkho).ToList();
+            Console.WriteLine($"[QLDA DEBUG] Số lượng vật tư: {VTPhieunhapkholist.Count}");
             
             // Lấy thông tin dự án (nếu có)
             var duan = !string.IsNullOrEmpty(Phieunhapkho.MaDuan) 
                 ? _context.duans.FirstOrDefault(d => d.MaDuan == Phieunhapkho.MaDuan) 
                 : null;
+            
+            Console.WriteLine($"[QLDA DEBUG] Duan: {(duan != null ? $"MaDuan={duan.MaDuan}, MaNguoiQLDA={duan.MaNguoiQLDA}" : "null")}");
+            Console.WriteLine($"[QLDA DEBUG] maNv2 == duan.MaNguoiQLDA: {duan != null && duan.MaNguoiQLDA == maNv2}");
 
             if (action == "approve")
             {
                 // Workflow duyệt:
-                // 1. "Quản lí dự án" (nếu có dự án) -> Trưởng dự án duyệt -> "Giám đốc"
-                // 2. "Giám đốc" -> Giám đốc duyệt -> "Chờ nhập kho"
-                // 3. "Chờ nhập kho" -> Kho xử lý -> "Đã nhập kho" và cộng vào kho tổng
+                // 1. "Chờ quản lý dự án duyệt" -> Quản lý dự án duyệt -> "Chờ Giám đốc duyệt"
+                // 2. "Quản lí dự án" (nếu có dự án) -> Trưởng dự án duyệt -> "Giám đốc"
+                // 3. "Giám đốc" -> Giám đốc duyệt -> "Chờ nhập kho"
+                // 4. "Chờ nhập kho" -> Kho xử lý -> "Đã nhập kho" và cộng vào kho tổng
 
-                if (Phieunhapkho.TrangThai == "Quản lí dự án")
+                if (Phieunhapkho.TrangThai == "Chờ quản lý dự án duyệt" || 
+                    Phieunhapkho.TrangThai?.Trim().Equals("Chờ quản lý dự án duyệt", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    Console.WriteLine("[QLDA DEBUG] Trạng thái là 'Chờ quản lý dự án duyệt'");
+                    // Quản lý dự án duyệt
+                    if (duan != null && duan.MaNguoiQLDA == maNv2)
+                    {
+                        Console.WriteLine("[QLDA DEBUG] Điều kiện QLDA thỏa mãn - Chuyển trạng thái sang 'Chờ Giám đốc duyệt'");
+                        Phieunhapkho.TrangThai = "Chờ Giám đốc duyệt";
+                        foreach (var vt in VTPhieunhapkholist)
+                        {
+                            vt.TrangThai = "Chờ Giám đốc duyệt";
+                            _context.vtphieunhapkho.Update(vt);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[QLDA DEBUG] Điều kiện QLDA KHÔNG thỏa mãn - duan != null: {duan != null}, MaNguoiQLDA == maNv2: {duan != null && duan.MaNguoiQLDA == maNv2}");
+                    }
+                }
+                else if (Phieunhapkho.TrangThai == "Quản lí dự án")
                 {
                     // Trưởng dự án duyệt
                     if (duan != null && duan.MaNguoiQLDA == maNv2)
@@ -2420,7 +2510,9 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         }
                     }
                 }
-                else if (Phieunhapkho.TrangThai == "Giám đốc")
+                else if (Phieunhapkho.TrangThai == "Giám đốc" || 
+                         Phieunhapkho.TrangThai == "Chờ Giám đốc duyệt" ||
+                         Phieunhapkho.TrangThai?.Trim().Equals("Chờ Giám đốc duyệt", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // Giám đốc duyệt
                     if (chucVu2 == "Giám đốc")
