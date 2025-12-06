@@ -49,7 +49,10 @@
                 </li>
             </ul>
             <ul>
-                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
+                <form method="get" action="@Url.Action("Phieunhapkho", "Yeucau", new { area = "NhanvienKho" })" style="display: inline;">
+                    <input type="text" id="timkiem" name="search" placeholder="Tìm kiếm" value="@ViewBag.Search" />
+                    <button type="submit" style="display: none;">Tìm</button>
+                </form>
             </ul>
         </div>
 
@@ -109,10 +112,10 @@
 
                                 @if (item.TrangThai == "Đã nhập kho")
                                 {
-                                    <a href="@Url.Action("InPhieunhapkho", "Yeucau", new { area = "NhanvienKho", MaNhapkho = item.MaNhapkho })"
+                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "NhanvienKho", MaNhapkho = item.MaNhapkho })"
                                        target="_blank"
                                        class="btn-icon"
-                                       title="In phiếu">
+                                       title="In phiếu trả hàng">
                                         <i class="bx bx-printer"></i>
                                     </a>
                                 }

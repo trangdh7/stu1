@@ -89,6 +89,7 @@
                         <th class="col-maso">MÃ SỐ</th>
                         <th class="col-dvt">ĐVT</th>
                         <th class="col-soluong" colspan="2">SỐ LƯỢNG</th>
+                        <th class="col-diengiai">DIỄN GIẢI NHẬP KHO</th>
                         <th class="col-dongia">ĐƠN GIÁ</th>
                         <th class="col-thanhtien">THÀNH TIỀN</th>
                     </tr>
@@ -99,6 +100,7 @@
                         <th></th>
                         <th class="col-soluong-sub col-theoctu">THEO C. TỪ</th>
                         <th class="col-soluong-sub col-thucnhap">THỰC NHẬP</th>
+                        <th></th>
                         <th></th>
                         <th></th>
                     </tr>
@@ -127,13 +129,14 @@
                                 <td class="text-center">@(item.DonVi ?? "")</td>
                                 <td class="text-center col-theoctu"></td>
                                 <td class="text-right col-thucnhap">@(soLuong.ToString("N0"))</td>
+                                <td class="text-left">@((item.DiengiaiNhapKho ?? "").Trim())</td>
                                 <td class="text-right">@(donGia.ToString("N0"))</td>
                                 <td class="text-right">@(thanhTien.ToString("N0"))</td>
                             </tr>
                             stt++;
                         }
                         <tr>
-                            <td colspan="6" class="total-row">CỘNG:</td>
+                            <td colspan="7" class="total-row">CỘNG:</td>
                             <td class="text-right total-row">@(tongTien.ToString("N0"))</td>
                             <td></td>
                         </tr>

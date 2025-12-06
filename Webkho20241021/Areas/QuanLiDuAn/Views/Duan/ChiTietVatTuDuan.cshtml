@@ -149,7 +149,7 @@
                             <th>ĐV</th>
                             <th>Người nhận</th>
                             <th>Ngày xuất kho</th>
-                            <th>Ngày nhận</th>
+                            <th>TRẠNG THÁI</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -189,7 +189,7 @@
                                         }
                                     </td>
                                     <td>@(vt.NgayXuatkho?.ToString("dd/MM/yyyy") ?? "")</td>
-                                    <td>@(vt.NgayXacNhanNhan?.ToString("dd/MM/yyyy") ?? "")</td>
+                                    <td>@(vt.TrangThai ?? "")</td>
                                 </tr>
                                 stt++;
                             }

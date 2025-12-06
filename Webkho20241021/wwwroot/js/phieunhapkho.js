@@ -66,6 +66,12 @@ function showVTnhapkho(Manhapkho) {
     selectedManhapkho = Manhapkho;
     console.log("Mã nhập kho được chọn:", Manhapkho); 
 
+    // Luôn gán vào hidden field (nếu tồn tại) để form duyệt không bị trống mã
+    const hiddenMa = document.getElementById('hidden-manhapkho');
+    if (hiddenMa) {
+        hiddenMa.value = Manhapkho;
+    }
+
     const pathSegments = window.location.pathname.split('/');   
     const area = pathSegments.length > 1 ? pathSegments[1] : ''; // Giả sử area là segment đầu tiên sau dấu '/'
 
@@ -228,6 +234,33 @@ function showVTnhapkho(Manhapkho) {
             } else {
                 $('#btn-nhapkho').hide();
             }
+
+            // Hiển thị/ẩn nút Duyệt và Từ chối cho Giám đốc
+            // Chỉ hiển thị khi trạng thái là "Chờ Giám đốc duyệt"
+            const pathSegments = window.location.pathname.split('/');
+            const area = pathSegments.length > 1 ? pathSegments[1] : '';
+            
+            if (area === 'Giamdoc' && trangThaiPhieu === "Chờ Giám đốc duyệt") {
+                $('#btn-duyet').show();
+                $('#btn-tuchoi').show();
+            } else if (area === 'Giamdoc') {
+                // Ẩn nút nếu không phải trạng thái cần duyệt
+                $('#btn-duyet').hide();
+                $('#btn-tuchoi').hide();
+            }
+            
+            // Hiển thị/ẩn nút Duyệt và Từ chối cho Quản lý dự án và Trưởng BP kho
+            // Chỉ hiển thị khi trạng thái là "Chờ quản lý dự án duyệt"
+            if (area === 'QuanLiDuAn' && trangThaiPhieu === "Chờ quản lý dự án duyệt") {
+                // Hiển thị nút duyệt cho cả QLDA và Trưởng BP kho
+                // Controller sẽ kiểm tra quyền duyệt
+                $('#btn-duyet').show();
+                $('#btn-tuchoi').show();
+            } else if (area === 'QuanLiDuAn') {
+                // Ẩn nút nếu không phải trạng thái cần duyệt
+                $('#btn-duyet').hide();
+                $('#btn-tuchoi').hide();
+            }
         },
         error: function (xhr, status, error) {
             console.error("Lỗi khi gọi API:", error);
@@ -383,4 +416,15 @@ $(document).ready(function () {
     getThongbaoData();
     // Ẩn nút "Nhập kho" ban đầu
     $('#btn-nhapkho').hide();
+
+    // Đảm bảo khi bấm Duyệt/Từ chối thì mã phiếu luôn được gán vào hidden
+    // Chỉ set giá trị, không ngăn chặn form submit
+    $(document).on('click', '#approve-buttons-container button[type="submit"]', function (e) {
+        const hiddenMa = document.getElementById('hidden-manhapkho');
+        if (hiddenMa) {
+            hiddenMa.value = selectedManhapkho || hiddenMa.value || "";
+        }
+        console.log("[APPROVE DEBUG] Submit click - hidden MaNhapkho:", hiddenMa ? hiddenMa.value : "(null)");
+        // Không preventDefault - để form submit tự nhiên
+    });
 });

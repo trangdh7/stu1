@@ -112,12 +112,28 @@ function displayXuatKhoButton(MaXuatkho, $row, area) {
     // Lấy cột trạng thái để kiểm tra có nút không
     const $trangThaiCell = $row.find('td').eq(6); // Cột Trạng thái
     const $spanWithButton = $trangThaiCell.find('span[data-has-button="true"]');
+    const $spanWithButtonMuahang = $trangThaiCell.find('span[data-has-button-muahang="true"]');
     const $statusSpan = $trangThaiCell.find('span.status-waiting');
     
     let html = '';
     
-    // Kiểm tra xem có cần hiển thị nút không
-    if ($spanWithButton.length > 0 && bophan == "BP kho") {
+    // Kiểm tra xem có cần hiển thị nút tạo phiếu mua hàng không
+    if ($spanWithButtonMuahang.length > 0 && bophan == "BP kho") {
+        const maXuatKho = $spanWithButtonMuahang.data('ma-xuatkho') || MaXuatkho;
+        const action = $spanWithButtonMuahang.data('action') || 'taophieumuahang';
+        
+        // Tạo form với nút có text "Tạo Phiếu Mua Hàng"
+        html = `
+            <form action="/${area}/Yeucau/TaoPhieuMuaHangChoNhanVienMuahang" method="post" style="display: inline-block;">
+                <input type="hidden" name="MaXuatkho" value="${maXuatKho}" />
+                <button type="submit" class="btn-icon approve-btn" style="padding: 15px 30px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; font-weight: bold; min-width: 200px; white-space: nowrap;">
+                    <i class="bx bx-cart-add" style="font-size: 20px; vertical-align: middle;"></i> Tạo Phiếu Mua Hàng
+                </button>
+            </form>
+        `;
+    }
+    // Kiểm tra xem có cần hiển thị nút xuất kho không
+    else if ($spanWithButton.length > 0 && bophan == "BP kho") {
         const maXuatKho = $spanWithButton.data('ma-xuatkho') || MaXuatkho;
         const action = $spanWithButton.data('action') || 'approve';
         

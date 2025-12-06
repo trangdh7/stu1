@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 using Webkho_20241021.Areas.NhanvienKetoan.Data;
 using Webkho_20241021.Models;
 
@@ -22,55 +21,58 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
         public IActionResult Duan()
         {
             var Duanlist = _context.duans.ToList();
+            var Khoduanlist = _context.khoduans.ToList();
             ViewBag.CurrentUserId = HttpContext.Session.GetString("MaNguoidung");
             var model = new Duanviewmodel
             {
                 Duan = Duanlist,
-                KhoDuan = new List<khoduans>()
+                KhoDuan = Khoduanlist
             };
             return View(model);
         }
         public IActionResult ThemDuan()
         {
             var Tennguoidunglist = _context.nguoidungs
-                              .Select(n => new { n.TenNguoidung, n.MaNguoidung })
+                              .Select(n => new { n.TenNguoidung, n.MaNguoidung })  // Lấy cả MaNguoidung
                               .ToList();
 
             ViewBag.Tennguoidunglist = Tennguoidunglist;
             return View();
         }
+
         public IActionResult GetVTDuan(string MaDuan)
         {
             var vatTuList = from vt in _context.vtphieuxuatkho
-                           join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
-                           where px.MaDuan == MaDuan
-                                 && (vt.TrangThai == "Đã xác nhận nhận hàng" 
-                                     || vt.TrangThai == "Đã xuất kho" 
-                                     || px.TrangThai == "Đã xác nhận nhận hàng" 
-                                     || px.TrangThai == "Hoàn thành")
-                           select new {
-                               TenSanpham = vt.TenSanpham,
-                               MaSanpham = vt.MaSanpham,
-                               DAMakho = vt.Makho,
-                               HangSX = vt.HangSX,
-                               NhaCC = vt.NhaCC,
-                               SL = vt.SL,
-                               DonVi = vt.DonVi,
-                               NgayNhapkho = vt.NgayNhapkho ?? px.NgayXacNhanNhan,
-                               NgayBaohanh = vt.NgayBaohanh,
-                               ThoiGianBH = vt.ThoiGianBH,
-                               TrangThai = vt.TrangThai ?? "Đã xác nhận nhận hàng"
-                           };
+                            join px in _context.phieuxuatkho on vt.MaXuatkho equals px.MaXuatkho
+                            where px.MaDuan == MaDuan
+                                  && (vt.TrangThai == "Đã xác nhận nhận hàng"
+                                      || vt.TrangThai == "Đã xuất kho"
+                                      || px.TrangThai == "Đã xác nhận nhận hàng"
+                                      || px.TrangThai == "Hoàn thành")
+                            select new
+                            {
+                                TenSanpham = vt.TenSanpham,
+                                MaSanpham = vt.MaSanpham,
+                                DAMakho = vt.Makho,
+                                HangSX = vt.HangSX,
+                                NhaCC = vt.NhaCC,
+                                SL = vt.SL,
+                                DonVi = vt.DonVi,
+                                NgayNhapkho = vt.NgayNhapkho ?? px.NgayXacNhanNhan,
+                                NgayBaohanh = vt.NgayBaohanh,
+                                ThoiGianBH = vt.ThoiGianBH,
+                                TrangThai = vt.TrangThai ?? "Đã xác nhận nhận hàng"
+                            };
 
             var result = vatTuList.GroupBy(v => new { v.MaSanpham, v.DAMakho })
-                                 .Select(g => g.First())
-                                 .ToList();
+                                  .Select(g => g.First())
+                                  .ToList();
 
             return Json(result);
         }
 
         [HttpPost]
-        public IActionResult ThemDuanSQL(duans duans, nguoidungs nguoidungs)
+        public IActionResult ThemDuanSQL(duans duans)
         {
             duans.TrangThai = "Chờ";
 
@@ -83,6 +85,7 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
         [HttpPost]
         public async Task<IActionResult> Xuliduan(string MaDuan, string action)
         {
+
             var duan = await _context.duans.FirstOrDefaultAsync(d => d.MaDuan == MaDuan);
             if (duan == null)
             {
@@ -96,6 +99,7 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                 TempData["Error"] = "Chỉ người quản lý dự án được phép cập nhật tiến trình dự án này.";
                 return RedirectToAction("Duan", "Duan", new { area = "NhanvienKetoan" });
             }
+            // Xử lý các hành động dựa trên trạng thái hiện tại và giá trị action
             if (action == "start" && duan.TrangThai == "Chờ")
             {
                 duan.NgayBatdau = DateTime.Now;
@@ -107,11 +111,12 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                 duan.TrangThai = "Đã hoàn thành";
             }
 
+            // Lưu thay đổi vào cơ sở dữ liệu
             _context.Update(duan);
             await _context.SaveChangesAsync();
 
+            // Quay lại trang danh sách dự án
             return RedirectToAction("Duan", "Duan", new { area = "NhanvienKetoan" });
         }
     }
 }
-

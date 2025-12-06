@@ -88,13 +88,16 @@
                                 <span>@item.TrangThai</span>
                             </td>
                             <td>
-                                    <a href="@Url.Action("InPhieunhapkho", "Yeucau", new { area = "TruongBPKho", MaNhapkho = item.MaNhapkho })" 
+                                @if (item.TrangThai == "Đã nhập kho")
+                                {
+                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "TruongBPKho", MaNhapkho = item.MaNhapkho })" 
                                        target="_blank" 
                                        class="btn-icon" 
-                                   title="In phiếu"
-                                   onclick="event.stopPropagation();">
+                                       title="In phiếu"
+                                       onclick="event.stopPropagation();">
                                         <i class="bx bx-printer"></i>
                                     </a>
+                                }
                             </td>
                         </tr>
                         STT++;

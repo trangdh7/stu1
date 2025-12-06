@@ -181,9 +181,12 @@
                     </button>
                 }
             }
-            <button type="button" class="btn btn-print" onclick="window.print()">
-                🖨️ In phiếu nhập kho
-            </button>
+            @if (phieunhapkho?.TrangThai == "Đã nhập kho")
+            {
+                <button type="button" class="btn btn-print" onclick="window.print()">
+                    🖨️ In phiếu nhập kho
+                </button>
+            }
             <button type="button" class="btn" style="background-color: #17a2b8; color: white;" onclick="kiemTraGiaTien()">
                 🔍 Kiểm tra giá tiền
             </button>

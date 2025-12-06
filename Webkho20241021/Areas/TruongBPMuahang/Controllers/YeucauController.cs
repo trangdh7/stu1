@@ -20,7 +20,7 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         {
             _context = context;
         }
-        public IActionResult Yeucau()
+        public IActionResult Yeucau(string search = "")
         {
             var userRole = HttpContext.Session.GetString("Chucvu");
 
@@ -45,6 +45,23 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 .ThenByDescending(y => y.NgayYeucau)
                 .ToList();
 
+            // Áp dụng tìm kiếm nếu có
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = search.Trim().ToLower();
+                SortedYeucaulist = SortedYeucaulist
+                    .Where(y =>
+                        (y.MaYeucau != null && y.MaYeucau.ToLower().Contains(searchTerm)) ||
+                        (y.TenYeucau != null && y.TenYeucau.ToLower().Contains(searchTerm)) ||
+                        (y.NguoiYeucau != null && y.NguoiYeucau.ToLower().Contains(searchTerm)) ||
+                        (y.Bophan != null && y.Bophan.ToLower().Contains(searchTerm)) ||
+                        (y.YCMaNguoidung != null && y.YCMaNguoidung.ToLower().Contains(searchTerm)) ||
+                        (y.YCMaDuan != null && y.YCMaDuan.ToLower().Contains(searchTerm)) ||
+                        (y.TrangThai != null && y.TrangThai.ToLower().Contains(searchTerm))
+                    )
+                    .ToList();
+            }
+
             var VTyeucaulist = _context.vtyeucau.ToList();
             var Duans = _context.duans.ToList();
 
@@ -55,40 +72,76 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 Duans = Duans
             };
 
+            ViewBag.Search = search;
             return View(model);
         }
 
-        public IActionResult Phieuxuatkho()
+        public IActionResult Phieuxuatkho(string search = "")
         {
             var Phieuxuatkholist = _context.phieuxuatkho
             .OrderByDescending(y => y.TrangThai == "Chờ lấy hàng")
             .ThenByDescending(y => y.TrangThai == "Đang chuẩn bị hàng")
             .ThenByDescending(y => y.NgayXuatkho)
             .ToList();
+
+            // Áp dụng tìm kiếm nếu có
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = search.Trim().ToLower();
+                Phieuxuatkholist = Phieuxuatkholist
+                    .Where(p =>
+                        (p.MaXuatkho != null && p.MaXuatkho.ToLower().Contains(searchTerm)) ||
+                        (p.MaYeucau != null && p.MaYeucau.ToLower().Contains(searchTerm)) ||
+                        (p.MaDuan != null && p.MaDuan.ToLower().Contains(searchTerm)) ||
+                        (p.MaNguoidung != null && p.MaNguoidung.ToLower().Contains(searchTerm)) ||
+                        (p.TrangThai != null && p.TrangThai.ToLower().Contains(searchTerm)) ||
+                        (p.GhiChu != null && p.GhiChu.ToLower().Contains(searchTerm))
+                    )
+                    .ToList();
+            }
+
             var VTphieuxuatkholist = _context.vtphieuxuatkho.ToList();
             var model = new Phieuxuatkhoviewmodel
             {
                 Phieuxuatkho = Phieuxuatkholist,
                 VTphieuxuatkho = VTphieuxuatkholist,
             };
+            ViewBag.Search = search;
             return View(model);
         }
 
-        public IActionResult Phieunhapkho()
+        public IActionResult Phieunhapkho(string search = "")
         {
             var Phieunhapkholist = _context.phieunhapkho
             .OrderByDescending(y => y.NgayNhapkho)
             .ToList();
+
+            // Áp dụng tìm kiếm nếu có
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = search.Trim().ToLower();
+                Phieunhapkholist = Phieunhapkholist
+                    .Where(p =>
+                        (p.MaNhapkho != null && p.MaNhapkho.ToLower().Contains(searchTerm)) ||
+                        (p.MaYeucau != null && p.MaYeucau.ToLower().Contains(searchTerm)) ||
+                        (p.MaDuan != null && p.MaDuan.ToLower().Contains(searchTerm)) ||
+                        (p.MaNguoidung != null && p.MaNguoidung.ToLower().Contains(searchTerm)) ||
+                        (p.TrangThai != null && p.TrangThai.ToLower().Contains(searchTerm))
+                    )
+                    .ToList();
+            }
+
             var VTphieunhapkholist = _context.vtphieunhapkho.ToList();
             var model = new Phieunhapkhoviewmodel
             {
                 Phieunhapkho = Phieunhapkholist,
                 VTphieunhapkho = VTphieunhapkholist,
             };
+            ViewBag.Search = search;
             return View(model);
         }
 
-        public IActionResult Phieumuahang()
+        public IActionResult Phieumuahang(string search = "")
         {
             var Phieumuahanglist = _context.phieumuahang
             .OrderByDescending(y => y.TrangThai == "Đã thanh toán")
@@ -104,12 +157,31 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     phieu.TenNguoiyeucau = ten;
                 }
             }
+
+            // Áp dụng tìm kiếm nếu có
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = search.Trim().ToLower();
+                Phieumuahanglist = Phieumuahanglist
+                    .Where(p =>
+                        (p.MaMuahang != null && p.MaMuahang.ToLower().Contains(searchTerm)) ||
+                        (p.MaYeucau != null && p.MaYeucau.ToLower().Contains(searchTerm)) ||
+                        (p.MaDuan != null && p.MaDuan.ToLower().Contains(searchTerm)) ||
+                        (p.MaNguoidung != null && p.MaNguoidung.ToLower().Contains(searchTerm)) ||
+                        (p.TenNguoiyeucau != null && p.TenNguoiyeucau.ToLower().Contains(searchTerm)) ||
+                        (p.TrangThai != null && p.TrangThai.ToLower().Contains(searchTerm)) ||
+                        (p.GhiChu != null && p.GhiChu.ToLower().Contains(searchTerm))
+                    )
+                    .ToList();
+            }
+
             var VTphieumuahanglist = _context.vtphieumuahang.ToList();
             var model = new Phieumuahangviewmodel
             {
                 Phieumuahang = Phieumuahanglist,
                 VTphieumuahang = VTphieumuahanglist,
             };
+            ViewBag.Search = search;
             return View(model);
         }
 
@@ -190,9 +262,41 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         [HttpGet]
         public IActionResult GetVTYeucau(string MaYeucau)
         {
-            var vatTuList = _context.vtyeucau
-                                 .Where(v => v.VTMaYeucau == MaYeucau).ToList();
-            return Json(vatTuList);
+            // Kiểm tra nếu là yêu cầu nhập kho (mã bắt đầu bằng "NHAPKHO_")
+            if (!string.IsNullOrEmpty(MaYeucau) && MaYeucau.StartsWith("NHAPKHO_"))
+            {
+                // Lấy dữ liệu từ vtphieunhapkho thông qua phieunhapkho
+                var vatTuList = (from vtnk in _context.vtphieunhapkho
+                                join pnk in _context.phieunhapkho on vtnk.MaNhapkho equals pnk.MaNhapkho
+                                where pnk.MaYeucau == MaYeucau
+                                select new
+                                {
+                                    ID = vtnk.ID,
+                                    VTMaYeucau = MaYeucau,
+                                    TenSanpham = vtnk.TenSanpham,
+                                    MaSanpham = vtnk.MaSanpham,
+                                    YCMakho = vtnk.Makho,
+                                    HangSX = vtnk.HangSX,
+                                    NhaCC = vtnk.NhaCC,
+                                    SL = vtnk.SL,
+                                    DonVi = vtnk.DonVi,
+                                    NgayCanHang = (DateTime?)null,
+                                    NgayNhapkho = vtnk.NgayNhapkho,
+                                    NgayBaohanh = vtnk.NgayBaohanh,
+                                    ThoiGianBH = vtnk.ThoiGianBH,
+                                    NgayDuyet = (DateTime?)null,
+                                    TrangThai = vtnk.TrangThai,
+                                    GhiChu = (string?)null
+                                }).ToList();
+                return Json(vatTuList);
+            }
+            else
+            {
+                // Lấy dữ liệu từ vtyeucau như bình thường
+                var vatTuList = _context.vtyeucau
+                                     .Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                return Json(vatTuList);
+            }
         }
 
         [HttpGet]
@@ -325,6 +429,165 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         }
 
         [HttpPost]
+        public IActionResult XuLyVatTuYeucauWithCheckbox(string MaYeucau, string VatTuData)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(VatTuData))
+                {
+                    return Json(new { success = false, message = "Không có dữ liệu vật tư." });
+                }
+
+                // Parse JSON data
+                var vatTuList = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(VatTuData);
+                if (vatTuList == null || !vatTuList.Any())
+                {
+                    return Json(new { success = false, message = "Dữ liệu vật tư không hợp lệ." });
+                }
+
+                // Kiểm tra xem yêu cầu có mã dự án không
+                var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                bool hasMaDuan = yeucau != null && !string.IsNullOrWhiteSpace(yeucau.YCMaDuan);
+                
+                // Xác định trạng thái tiếp theo dựa trên việc có mã dự án hay không
+                string nextTrangThaiVT = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ giám đốc duyệt";
+                string nextTrangThaiYC = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ Giám đốc duyệt";
+
+                int processedCount = 0;
+                int skippedCount = 0;
+
+                foreach (var item in vatTuList)
+                {
+                    var maSanpham = item.ContainsKey("MaSanpham") ? item["MaSanpham"]?.ToString() : null;
+                    var isApproved = item.ContainsKey("IsApproved") && 
+                                    item["IsApproved"] is System.Text.Json.JsonElement jsonElement && 
+                                    jsonElement.GetBoolean();
+                    var ghiChu = item.ContainsKey("GhiChu") ? item["GhiChu"]?.ToString() : null;
+
+                    if (string.IsNullOrEmpty(maSanpham))
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    var vatTu = _context.vtyeucau
+                        .FirstOrDefault(v => v.VTMaYeucau == MaYeucau && v.MaSanpham == maSanpham);
+
+                    if (vatTu == null)
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // Helper function để kiểm tra xem vật tư có đang chờ Trưởng BP mua hàng duyệt không
+                    Func<string, bool> isAwaitingTruongBPStatus = status =>
+                    {
+                        if (string.IsNullOrWhiteSpace(status))
+                        {
+                            return true;
+                        }
+                        var normalized = status.Trim();
+                        return normalized.Equals("Chờ Trưởng BP-BP mua hàng duyệt", StringComparison.OrdinalIgnoreCase)
+                            || normalized.StartsWith("Chờ Trưởng BP", StringComparison.OrdinalIgnoreCase)
+                            || normalized.Contains("chờ trưởng bp", StringComparison.OrdinalIgnoreCase);
+                    };
+
+                    // Helper function để kiểm tra xem vật tư đã được duyệt chưa
+                    Func<string, bool> isAlreadyApproved = status =>
+                    {
+                        if (string.IsNullOrWhiteSpace(status))
+                        {
+                            return false;
+                        }
+                        var normalized = status.Trim();
+                        return normalized == "Đã duyệt" ||
+                               normalized == "Đang mua hàng" ||
+                               normalized == "Đã xuất kho" ||
+                               normalized == "Đã nhận hàng" ||
+                               normalized == "Chờ giám đốc duyệt" ||
+                               normalized == "Chờ quản lý dự án duyệt";
+                    };
+
+                    // Helper function để kiểm tra xem vật tư đã bị từ chối chưa
+                    Func<string, bool> isAlreadyRejected = status =>
+                    {
+                        if (string.IsNullOrWhiteSpace(status))
+                        {
+                            return false;
+                        }
+                        return status.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase);
+                    };
+
+                    // Chỉ xử lý các vật tư đang chờ Trưởng BP mua hàng duyệt và chưa được duyệt/từ chối
+                    if (!isAwaitingTruongBPStatus(vatTu.TrangThai) || 
+                        isAlreadyApproved(vatTu.TrangThai) || 
+                        isAlreadyRejected(vatTu.TrangThai))
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    if (isApproved)
+                    {
+                        // Duyệt vật tư
+                        vatTu.NgayDuyet = DateTime.Now;
+                        vatTu.TrangThai = nextTrangThaiVT;
+                        vatTu.GhiChu = null; // Xóa ghi chú khi duyệt
+                    }
+                    else
+                    {
+                        // Từ chối vật tư
+                        vatTu.NgayDuyet = DateTime.Now;
+                        vatTu.TrangThai = "Đã từ chối";
+                        vatTu.GhiChu = ghiChu; // Lưu ghi chú khi từ chối
+                    }
+
+                    _context.vtyeucau.Update(vatTu);
+                    processedCount++;
+                }
+
+                _context.SaveChanges();
+
+                // Cập nhật trạng thái yêu cầu nếu tất cả vật tư đã được duyệt
+                if (yeucau != null)
+                {
+                    var chucVu = HttpContext.Session.GetString("Chucvu");
+                    var boPhan = HttpContext.Session.GetString("Bophan");
+                    
+                    // Kiểm tra xem tất cả vật tư đã được trưởng phòng duyệt chưa
+                    var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                    var allApprovedByTruongBP = allVatTu.All(v => v.TrangThai == nextTrangThaiVT || 
+                                                                   v.TrangThai == "Đã duyệt" || 
+                                                                   v.TrangThai == "Đang mua hàng" || 
+                                                                   v.TrangThai == "Đã xuất kho" || 
+                                                                   v.TrangThai == "Đã nhận hàng" ||
+                                                                   v.TrangThai == "Chờ giám đốc duyệt" ||
+                                                                   v.TrangThai == "Chờ quản lý dự án duyệt" ||
+                                                                   (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
+                    
+                    if (allApprovedByTruongBP && chucVu == "Trưởng BP" && boPhan == "BP mua hàng")
+                    {
+                        yeucau.TrangThai = nextTrangThaiYC;
+                        _context.yeucau.Update(yeucau);
+                        _context.SaveChanges();
+                    }
+                }
+
+                string message = $"Đã xử lý {processedCount} vật tư thành công.";
+                if (skippedCount > 0)
+                {
+                    message += $" ({skippedCount} vật tư đã được xử lý trước đó hoặc không ở trạng thái chờ duyệt)";
+                }
+
+                return Json(new { success = true, message = message });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
         public IActionResult XuLyTatCaVatTuYeucau(string MaYeucau, string action)
         {
             try
@@ -375,8 +638,49 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                         
                         if (allApprovedByTruongBP && chucVu == "Trưởng BP" && boPhan == "BP mua hàng")
                         {
-                            // Tất cả vật tư đã được trưởng phòng duyệt, cập nhật trạng thái yêu cầu để chuyển sang Giám đốc
-                            yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            // Kiểm tra trạng thái hiện tại của yêu cầu
+                            if (yeucau.TrangThai == "Chờ Trưởng BP-BP mua hàng duyệt")
+                            {
+                                // Kiểm tra xem có phải là yêu cầu nhập kho không
+                                bool isNhapKho = !string.IsNullOrEmpty(yeucau.MaYeucau) && 
+                                                (yeucau.MaYeucau.StartsWith("NHAPKHO_DUAN_") || 
+                                                 yeucau.MaYeucau.StartsWith("NHAPKHO_CANHAN_"));
+                                
+                                if (isNhapKho)
+                                {
+                                    // Nếu là nhập kho
+                                    if (yeucau.MaYeucau.StartsWith("NHAPKHO_DUAN_"))
+                                    {
+                                        // Dự án: Chờ quản lý dự án duyệt
+                                        yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                                    }
+                                    else if (yeucau.MaYeucau.StartsWith("NHAPKHO_CANHAN_"))
+                                    {
+                                        // Cá nhân: Chờ Giám đốc duyệt
+                                        yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                                    }
+                                }
+                                else
+                                {
+                                    // Nếu là yêu cầu vật tư thông thường
+                                    var duan = _context.duans.FirstOrDefault(d => d.MaDuan == yeucau.YCMaDuan);
+                                    if (duan != null)
+                                    {
+                                        // Có dự án: Chờ quản lý dự án duyệt
+                                        yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                                    }
+                                    else
+                                    {
+                                        // Cá nhân: Chờ Giám đốc duyệt
+                                        yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Giữ logic cũ cho các trường hợp khác
+                                yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            }
                             _context.yeucau.Update(yeucau);
                             
                             // Đồng bộ trạng thái tất cả vật tư - đảm bảo tất cả vật tư đều có trạng thái "Chờ giám đốc duyệt"
@@ -681,99 +985,125 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
 
                 var duan = _context.duans.FirstOrDefault(d => d.MaDuan == yeucau.YCMaDuan);
 
-                if (duan != null)
+                // Áp dụng quy tắc duyệt mới
+                if (chucVu2 == "Giám đốc")
                 {
+                    // Quy tắc 4: Giám đốc → Đã duyệt
+                    yeucau.TrangThai = "Đã duyệt";
+                }
+                else if (duan != null)
+                {
+                    // Có dự án
                     string maNguoiQLDA = duan.MaNguoiQLDA;
                     if (maNv2 == maNguoiQLDA)
                     {
+                        // Quy tắc 3: Quản lý dự án (người trùng mã QLDA)
                         if (chucVu2 == "Trưởng BP")
                         {
-                            yeucau.TrangThai = "Giám đốc";
+                            yeucau.TrangThai = "Chờ Giám đốc duyệt";
                         }
                         else if (chucVu2 == "Giám đốc")
                         {
                             yeucau.TrangThai = "Đã duyệt";
-
                         }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
+                        else if (chucVu2 == "Nhân viên")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
-                        {
-                            yeucau.TrangThai = "Trưởng BP-BP kho";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
-                        {
-                            yeucau.TrangThai = "Trưởng BP-BP mua hàng";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kế toán")
-                        {
-                            yeucau.TrangThai = "Trưởng BP-BP kế toán";
+                            // Quy tắc 1: Nhân viên → Chờ Trưởng BP-BP {bộ phận} duyệt
+                            if (boPhan2 == "BP kỹ thuật")
+                            {
+                                yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
+                            }
+                            else if (boPhan2 == "BP kho")
+                            {
+                                yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
+                            }
+                            else if (boPhan2 == "BP mua hàng")
+                            {
+                                yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
+                            }
+                            else if (boPhan2 == "BP kế toán")
+                            {
+                                yeucau.TrangThai = "Chờ Trưởng BP-BP kế toán duyệt";
+                            }
                         }
                     }
                     else
                     {
-                        if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
+                        // Không phải quản lý dự án nhưng có dự án
+                        if (chucVu2 == "Nhân viên")
                         {
-                            yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
+                            // Quy tắc 1: Nhân viên → Chờ Trưởng BP-BP {bộ phận} duyệt
+                            if (boPhan2 == "BP kỹ thuật")
+                            {
+                                yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
+                            }
+                            else if (boPhan2 == "BP kho")
+                            {
+                                yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
+                            }
+                            else if (boPhan2 == "BP mua hàng")
+                            {
+                                yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
+                            }
+                            else if (boPhan2 == "BP kế toán")
+                            {
+                                yeucau.TrangThai = "Chờ Trưởng BP-BP kế toán duyệt";
+                            }
                         }
-                        else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
+                        else if (chucVu2 == "Trưởng BP")
                         {
-                            yeucau.TrangThai = "Quản lí dự án";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
-                        {
-                            yeucau.TrangThai = "Trưởng BP-BP kho";
-                        }
-                        else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
-                        {
-                            yeucau.TrangThai = "Quản lí dự án";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
-                        {
-                            yeucau.TrangThai = "Trưởng BP-BP mua hàng";
-                        }
-                        else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
-                        {
-                            yeucau.TrangThai = "Quản lí dự án";
-                        }
-                        else if (chucVu2 == "Giám đốc")
-                        {
-                            yeucau.TrangThai = "Đã duyệt";
+                            // Quy tắc 2: Trưởng BP thuộc dự án → Chờ quản lý dự án duyệt
+                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
                         }
                     }
                 }
                 else
                 {
-                    if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
+                    // Không có dự án
+                    if (chucVu2 == "Nhân viên")
                     {
-                        yeucau.TrangThai = "Trưởng BP-BP kỹ thuật";
+                        // Quy tắc 1: Nhân viên → Chờ Trưởng BP-BP {bộ phận} duyệt
+                        if (boPhan2 == "BP kỹ thuật")
+                        {
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
+                        }
+                        else if (boPhan2 == "BP kho")
+                        {
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
+                        }
+                        else if (boPhan2 == "BP mua hàng")
+                        {
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
+                        }
+                        else if (boPhan2 == "BP kế toán")
+                        {
+                            yeucau.TrangThai = "Chờ Trưởng BP-BP kế toán duyệt";
+                        }
                     }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
+                    else if (chucVu2 == "Trưởng BP")
                     {
-                        yeucau.TrangThai = "Giám đốc";
+                        // Quy tắc 2: Trưởng BP không thuộc dự án → Chờ Giám đốc duyệt
+                        yeucau.TrangThai = "Chờ Giám đốc duyệt";
                     }
-                    else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
+                }
+                
+                // Đảm bảo trạng thái luôn được set đúng
+                if (string.IsNullOrEmpty(yeucau.TrangThai))
+                {
+                    if (chucVu2 == "Giám đốc")
                     {
-                        yeucau.TrangThai = "Trưởng BP-BP kho";
-                    }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
-                    {
-                        yeucau.TrangThai = "Giám đốc";
-                    }
-                    else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
-                    {
-                        yeucau.TrangThai = "Trưởng BP-BP mua hàng";
+                        yeucau.TrangThai = "Đã duyệt";
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
                     {
-                        yeucau.TrangThai = "Giám đốc";
-                    }
-                    else if (chucVu2 == "Giám đốc")
-                    {
-                        yeucau.TrangThai = "Đã duyệt";
-
+                        if (duan != null)
+                        {
+                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                        }
+                        else
+                        {
+                            yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                        }
                     }
                 }
 
@@ -867,15 +1197,51 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
 
             if (action == "approve")
             {
+                // Xử lý khi trạng thái là "Chờ Trưởng BP-BP mua hàng duyệt"
+                if (Yeucau.TrangThai == "Chờ Trưởng BP-BP mua hàng duyệt" && chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
+                {
+                    // Kiểm tra xem có phải là yêu cầu nhập kho không
+                    bool isNhapKho = !string.IsNullOrEmpty(Yeucau.MaYeucau) && 
+                                    (Yeucau.MaYeucau.StartsWith("NHAPKHO_DUAN_") || 
+                                     Yeucau.MaYeucau.StartsWith("NHAPKHO_CANHAN_"));
+                    
+                    if (isNhapKho)
+                    {
+                        // Nếu là nhập kho
+                        if (Yeucau.MaYeucau.StartsWith("NHAPKHO_DUAN_"))
+                        {
+                            // Dự án: Chờ quản lý dự án duyệt
+                            Yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                        }
+                        else if (Yeucau.MaYeucau.StartsWith("NHAPKHO_CANHAN_"))
+                        {
+                            // Cá nhân: Chờ Giám đốc duyệt
+                            Yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                        }
+                    }
+                    else
+                    {
+                        // Nếu là yêu cầu vật tư thông thường
+                        if (duan != null)
+                        {
+                            // Có dự án: Chờ quản lý dự án duyệt
+                            Yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                        }
+                        else
+                        {
+                            // Cá nhân: Chờ Giám đốc duyệt
+                            Yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                        }
+                    }
+                }
                 // Kiểm tra trạng thái hiện tại - chỉ xử lý nếu trạng thái phù hợp với vai trò
                 // Nếu trạng thái đã là "Giám đốc" hoặc "Đã duyệt", không xử lý (để giám đốc xử lý)
-                if (Yeucau.TrangThai == "Giám đốc" || Yeucau.TrangThai == "Đã duyệt")
+                else if (Yeucau.TrangThai == "Giám đốc" || Yeucau.TrangThai == "Đã duyệt")
                 {
                     // Trạng thái đã được xử lý bởi giám đốc, không làm gì
                     return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPMuahang" });
                 }
-
-                if (duan != null)
+                else if (duan != null)
                 {
                     string maNguoiQLDA = duan.MaNguoiQLDA;
                     if (maNv2 == maNguoiQLDA)
@@ -1363,6 +1729,58 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
 
                     }
                 }
+                // Đồng bộ trạng thái vật tư yêu cầu và yêu cầu tổng khi đã xuất kho
+                foreach (var VTxuatkho in VTphieuxuatkho)
+                {
+                    var vtYeucauList = _context.vtyeucau
+                        .Where(v => v.VTMaYeucau == VTxuatkho.MaYeucau && v.MaSanpham == VTxuatkho.MaSanpham)
+                        .ToList();
+
+                    foreach (var vtYc in vtYeucauList)
+                    {
+                        if (vtYc.TrangThai != "Đã xuất kho")
+                        {
+                            vtYc.TrangThai = "Đã xuất kho";
+                            _context.vtyeucau.Update(vtYc);
+                        }
+                    }
+                }
+
+                var maYeucauList = VTphieuxuatkho
+                    .Select(v => v.MaYeucau)
+                    .Where(ma => !string.IsNullOrEmpty(ma))
+                    .Distinct()
+                    .ToList();
+
+                foreach (var maYc in maYeucauList)
+                {
+                    var yeuCau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == maYc);
+                    if (yeuCau == null)
+                    {
+                        continue;
+                    }
+
+                    var vtList = _context.vtyeucau
+                        .Where(v => v.VTMaYeucau == maYc)
+                        .ToList();
+
+                    var allDoneOrRejected = vtList.All(v =>
+                        v.TrangThai == "Đã xuất kho" ||
+                        (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
+
+                    var hasDangMuaHang = vtList.Any(v => v.TrangThai == "Đang mua hàng");
+
+                    if (allDoneOrRejected)
+                    {
+                        yeuCau.TrangThai = "Đã xuất kho";
+                    }
+                    else if (hasDangMuaHang)
+                    {
+                        yeuCau.TrangThai = "Đang mua hàng";
+                    }
+
+                    _context.yeucau.Update(yeuCau);
+                }
                 Phieuxuatkho.TrangThai = "Đã lấy hàng";
                 _context.phieuxuatkho.Update(Phieuxuatkho);
                 _context.SaveChanges();
@@ -1643,7 +2061,7 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         [HttpPost]
         public IActionResult ThemPhieunhapkhoSQL(phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho,
             string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC,
-            int[] SL, string[] DonVi, string[] Makho, string LoaiNhapkho)
+            int[] SL, string[] DonVi, string[] Makho, string LoaiNhapkho, decimal[] DonGia, string[] DiengiaiNhapKho)
         {
             var maNv = HttpContext.Session.GetString("MaNguoidung");
             if (string.IsNullOrEmpty(maNv))
@@ -1830,6 +2248,13 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 {
                     if (string.IsNullOrEmpty(TenSanpham[i])) continue;
 
+                    decimal donGia = DonGia != null && i < DonGia.Length ? DonGia[i] : 0;
+                    int soLuong = (SL != null && i < SL.Length) ? SL[i] : 0;
+                    decimal thanhTien = donGia * soLuong;
+                    string diengiaiNhapKho = (DiengiaiNhapKho != null && i < DiengiaiNhapKho.Length)
+                        ? (DiengiaiNhapKho[i] ?? "Không sử dụng")
+                        : "Không sử dụng";
+
                     var newvtphieunhapkho = new vtphieunhapkho
                     {
                         TenSanpham = TenSanpham[i],
@@ -1837,8 +2262,11 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                         Makho = Makho?[i] ?? "",
                         HangSX = HangSX?[i] ?? "",
                         NhaCC = NhaCC?[i] ?? "",
-                        SL = SL?[i] ?? 0,
+                        SL = soLuong,
                         DonVi = DonVi?[i] ?? "",
+                        DiengiaiNhapKho = diengiaiNhapKho,
+                        DonGia = donGia,
+                        ThanhTien = thanhTien,
                         TrangThai = phieunhapkho.TrangThai,
                         MaNhapkho = MaNhapkho,
                         MaYeucau = phieunhapkho.MaYeucau
@@ -2385,8 +2813,30 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại khi tạo vtphieunhapkho
             }
 
+            // Đảm bảo requestedMakho tồn tại trong khotongs trước khi sử dụng
+            var verifiedKho = _context.khotongs.FirstOrDefault(k => k.Makho == requestedMakho);
+            if (verifiedKho == null)
+            {
+                // Nếu không tồn tại, tạo lại
+                var newKhoTong = new khotongs
+                {
+                    Makho = requestedMakho,
+                    TenSanpham = vtPhieumuahang.TenSanpham,
+                    MaSanpham = vtPhieumuahang.MaSanpham,
+                    HangSX = vtPhieumuahang.HangSX,
+                    NhaCC = vtPhieumuahang.NhaCC,
+                    DonVi = vtPhieumuahang.DonVi,
+                    SL = 0,
+                    NgayNhapkho = DateTime.Now,
+                    TrangThai = "Chờ nhập kho",
+                    LoaiCapPhat = "Kho tổng"
+                };
+                _context.khotongs.Add(newKhoTong);
+                _context.SaveChanges();
+            }
+
             // Đảm bảo vtyeucau có YCMakho tương ứng với requestedMakho
-            if (!string.IsNullOrEmpty(vtPhieumuahang.MaYeucau))
+            if (!string.IsNullOrEmpty(vtPhieumuahang.MaYeucau) && !string.IsNullOrEmpty(requestedMakho))
             {
                 // Tìm vtyeucau tương ứng dựa trên MaYeucau và thông tin sản phẩm
                 var vtyeucauList = _context.vtyeucau
@@ -2470,6 +2920,73 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
             }
 
             return candidate;
+        }
+
+        // In phiếu trả hàng
+        [HttpGet]
+        public IActionResult InPhietrahang(string MaNhapkho)
+        {
+            if (string.IsNullOrEmpty(MaNhapkho))
+            {
+                return NotFound();
+            }
+
+            var phieunhapkho = _context.phieunhapkho
+                .FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
+
+            if (phieunhapkho == null)
+            {
+                return NotFound();
+            }
+
+            var vtphieunhapkho = _context.vtphieunhapkho
+                .Where(vt => vt.MaNhapkho == MaNhapkho)
+                .ToList();
+
+            var yeucau = _context.yeucau
+                .FirstOrDefault(y => y.MaYeucau == phieunhapkho.MaYeucau);
+
+            var nguoiBanGiao = !string.IsNullOrEmpty(phieunhapkho.MaNguoidung)
+                ? _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == phieunhapkho.MaNguoidung)
+                : null;
+
+            string tenNguoiBanGiao = "";
+            string bophanNguoiBanGiao = "";
+            if (yeucau != null)
+            {
+                tenNguoiBanGiao = yeucau.NguoiYeucau ?? "";
+                var nguoiYeuCau = !string.IsNullOrEmpty(yeucau.YCMaNguoidung)
+                    ? _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == yeucau.YCMaNguoidung)
+                    : null;
+                bophanNguoiBanGiao = nguoiYeuCau?.Bophan ?? "";
+            }
+            else if (nguoiBanGiao != null)
+            {
+                tenNguoiBanGiao = nguoiBanGiao.TenNguoidung ?? "";
+                bophanNguoiBanGiao = nguoiBanGiao.Bophan ?? "";
+            }
+
+            // Lấy thông tin dự án
+            var duan = !string.IsNullOrEmpty(phieunhapkho.MaDuan)
+                ? _context.duans.FirstOrDefault(d => d.MaDuan == phieunhapkho.MaDuan)
+                : null;
+            string tenDuan = duan?.TenDuan ?? "";
+            string maDuan = duan?.MaDuan ?? "";
+
+            // Lấy thông tin Trưởng BP Kho làm người nhận
+            var nguoiNhan = _context.nguoidungs
+                .FirstOrDefault(n => n.Chucvu == "Trưởng BP" && n.Bophan == "BP kho");
+
+            ViewBag.Phieunhapkho = phieunhapkho;
+            ViewBag.VTPhieunhapkho = vtphieunhapkho;
+            ViewBag.Yeucau = yeucau;
+            ViewBag.TenNguoiBanGiao = tenNguoiBanGiao;
+            ViewBag.BophanNguoiBanGiao = bophanNguoiBanGiao;
+            ViewBag.TenDuan = tenDuan;
+            ViewBag.MaDuan = maDuan;
+            ViewBag.NguoiNhan = nguoiNhan;
+
+            return View();
         }
 
     }

@@ -118,12 +118,15 @@
                                 }
                             </td>
                             <td>
-                                <a href="@Url.Action("InPhieunhapkho", "Yeucau", new { area = "TruongBPKetoan", MaNhapkho = item.MaNhapkho })" 
-                                   target="_blank" 
-                                   class="btn-icon" 
-                                   title="In phiếu">
-                                    <i class="bx bx-printer"></i>
-                                </a>
+                                @if (item.TrangThai == "Đã nhập kho")
+                                {
+                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "TruongBPKetoan", MaNhapkho = item.MaNhapkho })" 
+                                       target="_blank" 
+                                       class="btn-icon" 
+                                       title="In phiếu">
+                                        <i class="bx bx-printer"></i>
+                                    </a>
+                                }
                             </td>
                         </tr>
                         STT++;

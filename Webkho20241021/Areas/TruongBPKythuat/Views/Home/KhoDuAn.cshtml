@@ -54,12 +54,7 @@
                                 <th>Dự án</th>
                                 <th>Số lượng</th>
                                 <th>Đơn vị</th>
-                                <th>Ngày nhập kho</th>
-                                <th>Ngày bảo hành</th>
-                                <th>Thời gian BH</th>
                                 <th>Trạng thái</th>
-                                <th>Loại cấp phát</th>
-                                
                             </tr>
                         </thead>
                         <tbody>
@@ -81,11 +76,7 @@
                 <td>@item.DuAn</td>
                 <td>@item.SL</td>
                 <td>@item.DonVi</td>
-                <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
-                <td>@item.NgayBaohanh?.ToString("dd/MM/yyyy")</td>
-                <td>@item.ThoiGianBH?.ToString("dd/MM/yyyy")</td>
-                <td>@(item.SL > 0 ? "Tồn Kho" : "Hết Hàng")</td>
-                <td>@item.LoaiCapPhat</td>
+                <td>@item.TrangThai</td>
             </tr>
 
             stt++;
@@ -94,7 +85,7 @@
     else
     {
         <tr>
-            <td colspan="14">Không có dữ liệu.</td>
+            <td colspan="10">Không có dữ liệu.</td>
         </tr>
     }
 </tbody>

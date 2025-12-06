@@ -200,9 +200,14 @@ button {
   top: 0;
 }
 
+.tablethietbi thead th {
+  border: 1px solid #000000;
+}
+
 .tablethietbi th,
 .tablethietbi td {
   padding: 5px 12px;
+  border: 1px solid #000000;
 }
 
 .tablethietbi tbody tr {

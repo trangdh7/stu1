@@ -1,4 +1,4 @@
-﻿
+
 @{
     ViewData["Title"] = "Phieunhapkho";
     Layout = "~/Areas/Giamdoc/Views/Layout/Layout.cshtml";
@@ -59,6 +59,7 @@
                         <td>Người yêu cầu</td>
                         <td>Ngày nhập kho</td>
                         <td>Trạng thái</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -82,6 +83,18 @@
                             <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
                             <td>
                                 <span>@item.TrangThai</span>
+                            </td>
+                            <td>
+                                @if (item.TrangThai == "Đã nhập kho")
+                                {
+                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "Giamdoc", MaNhapkho = item.MaNhapkho })" 
+                                       target="_blank" 
+                                       class="btn-icon" 
+                                       title="In phiếu"
+                                       onclick="event.stopPropagation();">
+                                        <i class="bx bx-printer"></i>
+                                    </a>
+                                }
                             </td>
                         </tr>
                         STT++;
@@ -137,19 +150,20 @@
                 </tbody>
             </table>
         </div>
-        <div id="approve-buttons-container" style="display: none; text-align: right; margin-top: 20px; padding-right: 20px;">
-            <form asp-action="Xuliphieunhapkho" asp-controller="Yeucau" asp-area="Giamdoc" method="post" id="form-approve-phieunhapkho">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="MaNhapkho" id="hidden-manhapkho" value="" />
-                <button type="submit" name="action" value="approve" class="btn btn-success" style="margin-right: 10px; padding: 10px 20px; font-size: 16px; background-color: #28a745; border-color: #28a745; color: white;">
-                    <i class="bx bxs-check-circle"></i> Duyệt
-                </button>
-                <button type="submit" name="action" value="reject" class="btn btn-danger" style="padding: 10px 20px; font-size: 16px; background-color: #dc3545; border-color: #dc3545; color: white;">
-                    <i class="bx bxs-x-circle"></i> Từ chối
-                </button>
-            </form>
+        <div style="text-align: right; padding: 20px 20px 0 0;">
+            <button id="btn-duyet" type="button" style="background-color: #336600; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; display: none; margin-left: 10px;">
+                Duyệt
+            </button>
+            <button id="btn-tuchoi" type="button" style="background-color: #336600; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; display: none; margin-left: 10px;">
+                Từ chối
+            </button>
         </div>
     </nav>
+    @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+    @{
+        var requestToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    }
+    <input type="hidden" id="RequestVerificationToken" name="__RequestVerificationToken" value="@requestToken" />
     <script src="~/js/phieunhapkho.js"></script>
     <script>
         $(document).ready(function () {
@@ -170,68 +184,79 @@
                     $(this).toggle(match);
                 });
             });
-        });
 
-        // Hàm để cập nhật hiển thị nút duyệt dựa trên trạng thái
-        function updateApproveButtons(manhapkho, trangThai) {
-            console.log("[GIAMDOC DEBUG] updateApproveButtons called:", { manhapkho, trangThai });
-            
-            var isGiamDoc = '@(Context.Session.GetString("Chucvu") == "Giám đốc")' === 'True';
-            console.log("[GIAMDOC DEBUG] isGiamDoc:", isGiamDoc);
-            
-            var shouldShow = isGiamDoc && (trangThai === "Chờ Giám đốc duyệt");
-            console.log("[GIAMDOC DEBUG] shouldShow:", shouldShow, {
-                isGiamDoc: isGiamDoc,
-                trangThaiMatch: trangThai === "Chờ Giám đốc duyệt",
-                trangThai: trangThai
-            });
-            
-            if (shouldShow) {
-                $('#hidden-manhapkho').val(manhapkho);
-                $('#approve-buttons-container').show();
-                console.log("[GIAMDOC DEBUG] Buttons shown for:", manhapkho);
-            } else {
-                $('#approve-buttons-container').hide();
-                console.log("[GIAMDOC DEBUG] Buttons hidden");
-            }
-        }
-
-        // Override hàm showVTnhapkho để cập nhật nút duyệt
-        var originalShowVTnhapkho = window.showVTnhapkho;
-        window.showVTnhapkho = function(Manhapkho) {
-            if (originalShowVTnhapkho) {
-                originalShowVTnhapkho(Manhapkho);
-            }
-            
-            // Lấy trạng thái từ hàng được chọn
-            var trangThai = "";
-            $('.table tbody tr').each(function () {
-                const link = $(this).find('td').eq(1).find('a');
-                const linkText = link.length > 0 ? link.text().trim() : $(this).find('td').eq(1).text().trim();
-                if (linkText === Manhapkho) {
-                    const trangThaiCell = $(this).find('td').eq(6);
-                    trangThai = trangThaiCell.find('span').text().trim() || trangThaiCell.text().trim();
-                    return false;
+            // Xử lý nút Duyệt
+            $('#btn-duyet').on('click', function() {
+                if (!selectedManhapkho) {
+                    alert("Vui lòng chọn phiếu nhập kho trước.");
+                    return;
                 }
+                
+                if (!confirm("Bạn có chắc chắn muốn duyệt phiếu nhập kho " + selectedManhapkho + "?")) {
+                    return;
+                }
+                
+                submitPhieunhapkhoAction('approve');
             });
-            
-            updateApproveButtons(Manhapkho, trangThai);
-        };
 
-        // Thêm event handler cho form submit để debug
-        $('#form-approve-phieunhapkho').on('submit', function(e) {
-            var manhapkho = $('#hidden-manhapkho').val();
-            var action = $('button[type="submit"]:focus').attr('name') === 'action' ? $('button[type="submit"]:focus').val() : 'approve';
-            console.log("[GIAMDOC DEBUG] Form submit triggered:", { manhapkho, action });
-            console.log("[GIAMDOC DEBUG] Form action URL:", $(this).attr('action'));
-            console.log("[GIAMDOC DEBUG] Form method:", $(this).attr('method'));
-            
-            if (!manhapkho || manhapkho.trim() === '') {
-                console.error("[GIAMDOC DEBUG] ERROR: MaNhapkho is empty!");
-                alert('Lỗi: Mã nhập kho không được để trống!');
-                e.preventDefault();
-                return false;
+            // Xử lý nút Từ chối
+            $('#btn-tuchoi').on('click', function() {
+                if (!selectedManhapkho) {
+                    alert("Vui lòng chọn phiếu nhập kho trước.");
+                    return;
+                }
+                
+                if (!confirm("Bạn có chắc chắn muốn từ chối phiếu nhập kho " + selectedManhapkho + "?")) {
+                    return;
+                }
+                
+                submitPhieunhapkhoAction('reject');
+            });
+
+            // Hàm submit action
+            function submitPhieunhapkhoAction(action) {
+                const pathSegments = window.location.pathname.split('/');
+                const area = pathSegments.length > 1 ? pathSegments[1] : '';
+                const url = `/${area}/Yeucau/Xuliphieunhapkho`;
+                
+                // Tạo form để submit
+                const form = $('<form>', {
+                    method: 'POST',
+                    action: url
+                });
+                
+                form.append($('<input>', {
+                    type: 'hidden',
+                    name: 'MaNhapkho',
+                    value: selectedManhapkho
+                }));
+                
+                form.append($('<input>', {
+                    type: 'hidden',
+                    name: 'submitAction',
+                    value: action
+                }));
+                
+                // Thêm token chống CSRF
+                const token = $('#RequestVerificationToken').val() || $('input[name="__RequestVerificationToken"]').val();
+                if (token) {
+                    form.append($('<input>', {
+                        type: 'hidden',
+                        name: '__RequestVerificationToken',
+                        value: token
+                    }));
+                }
+                
+                $('body').append(form);
+                form.submit();
             }
+
+            // Lưu hàm vào global scope để có thể gọi từ phieunhapkho.js
+            window.submitPhieunhapkhoAction = submitPhieunhapkhoAction;
+
+            // Ẩn các nút khi trang tải
+            $('#btn-duyet').hide();
+            $('#btn-tuchoi').hide();
         });
     </script>
 </body>

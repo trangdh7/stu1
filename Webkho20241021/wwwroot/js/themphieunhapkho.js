@@ -14,7 +14,7 @@ function handleLoaiNhapkhoChange() {
     }
     
     // Xóa dữ liệu cũ
-    tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Chọn dự án hoặc đợi load dữ liệu...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center;">Chọn dự án hoặc đợi load dữ liệu...</td></tr>';
     
     if (loai === "duan") {
         // Từ dự án: cho phép chọn mã dự án
@@ -43,7 +43,7 @@ function handleDuanChange() {
         if (searchSection) {
             searchSection.style.display = "none";
         }
-        tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Chọn dự án để xem vật tư...</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center;">Chọn dự án để xem vật tư...</td></tr>';
         return;
     }
     
@@ -121,7 +121,7 @@ async function loadVatTuTuKhoDuan(maduan) {
             const tableBody = document.getElementById("table-body");
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="9" style="text-align:center; padding: 20px;">
+                    <td colspan="12" style="text-align:center; padding: 20px;">
                         <div style="color: #999;">
                             Không có vật tư nào trong kho dự án này.<br>
                             <small style="font-size: 12px;">
@@ -194,9 +194,16 @@ function renderTable(items) {
     tableBody.innerHTML = ""; // Xóa nội dung cũ
     
     if (!items || items.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Không có vật tư nào.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center;">Không có vật tư nào.</td></tr>';
         return;
     }
+    
+    const reasonChoices = [
+        "Không sử dụng",
+        "Lỗi do người dùng",
+        "Lỗi do nhà sản xuất",
+        "Lỗi khác"
+    ];
     
     items.forEach((item, index) => {
         // Escape HTML để tránh XSS
@@ -206,6 +213,13 @@ function renderTable(items) {
             div.textContent = str;
             return div.innerHTML;
         };
+
+        const selectedReason = reasonChoices.includes(item.diengiaiNhapKho)
+            ? item.diengiaiNhapKho
+            : "Không sử dụng";
+        const optionsHtml = reasonChoices
+            .map(reason => `<option value="${reason}"${reason === selectedReason ? " selected" : ""}>${reason}</option>`)
+            .join("");
         
         const row = `
             <tr>
@@ -219,6 +233,12 @@ function renderTable(items) {
                 <td><span class="borrowed-qty">${item.sl || 0}</span></td>
                 <td><input type="number" name="SL" value="" min="1" step="1" max="${item.sl || 0}" placeholder="Nhập số lượng" style="width:100px;" class="quantity-input" /></td>
                 <td><input type="text" name="DonVi" value="${escapeHtml(item.donVi || '')}" readonly /></td>
+                <td>
+                    <select name="DiengiaiNhapKho" class="diengiai-select" style="min-width: 160px;">
+                        ${optionsHtml}
+                    </select>
+                </td>
+                <td><input type="text" name="DonGia" value="${escapeHtml(item.donGia || '')}" readonly /></td>
             </tr>
         `;
         tableBody.insertAdjacentHTML("beforeend", row);

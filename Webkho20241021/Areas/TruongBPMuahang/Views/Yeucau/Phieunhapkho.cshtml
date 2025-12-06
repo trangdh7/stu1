@@ -59,6 +59,7 @@
                         <td>Người yêu cầu</td>
                         <td>Ngày nhập kho</td>
                         <td>Trạng thái</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,6 +116,18 @@
                                 {
                                     @item.TrangThai
                                     ;
+                                }
+                            </td>
+                            <td>
+                                @if (item.TrangThai == "Đã nhập kho")
+                                {
+                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "TruongBPMuahang", MaNhapkho = item.MaNhapkho })" 
+                                       target="_blank" 
+                                       class="btn-icon" 
+                                       title="In phiếu"
+                                       onclick="event.stopPropagation();">
+                                        <i class="bx bx-printer"></i>
+                                    </a>
                                 }
                             </td>
                         </tr>

@@ -53,7 +53,10 @@
                 </li>
             </ul>
             <ul>
-                <input type="text" id="timkiem" name="Timkiem" placeholder="Tìm kiếm" />
+                <form method="get" action="@Url.Action("Phieuxuatkho", "Yeucau", new { area = "NhanvienKho" })" style="display: inline;">
+                    <input type="text" id="timkiem" name="search" placeholder="Tìm kiếm" value="@ViewBag.Search" />
+                    <button type="submit" style="display: none;">Tìm</button>
+                </form>
             </ul>
         </div>
 

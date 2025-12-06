@@ -1,0 +1,195 @@
+@{
+    ViewData["Title"] = "In Phiếu Trả Hàng";
+    Layout = null;
+}
+@using Webkho_20241021.Models
+@{
+    var phieunhapkho = ViewBag.Phieunhapkho as phieunhapkho;
+    var vtphieunhapkho = ViewBag.VTPhieunhapkho as List<vtphieunhapkho>;
+    var tenNguoiBanGiao = ViewBag.TenNguoiBanGiao as string ?? "";
+    var bophanNguoiBanGiao = ViewBag.BophanNguoiBanGiao as string ?? "";
+    var tenDuan = ViewBag.TenDuan as string ?? "";
+    var maDuan = ViewBag.MaDuan as string ?? "";
+    var nguoiNhan = ViewBag.NguoiNhan as nguoidungs;
+    var tenNguoiNhan = "";
+    var bophanNguoiNhan = "";
+    var sdtNguoiBanGiao = ViewBag.SdtNguoiBanGiao as string ?? "";
+    var sdtNguoiNhan = "";
+    var soPhieu = $"PTH-STU";
+    var ngayTra = phieunhapkho?.NgayNhapkho ?? DateTime.Now;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHIẾU TRẢ HÀNG</title>
+    <link rel="stylesheet" href="~/css/phietrahang.css" />
+</head>
+
+<body>
+    <div class="print-container">
+
+        <!-- Header -->
+        <div class="header">
+            <div class="company-name">STU JSC</div>
+            <div class="form-title">PHIẾU TRẢ HÀNG</div>
+        </div>
+
+    <!-- INFO SECTION - 2 columns -->
+    <div class="info-section">
+        <!-- Left: Người bàn giao -->
+        <div class="info-left">
+            <div class="info-left-title">Người bàn giao:</div>
+            <div class="info-row">
+                <div class="info-label">Người bàn giao:</div>
+                <div class="info-value">@tenNguoiBanGiao</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Bộ phận:</div>
+                <div class="info-value">@bophanNguoiBanGiao</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Sđt:</div>
+                <div class="info-value">@sdtNguoiBanGiao</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Tên dự án:</div>
+                <div class="info-value">@tenDuan</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Mã dự án:</div>
+                <div class="info-value">@maDuan</div>
+            </div>
+        </div>
+
+        <!-- Right: Người nhận -->
+        <div class="info-right">
+            <div class="info-right-title">Người nhận:</div>
+            <div class="info-row">
+                <div class="info-label">Người nhận:</div>
+                <input type="text" class="info-input" value="@tenNguoiNhan" placeholder="Điền tên người nhận" />
+            </div>
+                <div class="info-row">
+                    <div class="info-label">Bộ phận:</div>
+                    <input type="text" class="info-input" value="@bophanNguoiNhan" placeholder="Nhập bộ phận" />
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Sđt:</div>
+                    <input type="text" class="info-input" value="@sdtNguoiNhan" placeholder="Nhập số điện thoại" />
+                </div>
+            <div class="info-row">
+                <div class="info-label">Ngày trả:</div>
+                <div class="info-value">@ngayTra.ToString("dd/MM/yyyy")</div>
+            </div>
+            <div class="info-row" style="margin-top: 10px;">
+                <div class="info-label">Số phiếu:</div>
+                <div class="info-value" style="display: inline-flex; align-items: center;">
+                    <span style="border-bottom: 1px dotted #000; min-width: 100px; margin-right: 5px;">&nbsp;</span>
+                    <span>@soPhieu</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Reason Section -->
+        <div class="reason-section">
+            <div class="reason-title">Lý do trả:</div>
+            <div class="reason-checkboxes">
+                <div class="reason-item">
+                    <input type="checkbox" id="reason1" />
+                    <label for="reason1">Không sử dụng</label>
+                </div>
+                <div class="reason-item">
+                    <input type="checkbox" id="reason2" />
+                    <label for="reason2">Lỗi do người dùng</label>
+                </div>
+                <div class="reason-item">
+                    <input type="checkbox" id="reason3" />
+                    <label for="reason3">Lỗi do nhà sản xuất</label>
+                </div>
+                <div class="reason-item">
+                    <input type="checkbox" id="reason4" />
+                    <label for="reason4">Lỗi khác</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table>
+        <thead>
+            <tr>
+                <th class="col-tt">TT</th>
+                <th class="col-ten">Tên hàng hóa</th>
+                <th class="col-maso">Mã/Thông số</th>
+                <th class="col-hang">Hãng SX</th>
+                <th class="col-dvt">ĐVT</th>
+                <th class="col-sl">SL</th>
+                <th class="col-diengiai">Diễn giải lỗi hàng trả</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                int stt = 1;
+                if (vtphieunhapkho != null && vtphieunhapkho.Any())
+                {
+                    foreach (var item in vtphieunhapkho)
+                    {
+                            <tr>
+                                <td class="text-center">@stt</td>
+                                <td>@(item.TenSanpham ?? "")</td>
+                                <td>@(item.MaSanpham ?? "")</td>
+                                <td class="text-center">@(item.HangSX ?? "")</td>
+                                <td class="text-center">@(item.DonVi ?? "")</td>
+                                <td class="text-center">@(item.SL ?? 0)</td>
+                                <td>@(item.DiengiaiNhapKho ?? "")</td>
+                            </tr>
+                        stt++;
+                    }
+                }
+                else
+                {
+                        <tr>
+                            <td colspan="7" class="text-center">Không có dữ liệu</td>
+                        </tr>
+                }
+            }
+        </tbody>
+            </table>
+        </div>
+
+        <!-- Date Section -->
+        <div class="date-section">
+            Ngày @ngayTra.ToString("dd") tháng @ngayTra.ToString("MM") năm @ngayTra.ToString("yyyy")
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-title">DUYỆT TRẢ HÀNG</div>
+                <div class="signature-line">(Ký, ghi rõ họ tên)</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-title">NGƯỜI GIAO</div>
+                <div class="signature-line">(Ký, ghi rõ họ tên)</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-title">NGƯỜI NHẬN</div>
+                <div class="signature-line">(Ký, ghi rõ họ tên)</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-title">BP.MUA HÀNG</div>
+                <div class="signature-line">(Ký, ghi rõ họ tên)</div>
+            </div>
+    </div>
+    </div>
+
+    <div class="no-print">
+        <button onclick="window.print()" class="print-button">
+            In phiếu
+        </button>
+    </div>
+
+</body>
+</html>

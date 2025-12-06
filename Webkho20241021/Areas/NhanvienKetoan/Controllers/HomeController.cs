@@ -72,9 +72,6 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             int count = TenSanpham.Length;
             var MakhoPrefix = "STU";
 
-            // Tạo một danh sách để lưu các mục hợp lệ
-            List<khotongs> validKhotongs = new List<khotongs>();
-
             for (int i = 0; i < count; i++)
             {
                 if (string.IsNullOrWhiteSpace(TenSanpham[i]) || string.IsNullOrWhiteSpace(MaSanpham[i]) ||
@@ -83,39 +80,48 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                     continue;
                 }
 
-                string Makho;
-                int index = _context.khotongs.Count() + i + 1; // Khởi tạo index bắt đầu từ số lượng hiện tại + i
+                // Kiểm tra nếu tồn tại thiết bị với các thuộc tính giống nhau
+                var existingItem = _context.khotongs
+                    .FirstOrDefault(k => k.TenSanpham == TenSanpham[i] && k.MaSanpham == MaSanpham[i] && k.HangSX == HangSX[i]);
 
-                do
+                if (existingItem != null)
                 {
-                    Makho = $"{MakhoPrefix}{index}";
-                    index++;
+                    // Nếu tồn tại, cộng số lượng
+                    existingItem.SL += SL[i];
+                    _context.khotongs.Update(existingItem);
                 }
-                while (_context.khotongs.Any(k => k.Makho == Makho));
-
-                var khotongs = new khotongs
+                else
                 {
-                    TenSanpham = TenSanpham[i],
-                    MaSanpham = MaSanpham[i],
-                    HangSX = HangSX[i],
-                    NhaCC = NhaCC[i],
-                    SL = SL[i],
-                    DonVi = DonVi[i],
-                    NgayBaohanh = NgayBaohanh[i],
-                    ThoiGianBH = ThoiGianBH[i],
-                    Makho = Makho,
-                    NgayNhapkho = DateTime.Now,
-                    TrangThai = "Tồn kho"
-                };
+                    string Makho;
+                    int index = _context.khotongs.Count() + i + 1;
 
-                validKhotongs.Add(khotongs);
+                    do
+                    {
+                        Makho = $"{MakhoPrefix}{index}";
+                        index++;
+                    }
+                    while (_context.khotongs.Any(k => k.Makho == Makho));
+
+                    var khotongs = new khotongs
+                    {
+                        TenSanpham = TenSanpham[i],
+                        MaSanpham = MaSanpham[i],
+                        HangSX = HangSX[i],
+                        NhaCC = NhaCC[i],
+                        SL = SL[i],
+                        DonVi = DonVi[i],
+                        NgayBaohanh = NgayBaohanh[i],
+                        ThoiGianBH = ThoiGianBH[i],
+                        Makho = Makho,
+                        NgayNhapkho = DateTime.Now,
+                        TrangThai = "Tồn kho"
+                    };
+
+                    _context.khotongs.Add(khotongs);
+                }
             }
 
-            if (validKhotongs.Count > 0)
-            {
-                _context.khotongs.AddRange(validKhotongs);
-                _context.SaveChanges();
-            }
+            _context.SaveChanges();
 
             return RedirectToAction("Tongkho", "Home", new { area = "NhanvienKetoan" });
         }
@@ -135,50 +141,59 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             int count = TenSanpham.Length;
             var MakhoPrefix = "STU";
 
-            // Tạo một danh sách để lưu các mục hợp lệ
-            List<khotongs> validKhotongs = new List<khotongs>();
-
             for (int i = 0; i < count; i++)
             {
                 if (string.IsNullOrWhiteSpace(TenSanpham[i]) || string.IsNullOrWhiteSpace(MaSanpham[i]) ||
                     SL[i] <= 0 || string.IsNullOrWhiteSpace(DonVi[i]))
                 {
-                    continue;
+                    continue; 
                 }
 
-                string Makho;
-                int index = _context.khotongs.Count() + i + 1; // Khởi tạo index bắt đầu từ số lượng hiện tại + i
+                var existingItem = _context.khotongs.FirstOrDefault(k =>
+                    k.TenSanpham == TenSanpham[i] &&
+                    k.MaSanpham == MaSanpham[i] &&
+                    k.HangSX == HangSX[i]);
 
-                do
+                if (existingItem != null)
                 {
-                    Makho = $"{MakhoPrefix}{index}";
-                    index++;
+                    existingItem.SL += SL[i];
+                    _context.khotongs.Update(existingItem);
                 }
-                while (_context.khotongs.Any(k => k.Makho == Makho));
-
-                var khotongs = new khotongs
+                else
                 {
-                    TenSanpham = TenSanpham[i],
-                    MaSanpham = MaSanpham[i],
-                    HangSX = HangSX[i],
-                    NhaCC = NhaCC[i],
-                    SL = SL[i],
-                    DonVi = DonVi[i],
-                    NgayBaohanh = NgayBaohanh[i],
-                    ThoiGianBH = ThoiGianBH[i],
-                    Makho = Makho,
-                    NgayNhapkho = DateTime.Now,
-                    TrangThai = "Tồn kho"
-                };
+                    // Nếu chưa tồn tại, tạo mã kho mới
+                    string Makho;
+                    int index = _context.khotongs.Count() + i + 1;
 
-                validKhotongs.Add(khotongs);
+                    do
+                    {
+                        Makho = $"{MakhoPrefix}{index}";
+                        index++;
+                    }
+                    while (_context.khotongs.Any(k => k.Makho == Makho));
+
+                    // Tạo mục mới
+                    var newKhotong = new khotongs
+                    {
+                        TenSanpham = TenSanpham[i],
+                        MaSanpham = MaSanpham[i],
+                        HangSX = HangSX[i],
+                        NhaCC = NhaCC[i],
+                        SL = SL[i],
+                        DonVi = DonVi[i],
+                        NgayBaohanh = NgayBaohanh[i],
+                        ThoiGianBH = ThoiGianBH[i],
+                        Makho = Makho,
+                        NgayNhapkho = DateTime.Now,
+                        TrangThai = "Tồn kho"
+                    };
+
+                    _context.khotongs.Add(newKhotong);
+                }
             }
 
-            if (validKhotongs.Count > 0)
-            {
-                _context.khotongs.AddRange(validKhotongs);
-                _context.SaveChanges();
-            }
+            // Lưu thay đổi vào database
+            _context.SaveChanges();
 
             return RedirectToAction("Tongkho", "Home", new { area = "NhanvienKetoan" });
         }
@@ -214,12 +229,13 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             ViewBag.Q = q;
             return View("VatTuMoi", items);
         }
+
         public ActionResult CapPhatNvMoi()
         {
             var capPhatNvMoi = _context.khotongs
                 .Where(k => k.LoaiCapPhat == "ChoNhanVienMoi")
                 .ToList();
-
+            
             return View("Tongkho", capPhatNvMoi);
         }
 
@@ -228,18 +244,63 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 20;
 
-            var query = _context.khotongs.Where(k => !string.IsNullOrEmpty(k.DuAn));
-            var duAnList = _context.khotongs
-                .Where(k => !string.IsNullOrEmpty(k.DuAn))
-                .Select(k => k.DuAn)
-                .Distinct()
-                .OrderBy(x => x)
-                .ToList();
+            // Lấy mã nhân viên từ session để lọc theo cá nhân
+            var maNv = HttpContext.Session.GetString("MaNguoidung");
 
+            // Lấy vật tư từ phiếu xuất kho dự án của cá nhân và join với vtphieunhapkho qua phieunhapkho
+            var query = (from vtx in _context.vtphieuxuatkho
+                        join px in _context.phieuxuatkho on vtx.MaXuatkho equals px.MaXuatkho
+                        where !string.IsNullOrEmpty(px.MaDuan) && !string.IsNullOrEmpty(vtx.MaYeucau) // Chỉ lấy phiếu xuất kho dự án
+                            && px.MaNguoidung == maNv // Lọc theo người dùng hiện tại
+                        // Join với duans để lấy tên dự án
+                        join da in _context.duans on px.MaDuan equals da.MaDuan into daGroup
+                        from da in daGroup.DefaultIfEmpty()
+                        // Left join với vtphieunhapkho qua MaYeucau và MaSanpham
+                        join vtn in _context.vtphieunhapkho 
+                            on new { MaYeucau = vtx.MaYeucau, MaSanpham = vtx.MaSanpham } 
+                            equals new { MaYeucau = vtn.MaYeucau, MaSanpham = vtn.MaSanpham } into vtnGroup
+                        from vtn in vtnGroup.DefaultIfEmpty()
+                        // Ưu tiên dữ liệu từ vtphieunhapkho, nếu không có thì dùng vtphieuxuatkho
+                        select new khotongs
+                        {
+                            MaSanpham = vtn != null ? vtn.MaSanpham : vtx.MaSanpham,
+                            TenSanpham = vtn != null ? vtn.TenSanpham : vtx.TenSanpham,
+                            Makho = vtn != null ? vtn.Makho : vtx.Makho,
+                            HangSX = vtn != null ? vtn.HangSX : vtx.HangSX,
+                            NhaCC = vtn != null ? vtn.NhaCC : vtx.NhaCC,
+                            DuAn = da != null ? da.TenDuan : px.MaDuan, // Dùng tên dự án nếu có
+                            SL = vtn != null ? (vtn.SL ?? 0) : (vtx.SL ?? 0),
+                            DonVi = vtn != null ? vtn.DonVi : vtx.DonVi,
+                            TrangThai = vtn != null ? vtn.TrangThai : vtx.TrangThai // Trạng thái của kho dự án cá nhân
+                        }).Distinct();
+
+            // Lấy danh sách dự án từ phieuxuatkho của người dùng hiện tại
+            var duAnList = (from px in _context.phieuxuatkho
+                           join da in _context.duans on px.MaDuan equals da.MaDuan into daGroup
+                           from da in daGroup.DefaultIfEmpty()
+                           where !string.IsNullOrEmpty(px.MaDuan) && px.MaNguoidung == maNv
+                           select da != null ? da.TenDuan : px.MaDuan)
+                           .Distinct()
+                           .OrderBy(x => x)
+                           .ToList();
+
+            // Lọc theo dự án nếu có
             if (!string.IsNullOrWhiteSpace(duAn))
             {
-                query = query.Where(k => k.DuAn == duAn);
+                // Kiểm tra xem duAn là MaDuan hay TenDuan
+                var isMaDuan = _context.duans.Any(d => d.MaDuan == duAn);
+                if (isMaDuan)
+                {
+                    var tenDuan = _context.duans.Where(d => d.MaDuan == duAn).Select(d => d.TenDuan).FirstOrDefault();
+                    query = query.Where(k => k.DuAn == tenDuan || k.DuAn == duAn);
+                }
+                else
+                {
+                    query = query.Where(k => k.DuAn == duAn);
+                }
             }
+
+            // Tìm kiếm
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var keyword = q.Trim();
@@ -255,7 +316,7 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
 
             var total = query.Count();
             var items = query
-                .OrderByDescending(k => k.NgayNhapkho)
+                .OrderByDescending(k => k.MaSanpham)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();

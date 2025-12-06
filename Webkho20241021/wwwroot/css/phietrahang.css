@@ -1,0 +1,357 @@
+body {
+    font-family: "Times New Roman", serif;
+    font-size: 15px;
+    margin: 0;
+    padding: 20px;
+}
+
+.page {
+    width: 820px;
+    margin: 0 auto;
+}
+
+.print-container {
+    width: 820px;
+    margin: 0 auto;
+}
+
+/* HEADER */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.left-title {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.right-title {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.company-name {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.form-title {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* INFO SECTION - 2 columns layout */
+.info-section {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    gap: 20px;
+}
+
+.info-left, .info-right {
+    flex: 1;
+    border: 2px solid #000;
+    border-style: solid;
+    padding: 8px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.info-left-title, .info-right-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 3px;
+}
+
+.info-row {
+    display: flex;
+    margin: 4px 0;
+    align-items: baseline;
+}
+
+.info-label {
+    min-width: 120px;
+    font-weight: 600;
+}
+
+.info-value {
+    flex: 1;
+    border-bottom: 1px dotted #000;
+    min-height: 18px;
+    margin-left: 5px;
+}
+
+.info-input {
+    flex: 1;
+    border: none;
+    border-bottom: 1px solid #000;
+    min-height: 18px;
+    margin-left: 5px;
+    padding: 2px 4px;
+    font-family: "Times New Roman", serif;
+    font-size: 15px;
+    background: transparent;
+    outline: none;
+}
+
+.info-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+@media print {
+    .info-input {
+        border-bottom: 1px dotted #000;
+    }
+    
+    .info-input::placeholder {
+        color: transparent;
+    }
+}
+
+.info-box {
+    margin-top: 10px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 5px;
+}
+
+.row {
+    display: flex;
+    margin: 2px 0;
+}
+
+.label {
+    width: 130px;
+    font-weight: 600;
+}
+
+.value {
+    width: 220px;
+    border-bottom: 1px dotted #000;
+}
+
+.label.sm { 
+    width: 60px; 
+}
+
+.value.sm { 
+    width: 120px; 
+}
+
+/* REASON SECTION */
+.reason-section {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: 2px solid #000;
+    padding: 8px;
+}
+
+.reason-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.reason-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+    margin-left: 20px;
+}
+
+.reason-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.reason-item label {
+    font-weight: normal;
+}
+
+
+.reason {
+    margin-top: 10px;
+}
+
+.reason-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3px;
+    margin-left: 20px;
+}
+
+
+/* TABLE */
+.table-container {
+    margin-top: 15px;
+}
+
+.main-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+.main-table th,
+.main-table td {
+    border: 1px solid #000;
+    padding: 4px 6px;
+    text-align: left;
+}
+
+.main-table th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+table th,
+table td {
+    border: 1px solid #000;
+    padding: 4px 6px;
+    text-align: left;
+}
+
+table th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+.col-tt {
+    width: 40px;
+    text-align: center;
+}
+
+.col-ten {
+    min-width: 150px;
+}
+
+.col-maso {
+    width: 150px;
+}
+
+.col-hang {
+    width: 80px;
+}
+
+.col-dvt {
+    width: 60px;
+    text-align: center;
+}
+
+.col-sl {
+    width: 50px;
+    text-align: center;
+}
+
+.col-diengiai {
+    width: 170px;
+}
+
+.center {
+    text-align: center;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* DATE SECTION */
+.date-section {
+    text-align: right;
+    margin-top: 15px;
+    font-style: italic;
+}
+
+.date-line {
+    text-align: right;
+    margin-top: 12px;
+    font-style: italic;
+}
+
+/* SIGNATURE SECTION */
+.signature-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    text-align: center;
+    gap: 10px;
+}
+
+.signature-box {
+    flex: 1;
+    font-weight: 600;
+}
+
+.signature-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.signature-line {
+    font-weight: normal;
+    font-style: italic;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.sign-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    text-align: center;
+}
+
+.sign-box {
+    width: 24%;
+    font-weight: 600;
+}
+
+.sign-sub {
+    font-weight: normal;
+    font-style: italic;
+    margin-top: 5px;
+    font-size: 13px;
+}
+
+/* PRINT */
+.no-print {
+    margin-top: 20px;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.print-btn, .print-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 0 auto;
+}
+
+@media print {
+    body {
+        padding: 0;
+    }
+    
+    .no-print {
+        display: none;
+    }
+    
+    .page, .print-container {
+        width: 100%;
+    }
+}

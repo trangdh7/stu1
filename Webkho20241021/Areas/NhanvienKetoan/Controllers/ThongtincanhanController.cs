@@ -20,9 +20,11 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
         {
             var currentUserId = HttpContext.Session.GetString("MaNguoidung");
             
+            // Lọc dữ liệu theo người dùng hiện tại
             var query = _context.khonguoidungs
                 .Where(k => k.NDMaNguoidung == currentUserId);
             
+            // Tìm kiếm theo tên vật tư hoặc mã vật tư
             if (!string.IsNullOrEmpty(searchString))
             {
                 query = query.Where(k => 
@@ -30,8 +32,10 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                     k.MaSanpham.Contains(searchString));
             }
             
+            // Sắp xếp theo ngày nhập kho mới nhất
             query = query.OrderByDescending(k => k.NgayNhapkho);
             
+            // Phân trang
             var totalItems = query.Count();
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
             
@@ -168,4 +172,3 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
         }
     }
 }
-

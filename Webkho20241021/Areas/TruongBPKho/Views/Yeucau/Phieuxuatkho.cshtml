@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Phieuxuatkho";
     Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
 }
@@ -112,6 +112,10 @@
                                 else if (item.TrangThai == "Đã lấy hàng" && BophanSession == "BP kho")
                                 {
                                     <span data-has-button="true" data-ma-xuatkho="@item.MaXuatkho" data-action="approve">@item.TrangThai</span>
+                                }
+                                else if (item.TrangThai == "Thiếu hàng - Đã tạo phiếu mua" && BophanSession == "BP kho")
+                                {
+                                    <span data-has-button-muahang="true" data-ma-xuatkho="@item.MaXuatkho" data-action="taophieumuahang" style="color: #dc3545; font-weight: bold;">@item.TrangThai</span>
                                 }
                                 else
                                 {

@@ -72,6 +72,7 @@
                             <th>Đã mượn</th>
                             <th>Trả</th>
                             <th>Đơn vị</th>
+                            <th>Diễn giải nhập kho</th>
                             <th>Đơn giá</th>
                         </tr>
                     </thead>
@@ -92,6 +93,14 @@
                             <td><span id="borrowedInfo">—</span></td>
                             <td><input type="number" id="sl" name="SL" placeholder="Số lượng trả" min="1" /></td>
                             <td><input type="text" id="donVi" name="DonVi" placeholder="Đơn vị" readonly /></td>
+                            <td>
+                                <select name="DiengiaiNhapKho" id="diengiaiNhapKho">
+                                    <option value="Không sử dụng">Không sử dụng</option>
+                                    <option value="Lỗi do người dùng">Lỗi do người dùng</option>
+                                    <option value="Lỗi do nhà sản xuất">Lỗi do nhà sản xuất</option>
+                                    <option value="Lỗi khác">Lỗi khác</option>
+                                </select>
+                            </td>
                             <td><input type="number" id="donGia" name="DonGia" placeholder="Đơn giá" min="0" step="0.01" style="width:120px;" /></td>
                         </tr>
                     </tbody>
@@ -153,6 +162,7 @@
                         NhaCC: [],
                         SL: [],
                         DonVi: [],
+                        DiengiaiNhapKho: [],
                         DonGia: []
                     };
                     
@@ -183,6 +193,8 @@
                                 selectedData.NhaCC.push(row.querySelector('input[name="NhaCC"]')?.value || '');
                                 selectedData.SL.push(parsed);
                                 selectedData.DonVi.push(row.querySelector('input[name="DonVi"]')?.value || '');
+                                const diengiaiNhapKho = row.querySelector('select[name="DiengiaiNhapKho"]')?.value || 'Không sử dụng';
+                                selectedData.DiengiaiNhapKho.push(diengiaiNhapKho);
                                 const donGiaInput = row.querySelector('input[name="DonGia"]');
                                 const donGia = donGiaInput ? parseFloat(donGiaInput.value || '0') : 0;
                                 selectedData.DonGia.push(donGia);
@@ -217,6 +229,7 @@
                     selectedData.NhaCC.forEach(v => formData.append('NhaCC', v));
                     selectedData.SL.forEach(v => formData.append('SL', v));
                     selectedData.DonVi.forEach(v => formData.append('DonVi', v));
+                    selectedData.DiengiaiNhapKho.forEach(v => formData.append('DiengiaiNhapKho', v));
                     selectedData.DonGia.forEach(v => formData.append('DonGia', v));
                     
                     console.log('Submitting data - Items count:', selectedData.TenSanpham.length);

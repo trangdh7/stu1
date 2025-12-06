@@ -164,12 +164,11 @@
                         <td>Mã kho</td>
                         <td>Hãng sx</td>
                         <td>Nhà cung cấp</td>
-                        <td>Số lượng</td>
-                        <td>Đơn vị</td>
-                        <td>Trạng thái</td>
+                        <td style="text-align: center;">SL</td>
+                        <td>Đv</td>
+                        <td class="trangthai-column-header" style="display: none;">Trạng thái</td>
                         <td>Ghi chú</td>
                         <td>Ngày duyệt</td>
-                        <td>Duyệt</td>
                     </tr>
                 </thead>
                 <tbody id="vtYeucauBody">
@@ -195,6 +194,7 @@
                         // Vật tư đã được duyệt nếu có trạng thái "Đã duyệt" hoặc "Đang mua hàng" (đã qua bước duyệt)
                         var isApproved = trangThai == "Đã duyệt" || 
                                        trangThai == "Đang mua hàng" || 
+                                       trangThai == "Chờ xuất kho" ||
                                        trangThai == "Đã xuất kho" || 
                                        trangThai == "Đã nhận hàng";
                         // Vật tư bị từ chối nếu trạng thái chứa "Đã từ chối" (bao gồm "Giám đốc - Đã từ chối")
@@ -213,14 +213,18 @@
                             <td>@item.YCMakho</td>
                             <td>@item.HangSX</td>
                             <td>@item.NhaCC</td>
-                            <td>@item.SL</td>
+                            <td style="text-align: center;">@item.SL</td>
                             <td>@item.DonVi</td>
-                            <td class="trangthai-vattu">
+                            <td class="trangthai-vattu trangthai-column" style="display: none;">
                                 @{
                                     string trangThaiColor = "";
                                     if (trangThai == "Đang mua hàng")
                                     {
                                         trangThaiColor = "color: #2196f3; font-weight: bold;";
+                                    }
+                                    else if (trangThai == "Chờ xuất kho")
+                                    {
+                                        trangThaiColor = "color: #4caf50; font-weight: bold;";
                                     }
                                     else if (trangThai == "Đã xuất kho" || trangThai == "Đã duyệt")
                                     {
@@ -233,8 +237,15 @@
                                 }
                                 <span style="@trangThaiColor">@trangThai</span>
                             </td>
-                            <td class="ghichu-column" style="color: @(trangThai.Contains("Đã từ chối") || trangThai.Contains("từ chối") ? "#f44336" : "inherit");">
-                                @(item.GhiChu ?? "-")
+                            <td class="ghichu-column">
+                                @if (canActOnItem)
+                                {
+                                    <input type="text" class="ghichu-input" data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau" value="@(item.GhiChu ?? "")" placeholder="Nhập ghi chú..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px;" />
+                                }
+                                else
+                                {
+                                    <span style="color: @(trangThai.Contains("Đã từ chối") || trangThai.Contains("từ chối") ? "#f44336" : "inherit");">@(item.GhiChu ?? "-")</span>
+                                }
                             </td>
                             <td>
                                 @if (item.NgayDuyet.HasValue)
@@ -246,17 +257,6 @@
                                     <span style="color: #999;">-</span>
                                 }
                             </td>
-                            <td class="duyet-column">
-                                @if (canActOnItem)
-                                {
-                                    <button type="button" class="btn-icon approve-btn" onclick="approveSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Duyệt vật tư">
-                                        <i class="bx bxs-check-circle"></i>
-                                    </button>
-                                    <button type="button" class="btn-icon reject-btn" onclick="rejectSingleVatTu('@maYeucau', '@item.MaSanpham')" title="Từ chối vật tư">
-                                        <i class="bx bxs-x-circle"></i>
-                                    </button>
-                                }
-                            </td>
                         </tr>
                         STT2++;
                     }
@@ -266,13 +266,9 @@
         <div class="action-duyet">
             @if (Context.Session.GetString("Chucvu") == "Giám đốc" && Model.VTyeucau.Any())
             {
-                <div class="action-duyet-left">
-                    <button type="button" id="btnDuyetTatCa" class="btn-duyet-tatca" onclick="approveAllVT()">Duyệt tất cả</button>
-                    <button type="button" id="btnTuChoiTatCa" class="btn-tuchoi-tatca" onclick="rejectAllVT()">Từ chối tất cả</button>
-                </div>
                 <div class="action-duyet-right">
                     <button type="button" id="btnXacNhan" class="btn-xacnhan" style="display:none;" onclick="confirmBulkAction()">Xác nhận</button>
-                    <button type="button" id="btnXoaTatCa" class="btn-xoa-tatca" style="display:none;" onclick="clearBulkAction()">Xóa lựa chọn</button>
+                    <button type="button" id="btnCancel" class="btn-cancel" style="display:none;" onclick="clearBulkAction()">Cancel</button>
                 </div>
             }
         </div>
@@ -287,7 +283,6 @@
         var currentMaYeucau = '';
         var currentNguoiYeucau = '';
         var requestToken = '@requestToken';
-        var pendingBulkAction = null; // 'approve' | 'reject' | null
 
         function normalizeTrangThai(value) {
             if (!value || !value.trim()) {
@@ -300,6 +295,8 @@
             var color = '';
             if (trangThai === 'Đang mua hàng') {
                 color = 'color: #2196f3; font-weight: bold;';
+            } else if (trangThai === 'Chờ xuất kho') {
+                color = 'color: #4caf50; font-weight: bold;';
             } else if (trangThai === 'Đã xuất kho' || trangThai === 'Đã duyệt') {
                 color = 'color: #4caf50; font-weight: bold;';
             } else if (trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) {
@@ -412,10 +409,11 @@
                             var maVatTu = item.maSanpham || '';
                             var trangThai = normalizeTrangThai(item.trangThai || '');
                             // Vật tư đã được duyệt nếu có trạng thái "Đã duyệt" hoặc "Đang mua hàng" (đã qua bước duyệt)
-                            var isApproved = trangThai === 'Đã duyệt' || 
-                                           trangThai === 'Đang mua hàng' || 
-                                           trangThai === 'Đã xuất kho' || 
-                                           trangThai === 'Đã nhận hàng';
+                        var isApproved = trangThai === 'Đã duyệt' || 
+                                       trangThai === 'Đang mua hàng' || 
+                                       trangThai === 'Chờ xuất kho' ||
+                                       trangThai === 'Đã xuất kho' || 
+                                       trangThai === 'Đã nhận hàng';
                             // Bị từ chối nếu trạng thái chứa "Đã từ chối" (bao gồm "Giám đốc - Đã từ chối")
                             var isRejected = trangThai && trangThai.indexOf('Đã từ chối') !== -1;
                             // Được phép chọn hàng loạt khi đúng bước "Chờ giám đốc duyệt"
@@ -428,31 +426,45 @@
                             var maVatTuEscaped = maVatTu.replace(/'/g, "\\'");
                             var MaYeucauEscaped = MaYeucau.replace(/'/g, "\\'");
                             
+                            // Tích checkbox mặc định cho các vật tư đang chờ duyệt (có thể thao tác)
+                            var checkboxChecked = canActOnItem ? ' checked' : '';
                             var row = `<tr data-mavattu="${maVatTu}" data-mayeucau="${MaYeucau}">
-                                <td>${canSelectForBulk ? '<input type="checkbox" class="vt-checkbox" value="' + maVatTuEscaped + '" data-mayeucau="' + MaYeucauEscaped + '" data-mavattu="' + maVatTuEscaped + '" />' : ''}</td>
+                                <td>${canSelectForBulk ? '<input type="checkbox" class="vt-checkbox" value="' + maVatTuEscaped + '" data-mayeucau="' + MaYeucauEscaped + '" data-mavattu="' + maVatTuEscaped + '"' + checkboxChecked + ' />' : ''}</td>
                                 <td>${STT++}</td>
                                 <td>${item.tenSanpham || ''}</td>
                                 <td>${maVatTu}</td>
                                 <td>${item.ycMakho || ''}</td>
                                 <td>${item.hangSX || ''}</td>
                                 <td>${item.nhaCC || ''}</td>
-                                <td>${item.sl || 0}</td>
-                                <td>${item.donVi || ''}</td>
-                                <td class="trangthai-vattu">`;
+                                <td style="text-align: center;">${item.sl || 0}</td>
+                                <td>${item.donVi || ''}</td>`;
                             
                             // Thêm màu sắc cho trạng thái
                             var trangThaiColor = '';
                             if (trangThai === 'Đang mua hàng') {
                                 trangThaiColor = 'color: #2196f3; font-weight: bold;';
+                            } else if (trangThai === 'Chờ xuất kho') {
+                                trangThaiColor = 'color: #4caf50; font-weight: bold;';
                             } else if (trangThai === 'Đã xuất kho' || trangThai === 'Đã duyệt') {
                                 trangThaiColor = 'color: #4caf50; font-weight: bold;';
                             } else if (trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) {
                                 trangThaiColor = 'color: #8b0000; font-weight: bold;';
                             }
-                            row += `<span style="${trangThaiColor}">${trangThai}</span></td>
-                                <td class="ghichu-column" style="color: ${(trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) ? '#f44336' : 'inherit'};">
-                                    ${item.ghiChu || '-'}
+                            row += `<td class="trangthai-vattu trangthai-column" style="display: none;">
+                                    <span style="${trangThaiColor}">${trangThai}</span>
                                 </td>
+                                <td class="ghichu-column">`;
+                            
+                            // Hiển thị input ghi chú nếu có thể thao tác, ngược lại hiển thị text
+                            if (canActOnItem) {
+                                var ghiChuValue = (item.ghiChu || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                                row += `<input type="text" class="ghichu-input" data-mavattu="${maVatTuEscaped}" data-mayeucau="${MaYeucauEscaped}" value="${ghiChuValue}" placeholder="Nhập ghi chú..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 13px;" />`;
+                            } else {
+                                var ghiChuColor = (trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) ? '#f44336' : 'inherit';
+                                row += `<span style="color: ${ghiChuColor};">${item.ghiChu || '-'}</span>`;
+                            }
+                            
+                            row += `</td>
                                 <td>`;
                             
                             // Hiển thị ngày duyệt
@@ -470,30 +482,20 @@
                                 row += `<span style="color: #999;">-</span>`;
                             }
                             
-                            row += `</td>
-                                <td class="duyet-column">`;
-                            
-                            // Hiển thị nút duyệt nếu là Giám đốc và vật tư chưa được duyệt/từ chối
-                            if (canActOnItem) {
-                                // Hiển thị nút duyệt/từ chối cho Giám đốc
-                                row += `<button type="button" class="btn-icon approve-btn" onclick="approveSingleVatTu('${MaYeucauEscaped}', '${maVatTuEscaped}')" title="Duyệt vật tư">
-                                    <i class="bx bxs-check-circle"></i>
-                                </button>
-                                <button type="button" class="btn-icon reject-btn" onclick="rejectSingleVatTu('${MaYeucauEscaped}', '${maVatTuEscaped}')" title="Từ chối vật tư">
-                                    <i class="bx bxs-x-circle"></i>
-                                </button>`;
-                            }
-                            
                             row += `</td></tr>`;
                             $('#vtYeucauBody').append(row);
                         });
                         
-                        updateDuyetTatCaButton();
+                        // Kiểm tra và hiển thị/ẩn cột trạng thái sau khi load dữ liệu
+                        checkAndToggleTrangThaiColumn();
+                        // Cập nhật nút hành động sau khi load dữ liệu
+                        updateActionButtons();
                     } else {
                         $('#vtYeucauBody').append(
-                            `<tr><td colspan="13" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                            `<tr><td colspan="12" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                         );
-                        updateDuyetTatCaButton();
+                        // Cập nhật nút hành động khi không có dữ liệu
+                        updateActionButtons();
                     }
 
                     // Highlight hàng tương ứng trong bảng chính
@@ -526,86 +528,113 @@
                    selectedRole.trim() === 'Giám đốc';
         }
 
-        function approveSingleVatTu(maYeucau, maVatTu) {
-            if (confirm('Bạn có chắc chắn muốn duyệt vật tư ' + maVatTu + '?')) {
-                submitApprovalVatTu(maYeucau, maVatTu, 'approve');
-            }
-        }
-
-        function rejectSingleVatTu(maYeucau, maVatTu) {
-            // Hiển thị modal để nhập lý do từ chối
-            var ghiChu = prompt('Vui lòng nhập lý do từ chối vật tư ' + maVatTu + ':', '');
-            if (ghiChu !== null) {
-                if (confirm('Bạn có chắc chắn muốn từ chối vật tư ' + maVatTu + '?')) {
-                    submitApprovalVatTu(maYeucau, maVatTu, 'reject', ghiChu);
+        // Kiểm tra và hiển thị/ẩn cột trạng thái
+        // Ẩn khi tất cả vật tư đều chờ duyệt, hiển thị khi có vật tư đã được xử lý
+        function checkAndToggleTrangThaiColumn() {
+            var hasProcessedItems = false;
+            $('.trangthai-vattu').each(function() {
+                var trangThai = $(this).text().trim();
+                // Nếu trạng thái không phải "Chờ giám đốc duyệt" hoặc rỗng, thì đã được xử lý
+                if (trangThai && 
+                    trangThai !== 'Chờ giám đốc duyệt' && 
+                    trangThai !== 'Giám đốc' &&
+                    !trangThai.toLowerCase().includes('chờ giám đốc')) {
+                    hasProcessedItems = true;
+                    return false; // break loop
                 }
-            }
-        }
-
-        function approveAllVT() {
-            if (!currentMaYeucau) {
-                alert('Vui lòng chọn một yêu cầu để xem chi tiết.');
-                return;
-            }
-
-            var selectableCount = $('.vt-checkbox').length;
-            if (selectableCount === 0) {
-                alert('Không có vật tư nào cần duyệt.');
-                return;
-            }
-
-            // Chọn tất cả vật tư có thể thao tác
-            $('.vt-checkbox').prop('checked', true);
-            $('#selectAllVT').prop('checked', true);
-
-            // Đánh dấu trạng thái chờ xác nhận duyệt
-            pendingBulkAction = 'approve';
-            $('.vt-checkbox').each(function () {
-                var $row = $(this).closest('tr');
-                $row.addClass('pending-approval');
             });
-
-            // Hiển thị nút xác nhận & xóa tất cả
-            $('#btnXacNhan').show();
-            $('#btnXoaTatCa').show();
+            
+            if (hasProcessedItems) {
+                // Có vật tư đã được xử lý -> hiển thị cột trạng thái
+                $('.trangthai-column-header, .trangthai-column').css('display', 'table-cell');
+            } else {
+                // Tất cả vật tư đều chờ duyệt -> ẩn cột trạng thái
+                $('.trangthai-column-header, .trangthai-column').css('display', 'none');
+            }
         }
 
-        function rejectAllVT() {
-            if (!currentMaYeucau) {
-                alert('Vui lòng chọn một yêu cầu để xem chi tiết.');
-                return;
+        // Kiểm tra khi trang load xong
+        $(document).ready(function() {
+            checkAndToggleTrangThaiColumn();
+            // Cập nhật nút hành động khi trang load
+            setTimeout(function() {
+                updateActionButtons();
+            }, 100);
+        });
+
+        // Xử lý khi checkbox thay đổi - highlight hàng nếu không tích (từ chối)
+        $(document).on('change', '.vt-checkbox', function() {
+            var $row = $(this).closest('tr');
+            if ($(this).is(':checked')) {
+                $row.removeClass('rejected-row');
+            } else {
+                $row.addClass('rejected-row');
             }
+        });
 
-            var selectableCount = $('.vt-checkbox').length;
-            if (selectableCount === 0) {
-                alert('Không có vật tư nào để từ chối.');
-                return;
-            }
-
-            // Chọn tất cả vật tư có thể thao tác
-            $('.vt-checkbox').prop('checked', true);
-            $('#selectAllVT').prop('checked', true);
-
-            // Đánh dấu trạng thái chờ xác nhận từ chối
-            pendingBulkAction = 'reject';
-            $('.vt-checkbox').each(function () {
+        // Kiểm tra và hiển thị/ẩn nút Xác nhận và Cancel
+        function updateActionButtons() {
+            var hasCheckboxes = $('.vt-checkbox').length > 0;
+            var hasChecked = $('.vt-checkbox:checked').length > 0;
+            var hasUnchecked = $('.vt-checkbox:not(:checked)').length > 0;
+            
+            // Kiểm tra xem có vật tư nào đang chờ duyệt không
+            var hasPendingItems = false;
+            $('.vt-checkbox').each(function() {
                 var $row = $(this).closest('tr');
-                $row.addClass('pending-approval');
+                var $trangThaiCell = $row.find('.trangthai-vattu');
+                var trangThai = $trangThaiCell.text().trim();
+                // Nếu trạng thái là "Chờ giám đốc duyệt" hoặc rỗng thì còn chờ xử lý
+                if (!trangThai || 
+                    trangThai === 'Chờ giám đốc duyệt' || 
+                    trangThai === 'Giám đốc' ||
+                    trangThai.toLowerCase().includes('chờ giám đốc')) {
+                    hasPendingItems = true;
+                    return false; // break loop
+                }
             });
-
-            // Hiển thị nút xác nhận & xóa tất cả
-            $('#btnXacNhan').show();
-            $('#btnXoaTatCa').show();
+            
+            if (hasCheckboxes && hasPendingItems) {
+                // Có vật tư đang chờ duyệt
+                if (hasChecked || hasUnchecked) {
+                    // Có checkbox được chọn hoặc bỏ chọn -> hiển thị cả 2 nút
+                    $('#btnXacNhan').show();
+                    $('#btnCancel').show();
+                } else {
+                    // Chưa có thay đổi gì -> ẩn cả 2 nút
+                    $('#btnXacNhan').hide();
+                    $('#btnCancel').hide();
+                }
+            } else {
+                // Không còn vật tư nào chờ duyệt -> ẩn cả 2 nút
+                $('#btnXacNhan').hide();
+                $('#btnCancel').hide();
+            }
         }
+
+        // Xử lý khi checkbox thay đổi - highlight hàng nếu không tích (từ chối)
+        $(document).on('change', '.vt-checkbox', function() {
+            var $row = $(this).closest('tr');
+            if ($(this).is(':checked')) {
+                $row.removeClass('rejected-row');
+            } else {
+                $row.addClass('rejected-row');
+            }
+            // Cập nhật nút hành động
+            updateActionButtons();
+        });
+
+        // Xử lý checkbox "Chọn tất cả"
+        $(document).on('change', '#selectAllVT', function() {
+            var isChecked = $(this).is(':checked');
+            $('.vt-checkbox').prop('checked', isChecked).trigger('change');
+            // Cập nhật nút hành động
+            updateActionButtons();
+        });
 
         function confirmBulkAction() {
             if (!currentMaYeucau) {
                 alert('Vui lòng chọn một yêu cầu để xem chi tiết.');
-                return;
-            }
-
-            if (!pendingBulkAction) {
-                alert('Không có hành động nào cần xác nhận.');
                 return;
             }
 
@@ -615,101 +644,81 @@
                 return;
             }
 
-            // Gửi lên server theo hành động đang chờ
-            submitApprovalTatCaVatTu(currentMaYeucau, pendingBulkAction);
+            // Thu thập dữ liệu: checkbox status + ghi chú cho từng vật tư
+            var vatTuData = [];
+            var hasError = false;
+            var errorMessages = [];
+
+            $('.vt-checkbox').each(function() {
+                var $checkbox = $(this);
+                var maVatTu = $checkbox.val();
+                var isApproved = $checkbox.is(':checked'); // Tích = duyệt, không tích = từ chối
+                var $row = $checkbox.closest('tr');
+                var $ghichuInput = $row.find('.ghichu-input');
+                var ghiChu = $ghichuInput.length > 0 ? $ghichuInput.val() : '';
+
+                // Validation: Nếu từ chối (không tích) thì phải có ghi chú
+                if (!isApproved && (!ghiChu || ghiChu.trim() === '')) {
+                    hasError = true;
+                    errorMessages.push('Vật tư ' + maVatTu + ' bị từ chối nhưng chưa có ghi chú.');
+                }
+
+                vatTuData.push({
+                    MaSanpham: maVatTu,
+                    IsApproved: isApproved,
+                    GhiChu: ghiChu.trim()
+                });
+            });
+
+            if (hasError) {
+                alert('Vui lòng điền ghi chú cho các vật tư bị từ chối:\n' + errorMessages.join('\n'));
+                return;
+            }
+
+            // Gửi dữ liệu lên server
+            submitApprovalVatTuWithCheckbox(currentMaYeucau, vatTuData);
         }
 
         function clearBulkAction() {
-            // Bỏ chọn tất cả
+            // Bỏ chọn tất cả checkbox
             $('.vt-checkbox').prop('checked', false);
             $('#selectAllVT').prop('checked', false);
 
-            // Bỏ highlight đang chờ duyệt / từ chối
-            $('.tablethietbi tbody tr').removeClass('pending-approval');
+            // Xóa ghi chú
+            $('.ghichu-input').val('');
 
-            // Ẩn nút xác nhận & xóa tất cả, reset trạng thái
-            $('#btnXacNhan').hide();
-            $('#btnXoaTatCa').hide();
-            pendingBulkAction = null;
+            // Bỏ highlight
+            $('.tablethietbi tbody tr').removeClass('rejected-row');
+            
+            // Cập nhật nút hành động
+            updateActionButtons();
         }
 
-        function submitApprovalVatTu(maYeucau, maVatTu, action, ghiChu = null) {
-            const pathSegments = window.location.pathname.split('/');
-            const area = pathSegments.length > 1 ? pathSegments[1] : '';
-            
-            var data = {
-                MaYeucau: maYeucau,
-                MaSanpham: maVatTu,
-                action: action,
-                __RequestVerificationToken: requestToken
-            };
-            
-            if (action === 'reject' && ghiChu) {
-                data.GhiChu = ghiChu;
-            }
-            
-            $.ajax({
-                url: `/${area}/Yeucau/XuLyVatTuYeucau`,
-                method: 'POST',
-                data: data,
-                success: function(response) {
-                    if (response.success) {
-                        alert(response.message);
-                        // Cập nhật trạng thái trong bảng
-                        var $row = $(`tr[data-mayeucau="${maYeucau}"][data-mavattu="${maVatTu}"]`);
-                        var $trangThaiCell = $row.find('.trangthai-vattu');
-                        var $duyetCell = $row.find('.duyet-column');
-                        
-                        if (action === 'approve') {
-                            // Cập nhật trạng thái dựa trên response từ server
-                            var newTrangThai = response.trangThai || 'Đã duyệt';
-                            $trangThaiCell.html(getTrangThaiWithColor(newTrangThai));
-                            // Xóa nút duyệt/từ chối khỏi cột duyệt
-                            $duyetCell.html('');
-                        } else {
-                            var newTrangThai = 'Giám đốc - Đã từ chối';
-                            $trangThaiCell.html(getTrangThaiWithColor(newTrangThai));
-                            // Cập nhật cột ghi chú
-                            var $ghichuCell = $row.find('.ghichu-column');
-                            if ($ghichuCell.length) {
-                                $ghichuCell.text(response.ghiChu || '-').css('color', '#f44336');
-                            }
-                            // Xóa nút duyệt/từ chối khỏi cột duyệt
-                            $duyetCell.html('');
-                        }
-                    } else {
-                        alert(response.message || 'Có lỗi xảy ra.');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    alert('Có lỗi xảy ra khi duyệt vật tư: ' + error);
-                }
-            });
-        }
-
-        function submitApprovalTatCaVatTu(maYeucau, action) {
+        function submitApprovalVatTuWithCheckbox(maYeucau, vatTuData) {
             const pathSegments = window.location.pathname.split('/');
             const area = pathSegments.length > 1 ? pathSegments[1] : '';
             
             $.ajax({
-                url: `/${area}/Yeucau/XuLyTatCaVatTuYeucau`,
+                url: `/${area}/Yeucau/XuLyVatTuYeucauWithCheckbox`,
                 method: 'POST',
                 data: {
                     MaYeucau: maYeucau,
-                    action: action,
+                    VatTuData: JSON.stringify(vatTuData),
                     __RequestVerificationToken: requestToken
                 },
                 success: function(response) {
                     if (response.success) {
-                        alert(response.message);
-                        // Reload lại trang để cập nhật trạng thái yêu cầu trong bảng chính
+                        // Hiển thị cột trạng thái trước khi reload
+                        $('.trangthai-column-header, .trangthai-column').css('display', 'table-cell');
+                        alert(response.message || 'Đã xử lý thành công.');
+                        // Reload lại trang để cập nhật trạng thái
                         location.reload();
                     } else {
                         alert(response.message || 'Có lỗi xảy ra.');
                     }
                 },
                 error: function(xhr, status, error) {
-                    alert('Có lỗi xảy ra khi duyệt tất cả vật tư: ' + error);
+                    alert('Có lỗi xảy ra khi xử lý: ' + error);
                 }
             });
         }
@@ -793,9 +802,42 @@
         }
         .vt-checkbox {
             cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #4caf50;
+        }
+        .vt-checkbox:checked {
+            accent-color: #4caf50;
+        }
+        #selectAllVT {
+            width: 18px;
+            height: 18px;
+            accent-color: #4caf50;
+        }
+        #selectAllVT:checked {
+            accent-color: #4caf50;
         }
         .pending-approval {
             background-color: #fff9c4 !important;
+        }
+        .rejected-row {
+            background-color: #ffcdd2 !important;
+        }
+        .btn-cancel {
+            padding: 8px 16px;
+            background-color: #9e9e9e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 5px;
+        }
+        .btn-cancel:hover {
+            background-color: #757575;
+        }
+        .ghichu-input {
+            font-size: 13px;
         }
         .btn-xacnhan {
             padding: 8px 16px;

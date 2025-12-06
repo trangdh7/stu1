@@ -214,6 +214,36 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 .ThenBy(v => v.TenSanpham)
                 .ToList();
 
+            // Xác định trạng thái dựa trên số lượng nếu chưa có trạng thái rõ ràng
+            foreach (var vt in filteredVatTu)
+            {
+                // Nếu trạng thái là null, rỗng, hoặc là "Đã xác nhận nhận hàng" thì xác định lại dựa trên số lượng
+                if (string.IsNullOrWhiteSpace(vt.TrangThai) || 
+                    vt.TrangThai == "Đã xác nhận nhận hàng")
+                {
+                    if ((vt.SL ?? 0) > 0)
+                    {
+                        vt.TrangThai = "Đã xuất kho";
+                    }
+                    else
+                    {
+                        vt.TrangThai = "Đã trả kho";
+                    }
+                }
+                // Nếu trạng thái không phải "Đã trả kho" hoặc "Đã xuất kho", xác định lại dựa trên số lượng
+                else if (vt.TrangThai != "Đã trả kho" && vt.TrangThai != "Đã xuất kho")
+                {
+                    if ((vt.SL ?? 0) > 0)
+                    {
+                        vt.TrangThai = "Đã xuất kho";
+                    }
+                    else
+                    {
+                        vt.TrangThai = "Đã trả kho";
+                    }
+                }
+            }
+
             var viewModel = new ChiTietVatTuDuanViewModel
             {
                 Duan = duan,
