@@ -334,13 +334,25 @@ document.addEventListener("DOMContentLoaded", function () {
         appendHiddenInput("GhiChu", rowData.GhiChu || "");
     }
 
-    function renderRows(rows, updateState = true) {
+    async function renderRows(rows, updateState = true) {
         clearTable();
-        rows.forEach((row, index) => {
+        
+        // Giới hạn số dòng tối đa để tránh quá tải
+        const MAX_ROWS = 5000;
+        if (rows.length > MAX_ROWS) {
+            setFeedback(`Cảnh báo: Tệp có ${rows.length} dòng, chỉ hiển thị ${MAX_ROWS} dòng đầu tiên.`, true);
+            rows = rows.slice(0, MAX_ROWS);
+        }
+
+        // Render theo batch để tránh block UI
+        const RENDER_BATCH_SIZE = 100;
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
             const tr = document.createElement("tr");
             const finalQuantity = row.SLToSave ?? resolveFinalQuantity(row);
             tr.innerHTML = `
-                <td>${index + 1}</td>
+                <td>${i + 1}</td>
                 <td>${escapeHtml(row.TenSanpham)}</td>
                 <td>${escapeHtml(row.MaSanpham)}</td>
                 <td>${escapeHtml(row.HangSX)}</td>
@@ -349,7 +361,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td>${escapeHtml(finalQuantity)}</td>
                 <td>${escapeHtml(row.NgayCanHang)}</td>
                 <td>${escapeHtml(row.NhaCC)}</td>
-                <td><input type="text" class="ghichu-input" data-index="${index}" value="${escapeHtml(row.GhiChu || '')}" placeholder="Nhập ghi chú (tùy chọn)" style="width: 100%; padding: 4px;" /></td>
+                <td><input type="text" class="ghichu-input" data-index="${i}" value="${escapeHtml(row.GhiChu || '')}" placeholder="Nhập ghi chú (tùy chọn)" style="width: 100%; padding: 4px;" /></td>
             `;
             
             // Thêm event listener cho input ghi chú
@@ -369,7 +381,22 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             tableBody.appendChild(tr);
             appendRowHiddenInputs(row);
-        });
+
+            // Mỗi 100 dòng, cho phép UI update
+            if ((i + 1) % RENDER_BATCH_SIZE === 0) {
+                // Cho phép browser render
+                await new Promise(resolve => {
+                    if (window.requestAnimationFrame) {
+                        requestAnimationFrame(() => {
+                            setTimeout(resolve, 0);
+                        });
+                    } else {
+                        setTimeout(resolve, 0);
+                    }
+                });
+            }
+        }
+        
         if (updateState) {
             currentRows = rows.map((row) => ({ ...row }));
         }
@@ -389,7 +416,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return { ...row, NgayCanHang: newDate };
         });
         if (updated) {
-            renderRows(currentRows, false);
+            renderRows(currentRows, false).catch(err => console.error("Lỗi render:", err));
         }
     }
 
@@ -558,12 +585,198 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        renderRows(rows);
-        if (hasInvalidDate) {
-            setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel. Lưu ý: Một số ngày cần hàng trong quá khứ đã được tự động điều chỉnh thành ngày hôm nay.`, false);
-        } else {
-        setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel.`, false);
+        renderRows(rows).then(() => {
+            if (hasInvalidDate) {
+                setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel. Lưu ý: Một số ngày cần hàng trong quá khứ đã được tự động điều chỉnh thành ngày hôm nay.`, false);
+            } else {
+                setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel.`, false);
+            }
+        });
+    }
+
+    // Xử lý sheet theo batch để tránh block UI với file lớn
+    async function processSheetAsync(sheetRows) {
+        if (!sheetRows || !sheetRows.length) {
+            setFeedback("Tệp Excel không có dữ liệu.", true);
+            clearTable();
+            return;
         }
+
+        const headerRowIndex = findHeaderRowIndex(sheetRows);
+        if (headerRowIndex === -1) {
+            setFeedback("Không tìm thấy dòng tiêu đề hợp lệ trong tệp.", true);
+            clearTable();
+            return;
+        }
+
+        const headerRows = sheetRows.slice(
+            headerRowIndex,
+            Math.min(sheetRows.length, headerRowIndex + HEADER_LOOKAHEAD)
+        );
+        const headerRow = headerRows[0] || [];
+        const dataRows = sheetRows.slice(headerRowIndex + 1);
+        if (!headerRow.length) {
+            setFeedback("Không đọc được tiêu đề cột trong tệp.", true);
+            clearTable();
+            return;
+        }
+
+        const headerIndex = mapHeaders(headerRows);
+        const requiredKeys = ["ten", "ma", "hang", "donvi", "slmoi"];
+        const missingKeys = requiredKeys.filter(
+            (key) => headerIndex[key] === undefined
+        );
+        if (missingKeys.length) {
+            const missingLabels = {
+                ten: "Tên thiết bị/hàng hóa",
+                ma: "Mã VT",
+                hang: "Hãng SX",
+                donvi: "ĐV",
+                slmoi: "SL Mới"
+            };
+            const missingText = missingKeys
+                .map((key) => missingLabels[key] || key)
+                .join(", ");
+            setFeedback(`Thiếu cột bắt buộc: ${missingText}.`, true);
+            clearTable();
+            return;
+        }
+
+        const headerTexts = {};
+        Object.entries(headerIndex).forEach(([key, colIndex]) => {
+            for (let i = 0; i < headerRows.length; i++) {
+                const cell = headerRows[i] && headerRows[i][colIndex];
+                if (cell === undefined || cell === null) continue;
+                const text = cell.toString().trim();
+                if (text) {
+                    headerTexts[key] = text;
+                    break;
+                }
+            }
+        });
+
+        const normalizedHeaderTexts = Object.fromEntries(
+            Object.entries(headerTexts).map(([key, text]) => [
+                key,
+                normalizeHeader(text)
+            ])
+        );
+
+        const defaultDate = ngayCanHangDefault ? ngayCanHangDefault.value : "";
+        const today = new Date().toISOString().slice(0, 10);
+        let hasInvalidDate = false;
+
+        // Xử lý từng batch để không block UI
+        const BATCH_SIZE = 100; // Xử lý 100 dòng mỗi lần
+        let allRows = [];
+        let processedCount = 0;
+
+        const processBatch = async (startIndex) => {
+            const endIndex = Math.min(startIndex + BATCH_SIZE, dataRows.length);
+            const batch = dataRows.slice(startIndex, endIndex);
+
+            // Xử lý batch hiện tại
+            const batchRows = batch
+                .map((row) => {
+                    const getValue = (key) =>
+                        headerIndex[key] !== undefined ? row[headerIndex[key]] : "";
+                    const parsedDate = parseDateValue(getValue("ngay")) || defaultDate;
+                    let rowData = {
+                        TenSanpham: (getValue("ten") || "").toString().trim(),
+                        MaSanpham: (getValue("ma") || "").toString().trim(),
+                        HangSX: (getValue("hang") || "").toString().trim(),
+                        DonVi: (getValue("donvi") || "").toString().trim(),
+                        SLCu: parseQuantity(getValue("slcu")),
+                        SLMoi: parseQuantity(getValue("slmoi")),
+                        NhaCC: (getValue("nhacc") || "").toString().trim(),
+                        NgayCanHang: parsedDate,
+                        GhiChu: (getValue("ghichu") || "").toString().trim(),
+                        YCMakho: "",
+                        hasManualDate: Boolean(getValue("ngay"))
+                    };
+                    rowData.SLToSave = resolveFinalQuantity(rowData);
+                    rowData = applyKhoData(rowData);
+                    if (!rowData.hasManualDate) {
+                        rowData.NgayCanHang = defaultDate;
+                    }
+                    // Kiểm tra ngày hợp lệ (phải là ngày tương lai)
+                    if (rowData.NgayCanHang && !isValidFutureDate(rowData.NgayCanHang)) {
+                        hasInvalidDate = true;
+                        rowData.NgayCanHang = today;
+                    }
+                    return rowData;
+                })
+                .filter((row) => {
+                    if (!row.TenSanpham) return false;
+                    if (
+                        normalizedHeaderTexts.slmoi &&
+                        normalizeHeader(row.SLMoi) === normalizedHeaderTexts.slmoi
+                    ) {
+                        return false;
+                    }
+                    if (
+                        normalizedHeaderTexts.slcu &&
+                        normalizeHeader(row.SLCu) === normalizedHeaderTexts.slcu
+                    ) {
+                        return false;
+                    }
+                    const isNumericName = /^[0-9]+(\.[0-9]+)*$/.test(row.TenSanpham);
+                    if (isNumericName) return false;
+                    const otherFields = [
+                        row.MaSanpham,
+                        row.HangSX,
+                        row.DonVi,
+                        row.SLCu,
+                        row.SLMoi,
+                        row.NhaCC
+                    ];
+                    const hasOtherData = otherFields.some(
+                        (value) => value !== null && value !== ""
+                    );
+                    return hasOtherData;
+                });
+
+            allRows = allRows.concat(batchRows);
+            processedCount = endIndex;
+
+            // Cập nhật feedback với tiến trình
+            if (dataRows.length > BATCH_SIZE) {
+                const progress = Math.round((processedCount / dataRows.length) * 100);
+                setFeedback(`Đang xử lý: ${processedCount}/${dataRows.length} dòng (${progress}%)...`, false);
+            }
+
+            // Nếu còn dữ liệu, xử lý batch tiếp theo
+            if (endIndex < dataRows.length) {
+                // Sử dụng requestAnimationFrame hoặc setTimeout để cho phép UI update
+                await new Promise(resolve => {
+                    if (window.requestAnimationFrame) {
+                        requestAnimationFrame(() => {
+                            setTimeout(resolve, 0);
+                        });
+                    } else {
+                        setTimeout(resolve, 0);
+                    }
+                });
+                return processBatch(endIndex);
+            } else {
+                // Đã xử lý xong tất cả
+                if (!allRows.length) {
+                    setFeedback("Không tìm thấy dữ liệu hợp lệ trong tệp.", true);
+                    clearTable();
+                    return;
+                }
+
+                await renderRows(allRows);
+                if (hasInvalidDate) {
+                    setFeedback(`Đã nhập ${allRows.length} dòng từ tệp Excel. Lưu ý: Một số ngày cần hàng trong quá khứ đã được tự động điều chỉnh thành ngày hôm nay.`, false);
+                } else {
+                    setFeedback(`Đã nhập ${allRows.length} dòng từ tệp Excel.`, false);
+                }
+            }
+        };
+
+        // Bắt đầu xử lý từ batch đầu tiên
+        await processBatch(0);
     }
 
     function handleFileChange(event) {
@@ -581,27 +794,50 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        // Giới hạn kích thước file: 10MB
+        const maxFileSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxFileSize) {
+            setFeedback("Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn 10MB.", true);
+            fileInput.value = "";
+            clearTable();
+            return;
+        }
+
+        setFeedback("Đang xử lý tệp Excel, vui lòng đợi...", false);
         const isLegacyXls = /\.xls$/i.test(file.name) && !/\.xlsx$/i.test(file.name);
         const reader = new FileReader();
 
         reader.onload = function (e) {
             try {
                 const data = e.target.result;
-                const workbook = XLSX.read(isLegacyXls ? data : new Uint8Array(data), {
-                    type: isLegacyXls ? "binary" : "array"
-                });
-                if (!workbook.SheetNames.length) {
-                    setFeedback("Tệp không chứa sheet nào.", true);
-                    clearTable();
-                    return;
-                }
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const sheetRows = XLSX.utils.sheet_to_json(sheet, {
-                    header: 1,
-                    defval: "",
-                    blankrows: false
-                });
-                processSheet(sheetRows);
+                // Xử lý file trong background để không block UI
+                setTimeout(() => {
+                    try {
+                        const workbook = XLSX.read(isLegacyXls ? data : new Uint8Array(data), {
+                            type: isLegacyXls ? "binary" : "array"
+                        });
+                        if (!workbook.SheetNames.length) {
+                            setFeedback("Tệp không chứa sheet nào.", true);
+                            clearTable();
+                            return;
+                        }
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const sheetRows = XLSX.utils.sheet_to_json(sheet, {
+                            header: 1,
+                            defval: "",
+                            blankrows: false
+                        });
+                        // Xử lý sheet theo batch để tránh block UI
+                        processSheetAsync(sheetRows);
+                    } catch (error) {
+                        console.error("Lỗi khi đọc tệp Excel:", error);
+                        setFeedback(
+                            `Không thể đọc tệp Excel. ${error && error.message ? error.message : "Vui lòng kiểm tra lại."}`,
+                            true
+                        );
+                        clearTable();
+                    }
+                }, 0);
             } catch (error) {
                 console.error("Lỗi khi đọc tệp Excel:", error);
                 setFeedback(

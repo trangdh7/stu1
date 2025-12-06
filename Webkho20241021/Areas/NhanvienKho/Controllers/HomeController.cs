@@ -207,12 +207,25 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                 reservedCodes.Add(makho);
             }
 
+            int added = 0;
             if (validKhotongs.Count > 0)
             {
                 _context.khotongs.AddRange(validKhotongs);
                 _context.SaveChanges();
+                added = validKhotongs.Count;
             }
 
+            // Kiểm tra nếu là AJAX request
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.ContentType?.Contains("multipart/form-data") == true)
+            {
+                return Json(new { 
+                    success = true, 
+                    added = added,
+                    message = $"Import thành công: đã thêm {added} dòng."
+                });
+            }
+            
+            TempData["Success"] = $"Import thành công: đã thêm {added} dòng.";
             return RedirectToAction("Tongkho", "Home", new { area = "NhanvienKho" });
         }
 

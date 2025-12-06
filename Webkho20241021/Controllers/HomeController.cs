@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
@@ -655,6 +655,13 @@ namespace Webkho_20241021.Controllers
                 .OrderByDescending(v => v.NgayNhapkho)
                 .ToList();
             return View("VatTuMoi", items);
+        }
+
+        [AllowAnonymous]
+        public IActionResult NotFound()
+        {
+            Response.StatusCode = 404;
+            return View("NotFound");
         }
     }
 }

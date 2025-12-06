@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -76,6 +76,9 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Cấu hình xử lý lỗi 404 và các status code khác (phải đặt sau UseRouting)
+app.UseStatusCodePagesWithReExecute("/Home/NotFound");
 
 // Middleware để log authorization failures
 app.Use(async (context, next) =>

@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Import kho từ Excel";
     Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
 }
@@ -57,32 +57,44 @@
             <tbody></tbody>
         </table>
 
-        <form id="saveForm" method="post" action="@Url.Action("ImportSQL", "Home", new { area = "TruongBPKho" })">
-            @Html.AntiForgeryToken()
-            <div id="hiddenInputs"></div>
-            <button type="submit" class="btn btn-success">Lưu vào kho</button>
-        </form>
+        <div id="saveSection">
+            <button id="btnSave" type="button" class="btn btn-success">Lưu vào kho</button>
+            <div id="progressSection" style="display:none; margin-top:15px;">
+                <div class="progress mb-2">
+                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div id="progressText" class="text-muted"></div>
+            </div>
+        </div>
     </div>
 
     <div id="note" class="text-muted mt-3">
         Cột bắt buộc: TenSanpham, MaSanpham, SL, DonVi. Ngày: dùng định dạng dd/MM/yyyy hoặc yyyy-MM-dd.
     </div>
+    @Html.AntiForgeryToken()
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
     (function () {
         const fileInput = document.getElementById('excelFile');
         const btnPreview = document.getElementById('btnPreview');
         const btnClear = document.getElementById('btnClear');
+        const btnSave = document.getElementById('btnSave');
         const previewWrap = document.getElementById('previewWrap');
         const previewBody = document.querySelector('#previewTable tbody');
-        const hiddenInputs = document.getElementById('hiddenInputs');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        
+        // Lưu dữ liệu trong mảng thay vì tạo hidden inputs
+        let dataRows = [];
 
         function clearPreview() {
             previewBody.innerHTML = '';
-            hiddenInputs.innerHTML = '';
+            dataRows = [];
             previewWrap.style.display = 'none';
+            progressSection.style.display = 'none';
         }
 
         function toDateString(v) {
@@ -123,18 +135,9 @@
             return '';
         }
 
-        function addHidden(name, value) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = name; // arrays use same name multiple times
-            // Đảm bảo giá trị 0 được gửi đúng (không bị chuyển thành chuỗi rỗng)
-            input.value = (value === null || value === undefined) ? '' : String(value);
-            hiddenInputs.appendChild(input);
-        }
-
         function renderPreview(rows) {
             previewBody.innerHTML = '';
-            hiddenInputs.innerHTML = '';
+            dataRows = []; // Lưu dữ liệu vào mảng
 
             rows.forEach(r => {
                 const tr = document.createElement('tr');
@@ -148,26 +151,147 @@
                 const DonVi = (r.DonVi ?? r.ĐơnVị ?? r.Donvitinh ?? r.DVT ?? '').toString().trim();
                 const DuAn = (r.DuAn ?? r.DựÁn ?? r.Dự_án ?? r.Dự\u00e1n ?? r['Dự án'] ?? '').toString().trim();
 
-                // Row UI
-                [NgayNhapkho, TenSanpham, MaSanpham, HangSX, NhaCC, SL, DonVi, DuAn].forEach(val => {
-                    const td = document.createElement('td');
-                    td.textContent = val ?? '';
-                    tr.appendChild(td);
-                });
-                previewBody.appendChild(tr);
+                // Row UI - chỉ hiển thị tối đa 100 dòng để tránh treo trình duyệt
+                if (previewBody.children.length < 100) {
+                    [NgayNhapkho, TenSanpham, MaSanpham, HangSX, NhaCC, SL, DonVi, DuAn].forEach(val => {
+                        const td = document.createElement('td');
+                        td.textContent = val ?? '';
+                        tr.appendChild(td);
+                    });
+                    previewBody.appendChild(tr);
+                }
 
-                // Hidden fields to submit
-                addHidden('NgayNhapkho', NgayNhapkho);
-                addHidden('TenSanpham', TenSanpham);
-                addHidden('MaSanpham', MaSanpham);
-                addHidden('HangSX', HangSX);
-                addHidden('NhaCC', NhaCC);
-                addHidden('SL', SL);
-                addHidden('DonVi', DonVi);
-                addHidden('DuAn', DuAn);
+                // Lưu dữ liệu vào mảng
+                dataRows.push({
+                    NgayNhapkho,
+                    TenSanpham,
+                    MaSanpham,
+                    HangSX,
+                    NhaCC,
+                    SL,
+                    DonVi,
+                    DuAn
+                });
             });
 
+            // Hiển thị thông báo nếu có nhiều dòng
+            if (rows.length > 100) {
+                const infoRow = document.createElement('tr');
+                const infoCell = document.createElement('td');
+                infoCell.colSpan = 8;
+                infoCell.className = 'text-muted text-center';
+                infoCell.textContent = `... và ${rows.length - 100} dòng khác (tổng cộng ${rows.length} dòng)`;
+                infoRow.appendChild(infoCell);
+                previewBody.appendChild(infoRow);
+            }
+
             previewWrap.style.display = rows.length ? 'block' : 'none';
+        }
+
+        // Gửi dữ liệu theo batch để tránh treo trình duyệt
+        async function saveDataInBatches() {
+            if (dataRows.length === 0) {
+                alert('Không có dữ liệu để lưu');
+                return;
+            }
+
+            btnSave.disabled = true;
+            progressSection.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Đang chuẩn bị...';
+
+            const BATCH_SIZE = 100; // Gửi 100 bản ghi mỗi lần
+            const totalBatches = Math.ceil(dataRows.length / BATCH_SIZE);
+            let totalAdded = 0;
+            let totalUpdated = 0;
+            let errorCount = 0;
+            let successMessage = '';
+
+            try {
+                for (let i = 0; i < totalBatches; i++) {
+                    const start = i * BATCH_SIZE;
+                    const end = Math.min(start + BATCH_SIZE, dataRows.length);
+                    const batch = dataRows.slice(start, end);
+
+                    // Tạo FormData cho batch này
+                    const formData = new FormData();
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    if (token) {
+                        formData.append('__RequestVerificationToken', token);
+                    }
+                    batch.forEach(row => {
+                        formData.append('TenSanpham', row.TenSanpham || '');
+                        formData.append('MaSanpham', row.MaSanpham || '');
+                        formData.append('HangSX', row.HangSX || '');
+                        formData.append('NhaCC', row.NhaCC || '');
+                        formData.append('SL', row.SL || '0');
+                        formData.append('DonVi', row.DonVi || '');
+                        formData.append('NgayBaohanh', row.NgayNhapkho || '');
+                        formData.append('ThoiGianBH', '');
+                        formData.append('DuAn', row.DuAn || '');
+                    });
+
+                    // Gửi AJAX request
+                    const response = await fetch('@Url.Action("ImportSQL", "Home", new { area = "TruongBPKho" })', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            totalAdded += (result.added || 0);
+                            totalUpdated += (result.updated || 0);
+                            if (result.message) {
+                                successMessage = result.message;
+                            }
+                        } else {
+                            errorCount += batch.length;
+                        }
+                    } else {
+                        errorCount += batch.length;
+                        console.error(`Lỗi batch ${i + 1}:`, response.statusText);
+                    }
+
+                    // Cập nhật progress
+                    const progress = ((i + 1) / totalBatches) * 100;
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = `Đang xử lý: ${end}/${dataRows.length} bản ghi (Batch ${i + 1}/${totalBatches})`;
+
+                    // Nghỉ một chút giữa các batch để tránh quá tải
+                    if (i < totalBatches - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+
+                // Hoàn thành
+                progressBar.style.width = '100%';
+                if (errorCount === 0) {
+                    const finalMessage = successMessage || `Hoàn thành! Đã lưu ${totalAdded + totalUpdated} bản ghi.`;
+                    progressText.textContent = finalMessage;
+                    progressBar.classList.remove('progress-bar-animated');
+                    progressBar.classList.add('bg-success');
+                    setTimeout(() => {
+                        // Truyền thông báo qua query string
+                        const message = encodeURIComponent(successMessage || `Import thành công: thêm ${totalAdded} dòng, cập nhật ${totalUpdated} dòng.`);
+                        window.location.href = '@Url.Action("Tongkho", "Home", new { area = "TruongBPKho" })?success=' + message;
+                    }, 1500);
+                } else {
+                    progressText.textContent = `Hoàn thành với lỗi: ${totalAdded + totalUpdated} thành công, ${errorCount} lỗi.`;
+                    progressBar.classList.remove('progress-bar-animated');
+                    progressBar.classList.add('bg-warning');
+                    btnSave.disabled = false;
+                }
+            } catch (error) {
+                console.error('Lỗi khi lưu dữ liệu:', error);
+                progressText.textContent = 'Đã xảy ra lỗi: ' + error.message;
+                progressBar.classList.remove('progress-bar-animated');
+                progressBar.classList.add('bg-danger');
+                btnSave.disabled = false;
+            }
         }
 
         btnPreview.addEventListener('click', function () {
@@ -296,6 +420,7 @@
         });
 
         btnClear.addEventListener('click', clearPreview);
+        btnSave.addEventListener('click', saveDataInBatches);
     })();
 </script>
 </body>

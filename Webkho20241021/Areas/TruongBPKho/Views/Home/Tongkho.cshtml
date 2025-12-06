@@ -1,4 +1,4 @@
-﻿@model List<Webkho_20241021.Models.khotongs>
+@model List<Webkho_20241021.Models.khotongs>
 @{
     ViewData["Title"] = "Tongkho";
     Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
@@ -63,6 +63,21 @@
                     <div>
                         <strong>Thành công!</strong>
                         <p>@TempData["Success"]</p>
+                    </div>
+                </div>
+                <button class="alert-close" onclick="this.parentElement.style.display='none';">
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+        }
+        @if (Context.Request.Query["success"].Count > 0)
+        {
+            <div id="success-alert" class="alert alert-success">
+                <div class="alert-content">
+                    <i class='bx bx-check-circle'></i>
+                    <div>
+                        <strong>Thành công!</strong>
+                        <p>@Uri.UnescapeDataString(Context.Request.Query["success"].ToString())</p>
                     </div>
                 </div>
                 <button class="alert-close" onclick="this.parentElement.style.display='none';">

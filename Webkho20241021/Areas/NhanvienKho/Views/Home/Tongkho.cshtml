@@ -1,4 +1,4 @@
-﻿@model List<Webkho_20241021.Models.khotongs>
+@model List<Webkho_20241021.Models.khotongs>
 @{
     ViewData["Title"] = "Kho dự án";
     Layout = "~/Areas/NhanvienKho/Views/Layout/Layout.cshtml";
@@ -38,6 +38,35 @@
                 <input type="text" id="timkiem" placeholder="Tìm kiếm vật tư..." />
             </div>
         </div>
+        
+        <!-- Success Alert -->
+        @if (TempData["Success"] != null)
+        {
+            <div id="success-alert" class="alert alert-success" style="margin: 15px; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; color: #155724;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class='bx bx-check-circle' style="font-size: 24px;"></i>
+                    <div>
+                        <strong>Thành công!</strong>
+                        <p style="margin: 5px 0 0 0;">@TempData["Success"]</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.style.display='none';" style="margin-left: auto; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                </div>
+            </div>
+        }
+        @if (Context.Request.Query["success"].Count > 0)
+        {
+            <div id="success-alert" class="alert alert-success" style="margin: 15px; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; color: #155724;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class='bx bx-check-circle' style="font-size: 24px;"></i>
+                    <div>
+                        <strong>Thành công!</strong>
+                        <p style="margin: 5px 0 0 0;">@Uri.UnescapeDataString(Context.Request.Query["success"].ToString())</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.style.display='none';" style="margin-left: auto; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                </div>
+            </div>
+        }
+        
         <div class="action-section top-action">
             <div class="action-group">
                 <h3>Hành động</h3>

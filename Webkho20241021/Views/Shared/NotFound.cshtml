@@ -1,0 +1,38 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "404 - Trang không tìm thấy";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 - Trang không tìm thấy</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/NotFound.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="error-container">
+        <div class="logo-section">
+            <img src="https://cdn.nhanlucnganhluat.vn/uploads/images/B937CC5F/logo/2019-11/logo2.jpg" alt="STU Logo" />
+        </div>
+        
+        <div class="error-icon">🔍</div>
+        
+        <div class="error-code">404</div>
+        
+        <h1 class="error-title">Trang không tìm thấy</h1>
+        
+        <p class="error-message">
+            Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.<br>
+            Vui lòng kiểm tra lại đường dẫn hoặc quay về trang chủ.
+        </p>
+        
+        <div class="error-actions">
+            <a href="/Home/Dangnhap" class="btn-home">Về trang đăng nhập</a>
+            <a href="javascript:history.back()" class="btn-back">Quay lại</a>
+        </div>
+    </div>
+</body>
+</html>

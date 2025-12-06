@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Webkho_20241021.Models;
 using System.Linq;
@@ -256,6 +256,18 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             }
 
             _context.SaveChanges();
+            
+            // Kiểm tra nếu là AJAX request
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.ContentType?.Contains("multipart/form-data") == true)
+            {
+                return Json(new { 
+                    success = true, 
+                    added = added, 
+                    updated = updated,
+                    message = $"Import thành công: thêm {added} dòng, cập nhật {updated} dòng."
+                });
+            }
+            
             TempData["Success"] = $"Import thành công: thêm {added} dòng, cập nhật {updated} dòng.";
             return RedirectToAction("Tongkho", "Home", new { area = "TruongBPKho" });
         }

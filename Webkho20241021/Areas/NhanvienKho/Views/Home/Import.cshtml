@@ -1,6 +1,6 @@
-﻿@{
+@{
     ViewData["Title"] = "Import";
-    Layout = "~/Areas/NhanvienKythuat/Views/Layout/Layout.cshtml";
+    Layout = "~/Areas/NhanvienKho/Views/Layout/Layout.cshtml";
 }
 
 <!DOCTYPE html>
@@ -11,6 +11,13 @@
     <title>Import Vật Tư</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script>
+        // Lưu dữ liệu trong mảng thay vì tạo nhiều DOM elements
+        let dataRows = [];
+        const btnSave = document.getElementById('btnSave');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (file) {
@@ -28,93 +35,218 @@
         }
 
         function formatExcelDateToDatetimeLocal(dateString) {
-            // Kiểm tra nếu chuỗi ngày không hợp lệ hoặc rỗng
             if (!dateString) return '';
-
-            // Giả sử chuỗi ngày có định dạng dd/MM/yyyy
             const [day, month, year] = dateString.split('/');
-
             if (day && month && year && day.length <= 2 && month.length <= 2) {
-                // Định dạng lại theo `yyyy-MM-dd` để dùng trong thẻ input
                 return `${year}-${day.padStart(2, '0')}-${month.padStart(2, '0')}`;
             }
-
-            return ''; // Trả về chuỗi rỗng nếu không thể định dạng đúng
+            return '';
         }
 
         function populateTable(data) {
             const tbody = document.querySelector('.form-table tbody');
-            tbody.innerHTML = ''; // Clear existing rows
+            tbody.innerHTML = '';
+            dataRows = []; // Reset data array
 
-            for (let i = 1; i < data.length; i++) { // Skip header row
-                if (data[i].length <= 1) continue; // Skip rows with 1 or fewer columns
+            for (let i = 1; i < data.length; i++) {
+                if (data[i].length <= 1) continue;
 
                 const formattedNgayBaohanh = formatExcelDateToDatetimeLocal(data[i][7]);
                 const formattedThoiGianBH = formatExcelDateToDatetimeLocal(data[i][8]);
 
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${i}</td>
-                    <td style="width: 20%;"><input type="text" name="TenSanpham" value="${data[i][1] || ''}" placeholder="Tên vật tư" required /></td>
-                    <td><input type="text" name="MaSanpham" value="${data[i][2] || ''}" placeholder="Mã vật tư" required /></td>
-                    <td><input type="text" name="HangSX" value="${data[i][3] || ''}" placeholder="Hãng SX" /></td>
-                    <td><input type="text" name="NhaCC" value="${data[i][4] || ''}" placeholder="Nhà cung cấp" /></td>
-                    <td><input type="number" name="SL" value="${data[i][5] || ''}" placeholder="Số lượng" required /></td>
-                    <td><input type="text" name="DonVi" value="${data[i][6] || ''}" placeholder="Đơn vị" required /></td>
-                    <td><input type="date" name="NgayBaohanh" value="${formattedNgayBaohanh}" placeholder="Ngày bảo hành" /></td>
-                    <td><input type="date" name="ThoiGianBH" value="${formattedThoiGianBH}" placeholder="Thời gian BH" /></td>
-                `;
-                tbody.appendChild(row);
+                // Lưu dữ liệu vào mảng
+                dataRows.push({
+                    TenSanpham: (data[i][1] || '').toString().trim(),
+                    MaSanpham: (data[i][2] || '').toString().trim(),
+                    HangSX: (data[i][3] || '').toString().trim(),
+                    NhaCC: (data[i][4] || '').toString().trim(),
+                    SL: data[i][5] || '0',
+                    DonVi: (data[i][6] || '').toString().trim(),
+                    NgayBaohanh: formattedNgayBaohanh,
+                    ThoiGianBH: formattedThoiGianBH
+                });
+
+                // Chỉ hiển thị tối đa 100 dòng để tránh treo trình duyệt
+                if (tbody.children.length < 100) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${i}</td>
+                        <td style="width: 20%;">${data[i][1] || ''}</td>
+                        <td>${data[i][2] || ''}</td>
+                        <td>${data[i][3] || ''}</td>
+                        <td>${data[i][4] || ''}</td>
+                        <td>${data[i][5] || ''}</td>
+                        <td>${data[i][6] || ''}</td>
+                        <td>${formattedNgayBaohanh}</td>
+                        <td>${formattedThoiGianBH}</td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            }
+
+            // Hiển thị thông báo nếu có nhiều dòng
+            if (dataRows.length > 100) {
+                const infoRow = document.createElement('tr');
+                const infoCell = document.createElement('td');
+                infoCell.colSpan = 9;
+                infoCell.style.textAlign = 'center';
+                infoCell.style.color = '#666';
+                infoCell.textContent = `... và ${dataRows.length - 100} dòng khác (tổng cộng ${dataRows.length} dòng)`;
+                infoRow.appendChild(infoCell);
+                tbody.appendChild(infoRow);
             }
         }
 
+        // Gửi dữ liệu theo batch để tránh treo trình duyệt
+        async function saveDataInBatches() {
+            if (dataRows.length === 0) {
+                alert('Không có dữ liệu để lưu');
+                return;
+            }
+
+            btnSave.disabled = true;
+            progressSection.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Đang chuẩn bị...';
+
+            const BATCH_SIZE = 100;
+            const totalBatches = Math.ceil(dataRows.length / BATCH_SIZE);
+            let totalAdded = 0;
+            let errorCount = 0;
+            let successMessage = '';
+
+            try {
+                for (let i = 0; i < totalBatches; i++) {
+                    const start = i * BATCH_SIZE;
+                    const end = Math.min(start + BATCH_SIZE, dataRows.length);
+                    const batch = dataRows.slice(start, end);
+
+                    const formData = new FormData();
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    if (token) {
+                        formData.append('__RequestVerificationToken', token);
+                    }
+                    batch.forEach(row => {
+                        formData.append('TenSanpham', row.TenSanpham || '');
+                        formData.append('MaSanpham', row.MaSanpham || '');
+                        formData.append('HangSX', row.HangSX || '');
+                        formData.append('NhaCC', row.NhaCC || '');
+                        formData.append('SL', row.SL || '0');
+                        formData.append('DonVi', row.DonVi || '');
+                        formData.append('NgayBaohanh', row.NgayBaohanh || '');
+                        formData.append('ThoiGianBH', row.ThoiGianBH || '');
+                    });
+
+                    const response = await fetch('@Url.Action("ImportSQL", "Home", new { area = "NhanvienKho" })', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            totalAdded += (result.added || 0);
+                            if (result.message) {
+                                successMessage = result.message;
+                            }
+                        } else {
+                            errorCount += batch.length;
+                        }
+                    } else {
+                        errorCount += batch.length;
+                        console.error(`Lỗi batch ${i + 1}:`, response.statusText);
+                    }
+
+                    const progress = ((i + 1) / totalBatches) * 100;
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = `Đang xử lý: ${end}/${dataRows.length} bản ghi (Batch ${i + 1}/${totalBatches})`;
+
+                    if (i < totalBatches - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+
+                progressBar.style.width = '100%';
+                if (errorCount === 0) {
+                    const finalMessage = successMessage || `Hoàn thành! Đã lưu ${totalAdded} bản ghi.`;
+                    progressText.textContent = finalMessage;
+                    progressBar.classList.remove('progress-bar-animated');
+                    progressBar.classList.add('bg-success');
+                    setTimeout(() => {
+                        // Truyền thông báo qua query string
+                        const message = encodeURIComponent(successMessage || `Import thành công: đã thêm ${totalAdded} dòng.`);
+                        window.location.href = '@Url.Action("Tongkho", "Home", new { area = "NhanvienKho" })?success=' + message;
+                    }, 1500);
+                } else {
+                    progressText.textContent = `Hoàn thành với lỗi: ${totalAdded} thành công, ${errorCount} lỗi.`;
+                    progressBar.classList.remove('progress-bar-animated');
+                    progressBar.classList.add('bg-warning');
+                    btnSave.disabled = false;
+                }
+            } catch (error) {
+                console.error('Lỗi khi lưu dữ liệu:', error);
+                progressText.textContent = 'Đã xảy ra lỗi: ' + error.message;
+                progressBar.classList.remove('progress-bar-animated');
+                progressBar.classList.add('bg-danger');
+                btnSave.disabled = false;
+            }
+        }
+
+        btnSave.addEventListener('click', saveDataInBatches);
     </script>
 </head>
 <body>
-    @using (Html.BeginForm("ImportSQL", "Home", new { area = "NhanvienKythuat" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
-    {
-        <div class="formyeucau">
-            <div class="tieude">
-                <p>Chọn file Excel để import</p>
+    <div class="formyeucau">
+        <div class="tieude">
+            <p>Chọn file Excel để import</p>
+        </div>
+        <div class="row">
+            <div class="field">
+                <label for="file">File import</label>
+                <input type="file" id="file" name="file" onchange="handleFileUpload(event)" />
             </div>
-            <div class="row">
-                <div class="field">
-                    <label for="file">File import</label>
-                    <input type="file" id="file" name="file" onchange="handleFileUpload(event)" />
+        </div>
+        <div class="action">
+            <button type="button" onclick="handleFileUpload(event)">Import</button>
+        </div>
+    </div>
+    <div class="formtableyeucau">
+        <div class="tieude">
+            <p>Danh sách vật tư import</p>
+        </div>
+        <div class="themyeucau-table">
+            <table class="form-table">
+                <thead>
+                    <tr>
+                        <td>STT</td>
+                        <td>Tên vật tư</td>
+                        <td>Mã vật tư</td>
+                        <td>Hãng SX</td>
+                        <td>Nhà cung cấp</td>
+                        <td>Số lượng</td>
+                        <td>Đơn vị</td>
+                        <td>Ngày bảo hành</td>
+                        <td>Thời gian BH</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be populated here -->
+                </tbody>
+            </table>
+        </div>
+        <div class="action">
+            <button id="btnSave" type="button">Thêm vật tư</button>
+            <div id="progressSection" style="display:none; margin-top:15px;">
+                <div class="progress mb-2" style="height: 25px;">
+                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
                 </div>
-            </div>
-            <div class="action">
-                <button type="button" onclick="handleFileUpload(event)">Import</button>
+                <div id="progressText" style="text-align: center; color: #666;"></div>
             </div>
         </div>
-        <div class="formtableyeucau">
-            <div class="tieude">
-                <p>Danh sách vật tư import</p>
-            </div>
-            <div class="themyeucau-table">
-                <table class="form-table">
-                    <thead>
-                        <tr>
-                            <td>STT</td>
-                            <td>Tên vật tư</td>
-                            <td>Mã vật tư</td>
-                            <td>Hãng SX</td>
-                            <td>Nhà cung cấp</td>
-                            <td>Số lượng</td>
-                            <td>Đơn vị</td>
-                            <td>Ngày bảo hành</td>
-                            <td>Thời gian BH</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Rows will be populated here -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="action">
-                <button type="submit">Thêm vật tư</button>
-            </div>
-        </div>
-    }
+    </div>
+    @Html.AntiForgeryToken()
 </body>
 </html>
