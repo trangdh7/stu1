@@ -8,6 +8,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using OfficeOpenXml;
 
 
 namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
@@ -1406,9 +1407,15 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
         public IActionResult ThemyeucauSQL(yeucau yeucau, vtyeucau vtyeucau,
                                            duans duans, phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, List<string> YCMaKho,
                                            List<string> TenSanpham, List<string> MaSanpham,
-                                           List<string> HangSX, List<string> NhaCC, List<int> SL,
+                                           List<string> HangSX, List<string> NhaCC, List<int?> SL,
                                            List<string> DonVi, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
         {
+            // Kiểm tra null để tránh lỗi khi upload file Excel lớn
+            if (yeucau == null)
+            {
+                yeucau = new yeucau();
+            }
+
             DateTime? GetNgayCanHangAt(int index)
             {
                 if (Request.Form.TryGetValue("VTNgayCanHang", out var dateValues))
@@ -1422,26 +1429,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     }
                 }
 
-                return yeucau.NgayCanHang;
+                return yeucau?.NgayCanHang;
             }
 
             if (yeucau.TenYeucau != "Yêu cầu nhập kho")
             {
-                var prefix = yeucau.YCMaNguoidung;
-                int nextNumber = 1;
-
-                while (true)
-                {
-                    yeucau.MaYeucau = $"{prefix}{nextNumber}";
-
-                    var existingEntry = _context.yeucau
-                                                .FirstOrDefault(y => y.MaYeucau == yeucau.MaYeucau);
-                    if (existingEntry == null)
-                    {
-                        break;
-                    }
-                    nextNumber++;
-                }
                 yeucau.NgayYeucau = DateTime.Now;
 
                 var chucVu2 = HttpContext.Session.GetString("Chucvu");
@@ -1569,6 +1561,140 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     }
                 }
 
+                // ================== TẠO MÃ YÊU CẦU ĐÚNG CHUẨN ==================
+                
+                // Lấy mã sản phẩm (ST) từ tên file Excel hoặc từ form
+                string? stPart = null;
+                
+                // Ưu tiên đọc từ tên file Excel nếu có
+               if (Request.Form.Files != null && Request.Form.Files.Count > 0)
+                {
+                    var excelFile = Request.Form.Files.FirstOrDefault(f => 
+                        f.Name == "excel-upload" || 
+                        (!string.IsNullOrEmpty(f.FileName) && (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))));
+                    
+                    if (excelFile != null && !string.IsNullOrEmpty(excelFile.FileName))
+                    {
+                        try
+                        {
+                            // Lấy tên file không có extension
+                            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(excelFile.FileName);
+                            
+                            // Xử lý tên file có thể có dấu gạch dưới: thay thế bằng khoảng trắng để parse
+                            fileNameWithoutExt = fileNameWithoutExt.Replace('_', ' ');
+                            
+                            // Parse tên file: 
+                            // - "DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (mã vật tư đầu tiên)
+                            // - "251005 STUP10.5013 251203" → lấy "STUP10.5013" (bỏ qua số 6 chữ số)
+                            // - "251208 DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (bỏ qua số 6 chữ số)
+                            // Tách theo khoảng trắng
+                            var parts = fileNameWithoutExt.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                            
+                            // Tìm phần không phải số 6 chữ số (mã vật tư đầu tiên)
+                                foreach (var part in parts)
+                                {
+                                // Bỏ qua các phần là số 6 chữ số (mã dự án hoặc ngày)
+                                    if (part.Length == 6 && part.All(char.IsDigit))
+                                    {
+                                    continue;
+                                    }
+                                // Phần không phải số 6 chữ số là mã vật tư đầu tiên
+                                        stPart = part;
+                                        break;
+                                    }
+                                
+                            // Nếu sau khi parse không tìm thấy (có thể tên file chỉ có số hoặc format khác),
+                            // và chỉ có 1 phần duy nhất, lấy phần đó làm mã vật tư
+                            if (string.IsNullOrWhiteSpace(stPart) && parts.Length == 1)
+                                {
+                                    stPart = parts[0];
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Nếu parse tên file lỗi, fallback về MaSanpham từ form
+                            Console.WriteLine($"Lỗi khi parse tên file Excel để lấy mã sản phẩm: {ex.Message}");
+                        }
+                    }
+                }
+                
+                // Nếu không đọc được từ tên file, lấy từ MaSanpham form
+                if (string.IsNullOrWhiteSpace(stPart))
+                {
+                    if (MaSanpham != null && MaSanpham.Count > 0)
+                    {
+                        stPart = MaSanpham.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m));
+                    }
+                }
+                
+                if (string.IsNullOrWhiteSpace(stPart))
+                {
+                    stPart = "VT";
+                }
+                stPart = stPart.Replace(" ", ""); // Bỏ dấu cách
+                
+                // Lấy tên viết tắt từ MaNguoidung (không dùng hàm parse)
+                string tenVietTat = maNv2 ?? yeucau.YCMaNguoidung ?? "NGUOIDUNG";
+                
+                if (!string.IsNullOrEmpty(yeucau.YCMaDuan))
+                {
+                    // ===== Trường hợp có Mã Dự Án: NNNNNN ST HiepNT =====
+                    // Lấy 6 chữ số từ mã dự án
+                    string maDuanFormatted = "000000";
+                    var maDuanDigits = new string(yeucau.YCMaDuan.Where(char.IsDigit).ToArray());
+                    if (maDuanDigits.Length > 6)
+                    {
+                        maDuanFormatted = maDuanDigits.Substring(maDuanDigits.Length - 6);
+                    }
+                    else
+                    {
+                        maDuanFormatted = maDuanDigits.PadLeft(6, '0');
+                    }
+                    
+                    // Tạo mã yêu cầu: NNNNNN ST HiepNT
+                    yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}";
+                    
+                    // Đảm bảo tính duy nhất
+                    int suffixNumber = 1;
+                    while (true)
+                    {
+                        var exists = _context.yeucau
+                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
+                        if (exists == null)
+                        {
+                            break;
+                        }
+                        // Nếu trùng, thêm số suffix
+                        yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}{suffixNumber}";
+                        suffixNumber++;
+                    }
+                }
+                else
+                {
+                    // ===== Trường hợp KHÔNG có Mã Dự Án: YYMMDD ST HiepNT =====
+                    // Lấy ngày hiện tại dạng YYMMDD
+                    string datePart = DateTime.Now.ToString("yyMMdd");
+                    
+                    // Tạo mã yêu cầu: YYMMDD ST HiepNT
+                    yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
+                    
+                    // Đảm bảo tính duy nhất
+                    int suffixNumber = 1;
+                    while (true)
+                    {
+                        var exists = _context.yeucau
+                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
+                        if (exists == null)
+                        {
+                            break;
+                        }
+                        // Nếu trùng, thêm số suffix
+                        yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}{suffixNumber}";
+                        suffixNumber++;
+                    }
+                }
+                // ================================================================
+
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
@@ -1589,7 +1715,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                 Directory.CreateDirectory(uploadsFolder);
                             }
 
-                            var uniqueFileName = $"{yeucau.MaYeucau}_{DateTime.Now:yyyyMMddHHmmss}_{Path.GetFileName(excelFile.FileName)}";
+                            // Tên file theo cấu trúc mới: MaYeucau (đã bao gồm NNNNNN ST)
+                            var uniqueFileName = $"{yeucau.MaYeucau.Replace(" ", "_")}_{Path.GetFileName(excelFile.FileName)}";
                             var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                             using (var stream = new FileStream(filePath, FileMode.Create))
@@ -1644,7 +1771,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     var hangValue = (HangSX != null && i < HangSX.Count) ? HangSX[i] : null;
                     var nhaCcValue = (NhaCC != null && i < NhaCC.Count) ? NhaCC[i] : null;
                     var donViValue = (DonVi != null && i < DonVi.Count) ? DonVi[i] : null;
-                    var slValue = (SL != null && i < SL.Count) ? SL[i] : 0;
+                    var slValue = (SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0;
 
                     var khoMatch = _context.khotongs.FirstOrDefault(p => p.Makho == maKhoValue);
                     // Kiểm tra xem có phải vật tư từ kho cá nhân không
@@ -3604,6 +3731,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
             return View();
         }
+
 
     }
 }

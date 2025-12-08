@@ -7,6 +7,7 @@ using OfficeOpenXml;
 using System.Linq;
 using System.Security.Claims;
 using Webkho_20241021.Helpers;
+using Microsoft.AspNetCore.Http.Features;
 
 // Cấu hình license cho EPPlus 8+
 ExcelPackage.License.SetNonCommercialPersonal("Webkho Management System");
@@ -29,6 +30,15 @@ builder.Services.AddDbContext<ApplicationDbContext_user>(options =>
 
 // Thêm dịch vụ vào container
 builder.Services.AddControllersWithViews();
+
+// Cấu hình FormOptions để tăng giới hạn form values (hỗ trợ upload file Excel lớn)
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.ValueCountLimit = 20000; // Tăng từ 1024 (mặc định) lên 20000
+    options.KeyLengthLimit = 2048;   // Tăng giới hạn độ dài key
+    options.ValueLengthLimit = 4194304; // 4MB cho mỗi value
+    options.MultipartBodyLengthLimit = 134217728; // 128MB cho toàn bộ request
+});
 
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {

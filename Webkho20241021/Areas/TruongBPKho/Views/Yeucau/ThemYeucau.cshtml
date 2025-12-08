@@ -1,4 +1,4 @@
-﻿@model Webkho_20241021.Models.yeucau
+@model Webkho_20241021.Models.yeucau
 @{
     ViewData["Title"] = "ThemYeucau";
     Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
@@ -60,7 +60,7 @@
             </div>
             <div class="upload-excel">
                 <label for="excel-upload">Tải tệp Excel</label>
-                <input type="file" id="excel-upload" accept=".xlsx, .xls" />
+                <input type="file" id="excel-upload" name="excel-upload" accept=".xlsx, .xls" />
                 <p class="text-sm text-gray-600 leading-tight">
                     Vui lòng sử dụng tệp có các cột:
                     <b>Tên</b>, <b>Mã vật tư</b>, <b>Hãng sản xuất</b>,
