@@ -43,7 +43,7 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 
             var total = query.Count();
             var items = query
-                .OrderByDescending(k => k.MaSanpham)
+                .OrderByDescending(k => k.NgayNhapkho)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -82,58 +82,81 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
         }
 
         [HttpPost]
-        public IActionResult ThemvattuSQL(string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, DateTime?[] NgayBaohanh, DateTime?[] ThoiGianBH)
+        public IActionResult ThemvattuSQL(string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, DateTime?[] NgayBaohanh, DateTime?[] ThoiGianBH, string[] DuAn)
         {
-            int count = TenSanpham.Length;
-            var reservedCodes = new HashSet<string>(
+            // Duyệt theo độ dài nhỏ nhất của các mảng bắt buộc để tránh IndexOutOfRange
+            int count = new[]
+            {
+                TenSanpham?.Length ?? 0,
+                MaSanpham?.Length ?? 0,
+                HangSX?.Length ?? 0,
+                NhaCC?.Length ?? 0,
+                SL?.Length ?? 0,
+                DonVi?.Length ?? 0
+            }.Min();
+
+            // Tập hợp mã kho đã sử dụng (bao gồm dữ liệu hiện có và các bản ghi đang thêm trong batch này)
+            var usedMakho = new HashSet<string>(
                 _context.khotongs
                     .Select(k => k.Makho)
                     .Where(m => !string.IsNullOrWhiteSpace(m)),
                 StringComparer.OrdinalIgnoreCase);
 
-            List<khotongs> validKhotongs = new List<khotongs>();
-
             for (int i = 0; i < count; i++)
             {
                 if (string.IsNullOrWhiteSpace(TenSanpham[i]) || string.IsNullOrWhiteSpace(MaSanpham[i]) ||
-                    SL[i] <= 0 || string.IsNullOrWhiteSpace(DonVi[i]))
+                    SL[i] < 0 || string.IsNullOrWhiteSpace(DonVi[i]))
                 {
                     continue;
                 }
 
-                var ngayNhap = DateTime.Now;
-                var makho = MakhoHelper.BuildUniqueOfficialCode(
-                    _context,
-                    MaSanpham[i],
-                    HangSX[i],
-                    ngayNhap,
-                    reservedCodes);
+                var existingItem = _context.khotongs
+                    .FirstOrDefault(k => k.TenSanpham == TenSanpham[i] && k.MaSanpham == MaSanpham[i] && k.HangSX == HangSX[i]);
 
-                var khotongs = new khotongs
+                if (existingItem != null)
                 {
-                    TenSanpham = TenSanpham[i],
-                    MaSanpham = MaSanpham[i],
-                    HangSX = HangSX[i],
-                    NhaCC = NhaCC[i],
-                    SL = SL[i],
-                    DonVi = DonVi[i],
-                    NgayBaohanh = NgayBaohanh[i],
-                    ThoiGianBH = ThoiGianBH[i],
-                    Makho = makho,
-                    NgayNhapkho = ngayNhap,
-                    TrangThai = "Tồn kho"
-                };
+                    existingItem.SL += SL[i];
+                    // Nếu file có cột Dự án thì luôn đồng bộ vào vật tư hiện có
+                    if (DuAn != null && i < DuAn.Length && !string.IsNullOrWhiteSpace(DuAn[i]))
+                    {
+                        existingItem.DuAn = DuAn[i].Trim();
+                    }
+                    _context.khotongs.Update(existingItem);
+                }
+                else
+                {
+                    var ngayNhap = DateTime.Now;
+                    var makho = MakhoHelper.BuildUniqueOfficialCode(
+                        _context,
+                        MaSanpham[i],
+                        HangSX[i],
+                        ngayNhap,
+                        usedMakho);
 
-                validKhotongs.Add(khotongs);
-                reservedCodes.Add(makho);
+                    var khotongs = new khotongs
+                    {
+                        TenSanpham = TenSanpham[i],
+                        MaSanpham = MaSanpham[i],
+                        HangSX = HangSX[i],
+                        NhaCC = NhaCC[i],
+                        SL = SL[i],
+                        DonVi = DonVi[i],
+                        // Hai cột ngày có thể thiếu – truy cập an toàn theo chỉ số
+                        NgayBaohanh = (NgayBaohanh != null && i < NgayBaohanh.Length) ? NgayBaohanh[i] : null,
+                        ThoiGianBH = (ThoiGianBH != null && i < ThoiGianBH.Length) ? ThoiGianBH[i] : null,
+                        DuAn = (DuAn != null && i < DuAn.Length && !string.IsNullOrWhiteSpace(DuAn[i])) ? DuAn[i] : null,
+                        Makho = makho,
+                        NgayNhapkho = ngayNhap,
+                        TrangThai = "Tồn kho"
+                    };
+
+                    _context.khotongs.Add(khotongs);
+                    usedMakho.Add(makho);
+                }
             }
 
-            if (validKhotongs.Count > 0)
-            {
-                _context.khotongs.AddRange(validKhotongs);
-                _context.SaveChanges();
-            }
-
+            int totalAdded = _context.SaveChanges();
+            TempData["Success"] = "Thêm vật tư thành công!";
             return RedirectToAction("Tongkho", "Home", new { area = "NhanvienKho" });
         }
 
@@ -161,71 +184,99 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
         }
 
         [HttpPost]
-        public IActionResult ImportSQL(string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, DateTime?[] NgayBaohanh, DateTime?[] ThoiGianBH)
+        public IActionResult ImportSQL(string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, int[] SL, string[] DonVi, DateTime?[] NgayBaohanh, DateTime?[] ThoiGianBH, string[] DuAn)
         {
-            int count = TenSanpham.Length;
-            var reservedCodes = new HashSet<string>(
+            // Duyệt theo độ dài nhỏ nhất của các mảng bắt buộc để tránh IndexOutOfRange
+            int count = new[]
+            {
+                TenSanpham?.Length ?? 0,
+                MaSanpham?.Length ?? 0,
+                HangSX?.Length ?? 0,
+                NhaCC?.Length ?? 0,
+                SL?.Length ?? 0,
+                DonVi?.Length ?? 0
+            }.Min();
+            int added = 0;
+            int updated = 0;
+
+            // Tập hợp mã kho đã sử dụng (bao gồm dữ liệu hiện có và các bản ghi đang thêm trong batch này)
+            var usedMakho = new HashSet<string>(
                 _context.khotongs
                     .Select(k => k.Makho)
                     .Where(m => !string.IsNullOrWhiteSpace(m)),
                 StringComparer.OrdinalIgnoreCase);
 
-            List<khotongs> validKhotongs = new List<khotongs>();
-
             for (int i = 0; i < count; i++)
             {
                 if (string.IsNullOrWhiteSpace(TenSanpham[i]) || string.IsNullOrWhiteSpace(MaSanpham[i]) ||
-                    SL[i] <= 0 || string.IsNullOrWhiteSpace(DonVi[i]))
+                    SL[i] < 0 || string.IsNullOrWhiteSpace(DonVi[i]))
                 {
                     continue;
                 }
 
-                var ngayNhap = DateTime.Now;
-                var makho = MakhoHelper.BuildUniqueOfficialCode(
-                    _context,
-                    MaSanpham[i],
-                    HangSX[i],
-                    ngayNhap,
-                    reservedCodes);
+                var existingItem = _context.khotongs.FirstOrDefault(k =>
+                    k.TenSanpham == TenSanpham[i] &&
+                    k.MaSanpham == MaSanpham[i] &&
+                    k.HangSX == HangSX[i]);
 
-                var khotongs = new khotongs
+                if (existingItem != null)
                 {
-                    TenSanpham = TenSanpham[i],
-                    MaSanpham = MaSanpham[i],
-                    HangSX = HangSX[i],
-                    NhaCC = NhaCC[i],
-                    SL = SL[i],
-                    DonVi = DonVi[i],
-                    NgayBaohanh = NgayBaohanh[i],
-                    ThoiGianBH = ThoiGianBH[i],
-                    Makho = makho,
-                    NgayNhapkho = ngayNhap,
-                    TrangThai = "Tồn kho"
-                };
+                    existingItem.SL += SL[i];
+                    // Nếu file có cột Dự án thì luôn đồng bộ vào vật tư hiện có
+                    if (DuAn != null && i < DuAn.Length && !string.IsNullOrWhiteSpace(DuAn[i]))
+                    {
+                        existingItem.DuAn = DuAn[i].Trim();
+                    }
+                    _context.khotongs.Update(existingItem);
+                    updated++;
+                }
+                else
+                {
+                    var ngayNhap = DateTime.Now;
+                    var makho = MakhoHelper.BuildUniqueOfficialCode(
+                        _context,
+                        MaSanpham[i],
+                        HangSX[i],
+                        ngayNhap,
+                        usedMakho);
 
-                validKhotongs.Add(khotongs);
-                reservedCodes.Add(makho);
+                    var newKhotong = new khotongs
+                    {
+                        TenSanpham = TenSanpham[i],
+                        MaSanpham = MaSanpham[i],
+                        HangSX = HangSX[i],
+                        NhaCC = NhaCC[i],
+                        SL = SL[i],
+                        DonVi = DonVi[i],
+                        // Hai cột ngày có thể thiếu – truy cập an toàn theo chỉ số
+                        NgayBaohanh = (NgayBaohanh != null && i < NgayBaohanh.Length) ? NgayBaohanh[i] : null,
+                        ThoiGianBH = (ThoiGianBH != null && i < ThoiGianBH.Length) ? ThoiGianBH[i] : null,
+                        DuAn = (DuAn != null && i < DuAn.Length && !string.IsNullOrWhiteSpace(DuAn[i])) ? DuAn[i] : null,
+                        Makho = makho,
+                        NgayNhapkho = ngayNhap,
+                        TrangThai = "Tồn kho"
+                    };
+
+                    _context.khotongs.Add(newKhotong);
+                    usedMakho.Add(makho);
+                    added++;
+                }
             }
 
-            int added = 0;
-            if (validKhotongs.Count > 0)
-            {
-                _context.khotongs.AddRange(validKhotongs);
-                _context.SaveChanges();
-                added = validKhotongs.Count;
-            }
-
+            _context.SaveChanges();
+            
             // Kiểm tra nếu là AJAX request
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.ContentType?.Contains("multipart/form-data") == true)
             {
                 return Json(new { 
                     success = true, 
-                    added = added,
-                    message = $"Import thành công: đã thêm {added} dòng."
+                    added = added, 
+                    updated = updated,
+                    message = $"Import thành công: thêm {added} dòng, cập nhật {updated} dòng."
                 });
             }
             
-            TempData["Success"] = $"Import thành công: đã thêm {added} dòng.";
+            TempData["Success"] = $"Import thành công: thêm {added} dòng, cập nhật {updated} dòng.";
             return RedirectToAction("Tongkho", "Home", new { area = "NhanvienKho" });
         }
 
@@ -250,7 +301,7 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 
             var total = query.Count();
             var items = query
-                .OrderByDescending(k => k.MaSanpham)
+                .OrderByDescending(k => k.NgayNhapkho)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -267,6 +318,25 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                 .ToList();
 
             return View("Tongkho", capPhatNvMoi);
+        }
+
+        // Action debug để kiểm tra dữ liệu
+        public ActionResult DebugCapPhatNvMoi()
+        {
+            var allKhotongs = _context.khotongs.ToList();
+            var allVtphieuxuatkho = _context.vtphieuxuatkho.ToList();
+
+            var capPhatNvMoiFromKhotongs = allKhotongs.Where(k => k.LoaiCapPhat == "ChoNhanVienMoi").ToList();
+            var capPhatNvMoiFromVtphieuxuatkho = allVtphieuxuatkho.Where(k => k.LoaiCapPhat == "ChoNhanVienMoi").ToList();
+
+            ViewBag.TotalKhotongsRecords = allKhotongs.Count;
+            ViewBag.TotalVtphieuxuatkhoRecords = allVtphieuxuatkho.Count;
+            ViewBag.CapPhatNvMoiFromKhotongs = capPhatNvMoiFromKhotongs.Count;
+            ViewBag.CapPhatNvMoiFromVtphieuxuatkho = capPhatNvMoiFromVtphieuxuatkho.Count;
+            ViewBag.AllLoaiCapPhatKhotongs = allKhotongs.Select(k => k.LoaiCapPhat).Distinct().ToList();
+            ViewBag.AllLoaiCapPhatVtphieuxuatkho = allVtphieuxuatkho.Select(k => k.LoaiCapPhat).Distinct().ToList();
+
+            return View("Tongkho", capPhatNvMoiFromVtphieuxuatkho);
         }
 
         public IActionResult KhoDuAn(int page = 1, int pageSize = 20, string q = null, string duAn = null)
@@ -346,7 +416,7 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 
             var total = query.Count();
             var items = query
-                .OrderByDescending(k => k.MaSanpham)
+                .OrderByDescending(k => k.NgayNhapkho)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();

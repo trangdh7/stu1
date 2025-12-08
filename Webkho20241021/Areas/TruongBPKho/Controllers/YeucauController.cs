@@ -1279,6 +1279,15 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
                         newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
                         newVtyeucau.ThoiGianBH = khoMatch.ThoiGianBH;
+                        // Set trạng thái cho vật tư: nếu có dự án thì "Chờ quản lý dự án duyệt", nếu không có dự án thì "Chờ Giám đốc duyệt"
+                        if (duan != null)
+                        {
+                            newVtyeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                        }
+                        else
+                        {
+                            newVtyeucau.TrangThai = "Chờ Giám đốc duyệt";
+                        }
                         _context.vtyeucau.Add(newVtyeucau);
                     }
                     else
@@ -1296,6 +1305,15 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         newVtyeucau.NgayNhapkho = null;
                         newVtyeucau.NgayBaohanh = null;
                         newVtyeucau.ThoiGianBH = null;
+                        // Set trạng thái cho vật tư: nếu có dự án thì "Chờ quản lý dự án duyệt", nếu không có dự án thì "Chờ Giám đốc duyệt"
+                        if (duan != null)
+                        {
+                            newVtyeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                        }
+                        else
+                        {
+                            newVtyeucau.TrangThai = "Chờ Giám đốc duyệt";
+                        }
                         _context.vtyeucau.Add(newVtyeucau);
                     }
                     _context.SaveChanges();
@@ -1377,11 +1395,41 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         {
                             // Có dự án: Chờ quản lý dự án duyệt
                             Yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                            
+                            // Đồng bộ trạng thái cho tất cả vật tư (bao gồm cả null/empty)
+                            var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                            foreach (var vt in allVatTu)
+                            {
+                                // Xử lý vật tư có TrangThai null hoặc rỗng
+                                if (string.IsNullOrEmpty(vt.TrangThai) || 
+                                    (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
+                                     vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
+                                     vt.TrangThai != "Đã nhận hàng"))
+                                {
+                                    vt.TrangThai = "Chờ quản lý dự án duyệt";
+                                    _context.vtyeucau.Update(vt);
+                                }
+                            }
                         }
                         else
                         {
                             // Cá nhân: Chờ Giám đốc duyệt
                             Yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            
+                            // Đồng bộ trạng thái cho tất cả vật tư (bao gồm cả null/empty)
+                            var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                            foreach (var vt in allVatTu)
+                            {
+                                // Xử lý vật tư có TrangThai null hoặc rỗng
+                                if (string.IsNullOrEmpty(vt.TrangThai) || 
+                                    (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
+                                     vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
+                                     vt.TrangThai != "Đã nhận hàng"))
+                                {
+                                    vt.TrangThai = "Chờ Giám đốc duyệt";
+                                    _context.vtyeucau.Update(vt);
+                                }
+                            }
                         }
                     }
                 }
@@ -1393,6 +1441,21 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         if (chucVu2 != "Giám đốc")
                         {
                             Yeucau.TrangThai = "Giám đốc";
+                            
+                            // Đồng bộ trạng thái cho tất cả vật tư khi có dự án (bao gồm cả null/empty)
+                            var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                            foreach (var vt in allVatTu)
+                            {
+                                // Xử lý vật tư có TrangThai null hoặc rỗng
+                                if (string.IsNullOrEmpty(vt.TrangThai) || 
+                                    (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
+                                     vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
+                                     vt.TrangThai != "Đã nhận hàng"))
+                                {
+                                    vt.TrangThai = "Chờ giám đốc duyệt";
+                                    _context.vtyeucau.Update(vt);
+                                }
+                            }
                         }
                         else
                         {
@@ -1431,6 +1494,21 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                             if (chucVu2 != "Giám đốc")
                             {
                                 Yeucau.TrangThai = "Giám đốc";
+                                
+                                // Đồng bộ trạng thái cho tất cả vật tư khi có dự án (bao gồm cả null/empty)
+                                var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                                foreach (var vt in allVatTu)
+                                {
+                                    // Xử lý vật tư có TrangThai null hoặc rỗng
+                                    if (string.IsNullOrEmpty(vt.TrangThai) || 
+                                        (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
+                                         vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
+                                         vt.TrangThai != "Đã nhận hàng"))
+                                    {
+                                        vt.TrangThai = "Chờ giám đốc duyệt";
+                                        _context.vtyeucau.Update(vt);
+                                    }
+                                }
                             }
                             else
                             {
@@ -1457,6 +1535,21 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
                     {
                         Yeucau.TrangThai = "Giám đốc";
+                        
+                        // Đồng bộ trạng thái cho tất cả vật tư (bao gồm cả null/empty)
+                        var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                        foreach (var vt in allVatTu)
+                        {
+                            // Xử lý vật tư có TrangThai null hoặc rỗng
+                            if (string.IsNullOrEmpty(vt.TrangThai) || 
+                                (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
+                                 vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
+                                 vt.TrangThai != "Đã nhận hàng"))
+                            {
+                                vt.TrangThai = "Chờ giám đốc duyệt";
+                                _context.vtyeucau.Update(vt);
+                            }
+                        }
                     }
                     else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
                     {
