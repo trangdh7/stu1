@@ -153,6 +153,9 @@ namespace Webkho_20241021.Services
                 return;
             }
 
+            // Kiểm tra xem có đủ hàng không - kiểm tra số lượng đã phân bổ
+            // Sau khi nhập hàng, hàng đã có trong kho nên chỉ cần kiểm tra số lượng đã phân bổ
+            // Kiểm tra tồn kho chi tiết sẽ được thực hiện khi người dùng thực sự xuất kho
             bool duHang = vtYeuCauList.All(vt =>
             {
                 int required = vt.SL ?? 0;
@@ -161,6 +164,7 @@ namespace Webkho_20241021.Services
                     return true;
                 }
 
+                // Kiểm tra số lượng đã phân bổ trong phiếu xuất
                 int daCap = vtPhieuXuatList
                     .Where(vpx => string.Equals(vpx.MaSanpham, vt.MaSanpham, StringComparison.OrdinalIgnoreCase))
                     .Sum(vpx => vpx.SL ?? 0);
@@ -170,15 +174,23 @@ namespace Webkho_20241021.Services
 
             if (duHang)
             {
-                phieuXuat.TrangThai = "Đang chuẩn bị hàng";
-                phieuXuat.NgayChuanBi = DateTime.Now;
-                phieuXuat.GhiChu = null;
-                context.phieuxuatkho.Update(phieuXuat);
+                // Cập nhật trạng thái phiếu xuất kho từ "Thiếu hàng - Đã tạo phiếu mua" hoặc "Chờ xác nhận" sang "Đang chuẩn bị hàng"
+                // Điều này cho phép hiển thị nút xuất kho
+                if (phieuXuat.TrangThai == "Thiếu hàng - Đã tạo phiếu mua" || 
+                    phieuXuat.TrangThai == "Chờ xác nhận" ||
+                    phieuXuat.TrangThai == "Đang chuẩn bị hàng")
+                {
+                    phieuXuat.TrangThai = "Đang chuẩn bị hàng";
+                    phieuXuat.NgayChuanBi = DateTime.Now;
+                    phieuXuat.GhiChu = null;
+                    context.phieuxuatkho.Update(phieuXuat);
+                }
 
                 foreach (var vtLine in vtPhieuXuatList)
                 {
                     bool laTrangThaiCuoi = string.Equals(vtLine.TrangThai, "Đã xuất kho", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(vtLine.TrangThai, "Hoàn thành", StringComparison.OrdinalIgnoreCase);
+                        || string.Equals(vtLine.TrangThai, "Hoàn thành", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(vtLine.TrangThai, "Đã xác nhận nhận hàng", StringComparison.OrdinalIgnoreCase);
 
                     if (!laTrangThaiCuoi)
                     {

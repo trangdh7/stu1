@@ -1,4 +1,3 @@
-
 @{
     ViewData["Title"] = "Phieunhapkho";
     Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
@@ -87,9 +86,9 @@
                             <td>
                                 @if (item.TrangThai == "Đã nhập kho")
                                 {
-                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "QuanLiDuAn", MaNhapkho = item.MaNhapkho })" 
-                                       target="_blank" 
-                                       class="btn-icon" 
+                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "QuanLiDuAn", MaNhapkho = item.MaNhapkho })"
+                                       target="_blank"
+                                       class="btn-icon"
                                        title="In phiếu"
                                        onclick="event.stopPropagation();">
                                         <i class="bx bx-printer"></i>
@@ -138,7 +137,7 @@
                         <tr>
                             <td>@ST</td>
                             <td>@item.TenSanpham</td>
-                            <td>@item.MaSanpham</td>    
+                            <td>@item.MaSanpham</td>
                             <td>@item.Makho</td>
                             <td>@item.HangSX</td>
                             <td>@item.NhaCC</td>
@@ -150,13 +149,9 @@
                 </tbody>
             </table>
         </div>
+        @* Ẩn nút Duyệt và Từ chối cho QuanLiDuAn - chức năng này được chuyển sang trang Yeucau/Yeucau *@
         <div style="text-align: right; padding: 20px 20px 0 0;">
-            <button id="btn-duyet" type="button" style="background-color: #336600; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; display: none; margin-left: 10px;">
-                Duyệt
-            </button>
-            <button id="btn-tuchoi" type="button" style="background-color: #336600; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; display: none; margin-left: 10px;">
-                Từ chối
-            </button>
+            @* Nút Duyệt và Từ chối đã được ẩn - chức năng này được xử lý ở trang Yeucau/Yeucau với nút Xác nhận *@
         </div>
         @{
             // Kiểm tra xem người dùng có phải là QLDA không
@@ -179,7 +174,7 @@
                 }
             }
         }
-        
+
     </nav>
     @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
     @{
@@ -194,8 +189,10 @@
     <script src="~/js/phieunhapkho.js"></script>
     <script>
         $(document).ready(function () {
-            getThongbaoData();
-            
+            if (typeof getThongbaoData === 'function') {
+                getThongbaoData();
+            }
+
             // Chức năng tìm kiếm
             $('#timkiem').on('keyup', function() {
                 var value = $(this).val().toLowerCase();
@@ -218,11 +215,11 @@
                     alert("Vui lòng chọn phiếu nhập kho trước.");
                     return;
                 }
-                
+
                 if (!confirm("Bạn có chắc chắn muốn duyệt phiếu nhập kho " + selectedManhapkho + "?")) {
                     return;
                 }
-                
+
                 submitPhieunhapkhoAction('approve');
             });
 
@@ -232,11 +229,11 @@
                     alert("Vui lòng chọn phiếu nhập kho trước.");
                     return;
                 }
-                
+
                 if (!confirm("Bạn có chắc chắn muốn từ chối phiếu nhập kho " + selectedManhapkho + "?")) {
                     return;
                 }
-                
+
                 submitPhieunhapkhoAction('reject');
             });
 
@@ -245,25 +242,25 @@
                 const pathSegments = window.location.pathname.split('/');
                 const area = pathSegments.length > 1 ? pathSegments[1] : '';
                 const url = `/${area}/Yeucau/Xuliphieunhapkho`;
-                
+
                 // Tạo form để submit
                 const form = $('<form>', {
                     method: 'POST',
                     action: url
                 });
-                
+
                 form.append($('<input>', {
                     type: 'hidden',
                     name: 'MaNhapkho',
                     value: selectedManhapkho
                 }));
-                
+
                 form.append($('<input>', {
                     type: 'hidden',
                     name: 'submitAction',
                     value: action
                 }));
-                
+
                 // Thêm token chống CSRF
                 const token = $('#RequestVerificationToken').val() || $('input[name="__RequestVerificationToken"]').val();
                 if (token) {
@@ -273,7 +270,7 @@
                         value: token
                     }));
                 }
-                
+
                 $('body').append(form);
                 form.submit();
             }
@@ -288,7 +285,6 @@
     </script>
 </body>
 </html>
-
 
 
 

@@ -121,13 +121,31 @@
                             <td>
                                 @if (item.TrangThai == "Đã nhập kho")
                                 {
-                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "TruongBPMuahang", MaNhapkho = item.MaNhapkho })" 
-                                       target="_blank" 
-                                       class="btn-icon" 
-                                       title="In phiếu"
-                                       onclick="event.stopPropagation();">
-                                        <i class="bx bx-printer"></i>
-                                    </a>
+                                    @* Kiểm tra xem có phải phiếu nhập kho hoàn trả không (NHAPKHO_DUAN, NHAPKHO_CANHAN) và thuộc về user hiện tại *@
+                                    string currentUserId = Context.Session.GetString("MaNguoidung");
+                                    bool isNhapKhoDuanOrCaNhan = !string.IsNullOrEmpty(item.MaYeucau) && 
+                                                                 (item.MaYeucau.StartsWith("NHAPKHO_DUAN_", StringComparison.OrdinalIgnoreCase) || 
+                                                                  item.MaYeucau.StartsWith("NHAPKHO_CANHAN_", StringComparison.OrdinalIgnoreCase));
+                                    
+                                    bool belongsToCurrentUser = false;
+                                    if (isNhapKhoDuanOrCaNhan && !string.IsNullOrEmpty(currentUserId))
+                                    {
+                                        // Kiểm tra nếu MaYeucau chứa MaNguoidung của user hiện tại
+                                        belongsToCurrentUser = item.MaYeucau.Contains(currentUserId, StringComparison.OrdinalIgnoreCase) ||
+                                                               (!string.IsNullOrEmpty(item.MaNguoidung) && item.MaNguoidung.Equals(currentUserId, StringComparison.OrdinalIgnoreCase));
+                                    }
+                                    
+                                    if (isNhapKhoDuanOrCaNhan && belongsToCurrentUser)
+                                    {
+                                        @* Phiếu nhập kho hoàn trả của user hiện tại → In phiếu trả hàng *@
+                                        <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "TruongBPMuahang", MaNhapkho = item.MaNhapkho })" 
+                                           target="_blank" 
+                                           class="btn-icon" 
+                                           title="In phiếu trả hàng"
+                                           onclick="event.stopPropagation();">
+                                            <i class="bx bx-printer"></i>
+                                        </a>
+                                    }
                                 }
                             </td>
                         </tr>
@@ -187,7 +205,9 @@
     <script src="~/js/phieunhapkho.js"></script>
     <script>
         $(document).ready(function () {
-            getThongbaoData();
+            if (typeof getThongbaoData === 'function') {
+                getThongbaoData();
+            }
         });
     </script>
 </body>

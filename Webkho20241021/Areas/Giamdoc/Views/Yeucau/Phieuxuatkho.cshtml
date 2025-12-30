@@ -167,7 +167,9 @@
     <script src="~/js/phieuxuatkho.js"></script>
     <script>
         $(document).ready(function () {
-            getThongbaoData();
+            if (typeof getThongbaoData === 'function') {
+                getThongbaoData();
+            }
             
             // Chức năng tìm kiếm
             $('#timkiem').on('keyup', function() {

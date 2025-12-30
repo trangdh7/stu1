@@ -231,7 +231,7 @@ namespace Webkho_20241021.Areas.Admin.Controllers
 
         // Sửa user - POST
         [HttpPost]
-        public async Task<IActionResult> SuaUser(string id, string Name, string MaNV, string Chucvu, string Bophan, string Email, string PhoneNumber, string[] SelectedRoles)
+        public async Task<IActionResult> SuaUser(string id, string Name, string MaNV, string Chucvu, string Bophan, string Email, string PhoneNumber, string SelectedRole)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
@@ -250,23 +250,45 @@ namespace Webkho_20241021.Areas.Admin.Controllers
 
             if (result.Succeeded)
             {
-                // Cập nhật roles
+                // Cập nhật roles - chỉ có 1 role
                 var currentRoles = await _userManager.GetRolesAsync(user);
                 await _userManager.RemoveFromRolesAsync(user, currentRoles);
 
-                if (SelectedRoles != null && SelectedRoles.Length > 0)
+                string roleToAssign = null;
+
+                if (!string.IsNullOrWhiteSpace(SelectedRole))
                 {
-                    foreach (var roleName in SelectedRoles)
+                    // Sử dụng role được chọn
+                    roleToAssign = SelectedRole;
+                }
+                else
+                {
+                    // Không chọn role => gán lại role mặc định dựa trên chức vụ/bộ phận
+                    if (Chucvu == "Giám đốc")
                     {
-                        if (!string.IsNullOrWhiteSpace(roleName))
-                        {
-                            if (!await _roleManager.RoleExistsAsync(roleName))
-                            {
-                                await _roleManager.CreateAsync(new IdentityRole(roleName));
-                            }
-                            await _userManager.AddToRoleAsync(user, roleName);
-                        }
+                        roleToAssign = "Giám đốc";
                     }
+                    else if (Chucvu == "Admin")
+                    {
+                        roleToAssign = "Admin";
+                    }
+                    else if (Chucvu == "Quản lí dự án")
+                    {
+                        roleToAssign = "Quản lí dự án";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Chucvu) && !string.IsNullOrWhiteSpace(Bophan))
+                    {
+                        roleToAssign = $"{Chucvu}-{Bophan}";
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(roleToAssign))
+                {
+                    if (!await _roleManager.RoleExistsAsync(roleToAssign))
+                    {
+                        await _roleManager.CreateAsync(new IdentityRole(roleToAssign));
+                    }
+                    await _userManager.AddToRoleAsync(user, roleToAssign);
                 }
 
                 // Cập nhật bảng nguoidungs

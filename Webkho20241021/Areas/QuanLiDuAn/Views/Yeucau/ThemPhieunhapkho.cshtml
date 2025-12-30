@@ -239,13 +239,32 @@
                     fetch(url, {
                         method: 'POST',
                         body: formData,
-                        credentials: 'same-origin'
+                        credentials: 'same-origin',
+                        redirect: 'follow' // Đảm bảo follow redirect
                     })
                         .then(response => {
+                            console.log('Response status:', response.status);
+                            console.log('Response redirected:', response.redirected);
+                            console.log('Response URL:', response.url);
+                            
                             if (response.redirected) {
+                                // Nếu có redirect, chuyển đến URL đó
                                 window.location.href = response.url;
+                            } else if (response.ok) {
+                                // Nếu không có redirect nhưng response OK, chuyển đến trang Yeucau
+                                const pathSegments = window.location.pathname.split('/');
+                                const area = pathSegments.length > 1 ? pathSegments[1] : 'QuanLiDuAn';
+                                window.location.href = `/${area}/Yeucau/Yeucau`;
                             } else {
-                                return response.text().then(() => window.location.reload());
+                                // Nếu có lỗi, hiển thị thông báo
+                                return response.text().then(text => {
+                                    console.error('Error response:', text);
+                                    alert('Có lỗi xảy ra khi gửi dữ liệu. Vui lòng thử lại.');
+                                    if (submitBtn) {
+                                        submitBtn.disabled = false;
+                                        submitBtn.textContent = 'Gửi';
+                                    }
+                                });
                             }
                         })
                         .catch(error => {

@@ -12,6 +12,8 @@ namespace Webkho_20241021.Models
         public string? YCMakho { get; set; }
         public string? HangSX { get; set; }
         public string? NhaCC { get; set; }
+        public int? SLCu { get; set; }
+        public int? SLMoi { get; set; }
         public int? SL { get; set; }
         public string? DonVi { get; set; }
         public DateTime? NgayCanHang { get; set; }

@@ -24,7 +24,9 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 20;
 
-            var query = _context.khotongs.AsQueryable();
+            var query = _context.khotongs
+                .Where(k => !string.Equals(k.Makho, "VT mới", StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(k.MaSanpham, "VT-MOI", StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var keyword = q.Trim();
@@ -232,32 +234,104 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             // Lấy mã nhân viên từ session để lọc theo cá nhân
             var maNv = HttpContext.Session.GetString("MaNguoidung");
 
-            // Lấy vật tư từ phiếu xuất kho dự án của cá nhân và join với vtphieunhapkho qua phieunhapkho
-            var query = (from vtx in _context.vtphieuxuatkho
-                        join px in _context.phieuxuatkho on vtx.MaXuatkho equals px.MaXuatkho
-                        where !string.IsNullOrEmpty(px.MaDuan) && !string.IsNullOrEmpty(vtx.MaYeucau) // Chỉ lấy phiếu xuất kho dự án
-                            && px.MaNguoidung == maNv // Lọc theo người dùng hiện tại
-                        // Join với duans để lấy tên dự án
-                        join da in _context.duans on px.MaDuan equals da.MaDuan into daGroup
-                        from da in daGroup.DefaultIfEmpty()
-                        // Left join với vtphieunhapkho qua MaYeucau và MaSanpham
-                        join vtn in _context.vtphieunhapkho 
-                            on new { MaYeucau = vtx.MaYeucau, MaSanpham = vtx.MaSanpham } 
-                            equals new { MaYeucau = vtn.MaYeucau, MaSanpham = vtn.MaSanpham } into vtnGroup
-                        from vtn in vtnGroup.DefaultIfEmpty()
-                        // Ưu tiên dữ liệu từ vtphieunhapkho, nếu không có thì dùng vtphieuxuatkho
-                        select new khotongs
+            // Lấy vật tư từ phiếu xuất kho dự án của cá nhân
+            // Tính số lượng còn lại = Tổng số lượng đã xuất - Tổng số lượng đã nhập
+            // (Vì hàm TruKhoDuanKhiNhapKho có thể không trừ được hoặc không chính xác)
+            var dataList = (from vtx in _context.vtphieuxuatkho
+                           join px in _context.phieuxuatkho on vtx.MaXuatkho equals px.MaXuatkho
+                           where !string.IsNullOrEmpty(px.MaDuan) && !string.IsNullOrEmpty(vtx.MaYeucau) // Chỉ lấy phiếu xuất kho dự án
+                               && px.MaNguoidung == maNv // Lọc theo người dùng hiện tại
+                           // Join với duans để lấy tên dự án
+                           join da in _context.duans on px.MaDuan equals da.MaDuan into daGroup
+                           from da in daGroup.DefaultIfEmpty()
+                           // Left join với vtphieunhapkho để lấy thông tin mới nhất (Makho, Hãng SX, NhaCC)
+                           join vtn in _context.vtphieunhapkho 
+                               on new { MaYeucau = vtx.MaYeucau, MaSanpham = vtx.MaSanpham } 
+                               equals new { MaYeucau = vtn.MaYeucau, MaSanpham = vtn.MaSanpham } into vtnGroup
+                           from vtn in vtnGroup.DefaultIfEmpty()
+                           select new
+                           {
+                               vtx,
+                               px,
+                               da,
+                               vtn,
+                               MaDuan = px.MaDuan
+                           }).ToList(); // Lấy về memory để xử lý group by
+
+            // Lấy tổng số lượng đã nhập theo MaYeucau + MaSanpham từ database
+            var tongNhapDict = _context.vtphieunhapkho
+                .Where(vtn => !string.IsNullOrEmpty(vtn.MaYeucau) && !string.IsNullOrEmpty(vtn.MaSanpham))
+                .GroupBy(vtn => new { vtn.MaYeucau, vtn.MaSanpham })
+                .ToDictionary(
+                    g => (g.Key.MaYeucau ?? "") + "|" + (g.Key.MaSanpham ?? ""),
+                    g => g.Sum(vtn => vtn.SL ?? 0)
+                );
+
+            // Nhóm theo vật tư + dự án + MaYeucau để tính tổng xuất và tổng nhập
+            var query = dataList
+                .GroupBy(x => new { x.vtx.MaSanpham, x.MaDuan, x.vtx.MaYeucau })
+                .Select(g =>
+                {
+                    var firstItem = g.FirstOrDefault();
+                    var firstVtn = g.Where(x => x.vtn != null).Select(x => x.vtn).FirstOrDefault();
+                    var firstVtx = firstItem?.vtx;
+                    var firstDa = g.Select(x => x.da).FirstOrDefault(x => x != null);
+                    
+                    // Tổng số lượng đã xuất (từ tất cả các dòng vtphieuxuatkho)
+                    var tongXuat = g.Sum(x => x.vtx.SL ?? 0);
+                    
+                    // Tổng số lượng đã nhập (từ dictionary đã tính sẵn)
+                    var maYeucau = g.Key.MaYeucau ?? "";
+                    var maSanpham = g.Key.MaSanpham ?? "";
+                    var dictKey = maYeucau + "|" + maSanpham;
+                    var tongNhap = tongNhapDict.TryGetValue(dictKey, out var nhap) ? nhap : 0;
+                    
+                    // Số lượng còn lại = Tổng xuất - Tổng nhập
+                    var soLuongConLai = tongXuat - tongNhap;
+
+                    return new
+                    {
+                        khotong = new khotongs
                         {
-                            MaSanpham = vtn != null ? vtn.MaSanpham : vtx.MaSanpham,
-                            TenSanpham = vtn != null ? vtn.TenSanpham : vtx.TenSanpham,
-                            Makho = vtn != null ? vtn.Makho : vtx.Makho,
-                            HangSX = vtn != null ? vtn.HangSX : vtx.HangSX,
-                            NhaCC = vtn != null ? vtn.NhaCC : vtx.NhaCC,
-                            DuAn = da != null ? da.TenDuan : px.MaDuan, // Dùng tên dự án nếu có
-                            SL = vtn != null ? (vtn.SL ?? 0) : (vtx.SL ?? 0),
-                            DonVi = vtn != null ? vtn.DonVi : vtx.DonVi,
-                            TrangThai = vtn != null ? vtn.TrangThai : vtx.TrangThai // Trạng thái của kho dự án cá nhân
-                        }).Distinct();
+                            MaSanpham = firstVtn?.MaSanpham ?? firstVtx?.MaSanpham,
+                            TenSanpham = firstVtn?.TenSanpham ?? firstVtx?.TenSanpham,
+                            Makho = firstVtn?.Makho ?? firstVtx?.Makho,
+                            HangSX = firstVtn?.HangSX ?? firstVtx?.HangSX,
+                            NhaCC = firstVtn?.NhaCC ?? firstVtx?.NhaCC,
+                            DuAn = firstDa != null ? firstDa.TenDuan : g.Key.MaDuan,
+                            // Số lượng còn lại = Tổng xuất - Tổng nhập
+                            SL = Math.Max(0, soLuongConLai),
+                            DonVi = firstVtn?.DonVi ?? firstVtx?.DonVi,
+                            TrangThai = soLuongConLai > 0 ? "Đã xuất kho" : "Đã trả kho"
+                        },
+                        MaDuan = g.Key.MaDuan
+                    };
+                })
+                .Where(x => x.khotong.SL > 0)
+                // Nhóm lại theo MaSanpham + MaDuan để gộp các yêu cầu khác nhau của cùng vật tư
+                .GroupBy(x => new { x.khotong.MaSanpham, x.MaDuan })
+                .Select(g =>
+                {
+                    var firstItem = g.FirstOrDefault();
+                    return new
+                    {
+                        khotong = new khotongs
+                        {
+                            MaSanpham = firstItem.khotong.MaSanpham,
+                            TenSanpham = firstItem.khotong.TenSanpham,
+                            Makho = firstItem.khotong.Makho,
+                            HangSX = firstItem.khotong.HangSX,
+                            NhaCC = firstItem.khotong.NhaCC,
+                            DuAn = firstItem.khotong.DuAn,
+                            // Tổng số lượng còn lại từ tất cả các yêu cầu
+                            SL = g.Sum(x => x.khotong.SL),
+                            DonVi = firstItem.khotong.DonVi,
+                            TrangThai = "Đã xuất kho"
+                        },
+                        MaDuan = firstItem.MaDuan
+                    };
+                })
+                .AsQueryable();
 
             // Lấy danh sách dự án từ phieuxuatkho của người dùng hiện tại
             var duAnList = (from px in _context.phieuxuatkho
@@ -277,11 +351,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 if (isMaDuan)
                 {
                     var tenDuan = _context.duans.Where(d => d.MaDuan == duAn).Select(d => d.TenDuan).FirstOrDefault();
-                    query = query.Where(k => k.DuAn == tenDuan || k.DuAn == duAn);
+                    query = query.Where(x => x.khotong.DuAn == tenDuan || x.khotong.DuAn == duAn || x.MaDuan == duAn);
                 }
                 else
                 {
-                    query = query.Where(k => k.DuAn == duAn);
+                    query = query.Where(x => x.khotong.DuAn == duAn);
                 }
             }
 
@@ -289,28 +363,33 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var keyword = q.Trim();
-                query = query.Where(k =>
-                    (k.TenSanpham ?? "").Contains(keyword) ||
-                    (k.MaSanpham ?? "").Contains(keyword) ||
-                    (k.Makho ?? "").Contains(keyword) ||
-                    (k.HangSX ?? "").Contains(keyword) ||
-                    (k.NhaCC ?? "").Contains(keyword) ||
-                    (k.DuAn ?? "").Contains(keyword)
+                query = query.Where(x =>
+                    (x.khotong.TenSanpham ?? "").Contains(keyword) ||
+                    (x.khotong.MaSanpham ?? "").Contains(keyword) ||
+                    (x.khotong.Makho ?? "").Contains(keyword) ||
+                    (x.khotong.HangSX ?? "").Contains(keyword) ||
+                    (x.khotong.NhaCC ?? "").Contains(keyword) ||
+                    (x.khotong.DuAn ?? "").Contains(keyword) ||
+                    (x.MaDuan ?? "").Contains(keyword)
                 );
             }
 
             var total = query.Count();
-            var items = query
-                .OrderByDescending(k => k.MaSanpham)
+            var itemsWithMaDuan = query
+                .OrderByDescending(x => x.khotong.MaSanpham)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
+
+            var items = itemsWithMaDuan.Select(x => x.khotong).ToList();
+            var maDuanDict = itemsWithMaDuan.ToDictionary(x => x.khotong.Makho ?? "", x => x.MaDuan ?? "");
 
             ViewBag.Page = page;
             ViewBag.TotalPages = (int)Math.Ceiling(total / (double)pageSize);
             ViewBag.Q = q;
             ViewBag.DuAn = duAn;
             ViewBag.DuAnList = duAnList;
+            ViewBag.MaDuanDict = maDuanDict;
             return View("KhoDuAn", items);
         }
 

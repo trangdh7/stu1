@@ -240,6 +240,13 @@
             }, 5000);
         }
 
+        // Tự động chuyển Mã NV thành chữ hoa khi nhập
+        const maNVInput = document.querySelector('input[name="MaNV"]');
+        if (maNVInput) {
+            maNVInput.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+            });
+        }
         
     </script>
 </body>

@@ -148,14 +148,16 @@
                 <thead>
                     <tr>
                         <td><input type="checkbox" id="selectAllVT" /></td>
-                        <td>STT</td>
-                        <td>Tên vật tư</td>
-                        <td>Mã vật tư</td>
-                        <td>Mã kho</td>
-                        <td>Hãng sx</td>
-                        <td>Nhà cung cấp</td>
-                        <td style="text-align: center;">Số lượng</td>
-                        <td>Đơn vị</td>
+                        <td>TT</td>
+                        <td>Tên thiết bị/hàng hóa</td>
+                        <td>Mã VT</td>
+                        <td>Hãng SX</td>
+                        <td>NCC</td>
+                        <td>SL Cũ</td>
+                        <td>SL Mới</td>
+                        <td>SL</td>
+                        <td>ĐV</td>
+                        <td>Ngày cần</td>
                         <td class="trangthai-column-header" style="display: none;">Trạng thái</td>
                         <td>Ghi chú</td>
                         <td>Ngày duyệt</td>
@@ -217,11 +219,13 @@
                             <td>@STT2</td>
                             <td>@item.TenSanpham</td>
                             <td>@item.MaSanpham</td>
-                            <td>@item.YCMakho</td>
                             <td>@item.HangSX</td>
                             <td>@item.NhaCC</td>
-                            <td style="text-align: center;">@item.SL</td>
-                            <td>@item.DonVi</td>
+                            <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
+                            <td style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
+                            <td style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
+                            <td>@(item.DonVi ?? "-")</td>
+                            <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
                             <td class="trangthai-vattu trangthai-column" style="display: none;">
                                 @{
                                     string trangThaiColor = "";
@@ -304,6 +308,16 @@
                 || normalized.includes('chờ trưởng bp');
         }
 
+        function formatDateOnly(value) {
+            if (!value) return '-';
+            var date = new Date(value);
+            if (isNaN(date)) return '-';
+            var day = String(date.getDate()).padStart(2, '0');
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
         // Kiểm tra và hiển thị/ẩn cột trạng thái
         function checkAndToggleTrangThaiColumn() {
             var hasProcessedItems = false;
@@ -355,7 +369,9 @@
         }
 
         $(document).ready(function () {
-            getThongbaoData();
+            if (typeof getThongbaoData === 'function') {
+                getThongbaoData();
+            }
             checkAndToggleTrangThaiColumn();
             setTimeout(function() {
                 updateActionButtons();
@@ -466,19 +482,30 @@
                             
                             var maVatTuEscaped = maVatTu.replace(/'/g, "\\'");
                             var MaYeucauEscaped = MaYeucau.replace(/'/g, "\\'");
+
+                            var hangSX = item.hangSX ?? item.HangSX ?? '';
+                            var nhaCC = item.nhaCC ?? item.NhaCC ?? '';
+                            var slCuVal = item.slCu ?? item.SLCu;
+                            var slMoiVal = item.slMoi ?? item.SLMoi;
+                            var slVal = item.sl ?? item.SL ?? slMoiVal;
+                            var donViVal = item.donVi ?? item.DonVi ?? '-';
+                            var ngayCanHangVal = item.ngayCanHang ?? item.NgayCanHang;
+                            var ngayCanHangDisplay = formatDateOnly(ngayCanHangVal);
                             
                             // Tích checkbox mặc định cho các vật tư đang chờ duyệt
                             var checkboxChecked = canActOnItem ? ' checked' : '';
                             var row = `<tr data-mavattu="${maVatTu}" data-mayeucau="${MaYeucau}" class="clickable-vt-row" style="cursor: pointer;" onclick="showVTYeucau('${MaYeucauEscaped}', '${currentNguoiYeucau || ''}', '${MaYeucauEscaped}')">
                                 <td onclick="event.stopPropagation();">${canSelectForBulk ? '<input type="checkbox" class="vt-checkbox" value="' + maVatTuEscaped + '" data-mayeucau="' + MaYeucauEscaped + '" data-mavattu="' + maVatTuEscaped + '"' + checkboxChecked + ' />' : ''}</td>
                                 <td>${STT++}</td>
-                                <td>${item.tenSanpham || ''}</td>
+                                <td>${item.tenSanpham || item.TenSanpham || ''}</td>
                                 <td>${maVatTu}</td>
-                                <td>${item.ycMakho || ''}</td>
-                                <td>${item.hangSX || ''}</td>
-                                <td>${item.nhaCC || ''}</td>
-                                <td>${item.sl || 0}</td>
-                                <td>${item.donVi || ''}</td>`;
+                                <td>${hangSX || '-'}</td>
+                                <td>${nhaCC || '-'}</td>
+                                <td style="text-align: center;">${slCuVal ?? '-'}</td>
+                                <td style="text-align: center;">${slMoiVal ?? '-'}</td>
+                                <td style="text-align: center;">${slVal ?? '-'}</td>
+                                <td>${donViVal}</td>
+                                <td>${ngayCanHangDisplay}</td>`;
                             
                             // Thêm màu sắc cho trạng thái
                             var trangThaiColor = '';

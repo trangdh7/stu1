@@ -9,6 +9,8 @@ using System.IO;
 using System.Text.Json;
 using Webkho_20241021.Areas.TruongBPKythuat.Data;
 using Webkho_20241021.Models;
+using Webkho_20241021.Areas.TruongBPKho.Services;
+using Webkho_20241021.Services;
 using OfficeOpenXml;
 
 
@@ -45,7 +47,8 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
 
             var SortedYeucaulist = Yeucaulist
                 .OrderByDescending(y => y.TrangThai != null && y.TrangThai.Trim().Equals("Chờ Trưởng BP-BP kỹ thuật duyệt", StringComparison.OrdinalIgnoreCase))
-                .ThenByDescending(y => y.NgayYeucau)
+                .ThenBy(y => YeucauUpdateHelper.GetBaseRequestCode(y.MaYeucau ?? "")) // Nhóm theo mã cơ bản
+                .ThenByDescending(y => y.NgayYeucau) // Trong cùng nhóm, sắp xếp theo ngày giảm dần
                 .ToList();
 
             // Áp dụng tìm kiếm nếu có
@@ -273,9 +276,10 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                                     VTMaYeucau = MaYeucau,
                                     TenSanpham = vtnk.TenSanpham,
                                     MaSanpham = vtnk.MaSanpham,
-                                    YCMakho = vtnk.Makho,
                                     HangSX = vtnk.HangSX,
                                     NhaCC = vtnk.NhaCC,
+                                    SLCu = (int?)null,
+                                    SLMoi = vtnk.SL,
                                     SL = vtnk.SL,
                                     DonVi = vtnk.DonVi,
                                     NgayCanHang = (DateTime?)null,
@@ -878,6 +882,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                                            duans duans, phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, List<string> YCMaKho,
                                            List<string> TenSanpham, List<string> MaSanpham,
                                            List<string> HangSX, List<string> NhaCC, List<int?> SL,
+                                           List<int?> SLCu, List<int?> SLMoi, List<string> VTNgayCanHang, List<string> GhiChu,
                                            List<string> DonVi, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
         {
             // Kiểm tra null để tránh lỗi khi upload file Excel lớn
@@ -1092,8 +1097,10 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     // Tạo mã yêu cầu: NNNNNN ST HiepNT
                     yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}";
                     
-                    // Đảm bảo tính duy nhất
+                    // Đảm bảo tính duy nhất cho mã yêu cầu (bao gồm cả tên người)
+                    // Nếu cùng người gửi cùng mã cơ bản, thêm suffix để phân biệt
                     int suffixNumber = 1;
+                    string originalMaYeucau = yeucau.MaYeucau;
                     while (true)
                     {
                         var exists = _context.yeucau
@@ -1103,7 +1110,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                             break;
                         }
                         // Nếu trùng, thêm số suffix
-                        yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}{suffixNumber}";
+                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
                         suffixNumber++;
                     }
                 }
@@ -1116,50 +1123,152 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     // Tạo mã yêu cầu: YYMMDD ST HiepNT
                     yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
                     
-                    // Đảm bảo tính duy nhất
-                    int suffixNumber = 1;
-                    while (true)
+                    // Kiểm tra xem có yêu cầu đã tồn tại với cùng mã yêu cầu cơ bản không (bỏ phần tên người)
+                    var existingYeucau = YeucauUpdateHelper.FindExistingRequest(_context, yeucau.MaYeucau);
+                    
+                    if (existingYeucau != null)
                     {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
+                        // Cập nhật yêu cầu hiện có thay vì tạo mới
+                        yeucau = existingYeucau;
+                    }
+                    else
+                    {
+                        // Đảm bảo tính duy nhất cho mã yêu cầu mới
+                        int suffixNumber = 1;
+                        while (true)
                         {
-                            break;
+                            var exists = _context.yeucau
+                                                 .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
+                            if (exists == null)
+                            {
+                                break;
+                            }
+                            // Nếu trùng, thêm số suffix
+                            yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}{suffixNumber}";
+                            suffixNumber++;
                         }
-                        // Nếu trùng, thêm số suffix
-                        yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}{suffixNumber}";
-                        suffixNumber++;
                     }
                 }
                 // ================================================================
 
+                // Đảm bảo danh sách không null để tránh lỗi khi submit từ Excel
+                YCMaKho ??= new List<string>();
+                TenSanpham ??= new List<string>();
+                MaSanpham ??= new List<string>();
+                HangSX ??= new List<string>();
+                NhaCC ??= new List<string>();
+                SL ??= new List<int?>();
+                SLCu ??= new List<int?>();
+                SLMoi ??= new List<int?>();
+                VTNgayCanHang ??= new List<string>();
+                GhiChu ??= new List<string>();
+                DonVi ??= new List<string>();
+
+                // Luôn tạo yêu cầu mới để theo dõi từng người gửi
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
-                for (int i = 0; i < YCMaKho.Count; i++)
+                var itemCount = new[] { YCMaKho.Count, TenSanpham.Count, MaSanpham.Count, HangSX.Count, NhaCC.Count, SL.Count, SLCu.Count, SLMoi.Count, VTNgayCanHang.Count, GhiChu.Count, DonVi.Count }.Max();
+
+                for (int i = 0; i < itemCount; i++)
                 {
-                    if (string.IsNullOrEmpty(TenSanpham[i]))
+                    var tenSanPham = i < TenSanpham.Count ? TenSanpham[i] : null;
+                    if (string.IsNullOrWhiteSpace(tenSanPham))
                     {
                         continue;
                     }
 
-                    var khoMatch = _context.khotongs.FirstOrDefault(p => p.Makho == YCMaKho[i]);
+                    var maKhoItem = i < YCMaKho.Count ? YCMaKho[i] : null;
+                    var maSanPhamItem = i < MaSanpham.Count ? MaSanpham[i] : null;
+                    var slCu = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
+                    var slMoi = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
+                    var ghiChuItem = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
+                    DateTime? ngayCanHang = null;
+                    if (VTNgayCanHang != null && i < VTNgayCanHang.Count && !string.IsNullOrWhiteSpace(VTNgayCanHang[i]))
+                    {
+                        if (DateTime.TryParse(VTNgayCanHang[i], out var parsedDate))
+                        {
+                            ngayCanHang = parsedDate;
+                        }
+                    }
+
+                    // Ưu tiên kho gửi lên theo từng dòng, nếu thiếu thì dò theo mã sản phẩm
+                    var khoMatch = !string.IsNullOrWhiteSpace(maKhoItem)
+                        ? _context.khotongs.FirstOrDefault(p => p.Makho == maKhoItem)
+                        : null;
+                    if (khoMatch == null && !string.IsNullOrWhiteSpace(maSanPhamItem))
+                    {
+                        khoMatch = _context.khotongs.FirstOrDefault(p => p.MaSanpham == maSanPhamItem);
+                    }
                     if (khoMatch != null)
                     {
-                        var newVtyeucau = new vtyeucau();
-                        newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
-                        newVtyeucau.TenSanpham = TenSanpham[i];
-                        newVtyeucau.MaSanpham = MaSanpham[i];
-                        newVtyeucau.HangSX = HangSX[i];
-                        newVtyeucau.NhaCC = NhaCC[i];
-                        newVtyeucau.SL = (SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0;
-                        newVtyeucau.DonVi = DonVi[i];
-                        newVtyeucau.YCMakho = khoMatch.Makho;
-                        newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
-                        newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
-                        newVtyeucau.ThoiGianBH = khoMatch.ThoiGianBH;
-                        newVtyeucau.TrangThai = yeucau.TrangThai;
-                        _context.vtyeucau.Add(newVtyeucau);
+                        // Tính số lượng mới (ưu tiên SLMoi, sau đó SLCu, cuối cùng là SL)
+                        int slMoiValue = slMoi ?? slCu ?? ((SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0);
+                        
+                        // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
+                        var existingVTYeucau = _context.vtyeucau
+                            .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
+                                && string.Equals(vt.MaSanpham, maSanPhamItem, StringComparison.OrdinalIgnoreCase));
+                        
+                        if (existingVTYeucau != null)
+                        {
+                            // Cập nhật vật tư yêu cầu hiện có
+                            existingVTYeucau.TenSanpham = tenSanPham;
+                            existingVTYeucau.HangSX = (i < HangSX.Count) ? HangSX[i] : null;
+                            existingVTYeucau.NhaCC = (i < NhaCC.Count) ? NhaCC[i] : null;
+                            existingVTYeucau.SLCu = slCu;
+                            existingVTYeucau.SLMoi = slMoi;
+                            existingVTYeucau.SL = slMoi;
+                            existingVTYeucau.DonVi = (i < DonVi.Count) ? DonVi[i] : null;
+                            existingVTYeucau.YCMakho = khoMatch.Makho;
+                            existingVTYeucau.NgayCanHang = ngayCanHang;
+                            existingVTYeucau.NgayNhapkho = khoMatch.NgayNhapkho;
+                            existingVTYeucau.NgayBaohanh = khoMatch.NgayBaohanh;
+                            existingVTYeucau.ThoiGianBH = khoMatch.ThoiGianBH;
+                            existingVTYeucau.GhiChu = ghiChuItem;
+                            
+                            // Xử lý cập nhật theo logic mới
+                            int slThieu;
+                            var updateResult = YeucauUpdateHelper.XuLyCapNhatYeuCau(
+                                _context, 
+                                yeucau, 
+                                maSanPhamItem, 
+                                slMoiValue, 
+                                khoMatch.Makho, 
+                                out slThieu);
+                            
+                            if (updateResult.Success)
+                            {
+                                existingVTYeucau.SL = slMoiValue;
+                                if (string.IsNullOrEmpty(existingVTYeucau.TrangThai))
+                                {
+                                    existingVTYeucau.TrangThai = yeucau.TrangThai;
+                                }
+                                _context.vtyeucau.Update(existingVTYeucau);
+                            }
+                        }
+                        else
+                        {
+                            // Tạo mới vật tư yêu cầu
+                            var newVtyeucau = new vtyeucau();
+                            newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TenSanpham = tenSanPham;
+                            newVtyeucau.MaSanpham = maSanPhamItem;
+                            newVtyeucau.HangSX = (i < HangSX.Count) ? HangSX[i] : null;
+                            newVtyeucau.NhaCC = (i < NhaCC.Count) ? NhaCC[i] : null;
+                            newVtyeucau.SL = slMoiValue;
+                            newVtyeucau.SLCu = slCu;
+                            newVtyeucau.SLMoi = slMoi;
+                            newVtyeucau.DonVi = (i < DonVi.Count) ? DonVi[i] : null;
+                            newVtyeucau.YCMakho = khoMatch.Makho;
+                            newVtyeucau.NgayCanHang = ngayCanHang;
+                            newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
+                            newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
+                            newVtyeucau.ThoiGianBH = khoMatch.ThoiGianBH;
+                            newVtyeucau.TrangThai = yeucau.TrangThai;
+                            newVtyeucau.GhiChu = ghiChuItem;
+                            _context.vtyeucau.Add(newVtyeucau);
+                        }
                     }
                     else
                     {
@@ -1185,20 +1294,72 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                             _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại
                         }
 
-                        var newVtyeucau = new vtyeucau();
-                        newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
-                        newVtyeucau.TenSanpham = TenSanpham[i];
-                        newVtyeucau.MaSanpham = MaSanpham[i];
-                        newVtyeucau.HangSX = HangSX[i];
-                        newVtyeucau.NhaCC = NhaCC[i];
-                        newVtyeucau.SL = (SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0;
-                        newVtyeucau.DonVi = DonVi[i];
-                        newVtyeucau.YCMakho = "VT mới";
-                        newVtyeucau.NgayNhapkho = null;
-                        newVtyeucau.NgayBaohanh = null;
-                        newVtyeucau.ThoiGianBH = null;
-                        newVtyeucau.TrangThai = yeucau.TrangThai;
-                        _context.vtyeucau.Add(newVtyeucau);
+                        // Tính số lượng mới (ưu tiên SLMoi, sau đó SLCu, cuối cùng là SL)
+                        int slMoiValue = slMoi ?? slCu ?? ((SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0);
+                        
+                        // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
+                        var existingVTYeucau = _context.vtyeucau
+                            .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
+                                && string.Equals(vt.MaSanpham, maSanPhamItem, StringComparison.OrdinalIgnoreCase));
+                        
+                        if (existingVTYeucau != null)
+                        {
+                            // Cập nhật vật tư yêu cầu hiện có
+                            existingVTYeucau.TenSanpham = tenSanPham;
+                            existingVTYeucau.HangSX = (i < HangSX.Count) ? HangSX[i] : null;
+                            existingVTYeucau.NhaCC = (i < NhaCC.Count) ? NhaCC[i] : null;
+                            existingVTYeucau.SLCu = slCu;
+                            existingVTYeucau.SLMoi = slMoi;
+                            existingVTYeucau.SL = slMoiValue;
+                            existingVTYeucau.DonVi = (i < DonVi.Count) ? DonVi[i] : null;
+                            existingVTYeucau.YCMakho = "VT mới";
+                            existingVTYeucau.NgayCanHang = ngayCanHang;
+                            existingVTYeucau.NgayNhapkho = null;
+                            existingVTYeucau.NgayBaohanh = null;
+                            existingVTYeucau.ThoiGianBH = null;
+                            existingVTYeucau.GhiChu = ghiChuItem;
+                            
+                            // Xử lý cập nhật theo logic mới
+                            int slThieu;
+                            var updateResult = YeucauUpdateHelper.XuLyCapNhatYeuCau(
+                                _context, 
+                                yeucau, 
+                                maSanPhamItem, 
+                                slMoiValue, 
+                                "VT mới", 
+                                out slThieu);
+                            
+                            if (updateResult.Success)
+                            {
+                                if (string.IsNullOrEmpty(existingVTYeucau.TrangThai))
+                                {
+                                    existingVTYeucau.TrangThai = yeucau.TrangThai;
+                                }
+                                _context.vtyeucau.Update(existingVTYeucau);
+                            }
+                        }
+                        else
+                        {
+                            // Tạo mới vật tư yêu cầu
+                            var newVtyeucau = new vtyeucau();
+                            newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TenSanpham = tenSanPham;
+                            newVtyeucau.MaSanpham = maSanPhamItem;
+                            newVtyeucau.HangSX = (i < HangSX.Count) ? HangSX[i] : null;
+                            newVtyeucau.NhaCC = (i < NhaCC.Count) ? NhaCC[i] : null;
+                            newVtyeucau.SL = slMoiValue;
+                            newVtyeucau.SLCu = slCu;
+                            newVtyeucau.SLMoi = slMoi;
+                            newVtyeucau.DonVi = (i < DonVi.Count) ? DonVi[i] : null;
+                            newVtyeucau.YCMakho = "VT mới";
+                            newVtyeucau.NgayCanHang = ngayCanHang;
+                            newVtyeucau.NgayNhapkho = null;
+                            newVtyeucau.NgayBaohanh = null;
+                            newVtyeucau.ThoiGianBH = null;
+                            newVtyeucau.TrangThai = yeucau.TrangThai;
+                            newVtyeucau.GhiChu = ghiChuItem;
+                            _context.vtyeucau.Add(newVtyeucau);
+                        }
                     }
                     _context.SaveChanges();
                 }
@@ -1873,7 +2034,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
             var Phieumuahang = _context.phieumuahang.FirstOrDefault(p => p.MaMuahang == MaMuahang);
             var VTPhieumuahanglist = _context.vtphieumuahang.Where(vt => vt.MaMuahang == MaMuahang).ToList();
 
-            int STT = 0;
+            int STT = 1;
             string MaNhapkho;
 
             // Tạo mã phiếu nhập kho duy nhất
@@ -2037,7 +2198,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     return RedirectToAction("ThemPhieunhapkho", "Yeucau", new { area = currentArea });
                 }
 
-                int STT = 0;
+                int STT = 1;
                 string MaNhapkho;
 
                 while (true)

@@ -73,15 +73,27 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
         }
 
         [HttpPost]
-        public IActionResult ThemDuanSQL(duans duans, nguoidungs nguoidungs)
+        public IActionResult ThemDuanSQL(duans duans)
         {
-            duans.TrangThai = "Chờ";
+            // Kiểm tra trùng mã dự án
+            bool isExist = _context.duans.Any(d => d.MaDuan == duans.MaDuan);
 
+            if (isExist)
+            {
+                ModelState.AddModelError("MaDuan", "Mã dự án đã tồn tại!");
+                // Load lại dữ liệu dropdown
+                ViewBag.Tennguoidunglist = _context.nguoidungs.ToList();
+                return View("ThemDuan");
+            }
+
+            duans.TrangThai = "Chờ";
             _context.duans.Add(duans);
             _context.SaveChanges();
 
             return RedirectToAction("Duan", "Duan", new { area = "QuanLiDuAn" });
         }
+
+
 
         [HttpPost]
         public async Task<IActionResult> Xuliduan(string MaDuan, string action)

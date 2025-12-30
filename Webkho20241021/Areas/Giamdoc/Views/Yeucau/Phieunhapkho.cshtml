@@ -87,13 +87,31 @@
                             <td>
                                 @if (item.TrangThai == "Đã nhập kho")
                                 {
-                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "Giamdoc", MaNhapkho = item.MaNhapkho })" 
-                                       target="_blank" 
-                                       class="btn-icon" 
-                                       title="In phiếu"
-                                       onclick="event.stopPropagation();">
-                                        <i class="bx bx-printer"></i>
-                                    </a>
+                                    @* Kiểm tra xem có phải phiếu nhập kho hoàn trả không (NHAPKHO_DUAN, NHAPKHO_CANHAN) và thuộc về user hiện tại *@
+                                    string currentUserId = Context.Session.GetString("MaNguoidung");
+                                    bool isNhapKhoDuanOrCaNhan = !string.IsNullOrEmpty(item.MaYeucau) && 
+                                                                 (item.MaYeucau.StartsWith("NHAPKHO_DUAN_", StringComparison.OrdinalIgnoreCase) || 
+                                                                  item.MaYeucau.StartsWith("NHAPKHO_CANHAN_", StringComparison.OrdinalIgnoreCase));
+                                    
+                                    bool belongsToCurrentUser = false;
+                                    if (isNhapKhoDuanOrCaNhan && !string.IsNullOrEmpty(currentUserId))
+                                    {
+                                        // Kiểm tra nếu MaYeucau chứa MaNguoidung của user hiện tại
+                                        belongsToCurrentUser = item.MaYeucau.Contains(currentUserId, StringComparison.OrdinalIgnoreCase) ||
+                                                               (!string.IsNullOrEmpty(item.MaNguoidung) && item.MaNguoidung.Equals(currentUserId, StringComparison.OrdinalIgnoreCase));
+                                    }
+                                    
+                                    if (isNhapKhoDuanOrCaNhan && belongsToCurrentUser)
+                                    {
+                                        @* Phiếu nhập kho hoàn trả của user hiện tại → In phiếu trả hàng *@
+                                        <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "Giamdoc", MaNhapkho = item.MaNhapkho })" 
+                                           target="_blank" 
+                                           class="btn-icon" 
+                                           title="In phiếu trả hàng"
+                                           onclick="event.stopPropagation();">
+                                            <i class="bx bx-printer"></i>
+                                        </a>
+                                    }
                                 }
                             </td>
                         </tr>
@@ -150,14 +168,6 @@
                 </tbody>
             </table>
         </div>
-        <div style="text-align: right; padding: 20px 20px 0 0;">
-            <button id="btn-duyet" type="button" style="background-color: #336600; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; display: none; margin-left: 10px;">
-                Duyệt
-            </button>
-            <button id="btn-tuchoi" type="button" style="background-color: #336600; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; display: none; margin-left: 10px;">
-                Từ chối
-            </button>
-        </div>
     </nav>
     @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
     @{
@@ -167,7 +177,9 @@
     <script src="~/js/phieunhapkho.js"></script>
     <script>
         $(document).ready(function () {
-            getThongbaoData();
+            if (typeof getThongbaoData === 'function') {
+                getThongbaoData();
+            }
             
             // Chức năng tìm kiếm
             $('#timkiem').on('keyup', function() {
@@ -185,78 +197,6 @@
                 });
             });
 
-            // Xử lý nút Duyệt
-            $('#btn-duyet').on('click', function() {
-                if (!selectedManhapkho) {
-                    alert("Vui lòng chọn phiếu nhập kho trước.");
-                    return;
-                }
-                
-                if (!confirm("Bạn có chắc chắn muốn duyệt phiếu nhập kho " + selectedManhapkho + "?")) {
-                    return;
-                }
-                
-                submitPhieunhapkhoAction('approve');
-            });
-
-            // Xử lý nút Từ chối
-            $('#btn-tuchoi').on('click', function() {
-                if (!selectedManhapkho) {
-                    alert("Vui lòng chọn phiếu nhập kho trước.");
-                    return;
-                }
-                
-                if (!confirm("Bạn có chắc chắn muốn từ chối phiếu nhập kho " + selectedManhapkho + "?")) {
-                    return;
-                }
-                
-                submitPhieunhapkhoAction('reject');
-            });
-
-            // Hàm submit action
-            function submitPhieunhapkhoAction(action) {
-                const pathSegments = window.location.pathname.split('/');
-                const area = pathSegments.length > 1 ? pathSegments[1] : '';
-                const url = `/${area}/Yeucau/Xuliphieunhapkho`;
-                
-                // Tạo form để submit
-                const form = $('<form>', {
-                    method: 'POST',
-                    action: url
-                });
-                
-                form.append($('<input>', {
-                    type: 'hidden',
-                    name: 'MaNhapkho',
-                    value: selectedManhapkho
-                }));
-                
-                form.append($('<input>', {
-                    type: 'hidden',
-                    name: 'submitAction',
-                    value: action
-                }));
-                
-                // Thêm token chống CSRF
-                const token = $('#RequestVerificationToken').val() || $('input[name="__RequestVerificationToken"]').val();
-                if (token) {
-                    form.append($('<input>', {
-                        type: 'hidden',
-                        name: '__RequestVerificationToken',
-                        value: token
-                    }));
-                }
-                
-                $('body').append(form);
-                form.submit();
-            }
-
-            // Lưu hàm vào global scope để có thể gọi từ phieunhapkho.js
-            window.submitPhieunhapkhoAction = submitPhieunhapkhoAction;
-
-            // Ẩn các nút khi trang tải
-            $('#btn-duyet').hide();
-            $('#btn-tuchoi').hide();
         });
     </script>
 </body>

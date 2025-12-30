@@ -41,7 +41,8 @@ document.addEventListener("DOMContentLoaded", function () {
         slmoi: ["slmoi", "moi", "soluongmoi", "new"],
         nhacc: ["nhacungcap", "ncc"],
         ngay: ["ngaycanhang", "ngaycan", "ngaynhan", "ngaycan"],
-        ghichu: ["ghichu", "note", "lydo", "mota", "chuthich"]
+        ghichu: ["ghichu", "note", "lydo", "mota", "chuthich"],
+        kho: ["makho", "ykho", "ycmakho", "kho"]
     };
     
     
@@ -133,14 +134,16 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!matchedItem) {
             return rowData;
         }
+        // Chỉ bổ sung dữ liệu thiếu, không ghi đè giá trị đã có trong Excel
         return {
             ...rowData,
-            TenSanpham: matchedItem.tenSanpham || rowData.TenSanpham,
-            MaSanpham: matchedItem.maSanpham || rowData.MaSanpham,
-            HangSX: matchedItem.hangSX || rowData.HangSX,
-            DonVi: matchedItem.donVi || rowData.DonVi,
+            TenSanpham: rowData.TenSanpham || matchedItem.tenSanpham || "",
+            MaSanpham: rowData.MaSanpham || matchedItem.maSanpham || "",
+            HangSX: rowData.HangSX || matchedItem.hangSX || "",
+            DonVi: rowData.DonVi || matchedItem.donVi || "",
             NhaCC: rowData.NhaCC || matchedItem.nhaCC || "",
-            YCMakho: matchedItem.makho || rowData.YCMakho || "",
+            // Nếu file Excel đã chỉ định mã kho thì giữ nguyên, nếu không sẽ lấy theo mã sản phẩm trong kho tổng
+            YCMakho: rowData.YCMakho || matchedItem.makho || "",
             hasKhoMatch: true
         };
     }
@@ -323,13 +326,15 @@ document.addEventListener("DOMContentLoaded", function () {
     function appendRowHiddenInputs(rowData) {
         appendHiddenInput("TenSanpham", rowData.TenSanpham);
         appendHiddenInput("MaSanpham", rowData.MaSanpham);
-        appendHiddenInput("YCMakho", rowData.YCMakho || "");
         appendHiddenInput("HangSX", rowData.HangSX);
         appendHiddenInput("DonVi", rowData.DonVi);
         appendHiddenInput("SLCu", rowData.SLCu);
+        appendHiddenInput("SLMoi", rowData.SLMoi);
         const finalQuantity = rowData.SLToSave ?? resolveFinalQuantity(rowData);
         appendHiddenInput("SL", finalQuantity);
         appendHiddenInput("NhaCC", rowData.NhaCC);
+        // Lưu mã kho theo từng dòng để server không bị thiếu danh sách YCMaKho
+        appendHiddenInput("YCMaKho", rowData.YCMakho || "");
         appendHiddenInput("VTNgayCanHang", rowData.NgayCanHang);
         appendHiddenInput("GhiChu", rowData.GhiChu || "");
     }
@@ -357,8 +362,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td>${escapeHtml(row.MaSanpham)}</td>
                 <td>${escapeHtml(row.HangSX)}</td>
                 <td>${escapeHtml(row.DonVi)}</td>
-                <td>${escapeHtml(row.SLCu)}</td>
-                <td>${escapeHtml(finalQuantity)}</td>
+                <td>${escapeHtml(row.SLCu || '')}</td>
+                <td>${escapeHtml(row.SLMoi || '')}</td>
                 <td>${escapeHtml(row.NgayCanHang)}</td>
                 <td>${escapeHtml(row.NhaCC)}</td>
                 <td><input type="text" class="ghichu-input" data-index="${i}" value="${escapeHtml(row.GhiChu || '')}" placeholder="Nhập ghi chú (tùy chọn)" style="width: 100%; padding: 4px;" /></td>
@@ -474,7 +479,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const headerIndex = mapHeaders(headerRows);
+        let headerIndex = mapHeaders(headerRows);
+        headerIndex = tryFillMissingColumns(headerIndex, headerRows);
         const requiredKeys = ["ten", "ma", "hang", "donvi", "slmoi"];
         const missingKeys = requiredKeys.filter(
             (key) => headerIndex[key] === undefined
@@ -534,7 +540,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     NhaCC: (getValue("nhacc") || "").toString().trim(),
                     NgayCanHang: parsedDate,
                     GhiChu: (getValue("ghichu") || "").toString().trim(),
-                    YCMakho: "",
+                    YCMakho: (getValue("kho") || "").toString().trim(),
                     hasManualDate: Boolean(getValue("ngay"))
                 };
                 rowData.SLToSave = resolveFinalQuantity(rowData);
@@ -621,7 +627,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const headerIndex = mapHeaders(headerRows);
+        let headerIndex = mapHeaders(headerRows);
+        headerIndex = tryFillMissingColumns(headerIndex, headerRows);
         const requiredKeys = ["ten", "ma", "hang", "donvi", "slmoi"];
         const missingKeys = requiredKeys.filter(
             (key) => headerIndex[key] === undefined
@@ -691,7 +698,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         NhaCC: (getValue("nhacc") || "").toString().trim(),
                         NgayCanHang: parsedDate,
                         GhiChu: (getValue("ghichu") || "").toString().trim(),
-                        YCMakho: "",
+                        YCMakho: (getValue("kho") || "").toString().trim(),
                         hasManualDate: Boolean(getValue("ngay"))
                     };
                     rowData.SLToSave = resolveFinalQuantity(rowData);

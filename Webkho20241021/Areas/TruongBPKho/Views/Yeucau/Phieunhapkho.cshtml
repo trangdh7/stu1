@@ -13,6 +13,30 @@
 </head>
 <body>
 
+    @if (TempData["Success"] != null)
+    {
+        @* <div class="alert alert-success" style="margin: 10px; padding: 15px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; color: #155724;">
+            <strong>Thành công!</strong> @TempData["Success"]
+        </div> *@
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-warning" style="margin: 10px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; color: #856404;">
+            <strong>Cảnh báo!</strong> @TempData["Warning"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" style="margin: 10px; padding: 15px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; color: #721c24;">
+            <strong>Lỗi!</strong> @TempData["Error"]
+        </div>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <div class="alert alert-info" style="margin: 10px; padding: 15px; background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px; color: #0c5460;">
+            <strong>Thông tin!</strong> @TempData["Info"]
+        </div>
+    }
     <nav class="bodyyeucau">
         <div class="menu-kho">
             <ul class="timkiem">
@@ -90,13 +114,33 @@
                             <td>
                                 @if (item.TrangThai == "Đã nhập kho")
                                 {
-                                    <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "TruongBPKho", MaNhapkho = item.MaNhapkho })" 
-                                       target="_blank" 
-                                       class="btn-icon" 
-                                       title="In phiếu"
-                                       onclick="event.stopPropagation();">
-                                        <i class="bx bx-printer"></i>
-                                    </a>
+                                    @* Kiểm tra xem có phải phiếu nhập kho hoàn trả không (NHAPKHO_DUAN, NHAPKHO_CANHAN) *@
+                                    bool isNhapKhoDuanOrCaNhan = !string.IsNullOrEmpty(item.MaYeucau) && 
+                                                                 (item.MaYeucau.StartsWith("NHAPKHO_DUAN_", StringComparison.OrdinalIgnoreCase) || 
+                                                                  item.MaYeucau.StartsWith("NHAPKHO_CANHAN_", StringComparison.OrdinalIgnoreCase));
+                                    
+                                    if (isNhapKhoDuanOrCaNhan)
+                                    {
+                                        @* Phiếu nhập kho hoàn trả → In phiếu trả hàng *@
+                                        <a href="@Url.Action("InPhietrahang", "Yeucau", new { area = "TruongBPKho", MaNhapkho = item.MaNhapkho })" 
+                                           target="_blank" 
+                                           class="btn-icon" 
+                                           title="In phiếu trả hàng"
+                                           onclick="event.stopPropagation();">
+                                            <i class="bx bx-printer"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        @* Phiếu nhập kho thông thường (mua hàng về) → In phiếu nhập kho *@
+                                        <a href="@Url.Action("InPhieunhapkho", "Yeucau", new { area = "TruongBPKho", MaNhapkho = item.MaNhapkho })" 
+                                           target="_blank" 
+                                           class="btn-icon" 
+                                           title="In phiếu nhập kho"
+                                           onclick="event.stopPropagation();">
+                                            <i class="bx bx-printer"></i>
+                                        </a>
+                                    }
                                 }
                             </td>
                         </tr>
@@ -173,7 +217,9 @@
     <script src="~/js/phieunhapkho.js"></script>
     <script>
         $(document).ready(function () {
+            if (typeof getThongbaoData === 'function') {
             getThongbaoData();
+            }
         });
     </script>
 </body>

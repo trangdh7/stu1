@@ -69,6 +69,7 @@
                         <label>Bộ phận <span class="required">*</span></label>
                         <select name="Bophan" required class="form-select">
                             <option value="" disabled @(string.IsNullOrEmpty(Model.Bophan) ? "selected" : null)>Chọn bộ phận</option>
+                            <option value="Giám đốc" @(Model.Bophan == "Giám đốc" ? "selected" : null)>Giám đốc</option>
                             <option value="BP kỹ thuật" @(Model.Bophan == "BP kỹ thuật" ? "selected" : null)>BP kỹ thuật</option>
                             <option value="BP kho" @(Model.Bophan == "BP kho" ? "selected" : null)>BP kho</option>
                             <option value="BP mua hàng" @(Model.Bophan == "BP mua hàng" ? "selected" : null)>BP mua hàng</option>
@@ -79,34 +80,28 @@
                     </div>
                 </div>
 
-                @* <div class="form-section">
+                <div class="form-section">
                     <div class="section-title">🎯 Vai trò</div>
 
-                    <label>Chọn Roles (Vai trò) - Có thể chọn nhiều</label>
-
-                    <div class="checkbox-group">
-                        @if (ViewBag.AllRoles != null)
-                        {
-                            var userRoles = ViewBag.UserRoles as IList<string> ?? new List<string>();
-                            foreach (string role in ViewBag.AllRoles)
+                    <div class="form-group">
+                        <label>Vai trò (Role)</label>
+                        <select name="SelectedRole" class="form-select">
+                            <option value="">Tự động gán (dựa trên Chức vụ và Bộ phận)</option>
+                            @if (ViewBag.AllRoles != null)
                             {
-                                <div class="checkbox-item">
-                                    <input type="checkbox"
-                                           name="SelectedRoles"
-                                           value="@role"
-                                           id="role_@role"
-                                           @(userRoles.Contains(role) ? "checked" : "") />
-
-                                    <label for="role_@role">@role</label>
-                                </div>
+                                var userRoles = ViewBag.UserRoles as IList<string> ?? new List<string>();
+                                var currentRole = userRoles.Count > 0 ? userRoles[0] : null;
+                                foreach (string role in ViewBag.AllRoles)
+                                {
+                                    <option value="@role" @(currentRole == role ? "selected" : "")>@role</option>
+                                }
                             }
-                        }
+                        </select>
+                        <span class="form-text">
+                            Để trống hoặc chọn "Tự động gán" để hệ thống tự động gán role dựa trên Chức vụ và Bộ phận đã chọn ở trên.
+                        </span>
                     </div>
-
-                    <span class="form-text">
-                        Nếu không chọn role, hệ thống sẽ tự động gán role dựa trên Chức vụ và Bộ phận.
-                    </span>
-                </div> *@
+                </div>
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Cập nhật</button>

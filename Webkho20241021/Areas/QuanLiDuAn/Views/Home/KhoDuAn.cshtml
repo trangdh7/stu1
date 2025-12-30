@@ -32,8 +32,30 @@
                 <a href="/QuanLiDuAn/Home/KhoDuAn" class="nav-tab @(action=="KhoDuAn"?"active":"")"><i class='bx bx-briefcase'></i> Kho dự án</a>
             </div>
             <div class="nav-search">
-                <i class='bx bx-search'></i>
-                <input type="text" id="timkiem" placeholder="Tìm kiếm vật tư..." />
+                <form method="get" action="/QuanLiDuAn/Home/KhoDuAn" style="display:flex; align-items:center; gap:8px;">
+                    <label for="duAn" style="font-weight:600;">Dự án:</label>
+                    <select id="duAn" name="duAn">
+                        <option value="">Tất cả</option>
+                        @if (ViewBag.DuAnList != null)
+                        {
+                            foreach (var da in (IEnumerable<string>)ViewBag.DuAnList)
+                            {
+                                var isSelected = ((string)ViewBag.DuAn == da);
+                                @if (isSelected)
+                                {
+                                    <option value="@da" selected="selected">@da</option>
+                                }
+                                else
+                                {
+                                    <option value="@da">@da</option>
+                                }
+                            }
+                        }
+                    </select>
+                    <i class='bx bx-search'></i>
+                    <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm vật tư..." />
+                    <button type="submit" class="btn btn-primary">Lọc</button>
+                </form>
             </div>
         </div>
         <div class="warehouse-content">
@@ -51,6 +73,7 @@
                                 <th>Mã kho</th>
                                 <th>Hãng SX</th>
                                 <th>Nhà cung cấp</th>
+                                <th>Mã dự án</th>
                                 <th>Dự án</th>
                                 <th>Số lượng</th>
                                 <th>Đơn vị</th>
@@ -74,6 +97,7 @@
                 <td><strong>@item.Makho</strong></td>
                 <td>@item.HangSX</td>
                 <td>@item.NhaCC</td>
+                <td>@(ViewBag.MaDuanDict != null && ViewBag.MaDuanDict.ContainsKey(item.Makho ?? "") ? ViewBag.MaDuanDict[item.Makho ?? ""] : "")</td>
                 <td>@item.DuAn</td>
                 <td>@item.SL</td>
                 <td>@item.DonVi</td>
@@ -86,7 +110,7 @@
     else
     {
         <tr>
-            <td colspan="10">Không có dữ liệu.</td>
+            <td colspan="11">Không có dữ liệu.</td>
         </tr>
     }
 </tbody>
@@ -94,7 +118,7 @@
                     </table>
                     <div class="pagination">
                         @{
-                            int totalPage = (int)(ViewBag.TotalPages ?? 1); int curr = (int)(ViewBag.Page ?? 1); var _q = (string)(ViewBag.Q ?? ""); var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q);
+                            int totalPage = (int)(ViewBag.TotalPages ?? 1); int curr = (int)(ViewBag.Page ?? 1); var _q = (string)(ViewBag.Q ?? ""); var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q); var _du = (string)(ViewBag.DuAn ?? ""); var _duParam = string.IsNullOrEmpty(_du) ? "" : "&duAn=" + System.Net.WebUtility.UrlEncode(_du);
                         }
                         @if (totalPage > 1)
                         {
@@ -107,7 +131,7 @@
                                 else
                                 {
 
-                                    <a href="?page=@i@Html.Raw(_qParam)">@i</a>
+                                    <a href="?page=@i@Html.Raw(_qParam)@Html.Raw(_duParam)">@i</a>
                                 }
                             }
                         }

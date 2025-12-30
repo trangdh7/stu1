@@ -6,7 +6,9 @@ $(document).ready(function () {
             showVTxuatkho(Maxuatkho); 
         }
     }
-    getThongbaoData();
+    if (typeof getThongbaoData === 'function') {
+        getThongbaoData();
+    }
     setActiveMenu();
     
     // Xử lý click vào hàng
@@ -297,13 +299,6 @@ function getThongbaoData() {
                 $('.menu-yeucau .badge').removeClass('show');
             }
 
-            // Thông báo xác nhận nhận hàng
-            if (data.thongbaoxacnhannhanhangcount > 0) {
-                $('.menu-xacnhannhanhang .badge').addClass('show');
-                $('.menu-xacnhannhanhang .notification').text(data.thongbaoxacnhannhanhangcount);
-            } else {
-                $('.menu-xacnhannhanhang .badge').removeClass('show');
-            }
         },
         error: function (xhr, status, error) {
             console.error("Lỗi lấy thông báo:", error);
@@ -337,5 +332,7 @@ function setActiveMenu() {
 
 // Gọi hàm getThongbaoData khi trang được tải
 $(document).ready(function () {
-    getThongbaoData();
+    if (typeof getThongbaoData === 'function') {
+        getThongbaoData();
+    }
 });

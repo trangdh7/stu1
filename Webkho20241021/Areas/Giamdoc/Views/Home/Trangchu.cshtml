@@ -78,11 +78,15 @@
     <script>
         $(document).ready(function () {
             // Gọi hàm thông báo ngay khi trang load
-            getThongbaoDatatrangchu();
+            if (typeof getThongbaoDatatrangchu === 'function') {
+                getThongbaoDatatrangchu();
+            }
             
             // Gọi lại sau 1 giây để đảm bảo DOM đã sẵn sàng
             setTimeout(function() {
-                getThongbaoDatatrangchu();
+                if (typeof getThongbaoDatatrangchu === 'function') {
+                    getThongbaoDatatrangchu();
+                }
             }, 1000);
         });
     </script>

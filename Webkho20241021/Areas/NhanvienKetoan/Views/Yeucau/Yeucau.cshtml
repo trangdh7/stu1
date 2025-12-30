@@ -155,14 +155,17 @@
                 <thead>
                     <tr>
                         <td>STT</td>
-                        <td>Tên vật tư</td>
-                        <td>Mã vật tư</td>
-                        <td>Mã kho</td>
-                        <td>Hãng sx</td>
-                        <td>Nhà cung cấp</td>
-                        <td style="text-align: center;">Số lượng</td>
-                        <td>Đơn vị</td>
+                        <td>Tên thiết bị/hàng hóa</td>
+                        <td>Mã VT</td>
+                        <td>Hãng SX</td>
+                        <td>NCC</td>
+                        <td>SL Cũ</td>
+                        <td>SL Mới</td>
+                        <td>SL</td>
+                        <td>ĐV</td>
+                        <td>Ngày cần</td>
                         <td>Trạng thái</td>
+                        <td>Ghi chú</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -175,11 +178,17 @@
                             <td>@STT2</td>
                             <td>@item.TenSanpham</td>
                             <td>@item.MaSanpham</td>
-                            <td>@item.YCMakho</td>
                             <td>@item.HangSX</td>
                             <td>@item.NhaCC</td>
-                            <td style="text-align: center;">@item.SL</td>
-                            <td>@item.DonVi</td>
+                            <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
+                            <td style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
+                            <td style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
+                            <td>@(item.DonVi ?? "-")</td>
+                            <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td>@(item.TrangThai ?? "")</td>
+                            <td style="color: @(item.TrangThai?.Contains("Đã từ chối") == true ? "#f44336" : "inherit");">
+                                @(item.GhiChu ?? "-")
+                            </td>
                         </tr>
                         STT2++;
                     }
@@ -190,7 +199,9 @@
     <script src="~/js/yeucau.js"></script>
     <script>
         $(document).ready(function () {
-            getThongbaoData();
+            if (typeof getThongbaoData === 'function') {
+                getThongbaoData();
+            }
         });
     </script>
 </body>

@@ -14,7 +14,9 @@ $(document).ready(function () {
         const trangThai = link.data('trangthai') || '';
         showVTmuahang(Mamuahang, trangThai);
     }
-    getThongbaoData();
+    if (typeof getThongbaoData === 'function') {
+        getThongbaoData();
+    }
     setActiveMenu();
     
     // Xử lý click vào hàng
@@ -681,7 +683,9 @@ function setActiveMenu() {
 
 // Gọi hàm getThongbaoData khi trang được tải
 $(document).ready(function () {
-    getThongbaoData();
+    if (typeof getThongbaoData === 'function') {
+        getThongbaoData();
+    }
 });
 
 // Hàm in phiếu mua hàng

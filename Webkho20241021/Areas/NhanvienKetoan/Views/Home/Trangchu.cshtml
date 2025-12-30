@@ -65,7 +65,9 @@
     <script src="~/js/trangchu.js"></script>
     <script>
         $(document).ready(function () {
-            getThongbaoDatatrangchu();
+            if (typeof getThongbaoDatatrangchu === 'function') {
+                getThongbaoDatatrangchu();
+            }
         });
     </script>
 }

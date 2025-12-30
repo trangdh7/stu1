@@ -86,6 +86,7 @@
                                 <th>Mã kho</th>
                                 <th>Hãng SX</th>
                                 <th>Nhà cung cấp</th>
+                                <th>Mã dự án</th>
                                 <th>Dự án</th>
                                 <th>Số lượng</th>
                                 <th>Đơn vị</th>
@@ -109,6 +110,7 @@
                 <td><strong>@item.Makho</strong></td>
                 <td>@item.HangSX</td>
                 <td>@item.NhaCC</td>
+                <td>@(ViewBag.MaDuanDict != null && ViewBag.MaDuanDict.ContainsKey(item.Makho ?? "") ? ViewBag.MaDuanDict[item.Makho ?? ""] : "")</td>
                 <td>@item.DuAn</td>
                 <td>@item.SL</td>
                 <td>@item.DonVi</td>
@@ -121,7 +123,7 @@
     else
     {
         <tr>
-            <td colspan="10">Không có dữ liệu.</td>
+            <td colspan="11">Không có dữ liệu.</td>
         </tr>
     }
 </tbody>

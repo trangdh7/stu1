@@ -11,5 +11,6 @@ namespace Webkho_20241021.Models
 
         public string? Chucvu { get; set; }
         public string? Bophan { get; set; }
+        public string? Email { get; set; }
     }
 }

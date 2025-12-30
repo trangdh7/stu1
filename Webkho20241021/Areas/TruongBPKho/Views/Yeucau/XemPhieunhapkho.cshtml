@@ -11,6 +11,27 @@
     var nguoiDung = ViewBag.NguoiDung as Webkho_20241021.Models.nguoidungs;
     var duan = ViewBag.Duan as Webkho_20241021.Models.duans;
     
+    // Kiểm tra xem phiếu nhập kho có phải từ phiếu mua hàng không
+    // Điều kiện: Có MaYeucau và không phải là phiếu nhập kho đặc biệt (NHAPKHO_*)
+    // Vì khi tạo phiếu nhập kho từ phiếu mua hàng, MaYeucau sẽ được copy từ Phieumuahang.MaYeucau
+    bool isFromPhieuMuaHang = false;
+    if (phieunhapkho != null && !string.IsNullOrEmpty(phieunhapkho.MaYeucau))
+    {
+        // Kiểm tra xem có phiếu mua hàng nào có cùng MaYeucau không (từ ViewBag)
+        var phieumuahang = ViewBag.Phieumuahang as Webkho_20241021.Models.phieumuahang;
+        if (phieumuahang != null)
+        {
+            isFromPhieuMuaHang = true;
+        }
+        else
+        {
+            // Nếu MaYeucau không bắt đầu bằng "NHAPKHO_", có thể là từ yêu cầu mua hàng
+            // Vì các phiếu nhập kho đặc biệt (NHAPKHO_DUAN_, NHAPKHO_CANHAN_, NHAPKHO_TUDO_) 
+            // không phải từ phiếu mua hàng
+            isFromPhieuMuaHang = !phieunhapkho.MaYeucau.StartsWith("NHAPKHO_");
+        }
+    }
+    
     // Tính tổng tiền hàng
     decimal tongTienHang = 0;
     decimal tongChiPhi = 0;
@@ -173,7 +194,7 @@
         <div class="action-buttons">
             @if (phieunhapkho?.TrangThai == "Chờ nhập kho" || phieunhapkho?.TrangThai == "Sẵn sàng nhập kho")
             {
-                @using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                using (Html.BeginForm("Xuliphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
                 {
                     <input type="hidden" name="MaNhapkho" value="@phieunhapkho?.MaNhapkho" />
                     <button type="submit" name="action" value="approve" class="btn btn-approve">
@@ -183,9 +204,33 @@
             }
             @if (phieunhapkho?.TrangThai == "Đã nhập kho")
             {
+                @* Hiển thị nút tạo phiếu xuất kho *@
+                bool hasPhieuxuatkho = ViewBag.HasPhieuxuatkho != null && (bool)ViewBag.HasPhieuxuatkho;
+                bool canShowXuatKhoButton =
+                    !string.IsNullOrEmpty(phieunhapkho.MaYeucau)
+                    && !phieunhapkho.MaYeucau.StartsWith("NHAPKHO_")
+                    && !hasPhieuxuatkho;
+                
                 <button type="button" class="btn btn-print" onclick="window.print()">
                     🖨️ In phiếu nhập kho
                 </button>
+                
+                if (canShowXuatKhoButton)
+                {
+                    using (Html.BeginForm("Taophieuxuatkhobyphieunhapkho", "Yeucau", new { area = "TruongBPKho" }, FormMethod.Post))
+                    {
+                        <input type="hidden" name="MaNhapkho" value="@phieunhapkho?.MaNhapkho" />
+                        <button type="submit" class="btn" style="background-color: #28a745; color: white;" onclick="return confirm('Bạn có chắc chắn muốn tạo phiếu xuất kho (trả hàng cho người yêu cầu) từ phiếu nhập kho này?');">
+                            📦 Tạo phiếu xuất kho (Trả hàng)
+                        </button>
+                    }
+                }
+                else if (!string.IsNullOrEmpty(phieunhapkho.MaYeucau) && !phieunhapkho.MaYeucau.StartsWith("NHAPKHO_") && hasPhieuxuatkho)
+                {
+                    <div style="margin-top: 10px; padding: 10px; background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px; color: #0c5460;">
+                        <strong>Thông tin:</strong> Đã có phiếu xuất kho cho yêu cầu này. Vui lòng kiểm tra trong danh sách phiếu xuất kho.
+                    </div>
+                }
             }
             <button type="button" class="btn" style="background-color: #17a2b8; color: white;" onclick="kiemTraGiaTien()">
                 🔍 Kiểm tra giá tiền

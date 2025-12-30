@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Models;
 using Webkho_20241021.Areas.QuanLiDuAn.Data;
+using Webkho_20241021.Areas.TruongBPKho.Services;
+using Webkho_20241021.Services;
 using System;
 using System.IO;
 using System.Linq;
@@ -18,9 +20,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
     public class YeucauController : Controller
     {
         private readonly ApplicationDbContext _context;
-        public YeucauController(ApplicationDbContext context)
+        private readonly EmailService _emailService;
+        public YeucauController(ApplicationDbContext context, EmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
         public IActionResult Yeucau(string search = "")
         {
@@ -32,11 +36,58 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
             foreach (var yeucau in Yeucaulist)
             {
+                // Kiểm tra nếu là yêu cầu nhập kho (mã bắt đầu bằng "NHAPKHO_")
+                bool isNhapKhoRequest = !string.IsNullOrEmpty(yeucau.MaYeucau) && 
+                                        (yeucau.MaYeucau.StartsWith("NHAPKHO_DUAN_") || 
+                                         yeucau.MaYeucau.StartsWith("NHAPKHO_CANHAN_"));
+                
                 // Kiểm tra và cập nhật trạng thái dựa trên vật tư trước
                 var vatTus = _context.vtyeucau.Where(v => v.VTMaYeucau == yeucau.MaYeucau).ToList();
                 
+                // Với yêu cầu nhập kho, lấy vật tư từ vtphieunhapkho thay vì vtyeucau
+                if (isNhapKhoRequest)
+                {
+                    var vtPhieuNhap = (from vtnk in _context.vtphieunhapkho
+                                      join pnk in _context.phieunhapkho on vtnk.MaNhapkho equals pnk.MaNhapkho
+                                      where pnk.MaYeucau == yeucau.MaYeucau
+                                      select vtnk.TrangThai).ToList();
+                    
+                    // Nếu có vật tư trong phiếu nhập kho, kiểm tra trạng thái
+                    if (vtPhieuNhap.Any())
+                    {
+                        // Kiểm tra xem còn vật tư nào đang chờ quản lý dự án duyệt không
+                        var hasAwaitingQLDA = vtPhieuNhap.Any(v => IsAwaitingProjectManagerApproval(v));
+                        
+                        // Nếu không còn vật tư nào chờ QLDA duyệt và có ít nhất một vật tư đã được duyệt
+                        if (!hasAwaitingQLDA)
+                        {
+                            var hasApproved = vtPhieuNhap.Any(v => IsPostProjectManagerStatus(v));
+                            var hasRejected = vtPhieuNhap.Any(v => (v ?? string.Empty).Trim() == "Đã từ chối");
+                            
+                            // Chỉ cập nhật nếu trạng thái hiện tại không phải là các trạng thái bất biến
+                            var immutableStatuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                            {
+                                "Đang mua hàng",
+                                "Đã xuất kho",
+                                "Đã nhận hàng"
+                            };
+                            
+                            if (!immutableStatuses.Contains((yeucau.TrangThai ?? string.Empty).Trim()))
+                            {
+                                if (hasApproved)
+                                {
+                                    yeucau.TrangThai = "Chờ giám đốc duyệt";
+                                }
+                                else if (hasRejected && !hasApproved)
+                                {
+                                    yeucau.TrangThai = "Đã từ chối";
+                                }
+                            }
+                        }
+                    }
+                }
                 // Nếu có vật tư, kiểm tra trạng thái
-                if (vatTus.Any())
+                else if (vatTus.Any())
                 {
                     // Kiểm tra xem còn vật tư nào đang chờ quản lý dự án duyệt không
                     var hasAwaitingQLDA = vatTus.Any(v => IsAwaitingProjectManagerApproval(v.TrangThai));
@@ -80,9 +131,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
             _context.SaveChanges();
 
+            // Sắp xếp: nhóm các yêu cầu có cùng mã cơ bản (bỏ phần tên người) lại với nhau
             var SortedYeucaulist = Yeucaulist
                 .OrderByDescending(y => IsAwaitingProjectManagerApproval(y.TrangThai))
-                .ThenByDescending(y => y.NgayYeucau)
+                .ThenBy(y => YeucauUpdateHelper.GetBaseRequestCode(y.MaYeucau ?? "")) // Nhóm theo mã cơ bản
+                .ThenByDescending(y => y.NgayYeucau) // Trong cùng nhóm, sắp xếp theo ngày giảm dần
                 .ToList();
 
             // Áp dụng tìm kiếm nếu có
@@ -253,32 +306,101 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                 where pnk.MaYeucau == MaYeucau
                                 select new
                                 {
-                                    ID = vtnk.ID,
-                                    VTMaYeucau = MaYeucau,
-                                    TenSanpham = vtnk.TenSanpham,
-                                    MaSanpham = vtnk.MaSanpham,
-                                    YCMakho = vtnk.Makho,
-                                    HangSX = vtnk.HangSX,
-                                    NhaCC = vtnk.NhaCC,
-                                    SL = vtnk.SL,
-                                    DonVi = vtnk.DonVi,
-                                    NgayCanHang = (DateTime?)null,
-                                    NgayNhapkho = vtnk.NgayNhapkho,
-                                    NgayBaohanh = vtnk.NgayBaohanh,
-                                    ThoiGianBH = vtnk.ThoiGianBH,
-                                    NgayDuyet = (DateTime?)null,
-                                    TrangThai = vtnk.TrangThai,
-                                    GhiChu = (string?)null
+                                    id = vtnk.ID,
+                                    vtMaYeucau = MaYeucau,
+                                    tenSanpham = vtnk.TenSanpham,
+                                    maSanpham = vtnk.MaSanpham,
+                                    hangSX = vtnk.HangSX,
+                                    nhaCC = vtnk.NhaCC,
+                                    slCu = (int?)null,
+                                    slMoi = vtnk.SL,
+                                    sl = vtnk.SL,
+                                    donVi = vtnk.DonVi,
+                                    ngayCanHang = (DateTime?)null,
+                                    ngayNhapkho = vtnk.NgayNhapkho,
+                                    ngayBaohanh = vtnk.NgayBaohanh,
+                                    thoiGianBH = vtnk.ThoiGianBH,
+                                    ngayDuyet = (DateTime?)null,
+                                    trangThai = vtnk.TrangThai,
+                                    ghiChu = (string?)null
                                 }).ToList();
                 return Json(vatTuList);
             }
             else
             {
-                // Lấy dữ liệu từ vtyeucau như bình thường
+                // Lấy dữ liệu từ vtyeucau và chuẩn hóa field name camelCase để JS đọc thống nhất
                 var vatTuList = _context.vtyeucau
-                                     .Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                                     .Where(v => v.VTMaYeucau == MaYeucau)
+                                     .Select(v => new
+                                     {
+                                         id = v.ID,
+                                         vtMaYeucau = v.VTMaYeucau,
+                                         tenSanpham = v.TenSanpham,
+                                         maSanpham = v.MaSanpham,
+                                         hangSX = v.HangSX,
+                                         nhaCC = v.NhaCC,
+                                         slCu = v.SLCu,
+                                         slMoi = v.SLMoi,
+                                         sl = v.SL,
+                                         donVi = v.DonVi,
+                                         ngayCanHang = v.NgayCanHang,
+                                         ngayNhapkho = v.NgayNhapkho,
+                                         ngayBaohanh = v.NgayBaohanh,
+                                         thoiGianBH = v.ThoiGianBH,
+                                         ngayDuyet = v.NgayDuyet,
+                                         trangThai = v.TrangThai,
+                                         ghiChu = v.GhiChu
+                                     })
+                                     .ToList();
                 return Json(vatTuList);
             }
+        }
+
+        [HttpGet]
+        public IActionResult GetVTPhieunhapkho(string MaNhapkho)
+        {
+            var PhieunhapkhoList = _context.vtphieunhapkho
+                                 .Where(v => v.MaNhapkho == MaNhapkho).ToList();
+            
+            // Lấy thông tin phiếu nhập kho để lấy tên người yêu cầu và MaYeucau
+            var phieunhapkho = _context.phieunhapkho
+                .FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
+            
+            string tenNguoiYeuCau = "";
+            string maYeucau = "";
+            if (phieunhapkho != null)
+            {
+                maYeucau = phieunhapkho.MaYeucau ?? "";
+                // Lấy từ yeucau nếu có
+                if (!string.IsNullOrEmpty(phieunhapkho.MaYeucau))
+                {
+                    var yeucau = _context.yeucau
+                        .FirstOrDefault(y => y.MaYeucau == phieunhapkho.MaYeucau);
+                    if (yeucau != null)
+                    {
+                        tenNguoiYeuCau = yeucau.NguoiYeucau ?? "";
+                    }
+                }
+                
+                // Nếu không có từ yeucau, lấy từ nguoidungs
+                if (string.IsNullOrEmpty(tenNguoiYeuCau) && !string.IsNullOrEmpty(phieunhapkho.MaNguoidung))
+                {
+                    var nguoidung = _context.nguoidungs
+                        .FirstOrDefault(n => n.MaNguoidung == phieunhapkho.MaNguoidung);
+                    if (nguoidung != null)
+                    {
+                        tenNguoiYeuCau = nguoidung.TenNguoidung ?? "";
+                    }
+                }
+            }
+            
+            return Json(new
+            {
+                items = PhieunhapkhoList,
+                tenNguoiYeuCau = tenNguoiYeuCau,
+                maYeucau = maYeucau,
+                trangThaiPhieu = phieunhapkho?.TrangThai ?? ""
+            });
         }
 
         [HttpPost]
@@ -361,6 +483,27 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                 var updated = UpdateYeucauStatusAfterVatTuChange(MaYeucau);
 
+                // Gửi thông báo khi QLDA duyệt
+                if (action == "approve" && processedCount > 0)
+                {
+                    var yeucauForNotif = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucauForNotif != null)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            // Thông báo cho nhân viên
+                            await _emailService.SendNotificationToEmployeeAsync(
+                                MaYeucau,
+                                yeucauForNotif.NguoiYeucau ?? "",
+                                "Đã được quản lý dự án duyệt"
+                            );
+
+                            // Thông báo cho giám đốc
+                            await _emailService.SendNotificationToDirectorAsync(MaYeucau);
+                        });
+                    }
+                }
+
                 if (processedCount == 0)
                 {
                     var note = updated
@@ -401,6 +544,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     return Json(new { success = false, message = "Dữ liệu vật tư không hợp lệ." });
                 }
 
+                // Kiểm tra xem có phải là yêu cầu nhập kho không
+                bool isNhapKhoRequest = !string.IsNullOrEmpty(MaYeucau) && 
+                    (MaYeucau.StartsWith("NHAPKHO_DUAN_", StringComparison.OrdinalIgnoreCase) ||
+                     MaYeucau.StartsWith("NHAPKHO_CANHAN_", StringComparison.OrdinalIgnoreCase));
+
                 int processedCount = 0;
                 int skippedCount = 0;
 
@@ -418,26 +566,62 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         continue;
                     }
 
-                    var vatTu = _context.vtyeucau
-                        .FirstOrDefault(v => v.VTMaYeucau == MaYeucau && v.MaSanpham == maSanpham);
-
-                    if (vatTu == null)
+                    // Nếu là yêu cầu nhập kho, tìm vật tư trong vtphieunhapkho
+                    // Nếu không, tìm trong vtyeucau
+                    vtyeucau? vatTu = null;
+                    vtphieunhapkho? vtPhieuNhap = null;
+                    
+                    if (isNhapKhoRequest)
                     {
-                        skippedCount++;
-                        continue;
+                        // Tìm vật tư trong vtphieunhapkho thông qua phieunhapkho
+                        vtPhieuNhap = (from vtnk in _context.vtphieunhapkho
+                                      join pnk in _context.phieunhapkho on vtnk.MaNhapkho equals pnk.MaNhapkho
+                                      where pnk.MaYeucau == MaYeucau && vtnk.MaSanpham == maSanpham
+                                      select vtnk).FirstOrDefault();
+                        
+                        if (vtPhieuNhap == null)
+                        {
+                            skippedCount++;
+                            continue;
+                        }
+                        _context.Entry(vtPhieuNhap).Reload();
+                    }
+                    else
+                    {
+                        // Reload vật tư từ database để đảm bảo có trạng thái mới nhất
+                        vatTu = _context.vtyeucau
+                            .FirstOrDefault(v => v.VTMaYeucau == MaYeucau && v.MaSanpham == maSanpham);
+
+                        if (vatTu == null)
+                        {
+                            skippedCount++;
+                            continue;
+                        }
+
+                        // Reload để đảm bảo có trạng thái mới nhất
+                        _context.Entry(vatTu).Reload();
                     }
 
-                    // Helper function để kiểm tra xem vật tư có đang chờ quản lý dự án duyệt không
-                    Func<string, bool> isAwaitingQLDAStatus = status =>
+                    // Helper function để kiểm tra xem vật tư có đang chờ duyệt không
+                    // Với yêu cầu nhập kho: chấp nhận "Chờ quản lý dự án duyệt"
+                    // Với yêu cầu xuất kho: chấp nhận "Chờ quản lý dự án duyệt"
+                    Func<string, bool> isAwaitingApprovalStatus = status =>
                     {
                         if (string.IsNullOrWhiteSpace(status))
                         {
-                            return false;
+                            return true; // Trạng thái null/empty được coi là chờ duyệt
                         }
                         var normalized = status.Trim();
+                        // Chấp nhận cả "Chờ quản lý dự án duyệt" và "Chờ giám đốc duyệt"
                         return normalized.Equals("Chờ quản lý dự án duyệt", StringComparison.OrdinalIgnoreCase)
+                            || normalized.Equals("Chờ giám đốc duyệt", StringComparison.OrdinalIgnoreCase)
+                            || normalized.Equals("Chờ Giám đốc duyệt", StringComparison.OrdinalIgnoreCase)
                             || normalized.StartsWith("Chờ quản lý dự án", StringComparison.OrdinalIgnoreCase)
-                            || normalized.Contains("chờ quản lý dự án", StringComparison.OrdinalIgnoreCase);
+                            || normalized.StartsWith("Chờ giám đốc", StringComparison.OrdinalIgnoreCase)
+                            || normalized.StartsWith("Chờ Giám đốc", StringComparison.OrdinalIgnoreCase)
+                            || normalized.Contains("chờ quản lý dự án", StringComparison.OrdinalIgnoreCase)
+                            || normalized.Contains("chờ giám đốc", StringComparison.OrdinalIgnoreCase)
+                            || normalized.Contains("Chờ Giám đốc", StringComparison.OrdinalIgnoreCase);
                     };
 
                     // Helper function để kiểm tra xem vật tư đã được duyệt chưa
@@ -450,9 +634,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         var normalized = status.Trim();
                         return normalized == "Đã duyệt" ||
                                normalized == "Đang mua hàng" ||
+                               normalized == "Chờ xuất kho" ||
                                normalized == "Đã xuất kho" ||
                                normalized == "Đã nhận hàng" ||
-                               normalized == "Chờ giám đốc duyệt";
+                               normalized == "Chờ nhập kho" ||
+                               normalized == "Đã nhập kho";
                     };
 
                     // Helper function để kiểm tra xem vật tư đã bị từ chối chưa
@@ -465,10 +651,14 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         return status.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase);
                     };
 
-                    // Chỉ xử lý các vật tư đang chờ quản lý dự án duyệt và chưa được duyệt/từ chối
-                    if (!isAwaitingQLDAStatus(vatTu.TrangThai) || 
-                        isAlreadyApproved(vatTu.TrangThai) || 
-                        isAlreadyRejected(vatTu.TrangThai))
+                    // Chỉ xử lý các vật tư đang chờ duyệt (Chờ quản lý dự án duyệt hoặc Chờ giám đốc duyệt) và chưa được duyệt/từ chối
+                    var currentStatus = isNhapKhoRequest ? (vtPhieuNhap?.TrangThai ?? "") : (vatTu?.TrangThai ?? "");
+                    bool isAwaiting = isAwaitingApprovalStatus(currentStatus);
+                    bool isAlreadyApprovedStatus = isAlreadyApproved(currentStatus);
+                    bool isRejected = isAlreadyRejected(currentStatus);
+                    bool canProcess = isAwaiting && !isAlreadyApprovedStatus && !isRejected;
+                    
+                    if (!canProcess)
                     {
                         skippedCount++;
                         continue;
@@ -477,26 +667,98 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     if (isApproved)
                     {
                         // Duyệt vật tư
-                        vatTu.NgayDuyet = DateTime.Now;
-                        vatTu.TrangThai = "Chờ giám đốc duyệt";
-                        vatTu.GhiChu = null; // Xóa ghi chú khi duyệt
+                        if (isNhapKhoRequest)
+                        {
+                            // Với yêu cầu nhập kho, khi QuanLiDuAn duyệt thì chuyển thành "Chờ giám đốc duyệt"
+                            vtPhieuNhap.TrangThai = "Chờ giám đốc duyệt";
+                            _context.vtphieunhapkho.Update(vtPhieuNhap);
+                        }
+                        else
+                        {
+                            // Với yêu cầu xuất kho, cập nhật trạng thái trong vtyeucau
+                            vatTu.NgayDuyet = DateTime.Now;
+                            vatTu.TrangThai = "Chờ giám đốc duyệt";
+                            vatTu.GhiChu = null; // Xóa ghi chú khi duyệt
+                            _context.vtyeucau.Update(vatTu);
+                        }
                     }
                     else
                     {
                         // Từ chối vật tư
-                        vatTu.NgayDuyet = DateTime.Now;
-                        vatTu.TrangThai = "Đã từ chối";
-                        vatTu.GhiChu = ghiChu; // Lưu ghi chú khi từ chối
+                        if (isNhapKhoRequest)
+                        {
+                            // Với yêu cầu nhập kho, cập nhật trạng thái trong vtphieunhapkho
+                            vtPhieuNhap.TrangThai = "Đã từ chối";
+                            _context.vtphieunhapkho.Update(vtPhieuNhap);
+                        }
+                        else
+                        {
+                            // Với yêu cầu xuất kho, cập nhật trạng thái trong vtyeucau
+                            vatTu.NgayDuyet = DateTime.Now;
+                            vatTu.TrangThai = "Đã từ chối";
+                            vatTu.GhiChu = ghiChu; // Lưu ghi chú khi từ chối
+                            _context.vtyeucau.Update(vatTu);
+                        }
                     }
 
-                    _context.vtyeucau.Update(vatTu);
                     processedCount++;
                 }
 
                 _context.SaveChanges();
 
-                // Cập nhật trạng thái yêu cầu
-                UpdateYeucauStatusAfterVatTuChange(MaYeucau);
+                // Cập nhật trạng thái yêu cầu (chỉ với yêu cầu xuất kho, không áp dụng cho yêu cầu nhập kho)
+                if (!isNhapKhoRequest)
+                {
+                    UpdateYeucauStatusAfterVatTuChange(MaYeucau);
+                }
+                else
+                {
+                    // Với yêu cầu nhập kho, cập nhật trạng thái phieunhapkho và yeucau
+                    var phieunhapkho = _context.phieunhapkho.FirstOrDefault(p => p.MaYeucau == MaYeucau);
+                    if (phieunhapkho != null)
+                    {
+                        var vtList = _context.vtphieunhapkho.Where(vt => vt.MaNhapkho == phieunhapkho.MaNhapkho).ToList();
+                        // Kiểm tra xem tất cả vật tư đã được duyệt (chuyển thành "Chờ giám đốc duyệt") chưa
+                        bool allApproved = vtList.All(vt => vt.TrangThai == "Chờ giám đốc duyệt" || vt.TrangThai == "Chờ Giám đốc duyệt");
+                        bool hasRejected = vtList.Any(vt => vt.TrangThai == "Đã từ chối");
+                        bool hasPending = vtList.Any(vt => vt.TrangThai == "Chờ quản lý dự án duyệt" || string.IsNullOrWhiteSpace(vt.TrangThai));
+                        
+                        if (allApproved && vtList.Any() && !hasPending)
+                        {
+                            // Tất cả vật tư đã được duyệt -> chuyển trạng thái phiếu và yêu cầu thành "Chờ giám đốc duyệt"
+                            phieunhapkho.TrangThai = "Chờ giám đốc duyệt";
+                            var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                            if (yeucau != null)
+                            {
+                                yeucau.TrangThai = "Chờ giám đốc duyệt";
+                                _context.yeucau.Update(yeucau);
+                            }
+                        }
+                        else if (hasRejected)
+                        {
+                            phieunhapkho.TrangThai = "Đã từ chối";
+                            var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                            if (yeucau != null)
+                            {
+                                yeucau.TrangThai = "Đã từ chối";
+                                _context.yeucau.Update(yeucau);
+                            }
+                        }
+                        else if (hasPending)
+                        {
+                            // Vẫn còn vật tư chờ duyệt -> giữ trạng thái "Chờ quản lý dự án duyệt"
+                            phieunhapkho.TrangThai = "Chờ quản lý dự án duyệt";
+                            var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                            if (yeucau != null)
+                            {
+                                yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                                _context.yeucau.Update(yeucau);
+                            }
+                        }
+                        _context.phieunhapkho.Update(phieunhapkho);
+                        _context.SaveChanges();
+                    }
+                }
 
                 string message = $"Đã xử lý {processedCount} vật tư thành công.";
                 if (skippedCount > 0)
@@ -1175,13 +1437,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             return Json(PhieuxuatkhoList);
         }
 
-        [HttpGet]
-        public IActionResult GetVTPhieunhapkho(string MaNhapkho)
-        {
-            var PhieunhapkhoList = _context.vtphieunhapkho
-                                 .Where(v => v.MaNhapkho == MaNhapkho).ToList();
-            return Json(PhieunhapkhoList);
-        }
+        
+       
 
         [HttpGet]
         public IActionResult GetVTPhieumuahang(string MaMuahang)
@@ -1408,7 +1665,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                            duans duans, phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, List<string> YCMaKho,
                                            List<string> TenSanpham, List<string> MaSanpham,
                                            List<string> HangSX, List<string> NhaCC, List<int?> SL,
-                                           List<string> DonVi, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
+                                           List<int?> SLCu, List<int?> SLMoi,
+                                           List<string> DonVi, List<string> GhiChu, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
         {
             // Kiểm tra null để tránh lỗi khi upload file Excel lớn
             if (yeucau == null)
@@ -1654,8 +1912,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     // Tạo mã yêu cầu: NNNNNN ST HiepNT
                     yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}";
                     
-                    // Đảm bảo tính duy nhất
+                    // Đảm bảo tính duy nhất cho mã yêu cầu (bao gồm cả tên người)
+                    // Nếu cùng người gửi cùng mã cơ bản, thêm suffix để phân biệt
                     int suffixNumber = 1;
+                    string originalMaYeucau = yeucau.MaYeucau;
                     while (true)
                     {
                         var exists = _context.yeucau
@@ -1665,7 +1925,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             break;
                         }
                         // Nếu trùng, thêm số suffix
-                        yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}{suffixNumber}";
+                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
                         suffixNumber++;
                     }
                 }
@@ -1678,8 +1938,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     // Tạo mã yêu cầu: YYMMDD ST HiepNT
                     yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
                     
-                    // Đảm bảo tính duy nhất
+                    // Đảm bảo tính duy nhất cho mã yêu cầu (bao gồm cả tên người)
+                    // Nếu cùng người gửi cùng mã cơ bản, thêm suffix để phân biệt
                     int suffixNumber = 1;
+                    string originalMaYeucau = yeucau.MaYeucau;
                     while (true)
                     {
                         var exists = _context.yeucau
@@ -1689,12 +1951,13 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             break;
                         }
                         // Nếu trùng, thêm số suffix
-                        yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}{suffixNumber}";
+                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
                         suffixNumber++;
                     }
                 }
                 // ================================================================
 
+                // Luôn tạo yêu cầu mới để theo dõi từng người gửi
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
@@ -1771,7 +2034,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     var hangValue = (HangSX != null && i < HangSX.Count) ? HangSX[i] : null;
                     var nhaCcValue = (NhaCC != null && i < NhaCC.Count) ? NhaCC[i] : null;
                     var donViValue = (DonVi != null && i < DonVi.Count) ? DonVi[i] : null;
-                    var slValue = (SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0;
+                    var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
+                    var slMoiValue = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
+                    var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
+                    // Cột SL lấy giá trị từ SLMoi (nếu có), nếu không thì lấy từ SLCu, cuối cùng mới lấy từ SL
+                    var slValue = slMoiValue ?? slCuValue ?? ((SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0);
 
                     var khoMatch = _context.khotongs.FirstOrDefault(p => p.Makho == maKhoValue);
                     // Kiểm tra xem có phải vật tư từ kho cá nhân không
@@ -1782,31 +2049,85 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     
                     if (khoMatch != null)
                     {
-                        var newVtyeucau = new vtyeucau();
-                        newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
-                        newVtyeucau.TenSanpham = ten;
-                        newVtyeucau.MaSanpham = maValue;
-                        newVtyeucau.HangSX = hangValue;
-                        newVtyeucau.NhaCC = nhaCcValue;
-                        newVtyeucau.SL = slValue;
-                        newVtyeucau.DonVi = donViValue;
-                        newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
-                        newVtyeucau.YCMakho = khoMatch.Makho;
-                        newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
-                        newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
-                        newVtyeucau.ThoiGianBH = khoMatch.ThoiGianBH;
+                        // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
+                        var existingVTYeucau = _context.vtyeucau
+                            .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
+                                && string.Equals(vt.MaSanpham, maValue, StringComparison.OrdinalIgnoreCase));
                         
-                        // Nếu là Quản lý dự án và lấy vật tư từ kho cá nhân, đặt trạng thái "Chờ Giám đốc duyệt"
-                        if (laChucVuQLDA && khoCaNhanMatch != null)
+                        if (existingVTYeucau != null)
                         {
-                            newVtyeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            // Cập nhật vật tư yêu cầu hiện có
+                            existingVTYeucau.TenSanpham = ten;
+                            existingVTYeucau.HangSX = hangValue;
+                            existingVTYeucau.NhaCC = nhaCcValue;
+                            existingVTYeucau.SLCu = slCuValue;
+                            existingVTYeucau.SLMoi = slMoiValue;
+                            existingVTYeucau.SL = slValue;
+                            existingVTYeucau.DonVi = donViValue;
+                            existingVTYeucau.GhiChu = ghiChuValue;
+                            existingVTYeucau.NgayCanHang = GetNgayCanHangAt(i);
+                            existingVTYeucau.YCMakho = khoMatch.Makho;
+                            existingVTYeucau.NgayNhapkho = khoMatch.NgayNhapkho;
+                            existingVTYeucau.NgayBaohanh = khoMatch.NgayBaohanh;
+                            existingVTYeucau.ThoiGianBH = khoMatch.ThoiGianBH;
+                            
+                            // Xử lý cập nhật theo logic mới
+                            int slThieu;
+                            var updateResult = YeucauUpdateHelper.XuLyCapNhatYeuCau(
+                                _context, 
+                                yeucau, 
+                                maValue, 
+                                slValue, 
+                                khoMatch.Makho, 
+                                out slThieu);
+                            
+                            if (updateResult.Success)
+                            {
+                                // Nếu là Quản lý dự án và lấy vật tư từ kho cá nhân, đặt trạng thái "Chờ Giám đốc duyệt"
+                                if (laChucVuQLDA && khoCaNhanMatch != null)
+                                {
+                                    existingVTYeucau.TrangThai = "Chờ Giám đốc duyệt";
+                                }
+                                else if (string.IsNullOrEmpty(existingVTYeucau.TrangThai))
+                                {
+                                    existingVTYeucau.TrangThai = yeucau.TrangThai;
+                                }
+                                
+                                _context.vtyeucau.Update(existingVTYeucau);
+                            }
                         }
                         else
                         {
-                            newVtyeucau.TrangThai = yeucau.TrangThai;
+                            // Tạo mới vật tư yêu cầu
+                            var newVtyeucau = new vtyeucau();
+                            newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TenSanpham = ten;
+                            newVtyeucau.MaSanpham = maValue;
+                            newVtyeucau.HangSX = hangValue;
+                            newVtyeucau.NhaCC = nhaCcValue;
+                            newVtyeucau.SLCu = slCuValue;
+                            newVtyeucau.SLMoi = slMoiValue;
+                            newVtyeucau.SL = slValue;
+                            newVtyeucau.DonVi = donViValue;
+                            newVtyeucau.GhiChu = ghiChuValue;
+                            newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
+                            newVtyeucau.YCMakho = khoMatch.Makho;
+                            newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
+                            newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
+                            newVtyeucau.ThoiGianBH = khoMatch.ThoiGianBH;
+                            
+                            // Nếu là Quản lý dự án và lấy vật tư từ kho cá nhân, đặt trạng thái "Chờ Giám đốc duyệt"
+                            if (laChucVuQLDA && khoCaNhanMatch != null)
+                            {
+                                newVtyeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            }
+                            else
+                            {
+                                newVtyeucau.TrangThai = yeucau.TrangThai;
+                            }
+                            
+                            _context.vtyeucau.Add(newVtyeucau);
                         }
-                        
-                        _context.vtyeucau.Add(newVtyeucau);
                     }
                     else
                     {
@@ -1832,31 +2153,79 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại
                         }
 
-                        var newVtyeucau = new vtyeucau();
-                        newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
-                        newVtyeucau.TenSanpham = ten;
-                        newVtyeucau.MaSanpham = maValue;
-                        newVtyeucau.HangSX = hangValue;
-                        newVtyeucau.NhaCC = nhaCcValue;
-                        newVtyeucau.SL = slValue;
-                        newVtyeucau.DonVi = donViValue;
-                        newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
-                        newVtyeucau.YCMakho = "VT mới";
-                        newVtyeucau.NgayNhapkho = null;
-                        newVtyeucau.NgayBaohanh = null;
-                        newVtyeucau.ThoiGianBH = null;
+                        // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
+                        var existingVTYeucau = _context.vtyeucau
+                            .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
+                                && string.Equals(vt.MaSanpham, maValue, StringComparison.OrdinalIgnoreCase));
                         
-                        // Nếu là Quản lý dự án và lấy vật tư từ kho cá nhân, đặt trạng thái "Chờ Giám đốc duyệt"
-                        if (laChucVuQLDA && khoCaNhanMatch != null)
+                        if (existingVTYeucau != null)
                         {
-                            newVtyeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            // Cập nhật vật tư yêu cầu hiện có
+                            existingVTYeucau.TenSanpham = ten;
+                            existingVTYeucau.HangSX = hangValue;
+                            existingVTYeucau.NhaCC = nhaCcValue;
+                            existingVTYeucau.SLCu = slCuValue;
+                            existingVTYeucau.SLMoi = slMoiValue;
+                            existingVTYeucau.SL = slValue;
+                            existingVTYeucau.DonVi = donViValue;
+                            existingVTYeucau.GhiChu = ghiChuValue;
+                            existingVTYeucau.NgayCanHang = GetNgayCanHangAt(i);
+                            existingVTYeucau.YCMakho = "VT mới";
+                            existingVTYeucau.NgayNhapkho = null;
+                            existingVTYeucau.NgayBaohanh = null;
+                            existingVTYeucau.ThoiGianBH = null;
+                            
+                            // Xử lý cập nhật theo logic mới
+                            int slThieu;
+                            var updateResult = YeucauUpdateHelper.XuLyCapNhatYeuCau(
+                                _context, 
+                                yeucau, 
+                                maValue, 
+                                slValue, 
+                                "VT mới", 
+                                out slThieu);
+                            
+                            if (updateResult.Success)
+                            {
+                                if (string.IsNullOrEmpty(existingVTYeucau.TrangThai))
+                                {
+                                    existingVTYeucau.TrangThai = yeucau.TrangThai;
+                                }
+                                _context.vtyeucau.Update(existingVTYeucau);
+                            }
                         }
                         else
                         {
-                            newVtyeucau.TrangThai = yeucau.TrangThai;
+                            // Tạo mới vật tư yêu cầu
+                            var newVtyeucau = new vtyeucau();
+                            newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TenSanpham = ten;
+                            newVtyeucau.MaSanpham = maValue;
+                            newVtyeucau.HangSX = hangValue;
+                            newVtyeucau.NhaCC = nhaCcValue;
+                            newVtyeucau.SLCu = slCuValue;
+                            newVtyeucau.SLMoi = slMoiValue;
+                            newVtyeucau.SL = slValue;
+                            newVtyeucau.DonVi = donViValue;
+                            newVtyeucau.GhiChu = ghiChuValue;
+                            newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
+                            newVtyeucau.YCMakho = "VT mới";
+                            newVtyeucau.NgayNhapkho = null;
+                            newVtyeucau.NgayBaohanh = null;
+                            newVtyeucau.ThoiGianBH = null;
+                            
+                            // Nếu là Quản lý dự án và lấy vật tư từ kho cá nhân, đặt trạng thái "Chờ Giám đốc duyệt"
+                            if (laChucVuQLDA && khoCaNhanMatch != null)
+                            {
+                                newVtyeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            }
+                            else
+                            {
+                                newVtyeucau.TrangThai = yeucau.TrangThai;
+                            }
+                            
+                            _context.vtyeucau.Add(newVtyeucau);
                         }
-                        
-                        _context.vtyeucau.Add(newVtyeucau);
                     }
                     _context.SaveChanges();
                 }
@@ -2050,6 +2419,19 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             var danhSachVTTrongKho = _context.khotongs
                 .Where(kt => makhoList.Contains(kt.Makho))
                 .ToList();
+
+            // Kiểm tra xem đã có phiếu xuất kho hoặc phiếu mua hàng đã nhập kho (hoàn thành) cho yêu cầu này chưa
+            var trangThaiHoanThanh = new[] { "Hoàn thành", "Đã xác nhận nhận hàng", "Đã xuất kho", "Đã nhập kho" };
+            var existingPhieuXuatKhoDaNhapKho = _context.phieuxuatkho
+                .Where(px => px.MaYeucau == Mayeucau && trangThaiHoanThanh.Contains(px.TrangThai ?? ""))
+                .Any();
+            
+            var existingPhieuMuaHangDaNhapKho = _context.phieumuahang
+                .Where(pm => pm.MaYeucau == Mayeucau && trangThaiHoanThanh.Contains(pm.TrangThai ?? ""))
+                .Any();
+
+            // Nếu đã có phiếu đã nhập kho, luôn tạo phiếu mới (không gộp vào phiếu cũ)
+            bool shouldCreateNewPhieu = existingPhieuXuatKhoDaNhapKho || existingPhieuMuaHangDaNhapKho;
 
             string Maxuatkho;
             int Numberpxk = 1;
@@ -2419,7 +2801,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             var Phieumuahang = _context.phieumuahang.FirstOrDefault(p => p.MaMuahang == MaMuahang);
             var VTPhieumuahanglist = _context.vtphieumuahang.Where(vt => vt.MaMuahang == MaMuahang).ToList();
 
-            int STT = 0;
+            int STT = 1;
             string MaNhapkho;
 
             // Tạo mã phiếu nhập kho duy nhất
@@ -2504,8 +2886,9 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
         // Đã rollback logic sinh mã kho cho VT mới, giữ nguyên "VT mới" như trước
 
         [HttpPost]
-        public IActionResult ThemPhieunhapkhoSQL(phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, 
-            string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC, 
+        [HttpPost]
+        public IActionResult ThemPhieunhapkhoSQL(phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho,
+            string[] TenSanpham, string[] MaSanpham, string[] HangSX, string[] NhaCC,
             int[] SL, string[] DonVi, string[] Makho, string LoaiNhapkho, decimal[] DonGia, string[] DiengiaiNhapKho)
         {
             // Lưu session ngay từ đầu để đảm bảo không bị mất khi có exception
@@ -2515,10 +2898,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 TempData["Error"] = "Session đã hết hạn. Vui lòng đăng nhập lại!";
                 return RedirectToAction("Login", "Home", new { area = "" });
             }
-            
+
             // Lưu area để dùng trong catch block
             string currentArea = "QuanLiDuAn";
-            
+
             try
             {
 
@@ -2614,16 +2997,14 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                 phieunhapkho.MaNhapkho = MaNhapkho;
                 phieunhapkho.NgayNhapkho = DateTime.Now;
-                
+
                 // Thiết lập trạng thái ban đầu theo quy trình duyệt
-                // Nếu có dự án: gửi đến Trưởng dự án
-                // Nếu không có dự án (cá nhân): gửi đến Giám đốc
-                // Thiết lập trạng thái ban đầu theo quy trình duyệt
-                // Nếu có dự án: gửi đến Trưởng dự án
+                // Với QuanLiDuAn, khi tạo yêu cầu nhập kho trạng thái sẽ là "Chờ giám đốc duyệt"
+                // Nếu có dự án: gửi đến Giám đốc (thay vì Trưởng dự án)
                 // Nếu không có dự án (cá nhân): gửi đến Giám đốc
                 if (!string.IsNullOrEmpty(phieunhapkho.MaDuan))
                 {
-                    phieunhapkho.TrangThai = "Chờ quản lý dự án duyệt"; // Trưởng dự án duyệt
+                    phieunhapkho.TrangThai = "Chờ giám đốc duyệt"; // Giám đốc duyệt (thay đổi từ "Chờ quản lý dự án duyệt")
                 }
                 else
                 {
@@ -2653,6 +3034,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     var existingYeucauDacBiet = _context.yeucau
                         .FirstOrDefault(y => y.MaYeucau == maYeucauDacBiet);
 
+                    // Nếu chưa có yêu cầu, tạo mới với trạng thái phù hợp
                     if (existingYeucauDacBiet == null)
                     {
                         // Kiểm tra xem MaDuan có tồn tại trong bảng duans không
@@ -2663,38 +3045,39 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             // MySQL có thể case-sensitive, nên thử cả exact match và case-insensitive
                             var duanExists = _context.duans
                                 .FirstOrDefault(d => d.MaDuan == phieunhapkho.MaDuan);
-                            
+
                             // Nếu không tìm thấy với exact match, thử case-insensitive
                             if (duanExists == null)
                             {
                                 duanExists = _context.duans
-                                    .AsEnumerable() // Switch to in-memory để dùng case-insensitive
-                                    .FirstOrDefault(d => d.MaDuan != null && 
+                                    .AsEnumerable() 
+                                    .FirstOrDefault(d => d.MaDuan != null &&
                                                        d.MaDuan.Equals(phieunhapkho.MaDuan, StringComparison.OrdinalIgnoreCase));
                             }
-                            
+
                             if (duanExists != null)
                             {
-                                // Dùng giá trị từ database để đảm bảo đúng case
+                                
                                 ycMaDuan = duanExists.MaDuan;
                                 Console.WriteLine($"Found project: '{duanExists.MaDuan}' for input '{phieunhapkho.MaDuan}'");
                             }
                             else
                             {
-                                // Log warning và liệt kê các mã dự án có sẵn để debug
+                               
                                 var allDuans = _context.duans.Select(d => d.MaDuan).ToList();
                                 Console.WriteLine($"Warning: Mã dự án '{phieunhapkho.MaDuan}' không tồn tại trong bảng duans.");
                                 Console.WriteLine($"Available project codes: {string.Join(", ", allDuans)}");
-                                // Đặt YCMaDuan = null thay vì empty string để tránh foreign key violation
+                                
                             }
                         }
-                        
+
                         // Lấy thông tin người dùng từ bảng nguoidungs
                         var nguoiDung = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == maNv);
                         string tenNguoiDung = nguoiDung?.TenNguoidung ?? "";
                         string boPhanNguoiDung = nguoiDung?.Bophan ?? "";
-                        
+
                         // Tạo yeucau đặc biệt mới
+                        // Với QuanLiDuAn, trạng thái sẽ là "Chờ giám đốc duyệt"
                         var newYeucauDacBiet = new yeucau
                         {
                             MaYeucau = maYeucauDacBiet,
@@ -2704,8 +3087,9 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             Bophan = boPhanNguoiDung,
                             YCMaDuan = ycMaDuan, // NULL nếu không có hoặc không tồn tại trong duans
                             NgayYeucau = DateTime.Now,
+                            // Với QuanLiDuAn, khi tạo yêu cầu nhập kho trạng thái sẽ là "Chờ giám đốc duyệt"
                             TrangThai = (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
-                                ? "Chờ quản lý dự án duyệt"
+                                ? "Chờ giám đốc duyệt"
                                 : (LoaiNhapkho == "canhan"
                                     ? "Chờ Giám đốc duyệt"
                                     : "Đã duyệt") // Giữ nguyên với các luồng khác
@@ -2723,7 +3107,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 // LƯU Ý QUAN TRỌNG: KHÔNG trừ từ kho dự án/cá nhân ngay khi tạo phiếu nhập kho
                 // Chỉ trừ khi kho duyệt phiếu nhập kho (trong Xuliphieunhapkho)
                 // Vì nếu trừ ngay thì sẽ thiệt hại kho nếu phiếu bị từ chối hoặc chưa được duyệt
-                
+
                 // Xử lý vật tư - CHỈ tạo bản ghi, KHÔNG trừ từ kho
                 for (int i = 0; i < count; i++)
                 {
@@ -2748,7 +3132,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         DiengiaiNhapKho = diengiaiNhapKho,
                         DonGia = donGia,
                         ThanhTien = thanhTien,
-                        TrangThai = phieunhapkho.TrangThai,
+                        TrangThai = phieunhapkho.TrangThai, // Sẽ là "Chờ giám đốc duyệt" cho QuanLiDuAn
                         MaNhapkho = MaNhapkho,
                         MaYeucau = phieunhapkho.MaYeucau // Dùng cùng MaYeucau với phieunhapkho
                     };
@@ -2783,17 +3167,17 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     Console.WriteLine($"Inner Stack trace: {ex.InnerException.StackTrace}");
                 }
                 Console.WriteLine("==========================================");
-                
+
                 // Kiểm tra session - dùng biến maNv đã lưu trước đó thay vì lấy lại
                 // Vì có thể exception làm mất session, nhưng nếu maNv đã được lưu thì vẫn dùng được
                 var maNvCheck = HttpContext.Session.GetString("MaNguoidung") ?? maNv;
                 Console.WriteLine($"Session MaNguoidung after error: {maNvCheck ?? "NULL"}");
                 Console.WriteLine($"Original maNv (from before try): {maNv ?? "NULL"}");
-                
+
                 // Luôn redirect về trang tạo phiếu với thông báo lỗi
                 // Không redirect về login trừ khi thực sự không có session từ đầu
                 TempData["Error"] = $"Có lỗi xảy ra khi xử lý: {ex.Message}. Vui lòng kiểm tra lại dữ liệu hoặc liên hệ admin.";
-                
+
                 // Luôn redirect về trang tạo phiếu để người dùng có thể thử lại
                 // Chỉ redirect về login nếu thực sự không có maNv từ đầu
                 if (!string.IsNullOrEmpty(maNv))
@@ -2808,6 +3192,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 }
             }
         }
+
 
         [HttpPost]
         public IActionResult Xuliphieunhapkho(
@@ -3057,7 +3442,13 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         var existingPhieuxuatkho = _context.phieuxuatkho
                             .FirstOrDefault(px => px.MaYeucau == Phieunhapkho.MaYeucau);
                         
-                        if (existingPhieuxuatkho == null)
+                        // Kiểm tra nếu phiếu đã nhập kho (hoàn thành) thì tạo phiếu mới
+                        var trangThaiHoanThanh = new[] { "Hoàn thành", "Đã xác nhận nhận hàng", "Đã xuất kho", "Đã nhập kho" };
+                        bool existingPhieuDaNhapKho = existingPhieuxuatkho != null && 
+                            trangThaiHoanThanh.Contains(existingPhieuxuatkho.TrangThai ?? "");
+                        
+                        // Tạo phiếu mới nếu chưa có phiếu hoặc phiếu cũ đã nhập kho
+                        if (existingPhieuxuatkho == null || existingPhieuDaNhapKho)
                         {
                             // Lấy thông tin yêu cầu ban đầu
                             var yeucauBanDau = _context.yeucau

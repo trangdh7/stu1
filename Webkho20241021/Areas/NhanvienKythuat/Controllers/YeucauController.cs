@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Models;
 using Webkho_20241021.Areas.NhanvienKythuat.Data;
+using Webkho_20241021.Areas.TruongBPKho.Services;
+using Webkho_20241021.Services;
 using System;
 using System.IO;
 using System.Linq;
@@ -43,7 +45,8 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
 
             var SortedYeucaulist = Yeucaulist
                 .OrderByDescending(y => y.TrangThai == userRole)
-                .ThenByDescending(y => y.NgayYeucau)
+                .ThenBy(y => YeucauUpdateHelper.GetBaseRequestCode(y.MaYeucau ?? "")) // Nhóm theo mã cơ bản
+                .ThenByDescending(y => y.NgayYeucau) // Trong cùng nhóm, sắp xếp theo ngày giảm dần
                 .ToList();
 
             // Áp dụng tìm kiếm nếu có
@@ -539,6 +542,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                                            duans duans, phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, List<string> YCMaKho,
                                            List<string> TenSanpham, List<string> MaSanpham,
                                            List<string> HangSX, List<string> NhaCC, List<int?> SL,
+                                           List<int?> SLCu, List<int?> SLMoi,
                                            List<string> DonVi, List<string> GhiChu, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
         {
             // Kiểm tra null để tránh lỗi khi upload file Excel lớn
@@ -549,18 +553,21 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
 
             DateTime? GetNgayCanHangAt(int index)
             {
+                // Đọc đúng name của input: VTNgayCanHang
                 if (Request.Form.TryGetValue("VTNgayCanHang", out var dateValues))
                 {
                     if (index >= 0 && index < dateValues.Count)
                     {
-                        if (DateTime.TryParse(dateValues[index], out var parsedDate))
+                        var raw = dateValues[index];
+                        if (!string.IsNullOrWhiteSpace(raw) && DateTime.TryParse(raw, out var parsedDate))
                         {
                             return parsedDate;
                         }
                     }
                 }
 
-                return yeucau?.NgayCanHang;
+                // Không fallback sang yeucau.NgayCanHang để tránh lệch dữ liệu
+                return null;
             }
 
             if (yeucau.TenYeucau != "Yêu cầu nhập kho")
@@ -765,8 +772,10 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     // Tạo mã yêu cầu: NNNNNN ST HiepNT
                     yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}";
                     
-                    // Đảm bảo tính duy nhất
+                    // Đảm bảo tính duy nhất cho mã yêu cầu (bao gồm cả tên người)
+                    // Nếu cùng người gửi cùng mã cơ bản, thêm suffix để phân biệt
                     int suffixNumber = 1;
+                    string originalMaYeucau = yeucau.MaYeucau;
                     while (true)
                     {
                         var exists = _context.yeucau
@@ -776,7 +785,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                             break;
                         }
                         // Nếu trùng, thêm số suffix
-                        yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}{suffixNumber}";
+                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
                         suffixNumber++;
                     }
                 }
@@ -789,23 +798,35 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     // Tạo mã yêu cầu: YYMMDD ST HiepNT
                     yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
                     
-                    // Đảm bảo tính duy nhất
-                    int suffixNumber = 1;
-                    while (true)
+                    // Kiểm tra xem có yêu cầu đã tồn tại với cùng mã yêu cầu cơ bản không (bỏ phần tên người)
+                    var existingYeucau = YeucauUpdateHelper.FindExistingRequest(_context, yeucau.MaYeucau);
+                    
+                    if (existingYeucau != null)
                     {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
+                        // Cập nhật yêu cầu hiện có thay vì tạo mới
+                        yeucau = existingYeucau;
+                    }
+                    else
+                    {
+                        // Đảm bảo tính duy nhất cho mã yêu cầu mới
+                        int suffixNumber = 1;
+                        while (true)
                         {
-                            break;
+                            var exists = _context.yeucau
+                                                 .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
+                            if (exists == null)
+                            {
+                                break;
+                            }
+                            // Nếu trùng, thêm số suffix
+                            yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}{suffixNumber}";
+                            suffixNumber++;
                         }
-                        // Nếu trùng, thêm số suffix
-                        yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}{suffixNumber}";
-                        suffixNumber++;
                     }
                 }
                 // ================================================================
 
+                // Luôn tạo yêu cầu mới để theo dõi từng người gửi
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
@@ -858,17 +879,8 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 }
 
-                int rowCount = new[]
-                {
-                    TenSanpham?.Count ?? 0,
-                    MaSanpham?.Count ?? 0,
-                    HangSX?.Count ?? 0,
-                    NhaCC?.Count ?? 0,
-                    SL?.Count ?? 0,
-                    DonVi?.Count ?? 0,
-                    YCMaKho?.Count ?? 0,
-                    GhiChu?.Count ?? 0
-                }.Max();
+                // Số dòng lấy theo TenSanpham (bắt buộc) để tránh lệch mảng
+                int rowCount = TenSanpham?.Count ?? 0;
 
                 for (int i = 0; i < rowCount; i++)
                 {
@@ -878,71 +890,98 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         continue;
                     }
 
-                    var maKhoValue = (YCMaKho != null && i < YCMaKho.Count) ? YCMaKho[i] : null;
                     var maValue = (MaSanpham != null && i < MaSanpham.Count) ? MaSanpham[i] : null;
                     var hangValue = (HangSX != null && i < HangSX.Count) ? HangSX[i] : null;
                     var nhaCcValue = (NhaCC != null && i < NhaCC.Count) ? NhaCC[i] : null;
                     var donViValue = (DonVi != null && i < DonVi.Count) ? DonVi[i] : null;
                     var slValue = (SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0;
+                    var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
+                    var slMoiValueNullable = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
                     var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
 
-                    var khoMatch = _context.khotongs.FirstOrDefault(p => p.Makho == maKhoValue);
-                    if (khoMatch != null)
+                    // Tạo bản ghi "VT mới" trong khotongs nếu chưa tồn tại (để đáp ứng foreign key constraint)
+                    var vtMoiKho = _context.khotongs.FirstOrDefault(p => p.Makho == "VT mới");
+                    if (vtMoiKho == null)
                     {
-                        var newVtyeucau = new vtyeucau();
-                        newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
-                        newVtyeucau.TenSanpham = ten;
-                        newVtyeucau.MaSanpham = maValue;
-                        newVtyeucau.HangSX = hangValue;
-                        newVtyeucau.NhaCC = nhaCcValue;
-                        newVtyeucau.SL = slValue;
-                        newVtyeucau.DonVi = donViValue;
-                        newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
-                        newVtyeucau.YCMakho = khoMatch.Makho;
-                        newVtyeucau.NgayNhapkho = khoMatch.NgayNhapkho;
-                        newVtyeucau.NgayBaohanh = khoMatch.NgayBaohanh;
-                        newVtyeucau.ThoiGianBH = khoMatch.ThoiGianBH;
-                        newVtyeucau.GhiChu = ghiChuValue;
-                        _context.vtyeucau.Add(newVtyeucau);
+                        vtMoiKho = new khotongs
+                        {
+                            Makho = "VT mới",
+                            TenSanpham = "Vật tư mới",
+                            MaSanpham = "",
+                            HangSX = "",
+                            NhaCC = "",
+                            SL = 0,
+                            DonVi = "",
+                            NgayNhapkho = null,
+                            NgayBaohanh = null,
+                            ThoiGianBH = null,
+                            TrangThai = "VT mới"
+                        };
+                        _context.khotongs.Add(vtMoiKho);
+                        _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại
+                    }
+
+                    // Tính số lượng mới (ưu tiên SLMoi, sau đó SLCu, cuối cùng là SL)
+                    int slMoiValue = slMoiValueNullable ?? slCuValue ?? slValue;
+                    
+                    // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
+                    var existingVTYeucau = _context.vtyeucau
+                        .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
+                            && string.Equals(vt.MaSanpham, maValue, StringComparison.OrdinalIgnoreCase));
+                    
+                        if (existingVTYeucau != null)
+                    {
+                        // Cập nhật vật tư yêu cầu hiện có
+                        existingVTYeucau.TenSanpham = ten;
+                        existingVTYeucau.HangSX = hangValue;
+                        existingVTYeucau.NhaCC = nhaCcValue;
+                        existingVTYeucau.SLCu = slCuValue;
+                        existingVTYeucau.SLMoi = slMoiValueNullable;
+                        existingVTYeucau.SL = slMoiValue;
+                        existingVTYeucau.DonVi = donViValue;
+                        existingVTYeucau.NgayCanHang = GetNgayCanHangAt(i);
+                        existingVTYeucau.GhiChu = ghiChuValue;
+                        existingVTYeucau.YCMakho = "VT mới";
+                        existingVTYeucau.NgayNhapkho = null;
+                        existingVTYeucau.NgayBaohanh = null;
+                        existingVTYeucau.ThoiGianBH = null;
+                        
+                        // Xử lý cập nhật theo logic mới
+                        int slThieu;
+                        var updateResult = YeucauUpdateHelper.XuLyCapNhatYeuCau(
+                            _context, 
+                            yeucau, 
+                            maValue, 
+                            slMoiValue, 
+                            "VT mới", 
+                            out slThieu);
+                        
+                        if (updateResult.Success)
+                        {
+                            _context.vtyeucau.Update(existingVTYeucau);
+                        }
                     }
                     else
                     {
-                        // Tạo bản ghi "VT mới" trong khotongs nếu chưa tồn tại
-                        var vtMoiKho = _context.khotongs.FirstOrDefault(p => p.Makho == "VT mới");
-                        if (vtMoiKho == null)
-                        {
-                            vtMoiKho = new khotongs
-                            {
-                                Makho = "VT mới",
-                                TenSanpham = "Vật tư mới",
-                                MaSanpham = "",
-                                HangSX = "",
-                                NhaCC = "",
-                                SL = 0,
-                                DonVi = "",
-                                NgayNhapkho = null,
-                                NgayBaohanh = null,
-                                ThoiGianBH = null,
-                                TrangThai = "VT mới"
-                            };
-                            _context.khotongs.Add(vtMoiKho);
-                            _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại
-                        }
-
+                        // Tạo mới vật tư yêu cầu
                         var newVtyeucau = new vtyeucau();
                         newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
                         newVtyeucau.TenSanpham = ten;
                         newVtyeucau.MaSanpham = maValue;
                         newVtyeucau.HangSX = hangValue;
                         newVtyeucau.NhaCC = nhaCcValue;
-                        newVtyeucau.SL = slValue;
+                        newVtyeucau.SLCu = slCuValue;
+                        newVtyeucau.SLMoi = slMoiValueNullable;
+                        // Cột SL lấy giá trị từ SLMoi (nếu có), nếu không thì lấy từ SLCu
+                        newVtyeucau.SL = slMoiValue;
                         newVtyeucau.DonVi = donViValue;
                         newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
+                        newVtyeucau.GhiChu = ghiChuValue;
+                        // Set YCMakho = "VT mới" để đáp ứng foreign key constraint (nhưng không hiển thị trong view)
                         newVtyeucau.YCMakho = "VT mới";
                         newVtyeucau.NgayNhapkho = null;
                         newVtyeucau.NgayBaohanh = null;
                         newVtyeucau.ThoiGianBH = null;
-                        newVtyeucau.GhiChu = ghiChuValue;
                         _context.vtyeucau.Add(newVtyeucau);
                     }
                     _context.SaveChanges();
@@ -1434,19 +1473,57 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         .Where(v => v.VTMaYeucau == maYc)
                         .ToList();
 
+                    var hasDangMuaHang = vtList.Any(v => v.TrangThai == "Đang mua hàng");
+                    var hasChoXuatKho = vtList.Any(v => v.TrangThai == "Chờ xuất kho");
+                    var hasDaXuatKho = vtList.Any(v => v.TrangThai == "Đã xuất kho");
+                    var hasDaNhapKho = vtList.Any(v => v.TrangThai == "Đã nhập kho");
                     var allDoneOrRejected = vtList.All(v =>
                         v.TrangThai == "Đã xuất kho" ||
                         (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
 
-                    var hasDangMuaHang = vtList.Any(v => v.TrangThai == "Đang mua hàng");
-
-                    if (allDoneOrRejected)
+                    if (hasDaNhapKho)
+                    {
+                        // Nếu có vật tư đã nhập kho, kiểm tra xem tất cả vật tư đã nhập kho chưa
+                        var allDaNhapKho = vtList.All(v =>
+                            v.TrangThai == "Đã nhập kho" ||
+                            (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
+                        
+                        if (allDaNhapKho)
+                        {
+                            yeuCau.TrangThai = "Đã nhập kho";
+                        }
+                        else
+                        {
+                            // Có một số vật tư đã nhập kho nhưng chưa tất cả, kiểm tra các trạng thái khác
+                            if (hasDangMuaHang)
+                            {
+                                yeuCau.TrangThai = "Đang mua hàng";
+                            }
+                            else if (hasChoXuatKho)
+                            {
+                                yeuCau.TrangThai = "Chờ xuất kho";
+                            }
+                            else if (hasDaXuatKho)
+                            {
+                                yeuCau.TrangThai = "Đã xuất kho";
+                            }
+                            else
+                            {
+                                yeuCau.TrangThai = "Đã nhập kho";
+                            }
+                        }
+                    }
+                    else if (allDoneOrRejected)
                     {
                         yeuCau.TrangThai = "Đã xuất kho";
                     }
                     else if (hasDangMuaHang)
                     {
                         yeuCau.TrangThai = "Đang mua hàng";
+                    }
+                    else if (hasChoXuatKho)
+                    {
+                        yeuCau.TrangThai = "Chờ xuất kho";
                     }
 
                     _context.yeucau.Update(yeuCau);
@@ -1590,7 +1667,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
             var Phieumuahang = _context.phieumuahang.FirstOrDefault(p => p.MaMuahang == MaMuahang);
             var VTPhieumuahanglist = _context.vtphieumuahang.Where(vt => vt.MaMuahang == MaMuahang).ToList();
 
-            int STT = 0;
+            int STT = 1;
             string MaNhapkho;
 
             // Tạo mã phiếu nhập kho duy nhất
@@ -1766,7 +1843,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     return RedirectToAction("ThemPhieunhapkho", "Yeucau", new { area = "NhanvienKythuat" });
                 }
 
-                int STT = 0;
+                int STT = 1;
                 string MaNhapkho;
 
                 // Tạo mã phiếu nhập kho duy nhất

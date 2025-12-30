@@ -147,7 +147,9 @@
         <script src="~/js/phieumuahang.js"></script>
         <script>
             $(document).ready(function () {
+                if (typeof getThongbaoData === 'function') {
                 getThongbaoData();
+                }
                 
                 // Xử lý nút duyệt
                 $('#btnApprove').on('click', function() {

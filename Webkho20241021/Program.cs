@@ -31,6 +31,9 @@ builder.Services.AddDbContext<ApplicationDbContext_user>(options =>
 // Thêm dịch vụ vào container
 builder.Services.AddControllersWithViews();
 
+// Đăng ký EmailService
+builder.Services.AddScoped<Webkho_20241021.Services.EmailService>();
+
 // Cấu hình FormOptions để tăng giới hạn form values (hỗ trợ upload file Excel lớn)
 builder.Services.Configure<FormOptions>(options =>
 {

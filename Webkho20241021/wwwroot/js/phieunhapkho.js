@@ -1,10 +1,10 @@
 $(document).ready(function () {
     // Tự động load dữ liệu vật tư cho hàng đầu tiên khi trang load
-    setTimeout(function() {
+    setTimeout(function () {
         console.log("Đang tìm hàng đầu tiên để load dữ liệu...");
-        const firstRow = $('.table tbody tr').first(); 
+        const firstRow = $('.table tbody tr').first();
         console.log("Số hàng tìm thấy:", firstRow.length);
-        
+
         if (firstRow.length > 0) {
             // Lấy mã nhập kho từ link trong cột thứ 2 (td:eq(1))
             const link = firstRow.find('td').eq(1).find('a');
@@ -17,12 +17,12 @@ $(document).ready(function () {
             console.log("Không tìm thấy hàng nào trong bảng");
         }
     }, 300); // Tăng thời gian chờ để đảm bảo DOM đã load xong
-    
+
     getThongbaoData();
     setActiveMenu();
-    
+
     // Xử lý click vào hàng
-    $(document).on('click', '.clickable-row', function() {
+    $(document).on('click', '.clickable-row', function () {
         const MaNhapkho = $(this).data('manhapkho');
         if (MaNhapkho) {
             showVTnhapkho(MaNhapkho);
@@ -64,7 +64,7 @@ function showVTnhapkho(Manhapkho) {
     }
 
     selectedManhapkho = Manhapkho;
-    console.log("Mã nhập kho được chọn:", Manhapkho); 
+    console.log("Mã nhập kho được chọn:", Manhapkho);
 
     // Luôn gán vào hidden field (nếu tồn tại) để form duyệt không bị trống mã
     const hiddenMa = document.getElementById('hidden-manhapkho');
@@ -72,7 +72,7 @@ function showVTnhapkho(Manhapkho) {
         hiddenMa.value = Manhapkho;
     }
 
-    const pathSegments = window.location.pathname.split('/');   
+    const pathSegments = window.location.pathname.split('/');
     const area = pathSegments.length > 1 ? pathSegments[1] : ''; // Giả sử area là segment đầu tiên sau dấu '/'
 
     const url = `/${area}/Yeucau/GetVTPhieunhapkho`;
@@ -84,14 +84,14 @@ function showVTnhapkho(Manhapkho) {
         method: 'GET',
         data: { MaNhapkho: Manhapkho }, // Sửa tên tham số để khớp với controller
         success: function (response) {
-            console.log("Dữ liệu nhận được từ API:", response); 
-            
+            console.log("Dữ liệu nhận được từ API:", response);
+
             // Xử lý response mới (có items) hoặc cũ (mảng trực tiếp)
             let data = response.items || response;
             let tenNguoiYeuCau = response.tenNguoiYeuCau || '';
-            
+
             console.log("Số lượng vật tư:", data ? (Array.isArray(data) ? data.length : 0) : 0);
-            
+
             // Hiển thị header text cho tất cả areas
             if (Manhapkho && tenNguoiYeuCau) {
                 $('#phieunhapkho-header-text').text(`Yêu cầu nhập kho ${Manhapkho} của ${tenNguoiYeuCau}`);
@@ -121,7 +121,7 @@ function showVTnhapkho(Manhapkho) {
                     const sl = item.sl || item.SL || item.sL || 0;
                     const donVi = item.donVi || item.DonVi || item.donVi || '';
                     const trangThai = item.trangThai || item.TrangThai || item.trangThai || '';
-                    
+
                     const normalizedStatus = (trangThai || '').toString().toLowerCase();
                     const canPrint = normalizedStatus.includes('đã nhập kho') || normalizedStatus.includes('da nhap kho') || normalizedStatus.includes('hoàn thành') || normalizedStatus.includes('hoan thanh');
                     const printButton = canPrint && makho && makho !== 'Không xác định'
@@ -161,9 +161,9 @@ function showVTnhapkho(Manhapkho) {
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
                 });
-                
+
                 // Thêm event handler cho nút in mã kho
-                $('.btn-print-makho').on('click', function(e) {
+                $('.btn-print-makho').on('click', function (e) {
                     e.stopPropagation();
                     const makho = $(this).data('makho');
                     const tenSanpham = $(this).data('tensp');
@@ -171,7 +171,7 @@ function showVTnhapkho(Manhapkho) {
                     const hangSX = $(this).data('hangsx');
                     const nhaCC = $(this).data('nhacc');
                     const ngayNhapkho = $(this).data('ngay');
-                    
+
                     if (makho && makho !== 'Không xác định') {
                         const pathSegments = window.location.pathname.split('/');
                         const area = pathSegments.length > 1 ? pathSegments[1] : '';
@@ -181,25 +181,25 @@ function showVTnhapkho(Manhapkho) {
                         alert('Không có mã kho để in!');
                     }
                 });
-                
+
                 // Thêm event handler cho click vào mã kho (chỉ hiển thị thông tin, không mở phiếu in)
-                $('.makho-link').on('click', function(e) {
+                $('.makho-link').on('click', function (e) {
                     e.stopPropagation();
                     const makho = $(this).data('makho');
                     const tenSanpham = $(this).data('tensp');
                     const maSanpham = $(this).data('masp');
                     const hangSX = $(this).data('hangsx');
                     const nhaCC = $(this).data('nhacc');
-                    
+
                     if (makho && makho !== 'Không xác định') {
                         // Hiển thị thông tin vật tư trong modal hoặc alert
                         const info = `Thông tin vật tư:\n\n` +
-                                   `Mã kho: ${makho}\n` +
-                                   `Tên sản phẩm: ${tenSanpham}\n` +
-                                   `Mã sản phẩm: ${maSanpham}\n` +
-                                   `Hãng SX: ${hangSX}\n` +
-                                   `Nhà cung cấp: ${nhaCC}\n\n` +
-                                   `Sử dụng nút "In mã kho" để in tem.`;
+                            `Mã kho: ${makho}\n` +
+                            `Tên sản phẩm: ${tenSanpham}\n` +
+                            `Mã sản phẩm: ${maSanpham}\n` +
+                            `Hãng SX: ${hangSX}\n` +
+                            `Nhà cung cấp: ${nhaCC}\n\n` +
+                            `Sử dụng nút "In mã kho" để in tem.`;
                         alert(info);
                     }
                 });
@@ -227,7 +227,7 @@ function showVTnhapkho(Manhapkho) {
                 }
             });
             applyNhapKhoRowHighlight($rowToHighlight);
-            
+
             // Hiển thị/ẩn nút "Nhập kho" dựa trên trạng thái
             if (trangThaiPhieu === "Chờ nhập kho") {
                 $('#btn-nhapkho').show();
@@ -239,7 +239,7 @@ function showVTnhapkho(Manhapkho) {
             // Chỉ hiển thị khi trạng thái là "Chờ Giám đốc duyệt"
             const pathSegments = window.location.pathname.split('/');
             const area = pathSegments.length > 1 ? pathSegments[1] : '';
-            
+
             if (area === 'Giamdoc' && trangThaiPhieu === "Chờ Giám đốc duyệt") {
                 $('#btn-duyet').show();
                 $('#btn-tuchoi').show();
@@ -248,16 +248,10 @@ function showVTnhapkho(Manhapkho) {
                 $('#btn-duyet').hide();
                 $('#btn-tuchoi').hide();
             }
-            
-            // Hiển thị/ẩn nút Duyệt và Từ chối cho Quản lý dự án và Trưởng BP kho
-            // Chỉ hiển thị khi trạng thái là "Chờ quản lý dự án duyệt"
-            if (area === 'QuanLiDuAn' && trangThaiPhieu === "Chờ quản lý dự án duyệt") {
-                // Hiển thị nút duyệt cho cả QLDA và Trưởng BP kho
-                // Controller sẽ kiểm tra quyền duyệt
-                $('#btn-duyet').show();
-                $('#btn-tuchoi').show();
-            } else if (area === 'QuanLiDuAn') {
-                // Ẩn nút nếu không phải trạng thái cần duyệt
+
+            // Ẩn nút Duyệt và Từ chối cho QuanLiDuAn - chức năng này được chuyển sang trang Yeucau/Yeucau
+            // Với QuanLiDuAn, việc duyệt/từ chối được thực hiện ở trang Yeucau/Yeucau với nút Xác nhận
+            if (area === 'QuanLiDuAn') {
                 $('#btn-duyet').hide();
                 $('#btn-tuchoi').hide();
             }
@@ -267,7 +261,7 @@ function showVTnhapkho(Manhapkho) {
             console.error("Status:", status);
             console.error("Response:", xhr.responseText);
             console.error("Status Code:", xhr.status);
-            
+
             $('.tablethietbi tbody').html(
                 `<tr>
                     <td colspan="10" style="text-align:center; color: red;">
@@ -276,7 +270,7 @@ function showVTnhapkho(Manhapkho) {
                     </td>
                 </tr>`
             );
-            
+
             // Không hiển thị alert để tránh làm phiền người dùng
             // alert("Không thể lấy dữ liệu vật tư. Lỗi: " + error); 
         }
@@ -365,38 +359,38 @@ function setActiveMenu() {
 }
 
 // Xử lý nút "Nhập kho"
-$(document).on('click', '#btn-nhapkho', function() {
+$(document).on('click', '#btn-nhapkho', function () {
     if (!selectedManhapkho) {
         alert("Vui lòng chọn phiếu nhập kho trước.");
         return;
     }
-    
+
     if (!confirm("Bạn có chắc chắn muốn duyệt nhập kho cho phiếu " + selectedManhapkho + "?")) {
         return;
     }
-    
+
     const pathSegments = window.location.pathname.split('/');
     const area = pathSegments.length > 1 ? pathSegments[1] : '';
     const url = `/${area}/Yeucau/Xuliphieunhapkho`;
-    
+
     // Tạo form để submit
     const form = $('<form>', {
         method: 'POST',
         action: url
     });
-    
+
     form.append($('<input>', {
         type: 'hidden',
         name: 'MaNhapkho',
         value: selectedManhapkho
     }));
-    
+
     form.append($('<input>', {
         type: 'hidden',
         name: 'action',
         value: 'approve'
     }));
-    
+
     // Thêm token chống CSRF nếu có
     const token = $('input[name="__RequestVerificationToken"]').val();
     if (token) {
@@ -406,7 +400,7 @@ $(document).on('click', '#btn-nhapkho', function() {
             value: token
         }));
     }
-    
+
     $('body').append(form);
     form.submit();
 });

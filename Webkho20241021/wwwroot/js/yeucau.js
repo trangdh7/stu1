@@ -12,11 +12,15 @@ $(document).ready(function () {
     }
 
     // Gọi hàm thông báo ngay khi trang load
-    getThongbaoData();
+    if (typeof getThongbaoData === 'function') {
+        getThongbaoData();
+    }
     
     // Gọi lại sau 1 giây để đảm bảo DOM đã sẵn sàng
     setTimeout(function() {
-        getThongbaoData();
+        if (typeof getThongbaoData === 'function') {
+            getThongbaoData();
+        }
     }, 1000);
     
     setActiveMenu();
@@ -86,19 +90,37 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                     // Xác định màu cho ghi chú (đỏ nếu bị từ chối)
                     var ghiChuColor = (item.trangThai && (item.trangThai.indexOf('Đã từ chối') !== -1 || item.trangThai.indexOf('từ chối') !== -1)) ? '#f44336' : 'inherit';
                     // Hỗ trợ cả camelCase và PascalCase
-                    var ghiChu = item.ghiChu || item.GhiChu || '-';
-                    
-                    // Tạo một dòng mới
+                    const tenSanpham = item.tenSanpham || item.TenSanpham || '';
+                    const maSanpham = item.maSanpham || item.MaSanpham || '';
+                    const hangSX = item.hangSX || item.HangSX || '';
+                    const nhaCC = item.nhaCC || item.NhaCC || '';
+                    const slCu = item.slCu ?? item.SLCu;
+                    const slMoi = item.slMoi ?? item.SLMoi;
+                    const slTong = item.sl ?? item.SL ?? slMoi;
+                    const donVi = item.donVi || item.DonVi || '';
+                    const ngayCan = item.ngayCanHang || item.NgayCanHang
+                        ? new Date(item.ngayCanHang || item.NgayCanHang).toLocaleDateString('vi-VN')
+                        : '-';
+                    const trangThai = item.trangThai || item.TrangThai || '';
+                    const ghiChu = item.ghiChu || item.GhiChu || '-';
+
+                    const formatNumberOrDash = (value) => {
+                        return value === null || value === undefined || value === '' ? '-' : value;
+                    };
+
+                    // Tạo một dòng mới khớp tiêu đề bảng
                     let row = `<tr>
                         <td>${STT++}</td>
-                        <td>${item.tenSanpham || ''}</td>
-                        <td>${item.maSanpham || ''}</td>
-                        <td>${item.ycMakho || ''}</td>
-                        <td>${item.hangSX || ''}</td>
-                        <td>${item.nhaCC || ''}</td>
-                        <td>${item.sl}</td>
-                        <td>${item.donVi || ''}</td>
-                        <td>${item.trangThai || ''}</td>
+                        <td>${tenSanpham}</td>
+                        <td>${maSanpham}</td>
+                        <td>${hangSX}</td>
+                        <td>${nhaCC}</td>
+                        <td style="text-align: center;">${formatNumberOrDash(slCu)}</td>
+                        <td style="text-align: center;">${formatNumberOrDash(slMoi)}</td>
+                        <td style="text-align: center;">${formatNumberOrDash(slTong)}</td>
+                        <td>${donVi || '-'}</td>
+                        <td>${ngayCan}</td>
+                        <td>${trangThai}</td>
                         <td style="color: ${ghiChuColor};">${ghiChu}</td>
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
@@ -231,7 +253,9 @@ function setActiveMenu() {
 
 // Gọi hàm getThongbaoData khi trang được tải
 $(document).ready(function () {
-    getThongbaoData();
+    if (typeof getThongbaoData === 'function') {
+        getThongbaoData();
+    }
 });
 
 function initializeYeucauFilters() {

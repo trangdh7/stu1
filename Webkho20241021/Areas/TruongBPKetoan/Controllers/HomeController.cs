@@ -24,7 +24,9 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 20;
 
-            var query = _context.khotongs.AsQueryable();
+            var query = _context.khotongs
+                .Where(k => !string.Equals(k.Makho, "VT mới", StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(k.MaSanpham, "VT-MOI", StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var keyword = q.Trim();
@@ -261,17 +263,20 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                             equals new { MaYeucau = vtn.MaYeucau, MaSanpham = vtn.MaSanpham } into vtnGroup
                         from vtn in vtnGroup.DefaultIfEmpty()
                         // Ưu tiên dữ liệu từ vtphieunhapkho, nếu không có thì dùng vtphieuxuatkho
-                        select new khotongs
-                        {
-                            MaSanpham = vtn != null ? vtn.MaSanpham : vtx.MaSanpham,
-                            TenSanpham = vtn != null ? vtn.TenSanpham : vtx.TenSanpham,
-                            Makho = vtn != null ? vtn.Makho : vtx.Makho,
-                            HangSX = vtn != null ? vtn.HangSX : vtx.HangSX,
-                            NhaCC = vtn != null ? vtn.NhaCC : vtx.NhaCC,
-                            DuAn = da != null ? da.TenDuan : px.MaDuan, // Dùng tên dự án nếu có
-                            SL = vtn != null ? (vtn.SL ?? 0) : (vtx.SL ?? 0),
-                            DonVi = vtn != null ? vtn.DonVi : vtx.DonVi,
-                            TrangThai = vtn != null ? vtn.TrangThai : vtx.TrangThai // Trạng thái của kho dự án cá nhân
+                        select new { 
+                            khotong = new khotongs
+                            {
+                                MaSanpham = vtn != null ? vtn.MaSanpham : vtx.MaSanpham,
+                                TenSanpham = vtn != null ? vtn.TenSanpham : vtx.TenSanpham,
+                                Makho = vtn != null ? vtn.Makho : vtx.Makho,
+                                HangSX = vtn != null ? vtn.HangSX : vtx.HangSX,
+                                NhaCC = vtn != null ? vtn.NhaCC : vtx.NhaCC,
+                                DuAn = da != null ? da.TenDuan : px.MaDuan, // Dùng tên dự án nếu có
+                                SL = vtn != null ? (vtn.SL ?? 0) : (vtx.SL ?? 0),
+                                DonVi = vtn != null ? vtn.DonVi : vtx.DonVi,
+                                TrangThai = vtn != null ? vtn.TrangThai : vtx.TrangThai // Trạng thái của kho dự án cá nhân
+                            },
+                            MaDuan = px.MaDuan
                         }).Distinct();
 
             // Lấy danh sách dự án từ phieuxuatkho của người dùng hiện tại
@@ -292,11 +297,11 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 if (isMaDuan)
                 {
                     var tenDuan = _context.duans.Where(d => d.MaDuan == duAn).Select(d => d.TenDuan).FirstOrDefault();
-                    query = query.Where(k => k.DuAn == tenDuan || k.DuAn == duAn);
+                    query = query.Where(x => x.khotong.DuAn == tenDuan || x.khotong.DuAn == duAn || x.MaDuan == duAn);
                 }
                 else
                 {
-                    query = query.Where(k => k.DuAn == duAn);
+                    query = query.Where(x => x.khotong.DuAn == duAn);
                 }
             }
 
@@ -304,28 +309,33 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var keyword = q.Trim();
-                query = query.Where(k =>
-                    (k.TenSanpham ?? "").Contains(keyword) ||
-                    (k.MaSanpham ?? "").Contains(keyword) ||
-                    (k.Makho ?? "").Contains(keyword) ||
-                    (k.HangSX ?? "").Contains(keyword) ||
-                    (k.NhaCC ?? "").Contains(keyword) ||
-                    (k.DuAn ?? "").Contains(keyword)
+                query = query.Where(x =>
+                    (x.khotong.TenSanpham ?? "").Contains(keyword) ||
+                    (x.khotong.MaSanpham ?? "").Contains(keyword) ||
+                    (x.khotong.Makho ?? "").Contains(keyword) ||
+                    (x.khotong.HangSX ?? "").Contains(keyword) ||
+                    (x.khotong.NhaCC ?? "").Contains(keyword) ||
+                    (x.khotong.DuAn ?? "").Contains(keyword) ||
+                    (x.MaDuan ?? "").Contains(keyword)
                 );
             }
 
             var total = query.Count();
-            var items = query
-                .OrderByDescending(k => k.MaSanpham)
+            var itemsWithMaDuan = query
+                .OrderByDescending(x => x.khotong.MaSanpham)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
+
+            var items = itemsWithMaDuan.Select(x => x.khotong).ToList();
+            var maDuanDict = itemsWithMaDuan.ToDictionary(x => x.khotong.Makho ?? "", x => x.MaDuan ?? "");
 
             ViewBag.Page = page;
             ViewBag.TotalPages = (int)Math.Ceiling(total / (double)pageSize);
             ViewBag.Q = q;
             ViewBag.DuAn = duAn;
             ViewBag.DuAnList = duAnList;
+            ViewBag.MaDuanDict = maDuanDict;
             return View("KhoDuAn", items);
         }
 
