@@ -67,6 +67,17 @@
                     }
                     @foreach (var item in Model.Phieunhapkho)
                     {
+                        // Chỉ hiển thị phiếu có MaYeucau bắt đầu bằng NHAPKHO_DUAN_ hoặc NHAPKHO_CANHAN
+                        // Ẩn các phiếu có format cũ (dạng số + chữ như "171125 251201STUP12.5 QUYNHTT1")
+                        bool isNhapKhoDuanOrCaNhan = !string.IsNullOrEmpty(item.MaYeucau) && 
+                                                      (item.MaYeucau.StartsWith("NHAPKHO_DUAN_", StringComparison.OrdinalIgnoreCase) || 
+                                                       item.MaYeucau.StartsWith("NHAPKHO_CANHAN", StringComparison.OrdinalIgnoreCase));
+                        
+                        if (!isNhapKhoDuanOrCaNhan)
+                        {
+                            continue; // Bỏ qua phiếu không phải dạng NHAPKHO_DUAN_ hoặc NHAPKHO_CANHAN
+                        }
+                        
                         string ChucvuSession = Context.Session.GetString("Chucvu");
                         string BophanSession = Context.Session.GetString("Bophan");
                         <tr class="clickable-row" data-manhapkho="@item.MaNhapkho" onclick="showVTnhapkho('@item.MaNhapkho')" style="cursor: pointer;">
@@ -136,9 +147,6 @@
                                 {
                                     @* Kiểm tra xem có phải phiếu nhập kho hoàn trả không (NHAPKHO_DUAN, NHAPKHO_CANHAN) và thuộc về user hiện tại *@
                                     string currentUserId = Context.Session.GetString("MaNguoidung");
-                                    bool isNhapKhoDuanOrCaNhan = !string.IsNullOrEmpty(item.MaYeucau) && 
-                                                                 (item.MaYeucau.StartsWith("NHAPKHO_DUAN_", StringComparison.OrdinalIgnoreCase) || 
-                                                                  item.MaYeucau.StartsWith("NHAPKHO_CANHAN_", StringComparison.OrdinalIgnoreCase));
                                     
                                     bool belongsToCurrentUser = false;
                                     if (isNhapKhoDuanOrCaNhan && !string.IsNullOrEmpty(currentUserId))

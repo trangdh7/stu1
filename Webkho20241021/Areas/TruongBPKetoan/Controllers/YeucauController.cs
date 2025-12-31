@@ -1225,6 +1225,40 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
+                // Lưu thông tin file Excel vào database (không lưu file vào đĩa để tiết kiệm dung lượng)
+                try
+                {
+                    if (Request.Form.Files != null && Request.Form.Files.Count > 0)
+                    {
+                        var excelFile = Request.Form.Files.FirstOrDefault(f => 
+                            f.Name == "excel-upload" || 
+                            (!string.IsNullOrEmpty(f.FileName) && (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))));
+                        
+                        if (excelFile != null && excelFile.Length > 0)
+                        {
+                            var excelFileRecord = new ExcelFile
+                            {
+                                MaYeucau = yeucau.MaYeucau,
+                                MaDuan = yeucau.YCMaDuan,
+                                TenFile = excelFile.FileName,
+                                DuongDanFile = null, // Không lưu file vào đĩa
+                                NgayUpload = DateTime.Now,
+                                NguoiUpload = maNv2,
+                                KichThuocFile = excelFile.Length
+                            };
+
+                            _context.ExcelFiles.Add(excelFileRecord);
+                            _context.SaveChanges();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log lỗi nhưng không dừng quá trình xử lý
+                    Console.WriteLine($"Lỗi khi lưu thông tin file Excel: {ex.Message}");
+                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                }
+
                 for (int i = 0; i < YCMaKho.Count; i++)
                 {
                     if (string.IsNullOrEmpty(TenSanpham[i]))

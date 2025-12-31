@@ -43,14 +43,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const renderRows = (transactions) => {
         if (!transactions || transactions.length === 0) {
-            body.innerHTML = `<tr><td colspan="9">Không có giao dịch nào cho vật tư này.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="10">Không có giao dịch nào cho vật tư này.</td></tr>`;
             return;
         }
 
-        body.innerHTML = transactions.map(item => {
+        body.innerHTML = transactions.map((item, index) => {
             const ngay = item.ngay ? new Date(item.ngay).toLocaleDateString("vi-VN") : "--";
             return `
                 <tr>
+                    <td>${index + 1}</td>
                     <td>${ngay}</td>
                     <td>${item.maChungTu ?? ""}</td>
                     <td>${item.loai ?? ""}</td>
@@ -87,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             title.textContent = itemName;
             code.textContent = itemCode;
-            body.innerHTML = `<tr><td colspan="9">Đang tải dữ liệu...</td></tr>`;
+            body.innerHTML = `<tr><td colspan="11">Đang tải dữ liệu...</td></tr>`;
             updateSummary(null, tonKho, donVi);
             togglePanel(true);
 
@@ -96,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 .then(result => {
                     if (!result || result.success !== true) {
                         const message = result?.message || "Không tải được dữ liệu. Vui lòng thử lại.";
-                        body.innerHTML = `<tr><td colspan="9">${message}</td></tr>`;
+                        body.innerHTML = `<tr><td colspan="11">${message}</td></tr>`;
                         return;
                     }
 
@@ -104,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     renderRows(result.data?.transactions);
                 })
                 .catch(() => {
-                    body.innerHTML = `<tr><td colspan="9">Có lỗi xảy ra khi tải dữ liệu.</td></tr>`;
+                    body.innerHTML = `<tr><td colspan="11">Có lỗi xảy ra khi tải dữ liệu.</td></tr>`;
                 });
         });
     });

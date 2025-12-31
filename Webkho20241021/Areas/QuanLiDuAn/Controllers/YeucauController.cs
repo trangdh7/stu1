@@ -1572,6 +1572,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
             try
             {
+                // Lấy thông tin dự án để lấy mã quản lý dự án (MaNguoiQLDA)
+                var duan = _context.duans.FirstOrDefault(d => d.MaDuan == maduan);
+                string maNguoiQLDA = duan?.MaNguoiQLDA ?? maNv; // Nếu không có MaNguoiQLDA thì dùng maNv
+                
                 // Lấy vật tư từ vtphieuxuatkho (đã xuất kho) kết hợp với phieuxuatkho theo MaDuan
                 // Các vật tư đã được xuất kho cho dự án này có thể được trả lại
                 var khoDuanItems = (from vt in _context.vtphieuxuatkho
@@ -1602,6 +1606,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 // Debug info
                 Console.WriteLine($"Querying vtphieuxuatkho for MaDuan = '{maduan}'");
                 Console.WriteLine($"Found {khoDuanItems.Count} items");
+                Console.WriteLine($"Project Manager Code (MaNguoiQLDA): {maNguoiQLDA}");
                 
                 // Debug: Kiểm tra số phiếu xuất kho có MaDuan này
                 var phieuxuatCount = _context.phieuxuatkho.Count(p => p.MaDuan == maduan);
@@ -1609,7 +1614,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                 return Json(new
                 {
-                    maNguoidung = maNv,
+                    maNguoidung = maNguoiQLDA, // Trả về mã quản lý dự án thay vì mã người dùng hiện tại
                     maDuan = maduan,
                     vtPhieuMuaHang = khoDuanItems,
                     debug = new
@@ -1623,9 +1628,14 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             {
                 Console.WriteLine($"Error in GetDataByMaDuan: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                
+                // Lấy mã quản lý dự án trong trường hợp lỗi
+                var duan = _context.duans.FirstOrDefault(d => d.MaDuan == maduan);
+                string maNguoiQLDA = duan?.MaNguoiQLDA ?? maNv;
+                
                 return Json(new
                 {
-                    maNguoidung = maNv,
+                    maNguoidung = maNguoiQLDA, // Trả về mã quản lý dự án thay vì mã người dùng hiện tại
                     maDuan = maduan,
                     vtPhieuMuaHang = new List<object>(),
                     error = ex.Message
@@ -1961,7 +1971,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
-                // Lưu file Excel nếu có
+                // Lưu thông tin file Excel vào database (không lưu file vào đĩa để tiết kiệm dung lượng)
                 try
                 {
                     if (Request.Form.Files != null && Request.Form.Files.Count > 0)
@@ -1972,27 +1982,12 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         
                         if (excelFile != null && excelFile.Length > 0)
                         {
-                            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "excel");
-                            if (!Directory.Exists(uploadsFolder))
-                            {
-                                Directory.CreateDirectory(uploadsFolder);
-                            }
-
-                            // Tên file theo cấu trúc mới: MaYeucau (đã bao gồm NNNNNN ST)
-                            var uniqueFileName = $"{yeucau.MaYeucau.Replace(" ", "_")}_{Path.GetFileName(excelFile.FileName)}";
-                            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                            using (var stream = new FileStream(filePath, FileMode.Create))
-                            {
-                                excelFile.CopyTo(stream);
-                            }
-
                             var excelFileRecord = new ExcelFile
                             {
                                 MaYeucau = yeucau.MaYeucau,
                                 MaDuan = yeucau.YCMaDuan,
                                 TenFile = excelFile.FileName,
-                                DuongDanFile = $"/uploads/excel/{uniqueFileName}",
+                                DuongDanFile = null, // Không lưu file vào đĩa
                                 NgayUpload = DateTime.Now,
                                 NguoiUpload = maNv2,
                                 KichThuocFile = excelFile.Length
@@ -2006,7 +2001,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 catch (Exception ex)
                 {
                     // Log lỗi nhưng không dừng quá trình xử lý
-                    Console.WriteLine($"Lỗi khi lưu file Excel: {ex.Message}");
+                    Console.WriteLine($"Lỗi khi lưu thông tin file Excel: {ex.Message}");
                     Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 }
 
@@ -3011,28 +3006,61 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     phieunhapkho.TrangThai = "Chờ Giám đốc duyệt"; // Giám đốc duyệt
                 }
 
+                // Xác định mã người dùng cho phiếu nhập kho
+                // Với nhập kho dự án: dùng mã quản lý dự án (MaNguoiQLDA)
+                // Với nhập kho cá nhân: dùng mã người dùng từ form hoặc session
+                string maNguoiDungChoPhieu;
+                if (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                {
+                    // Lấy mã quản lý dự án từ bảng duans
+                    var duan = _context.duans.FirstOrDefault(d => d.MaDuan == phieunhapkho.MaDuan);
+                    maNguoiDungChoPhieu = !string.IsNullOrEmpty(duan?.MaNguoiQLDA) 
+                        ? duan.MaNguoiQLDA 
+                        : (!string.IsNullOrEmpty(phieunhapkho.MaNguoidung) ? phieunhapkho.MaNguoidung : maNv);
+                }
+                else
+                {
+                    // Nhập kho cá nhân: ưu tiên lấy từ phieunhapkho.MaNguoidung, nếu không có thì dùng maNv từ session
+                    maNguoiDungChoPhieu = !string.IsNullOrEmpty(phieunhapkho.MaNguoidung) 
+                        ? phieunhapkho.MaNguoidung 
+                        : maNv;
+                }
+
                 // Tạo hoặc lấy mã yêu cầu đặc biệt cho phiếu nhập kho từ dự án/cá nhân
                 // Nếu không có MaYeucau, tạo một yeucau đặc biệt để thỏa mãn foreign key constraint
                 if (string.IsNullOrEmpty(phieunhapkho.MaYeucau))
                 {
                     // Tạo mã yêu cầu đặc biệt dựa trên loại nhập kho
-                    string maYeucauDacBiet = "";
+                    string maYeucauBase = "";
                     if (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
                     {
-                        maYeucauDacBiet = $"NHAPKHO_DUAN_{phieunhapkho.MaDuan}";
+                        // Format: NHAPKHO_DUAN_{MaDuan}_{maNv}
+                        maYeucauBase = $"NHAPKHO_DUAN_{phieunhapkho.MaDuan}_{maNguoiDungChoPhieu}";
                     }
                     else if (LoaiNhapkho == "canhan")
                     {
-                        maYeucauDacBiet = $"NHAPKHO_CANHAN_{maNv}";
+                        // Format: NHAPKHO_CANHAN_{maNv}
+                        maYeucauBase = $"NHAPKHO_CANHAN_{maNguoiDungChoPhieu}";
                     }
                     else
                     {
-                        maYeucauDacBiet = $"NHAPKHO_TUDO_{maNv}_{DateTime.Now:yyyyMMddHHmmss}";
+                        maYeucauBase = $"NHAPKHO_TUDO_{maNguoiDungChoPhieu}_{DateTime.Now:yyyyMMddHHmmss}";
                     }
 
-                    // Kiểm tra xem yeucau đặc biệt đã tồn tại chưa
+                    // Kiểm tra xem mã yêu cầu đã tồn tại chưa, nếu trùng thì thêm số 1, 2, 3...
+                    string maYeucauDacBiet = maYeucauBase;
+                    int suffixNumber = 0;
                     var existingYeucauDacBiet = _context.yeucau
                         .FirstOrDefault(y => y.MaYeucau == maYeucauDacBiet);
+
+                    // Nếu mã đã tồn tại, tìm mã mới với số thứ tự tăng dần
+                    while (existingYeucauDacBiet != null)
+                    {
+                        suffixNumber++;
+                        maYeucauDacBiet = $"{maYeucauBase}{suffixNumber}";
+                        existingYeucauDacBiet = _context.yeucau
+                            .FirstOrDefault(y => y.MaYeucau == maYeucauDacBiet);
+                    }
 
                     // Nếu chưa có yêu cầu, tạo mới với trạng thái phù hợp
                     if (existingYeucauDacBiet == null)
@@ -3071,8 +3099,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             }
                         }
 
-                        // Lấy thông tin người dùng từ bảng nguoidungs
-                        var nguoiDung = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == maNv);
+                        // Lấy thông tin người dùng từ bảng nguoidungs (dùng maNguoiDungChoPhieu thay vì maNv)
+                        var nguoiDung = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == maNguoiDungChoPhieu);
                         string tenNguoiDung = nguoiDung?.TenNguoidung ?? "";
                         string boPhanNguoiDung = nguoiDung?.Bophan ?? "";
 
@@ -3082,7 +3110,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         {
                             MaYeucau = maYeucauDacBiet,
                             TenYeucau = "Yêu cầu nhập kho",
-                            YCMaNguoidung = maNv,
+                            YCMaNguoidung = maNguoiDungChoPhieu,
                             NguoiYeucau = tenNguoiDung,
                             Bophan = boPhanNguoiDung,
                             YCMaDuan = ycMaDuan, // NULL nếu không có hoặc không tồn tại trong duans
@@ -3099,6 +3127,101 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     }
 
                     phieunhapkho.MaYeucau = maYeucauDacBiet;
+                }
+
+                // KIỂM TRA: Nếu đã có phiếu nhập kho với cùng MaYeucau và trạng thái "Đã nhập kho", 
+                // thì tạo mã yêu cầu mới để tạo phiếu mới thay vì update phiếu cũ
+                if (!string.IsNullOrEmpty(phieunhapkho.MaYeucau))
+                {
+                    var existingPhieuNhapKho = _context.phieunhapkho
+                        .FirstOrDefault(p => p.MaYeucau == phieunhapkho.MaYeucau && 
+                                            p.TrangThai == "Đã nhập kho");
+                    
+                    if (existingPhieuNhapKho != null)
+                    {
+                        // Tạo mã yêu cầu mới với số thứ tự để đảm bảo tạo phiếu mới
+                        // Format: NHAPKHO_DUAN_{MaDuan}_{maNv} hoặc NHAPKHO_CANHAN_{maNv}
+                        string maYeucauBaseMoi = "";
+                        if (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                        {
+                            maYeucauBaseMoi = $"NHAPKHO_DUAN_{phieunhapkho.MaDuan}_{maNguoiDungChoPhieu}";
+                        }
+                        else if (LoaiNhapkho == "canhan")
+                        {
+                            maYeucauBaseMoi = $"NHAPKHO_CANHAN_{maNguoiDungChoPhieu}";
+                        }
+                        else
+                        {
+                            maYeucauBaseMoi = $"NHAPKHO_TUDO_{maNguoiDungChoPhieu}_{DateTime.Now:yyyyMMddHHmmss}";
+                        }
+
+                        // Tìm mã yêu cầu mới với số thứ tự tăng dần (1, 2, 3...)
+                        string maYeucauMoi = maYeucauBaseMoi;
+                        int suffixNumberMoi = 0;
+                        var existingYeucauMoi = _context.yeucau
+                            .FirstOrDefault(y => y.MaYeucau == maYeucauMoi);
+
+                        // Nếu mã đã tồn tại, tìm mã mới với số thứ tự tăng dần
+                        while (existingYeucauMoi != null)
+                        {
+                            suffixNumberMoi++;
+                            maYeucauMoi = $"{maYeucauBaseMoi}{suffixNumberMoi}";
+                            existingYeucauMoi = _context.yeucau
+                                .FirstOrDefault(y => y.MaYeucau == maYeucauMoi);
+                        }
+
+                        // Nếu chưa có yêu cầu mới, tạo mới
+                        if (existingYeucauMoi == null)
+                        {
+                            // Lấy thông tin người dùng từ bảng nguoidungs (dùng maNguoiDungChoPhieu thay vì maNv)
+                            var nguoiDungMoi = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == maNguoiDungChoPhieu);
+                            string tenNguoiDungMoi = nguoiDungMoi?.TenNguoidung ?? "";
+                            string boPhanNguoiDungMoi = nguoiDungMoi?.Bophan ?? "";
+
+                            // Kiểm tra xem MaDuan có tồn tại trong bảng duans không
+                            string ycMaDuan = null;
+                            if (!string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                            {
+                                var duanExists = _context.duans
+                                    .FirstOrDefault(d => d.MaDuan == phieunhapkho.MaDuan);
+
+                                if (duanExists == null)
+                                {
+                                    duanExists = _context.duans
+                                        .AsEnumerable()
+                                        .FirstOrDefault(d => d.MaDuan != null &&
+                                                           d.MaDuan.Equals(phieunhapkho.MaDuan, StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                if (duanExists != null)
+                                {
+                                    ycMaDuan = duanExists.MaDuan;
+                                }
+                            }
+
+                            // Tạo yeucau mới
+                            var newYeucauMoi = new yeucau
+                            {
+                                MaYeucau = maYeucauMoi,
+                                TenYeucau = "Yêu cầu nhập kho",
+                                YCMaNguoidung = maNguoiDungChoPhieu,
+                                NguoiYeucau = tenNguoiDungMoi,
+                                Bophan = boPhanNguoiDungMoi,
+                                YCMaDuan = ycMaDuan,
+                                NgayYeucau = DateTime.Now,
+                                TrangThai = (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
+                                    ? "Chờ giám đốc duyệt"
+                                    : (LoaiNhapkho == "canhan"
+                                        ? "Chờ Giám đốc duyệt"
+                                        : "Đã duyệt")
+                            };
+                            _context.yeucau.Add(newYeucauMoi);
+                            _context.SaveChanges();
+                        }
+
+                        // Cập nhật MaYeucau cho phiếu nhập kho mới
+                        phieunhapkho.MaYeucau = maYeucauMoi;
+                    }
                 }
 
                 _context.phieunhapkho.Add(phieunhapkho);

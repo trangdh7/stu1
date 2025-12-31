@@ -216,7 +216,7 @@
                             <td>@item.NhaCC</td>
                             <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
                             <td style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
-                            <td style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
+                            <td  style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
                             <td class="trangthai-vattu trangthai-column" style="display: none;">
@@ -468,7 +468,7 @@
                                 <td>${nhaCC || '-'}</td>
                                 <td style="text-align: center;">${slCuVal ?? '-'}</td>
                                 <td style="text-align: center;">${slMoiVal ?? '-'}</td>
-                                <td style="text-align: center;">${slVal ?? '-'}</td>
+                                <td  style="text-align: center;">${slVal ?? '-'}</td>
                                 <td>${donViVal}</td>
                                 <td>${ngayCanHangDisplay}</td>`;
                             
@@ -612,10 +612,7 @@
             
             console.log("[DEBUG YEUCAU] hasCheckboxes:", hasCheckboxes);
             
-            // Nếu có checkbox thì có nghĩa là có vật tư đang chờ duyệt
-            // Vì checkbox chỉ được hiển thị khi canSelectForBulk = true, 
-            // mà canSelectForBulk = canApprove && isAwaitingDirector
-            // Nên nếu có checkbox thì luôn hiển thị nút Xác nhận để người dùng có thể xác nhận
+           
             if (hasCheckboxes) {
                 // Có vật tư đang chờ duyệt -> hiển thị nút Xác nhận và Cancel
                 console.log("[DEBUG YEUCAU] ✅ Hiển thị nút Xác nhận và Cancel (có checkbox = có vật tư chờ duyệt)");

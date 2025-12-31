@@ -20,6 +20,12 @@ function handleLoaiNhapkhoChange() {
         // Từ dự án: cho phép chọn mã dự án
         maduanSelect.removeAttribute("disabled");
         maduanSelect.setAttribute("required", "required");
+        
+        // Nếu đã có mã dự án được chọn trước đó, tự động load dữ liệu
+        const maduan = maduanSelect.value;
+        if (maduan) {
+            handleDuanChange();
+        }
     } else if (loai === "canhan") {
         // Từ cá nhân: không cần mã dự án
         maduanSelect.removeAttribute("required");

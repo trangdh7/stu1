@@ -64,7 +64,17 @@ namespace Webkho_20241021.Services
                         NhaCC = g.Select(x => x.NhaCC).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)),
                         DonVi = g.Select(x => x.DonVi).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)),
                         Quantity = g.Sum(x => x.SL ?? 0),
-                        Amount = g.Sum(x => x.ThanhTien ?? ((x.SL ?? 0) * (x.DonGia ?? 0m))),
+                        Amount = g.Sum(x => 
+                        {
+                            // Ưu tiên lấy ThanhTien, nếu không có hoặc = 0 thì tính từ DonGia * SL
+                            if (x.ThanhTien.HasValue && x.ThanhTien.Value > 0)
+                                return x.ThanhTien.Value;
+                            
+                            if (x.DonGia.HasValue && x.DonGia.Value > 0 && x.SL.HasValue && x.SL.Value > 0)
+                                return x.DonGia.Value * x.SL.Value;
+                            
+                            return 0m;
+                        }),
                         LastDate = g.Max(x => x.NgayNhapkho)
                     });
 
@@ -80,7 +90,17 @@ namespace Webkho_20241021.Services
                         NhaCC = g.Select(x => x.NhaCC).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)),
                         DonVi = g.Select(x => x.DonVi).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)),
                         Quantity = g.Sum(x => x.SL ?? 0),
-                        Amount = g.Sum(x => x.ThanhTien ?? ((x.SL ?? 0) * (x.DonGia ?? 0m))),
+                        Amount = g.Sum(x => 
+                        {
+                            // Ưu tiên lấy ThanhTien, nếu không có hoặc = 0 thì tính từ DonGia * SL
+                            if (x.ThanhTien.HasValue && x.ThanhTien.Value > 0)
+                                return x.ThanhTien.Value;
+                            
+                            if (x.DonGia.HasValue && x.DonGia.Value > 0 && x.SL.HasValue && x.SL.Value > 0)
+                                return x.DonGia.Value * x.SL.Value;
+                            
+                            return 0m;
+                        }),
                         LastDate = g.Max(x => x.NgayNhapkho)
                     });
 
@@ -191,7 +211,11 @@ namespace Webkho_20241021.Services
                                    MaKho = detail.Makho,
                                    TkDoiUng = phieu != null ? (phieu.MaNguoidung ?? phieu.MaDuan) : null,
                                    NguoiThucHien = user != null ? user.TenNguoidung : null,
-                                   GhiChu = phieu != null ? phieu.TrangThai : null
+                                   GhiChu = !string.IsNullOrWhiteSpace(detail.DiengiaiNhapKho) 
+                                       ? detail.DiengiaiNhapKho 
+                                       : (phieu != null && !string.IsNullOrWhiteSpace(phieu.TrangThai) 
+                                           ? phieu.TrangThai 
+                                           : "Đã nhập kho")
                                }).ToList();
 
             var xuatDetails = (from detail in _context.vtphieuxuatkho.AsNoTracking()
@@ -219,7 +243,13 @@ namespace Webkho_20241021.Services
                                    MaKho = detail.Makho,
                                    TkDoiUng = phieu != null ? (phieu.MaNguoidung ?? phieu.MaDuan) : null,
                                    NguoiThucHien = user != null ? user.TenNguoidung : null,
-                                   GhiChu = phieu != null ? (phieu.GhiChu ?? phieu.TrangThai) : null
+                                   GhiChu = phieu != null && !string.IsNullOrWhiteSpace(phieu.GhiChu)
+                                       ? (phieu.GhiChu == "Phiếu được hoàn tất và khóa ngay khi kho xác nhận xuất." 
+                                           ? "Đã hoàn tất xuất kho" 
+                                           : phieu.GhiChu)
+                                       : (phieu != null && !string.IsNullOrWhiteSpace(phieu.TrangThai) && phieu.TrangThai != "Hoàn thành"
+                                           ? phieu.TrangThai
+                                           : "Đã xuất kho")
                                }).ToList();
 
             response.Transactions = nhapDetails

@@ -2021,7 +2021,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             Phieuxuatkho.TrangThai = "Hoàn thành";
             Phieuxuatkho.NgayHoanThanh = DateTime.Now;
             Phieuxuatkho.NgayXuatkho = DateTime.Now;
-            Phieuxuatkho.GhiChu = "Phiếu được hoàn tất và khóa ngay khi kho xác nhận xuất.";
+            Phieuxuatkho.GhiChu = "Đã hoàn tất xuất kho";
 
             _context.phieuxuatkho.Update(Phieuxuatkho);
 
@@ -4012,12 +4012,20 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
         
         private void CongVaoKhoTong(vtphieunhapkho vtPhieunhapkho)
         {
+            Debug.WriteLine($"========== DEBUG CongVaoKhoTong START ==========");
+            Debug.WriteLine($"MaSanpham: {vtPhieunhapkho.MaSanpham}, Makho: {vtPhieunhapkho.Makho}, HangSX: {vtPhieunhapkho.HangSX}, SL: {vtPhieunhapkho.SL}");
+            
             var khotong = TimKhoTong(vtPhieunhapkho);
 
             if (khotong != null)
             {
+                Debug.WriteLine($"✅ Tìm thấy kho tổng - Makho: {khotong.Makho}, SL hiện tại: {khotong.SL}");
+                
                 // Cộng số lượng vào khotong đã tồn tại
-                khotong.SL = (khotong.SL ?? 0) + (vtPhieunhapkho.SL ?? 0);
+                int slCu = khotong.SL ?? 0;
+                int slThem = vtPhieunhapkho.SL ?? 0;
+                khotong.SL = slCu + slThem;
+                Debug.WriteLine($"SL sau khi cộng: {slCu} + {slThem} = {khotong.SL}");
 
                 // Cập nhật thông tin nếu cần (ưu tiên thông tin mới hơn)
                 if (!string.IsNullOrEmpty(vtPhieunhapkho.TenSanpham))
@@ -4040,9 +4048,12 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 }
 
                 _context.khotongs.Update(khotong);
+                Debug.WriteLine($"✅ Đã cập nhật kho tổng");
             }
             else
             {
+                Debug.WriteLine($"⚠️ Không tìm thấy kho tổng, tạo mới");
+                
                 // Tạo mới vật tư trong tồn kho nếu chưa có
                 var newKhotong = new khotongs
                 {
@@ -4057,7 +4068,10 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     TrangThai = "Tồn kho"
                 };
                 _context.khotongs.Add(newKhotong);
+                Debug.WriteLine($"✅ Đã tạo mới kho tổng - Makho: {newKhotong.Makho}, SL: {newKhotong.SL}");
             }
+            
+            Debug.WriteLine($"========== DEBUG CongVaoKhoTong END ==========");
         }
 
        
