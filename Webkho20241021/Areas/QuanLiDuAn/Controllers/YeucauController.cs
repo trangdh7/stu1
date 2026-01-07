@@ -651,6 +651,27 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         return status.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase);
                     };
 
+                    // Kiểm tra số lượng yêu cầu - nếu bằng 0 thì đặt trạng thái "Hoàn thành" và bỏ qua
+                    int soLuongYeuCau = isNhapKhoRequest ? (vtPhieuNhap?.SL ?? 0) : (vatTu?.SL ?? 0);
+                    if (soLuongYeuCau == 0)
+                    {
+                        // Nếu số lượng = 0, không cần mua hàng, đặt trạng thái "Hoàn thành"
+                        if (isNhapKhoRequest)
+                        {
+                            vtPhieuNhap.TrangThai = "Hoàn thành";
+                            _context.vtphieunhapkho.Update(vtPhieuNhap);
+                        }
+                        else
+                        {
+                            vatTu.NgayDuyet = DateTime.Now;
+                            vatTu.TrangThai = "Hoàn thành";
+                            vatTu.GhiChu = null;
+                            _context.vtyeucau.Update(vatTu);
+                        }
+                        processedCount++;
+                        continue;
+                    }
+
                     // Chỉ xử lý các vật tư đang chờ duyệt (Chờ quản lý dự án duyệt hoặc Chờ giám đốc duyệt) và chưa được duyệt/từ chối
                     var currentStatus = isNhapKhoRequest ? (vtPhieuNhap?.TrangThai ?? "") : (vatTu?.TrangThai ?? "");
                     bool isAwaiting = isAwaitingApprovalStatus(currentStatus);

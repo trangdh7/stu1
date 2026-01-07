@@ -243,6 +243,19 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         return status.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase);
                     };
 
+                    // Kiểm tra số lượng yêu cầu - nếu bằng 0 thì đặt trạng thái "Hoàn thành" và bỏ qua
+                    int soLuongYeuCau = vatTu.SL ?? 0;
+                    if (soLuongYeuCau == 0)
+                    {
+                        // Nếu số lượng = 0, không cần mua hàng, đặt trạng thái "Hoàn thành"
+                        vatTu.NgayDuyet = DateTime.Now;
+                        vatTu.TrangThai = "Hoàn thành";
+                        vatTu.GhiChu = ghiChu;
+                        _context.vtyeucau.Update(vatTu);
+                        processedCount++;
+                        continue;
+                    }
+
                     // Chỉ xử lý các vật tư đang chờ Trưởng BP kho duyệt và chưa được duyệt/từ chối
                     if (!isAwaitingTruongBPStatus(vatTu.TrangThai) || 
                         isAlreadyApproved(vatTu.TrangThai) || 
