@@ -25,6 +25,9 @@ namespace Webkho_20241021.Areas.TruongBPKho.Services
             var yeucauList = _context.yeucau
                 .ToList();
 
+            // Đồng bộ trạng thái vật tư dựa trên phiếu
+            DongBoTrangThaiVatTu();
+
             // Cập nhật trạng thái yêu cầu
             CapNhatTrangThaiYeucau(yeucauList);
 
@@ -44,9 +47,49 @@ namespace Webkho_20241021.Areas.TruongBPKho.Services
             };
         }
 
-        /// <summary>
-        /// Cập nhật trạng thái yêu cầu dựa trên số lượng vật tư còn thiếu
-        /// </summary>
+        private void DongBoTrangThaiVatTu()
+        {
+            // Lấy tất cả phiếu xuất kho có trạng thái "Đã xuất kho"
+            var phieuxuatkhoList = _context.phieuxuatkho
+                .Where(p => p.TrangThai == "Đã xuất kho")
+                .ToList();
+
+            foreach (var phieu in phieuxuatkhoList)
+            {
+                if (string.IsNullOrEmpty(phieu.MaYeucau))
+                    continue;
+
+                // Lấy các vật tư trong phiếu xuất kho
+                var vtPhieuxuatkhoList = _context.vtphieuxuatkho
+                    .Where(vt => vt.MaXuatkho == phieu.MaXuatkho)
+                    .ToList();
+
+                foreach (var vtPhieu in vtPhieuxuatkhoList)
+                {
+                    if (string.IsNullOrEmpty(vtPhieu.MaYeucau) || string.IsNullOrEmpty(vtPhieu.MaSanpham))
+                        continue;
+
+                    // Tìm các vật tư yêu cầu tương ứng
+                    var vtYeucauList = _context.vtyeucau
+                        .Where(v => v.VTMaYeucau == vtPhieu.MaYeucau && v.MaSanpham == vtPhieu.MaSanpham)
+                        .ToList();
+
+                    foreach (var vtYeucau in vtYeucauList)
+                    {
+                        // Nếu phiếu đã xuất kho, cập nhật trạng thái vật tư thành "Đã xuất kho"
+                        if (vtYeucau.TrangThai != "Đã xuất kho" && vtYeucau.TrangThai != "Hoàn thành")
+                        {
+                            vtYeucau.TrangThai = "Đã xuất kho";
+                            _context.vtyeucau.Update(vtYeucau);
+                        }
+                    }
+                }
+            }
+
+            _context.SaveChanges();
+        }
+
+        
         private void CapNhatTrangThaiYeucau(List<yeucau> yeucauList)
         {
             foreach (var yeucau in yeucauList)

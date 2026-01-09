@@ -958,9 +958,12 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             else if (hasChoXuatKho || hasDaXuatKho)
                             {
                                 // Có vật tư chờ xuất kho hoặc đã xuất kho
+                                // Tất cả các vật tư còn lại đã ở các trạng thái “chờ/đã xuất” hoặc đã hoàn thành / bị từ chối
+                                // → coi như đã xử lý xong (không còn vật tư cần mua hàng)
                                 var allChoXuatKhoOrDaXuatKho = vatTuListFinal.All(v =>
                                     v.TrangThai == "Chờ xuất kho" ||
                                     v.TrangThai == "Đã xuất kho" ||
+                                    v.TrangThai == "Hoàn thành" ||
                                     (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
                                 
                                 if (allChoXuatKhoOrDaXuatKho)
@@ -990,9 +993,11 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             {
                                 // Có vật tư bị từ chối (nhưng không phải tất cả) và không còn vật tư đang mua hàng
                                 // Kiểm tra xem các vật tư còn lại đã xuất kho chưa
+                                // Các vật tư còn lại đều đã hoàn tất (chờ/đã xuất hoặc hoàn thành / bị từ chối)
                                 var allCompleted = vatTuListFinal.All(v =>
                                     v.TrangThai == "Chờ xuất kho" ||
                                     v.TrangThai == "Đã xuất kho" ||
+                                    v.TrangThai == "Hoàn thành" ||
                                     (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
                                 
                                 if (allCompleted)
@@ -2054,6 +2059,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                 var allChoXuatKhoOrDaXuatKho = vatTuListFinal.All(v =>
                                     v.TrangThai == "Chờ xuất kho" ||
                                     v.TrangThai == "Đã xuất kho" ||
+                                    v.TrangThai == "Hoàn thành" ||
                                     (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
 
                                 if (allChoXuatKhoOrDaXuatKho)
@@ -2083,6 +2089,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                 var allCompleted = vatTuListFinal.All(v =>
                                     v.TrangThai == "Chờ xuất kho" ||
                                     v.TrangThai == "Đã xuất kho" ||
+                                    v.TrangThai == "Hoàn thành" ||
                                     (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
 
                                 if (allCompleted)

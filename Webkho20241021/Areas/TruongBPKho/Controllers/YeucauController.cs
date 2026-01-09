@@ -700,8 +700,8 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 vt.Makho,
                 vt.HangSX,
                 vt.NhaCC,
-                // ⭐ SỬA: Thay vì dùng vt.SL, tính lại số lượng còn thiếu thực tế
-                sl = TinhSoLuongConThieu(vt.MaYeucau ?? "", vt.MaSanpham ?? ""),
+                // ⭐ SỬA: Sử dụng số lượng từ phiếu mua hàng (vt.SL)
+                sl = vt.SL ?? 0,
                 vt.DonVi,
                 vt.DonGia,
                 vt.ThanhTien,

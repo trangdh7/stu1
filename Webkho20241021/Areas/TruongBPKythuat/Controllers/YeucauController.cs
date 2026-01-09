@@ -533,15 +533,34 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     var boPhan = HttpContext.Session.GetString("Bophan");
                     
                     // Kiểm tra xem tất cả vật tư đã được trưởng phòng duyệt chưa
+                    // Lấy lại từ DB sau khi SaveChanges để có dữ liệu mới nhất
                     var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
-                    var allApprovedByTruongBP = allVatTu.All(v => v.TrangThai == nextTrangThaiVT || 
-                                                                   v.TrangThai == "Đã duyệt" || 
-                                                                   v.TrangThai == "Đang mua hàng" || 
-                                                                   v.TrangThai == "Đã xuất kho" || 
-                                                                   v.TrangThai == "Đã nhận hàng" ||
-                                                                   v.TrangThai == "Chờ giám đốc duyệt" ||
-                                                                   v.TrangThai == "Chờ quản lý dự án duyệt" ||
-                                                                   (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
+                    
+                    // Kiểm tra tất cả vật tư đã được xử lý (duyệt/từ chối/hoàn thành)
+                    // Loại trừ các trạng thái "Chờ Trưởng BP-BP kỹ thuật duyệt" hoặc null/empty
+                    var allApprovedByTruongBP = allVatTu.All(v => 
+                    {
+                        if (string.IsNullOrWhiteSpace(v.TrangThai))
+                            return false;
+                        
+                        var normalized = v.TrangThai.Trim();
+                        
+                        // Loại trừ các trạng thái chờ duyệt
+                        if (normalized.Equals("Chờ Trưởng BP-BP kỹ thuật duyệt", StringComparison.OrdinalIgnoreCase) ||
+                            normalized.Contains("chờ trưởng bp", StringComparison.OrdinalIgnoreCase))
+                            return false;
+                        
+                        // Chấp nhận các trạng thái đã được xử lý
+                        return normalized == nextTrangThaiVT ||
+                               normalized == "Đã duyệt" ||
+                               normalized == "Đang mua hàng" ||
+                               normalized == "Đã xuất kho" ||
+                               normalized == "Đã nhận hàng" ||
+                               normalized == "Chờ giám đốc duyệt" ||
+                               normalized == "Chờ quản lý dự án duyệt" ||
+                               normalized == "Hoàn thành" ||
+                               normalized.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase);
+                    });
                     
                     if (allApprovedByTruongBP && chucVu == "Trưởng BP" && boPhan == "BP kỹ thuật")
                     {
@@ -646,29 +665,39 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 // Cập nhật trạng thái yêu cầu chính nếu Trưởng BP duyệt tất cả vật tư
                 if (action == "approve" && yeucau != null)
                 {
-                    // Kiểm tra xem tất cả vật tư đã được trưởng phòng duyệt chưa
-                    var allApprovedByTruongBP = vatTuList.All(v => v.TrangThai == nextTrangThaiVT);
+                    // Lấy lại TẤT CẢ vật tư từ DB sau SaveChanges để có dữ liệu mới nhất
+                    var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                    
+                    // Kiểm tra xem TẤT CẢ vật tư (không chỉ các vật tư được chọn) đã được trưởng phòng duyệt chưa
+                    var allApprovedByTruongBP = allVatTu.All(v =>
+                    {
+                        if (string.IsNullOrWhiteSpace(v.TrangThai))
+                            return false;
+                        
+                        var normalized = v.TrangThai.Trim();
+                        
+                        // Loại trừ các trạng thái chờ duyệt
+                        if (normalized.Equals("Chờ Trưởng BP-BP kỹ thuật duyệt", StringComparison.OrdinalIgnoreCase) ||
+                            normalized.Contains("chờ trưởng bp", StringComparison.OrdinalIgnoreCase))
+                            return false;
+                        
+                        // Chấp nhận các trạng thái đã được xử lý
+                        return normalized == nextTrangThaiVT ||
+                               normalized == "Đã duyệt" ||
+                               normalized == "Đang mua hàng" ||
+                               normalized == "Đã xuất kho" ||
+                               normalized == "Đã nhận hàng" ||
+                               normalized == "Chờ giám đốc duyệt" ||
+                               normalized == "Chờ quản lý dự án duyệt" ||
+                               normalized == "Hoàn thành" ||
+                               normalized.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase);
+                    });
                     
                     if (allApprovedByTruongBP && chucVu == "Trưởng BP" && boPhan == "BP kỹ thuật")
                     {
                         // Tất cả vật tư đã được trưởng phòng duyệt, cập nhật trạng thái yêu cầu
                         yeucau.TrangThai = nextTrangThaiYC;
                         _context.yeucau.Update(yeucau);
-                        
-                        // Đồng bộ trạng thái tất cả vật tư - đảm bảo tất cả vật tư đều có trạng thái đúng
-                        var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
-                        foreach (var vt in allVatTu)
-                        {
-                            // Chỉ cập nhật các vật tư chưa được duyệt hoàn toàn
-                            if (vt.TrangThai != "Đã duyệt" && vt.TrangThai != "Đang mua hàng" && 
-                                vt.TrangThai != "Đã từ chối" && vt.TrangThai != "Đã xuất kho" && 
-                                vt.TrangThai != "Đã nhận hàng")
-                            {
-                                vt.TrangThai = nextTrangThaiVT;
-                                _context.vtyeucau.Update(vt);
-                            }
-                        }
-                        
                         _context.SaveChanges();
                     }
                 }
