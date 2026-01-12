@@ -19,7 +19,7 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/NhanvienMuahang/Yeucau/Yeucau">Vật tư yêu cầu</a>
+                    <a href="/NhanvienMuahang/Yeucau/Yeucau">Yêu cầu vật tư</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -62,6 +62,8 @@
                         <td>Mã dự án</td>
                         <td>Ngày yêu cầu</td>
                         <td>Trạng thái</td>
+                        <td>Ngày duyệt</td>
+                        <td>Tên người duyệt</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -73,6 +75,11 @@
                         var duan = Model.Duans.FirstOrDefault(d => d.MaDuan == item.YCMaDuan);
                         string maNguoiQLDA = duan?.MaNguoiQLDA;
                         string maNguoidungSession = Context.Session.GetString("MaNguoidung");
+                        // Tính ngày duyệt sớm nhất từ các vật tư trong yêu cầu
+                        var ngayDuyetSomNhat = Model.VTyeucau
+                            .Where(vt => vt.VTMaYeucau == item.MaYeucau && vt.NgayDuyet.HasValue)
+                            .OrderBy(vt => vt.NgayDuyet)
+                            .FirstOrDefault()?.NgayDuyet;
                         <tr onclick="showVTYeucau('@item.MaYeucau')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
@@ -132,6 +139,26 @@
                                     ;
                                 }
                             </td>
+                            <td>
+                                @if (ngayDuyetSomNhat.HasValue)
+                                {
+                                    <span>@ngayDuyetSomNhat.Value.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #999;">-</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.NguoiDuyet))
+                                {
+                                    <span>@item.NguoiDuyet</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #999;">-</span>
+                                }
+                            </td>
                         </tr>
                         STT++;
                     }
@@ -158,7 +185,7 @@
                         <td>NCC</td>
                         <td>SL Cũ</td>
                         <td>SL Mới</td>
-                        <td>SL</td>
+                        <td hidden>SL</td>
                         <td>ĐV</td>
                         <td>Ngày cần</td>
                         <td>Trạng thái</td>
@@ -179,7 +206,7 @@
                             <td>@item.NhaCC</td>
                             <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
                             <td style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
-                            <td style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
+                            <td hidden  style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
                             <td>@(item.TrangThai ?? "")</td>

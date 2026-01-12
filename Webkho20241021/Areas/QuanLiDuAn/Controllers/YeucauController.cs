@@ -184,7 +184,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     .ToList();
             }
 
-            var VTyeucaulist = _context.vtyeucau.ToList();
+            var VTyeucaulist = _context.vtyeucau.Where(vt => vt.SLMoi != 0).ToList(); // Lọc bỏ các dòng có SLMoi = 0
             var Duans = _context.duans.ToList();
 
             var model = new Yeucauviewmodel
@@ -357,9 +357,9 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             }
             else
             {
-                // Lấy dữ liệu từ vtyeucau và chuẩn hóa field name camelCase để JS đọc thống nhất
+                // Lấy dữ liệu từ vtyeucau và chuẩn hóa field name camelCase để JS đọc thống nhất, lọc bỏ các dòng có SLMoi = 0
                 var vatTuList = _context.vtyeucau
-                                     .Where(v => v.VTMaYeucau == MaYeucau)
+                                     .Where(v => v.VTMaYeucau == MaYeucau && v.SLMoi != 0)
                                      .Select(v => new
                                      {
                                          id = v.ID,
@@ -458,6 +458,20 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 }
 
                 _context.vtyeucau.Update(vatTu);
+                
+                // Lưu thông tin người duyệt vào bảng yeucau (ghi đè mã người duyệt mới nhất)
+                var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                if (yeucau != null)
+                {
+                    var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                    if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                    {
+                        yeucau.NguoiDuyet = maNguoiDuyet;
+                        yeucau.NgayDuyet = DateTime.Now;
+                        _context.yeucau.Update(yeucau);
+                    }
+                }
+                
                 _context.SaveChanges();
 
                 UpdateYeucauStatusAfterVatTuChange(MaYeucau);
@@ -504,9 +518,20 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     }
                 }
 
-                // Lưu thay đổi trạng thái vật tư
+                // Lưu thông tin người duyệt vào bảng yeucau (ghi đè mã người duyệt mới nhất)
                 if (processedCount > 0)
                 {
+                    var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucau != null)
+                    {
+                        var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                        if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                        {
+                            yeucau.NguoiDuyet = maNguoiDuyet;
+                            yeucau.NgayDuyet = DateTime.Now;
+                            _context.yeucau.Update(yeucau);
+                        }
+                    }
                     _context.SaveChanges();
                 }
 
@@ -752,6 +777,22 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     }
 
                     processedCount++;
+                }
+
+                // Lưu thông tin người duyệt vào bảng yeucau (ghi đè mã người duyệt mới nhất) - chỉ lưu một lần sau khi xử lý xong tất cả vật tư
+                if (processedCount > 0)
+                {
+                    var yeucauQLDA = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucauQLDA != null)
+                    {
+                        var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                        if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                        {
+                            yeucauQLDA.NguoiDuyet = maNguoiDuyet;
+                            yeucauQLDA.NgayDuyet = DateTime.Now;
+                            _context.yeucau.Update(yeucauQLDA);
+                        }
+                    }
                 }
 
                 _context.SaveChanges();
@@ -2126,6 +2167,13 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     var donViValue = (DonVi != null && i < DonVi.Count) ? DonVi[i] : null;
                     var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                     var slMoiValue = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
+                    
+                    // Bỏ qua dòng nếu số lượng mới bằng 0 (không cần lưu và hiển thị)
+                    if (slMoiValue == 0)
+                    {
+                        continue;
+                    }
+                    
                     var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
                     // Cột SL lấy giá trị từ SLMoi (nếu có), nếu không thì lấy từ SLCu, cuối cùng mới lấy từ SL
                     var slValue = slMoiValue ?? slCuValue ?? ((SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0);
@@ -2941,7 +2989,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 MaYeucau = Phieumuahang.MaYeucau,
                 MaDuan = Phieumuahang.MaDuan,
                 MaNguoidung = Phieumuahang.MaNguoidung,
-                NgayNhapkho = DateTime.Now,
+                NgayNhapkho = null, // Để trống, chỉ lưu khi bộ phận kho nhập kho
                 TrangThai = "Chờ nhập kho"
             };
             _context.phieunhapkho.Add(newphieunhapkho);
@@ -3095,7 +3143,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     return RedirectToAction("ThemPhieunhapkho", "Yeucau", new { area = "QuanLiDuAn" });
                 }
 
-                int STT = 0;
+                int STT = 1;
                 string MaNhapkho;
 
                 // Tạo mã phiếu nhập kho duy nhất
@@ -3619,6 +3667,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     // KHÔNG trừ từ kho dự án/cá nhân ở đây
                     // Chỉ trừ khi người nhận xác nhận nhận hàng (trạng thái "Đã xác nhận nhận hàng")
                     Phieunhapkho.TrangThai = "Đã nhập kho";
+                    // Lưu thời gian nhập kho khi bộ phận kho nhập kho
+                    Phieunhapkho.NgayNhapkho = DateTime.Now;
                     
                     foreach (var VTPhieunhapkho in VTPhieunhapkholist)
                     {
@@ -3702,7 +3752,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             if (yeucauBanDau != null)
                             {
                                 // Tạo mã phiếu xuất kho duy nhất
-                                int STT = 0;
+                                int STT = 1;
                                 string MaXuatkho;
                                 while (true)
                                 {
@@ -3723,9 +3773,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                     MaYeucau = Phieunhapkho.MaYeucau,
                                     MaDuan = Phieunhapkho.MaDuan,
                                     MaNguoidung = Phieunhapkho.MaNguoidung,
-                                    NgayXuatkho = DateTime.Now,
+                                    NgayXuatkho = null,
+                                    NgayChuanBi = DateTime.Now,
                                     TrangThai = "Chờ xác nhận"
                                 };
+                                
                                 _context.phieuxuatkho.Add(newPhieuxuatkho);
                                 _context.SaveChanges();
                                 
@@ -3943,7 +3995,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             var Phieunhapkho = _context.phieunhapkho.FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
             var VTPhieunhapkholist = _context.vtphieunhapkho.Where(vt => vt.MaNhapkho == MaNhapkho).ToList();
 
-            int STT = 0;
+            int STT = 1;
             string MaXuatkho;
             // Tạo mã phiếu nhập kho duy nhất
             while (true)

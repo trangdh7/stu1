@@ -117,7 +117,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                         <td>${nhaCC}</td>
                         <td style="text-align: center;">${formatNumberOrDash(slCu)}</td>
                         <td style="text-align: center;">${formatNumberOrDash(slMoi)}</td>
-                        <td style="text-align: center;">${formatNumberOrDash(slTong)}</td>
+                        <td style="display: none; text-align: center;">${formatNumberOrDash(slTong)}</td>
                         <td>${donVi || '-'}</td>
                         <td>${ngayCan}</td>
                         <td>${trangThai}</td>

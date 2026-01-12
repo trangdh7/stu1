@@ -1,4 +1,4 @@
-﻿
+
 @{
     ViewData["Title"] = "Phieunhapkho";
     Layout = "~/Areas/NhanvienKho/Views/Layout/Layout.cshtml";
@@ -18,7 +18,7 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/NhanvienKho/Yeucau/Yeucau">Vật tư yêu cầu</a>
+                    <a href="/NhanvienKho/Yeucau/Yeucau">Yêu cầu vật tư</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -91,7 +91,7 @@
                             <td>@item.MaYeucau</td>
                             <td>@item.MaDuan</td>
                             <td>@item.MaNguoidung</td>
-                            <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                            <td>@(item.TrangThai == "Đã nhập kho" ? item.NgayNhapkho?.ToString("dd/MM/yyyy") : "")</td>
                             <td>
                                 <span>@item.TrangThai</span>
                             </td>

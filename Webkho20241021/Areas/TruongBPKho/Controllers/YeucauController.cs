@@ -284,6 +284,18 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     processedCount++;
                 }
 
+                // Lưu thông tin người duyệt vào bảng yeucau (ghi đè mã người duyệt mới nhất)
+                if (yeucau != null && processedCount > 0)
+                {
+                    var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                    if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                    {
+                        yeucau.NguoiDuyet = maNguoiDuyet;
+                        yeucau.NgayDuyet = DateTime.Now;
+                        _context.yeucau.Update(yeucau);
+                    }
+                }
+
                 _context.SaveChanges();
 
                 // Cập nhật trạng thái yêu cầu nếu tất cả vật tư đã được duyệt
@@ -2263,7 +2275,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             try
             {
                 // Tạo mã phiếu mua hàng duy nhất
-                int STT = 0;
+                int STT = 1;
                 string MaMuahang;
                 do
                 {
@@ -2528,7 +2540,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 }
 
                 // Tạo mã phiếu mua hàng duy nhất
-                int STT = 0;
+                int STT = 1;
                 string MaMuahang;
                 do
                 {
@@ -2863,7 +2875,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 if (phieuXuatKhoHienTai == null)
                 {
                     // Tạo phiếu xuất kho mới
-                    int STT = 0;
+                    int STT = 1;
                     while (true)
                     {
                         maXuatkho = $"PXK{STT}";
@@ -2881,7 +2893,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         MaYeucau = maYeucau,
                         MaDuan = item.YeuCau.YCMaDuan,
                         MaNguoidung = item.YeuCau.YCMaNguoidung,
-                        NgayXuatkho = DateTime.Now,
+                        NgayXuatkho = null,
                         NgayChuanBi = DateTime.Now,
                         TrangThai = "Đang chuẩn bị hàng"
                     };
@@ -4198,6 +4210,8 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
         private void XuLyNhapKho(phieunhapkho phieunhapkho, List<vtphieunhapkho> vtPhieunhapkhoList)
         {
             phieunhapkho.TrangThai = "Đã nhập kho";
+            // Lưu thời gian nhập kho khi bộ phận kho nhập kho
+            phieunhapkho.NgayNhapkho = DateTime.Now;
             bool isNhapKhoDuanOrCaNhan = IsNhapKhoDuanOrCaNhan(phieunhapkho);
 
             foreach (var vtPhieunhapkho in vtPhieunhapkhoList)
@@ -4312,7 +4326,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
      
         private string TaoMaXuatKhoMoi()
         {
-            int STT = 0;
+            int STT = 1;
             string maXuatkho;
             while (true)
             {

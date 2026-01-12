@@ -83,7 +83,21 @@
                             <td>@item.MaYeucau</td>
                             <td>@item.MaDuan</td>
                             <td>@item.MaNguoidung</td>
-                            <td>@item.NgayXuatkho?.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                @{
+                                    var trangThaiXuat = item.TrangThai ?? "";
+                                    var daXuatKho = trangThaiXuat == "Đã lấy hàng"
+                                        || trangThaiXuat == "Đã xuất kho"
+                                        || trangThaiXuat == "Chờ người yêu cầu xác nhận"
+                                        || trangThaiXuat == "Chờ xác nhận nhận hàng"
+                                        || trangThaiXuat == "Đã xác nhận nhận hàng"
+                                        || trangThaiXuat == "Hoàn thành";
+                                }
+                                @if (daXuatKho && item.NgayXuatkho.HasValue)
+                                {
+                                    @item.NgayXuatkho.Value.ToString("dd/MM/yyyy")
+                                }
+                            </td>
                             <td>
                                 @if (item.TrangThai == "Chờ xác nhận" && BophanSession == "BP kho")
                                 {

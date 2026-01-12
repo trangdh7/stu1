@@ -1,4 +1,4 @@
-﻿
+
 @{
     ViewData["Title"] = "Phieunhapkho";
     Layout = "~/Areas/NhanvienMuahang/Views/Layout/Layout.cshtml";
@@ -18,7 +18,7 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/NhanvienMuahang/Yeucau/Yeucau">Vật tư yêu cầu</a>
+                    <a href="/NhanvienMuahang/Yeucau/Yeucau">Yêu cầu vật tư</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -67,19 +67,22 @@
                     }
                     @foreach (var item in Model.Phieunhapkho)
                     {
-                        // Chỉ hiển thị phiếu có MaYeucau bắt đầu bằng NHAPKHO_DUAN_ hoặc NHAPKHO_CANHAN
-                        // Ẩn các phiếu có format cũ (dạng số + chữ như "171125 251201STUP12.5 QUYNHTT1")
+                        string ChucvuSession = Context.Session.GetString("Chucvu");
+                        string BophanSession = Context.Session.GetString("Bophan");
+                        
+                        // Các areas khác chỉ xem được phiếu đã nhập kho (trạng thái "Đã nhập kho")
+                        // Bộ phận kho có thể xem tất cả các phiếu
+                        bool isKho = BophanSession == "BP kho";
+                        if (!isKho && item.TrangThai != "Đã nhập kho")
+                        {
+                            continue; // Bỏ qua phiếu chưa nhập kho cho các areas khác
+                        }
+                        
+                        // Kiểm tra xem có phải phiếu nhập kho hoàn trả không (NHAPKHO_DUAN, NHAPKHO_CANHAN)
                         bool isNhapKhoDuanOrCaNhan = !string.IsNullOrEmpty(item.MaYeucau) && 
                                                       (item.MaYeucau.StartsWith("NHAPKHO_DUAN_", StringComparison.OrdinalIgnoreCase) || 
                                                        item.MaYeucau.StartsWith("NHAPKHO_CANHAN", StringComparison.OrdinalIgnoreCase));
                         
-                        if (!isNhapKhoDuanOrCaNhan)
-                        {
-                            continue; // Bỏ qua phiếu không phải dạng NHAPKHO_DUAN_ hoặc NHAPKHO_CANHAN
-                        }
-                        
-                        string ChucvuSession = Context.Session.GetString("Chucvu");
-                        string BophanSession = Context.Session.GetString("Bophan");
                         <tr class="clickable-row" data-manhapkho="@item.MaNhapkho" onclick="showVTnhapkho('@item.MaNhapkho')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>
@@ -90,7 +93,7 @@
                             <td>@item.MaYeucau</td>
                             <td>@item.MaDuan</td>
                             <td>@item.MaNguoidung</td>
-                            <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                            <td>@(item.TrangThai == "Đã nhập kho" ? item.NgayNhapkho?.ToString("dd/MM/yyyy") : "")</td>
                             <td>
                                 @{
                                     // Hiển thị trạng thái và nút duyệt theo quyền
@@ -98,7 +101,7 @@
                                     var maQLDA = duan?.MaNguoiQLDA;
                                     var isQLDA = !string.IsNullOrEmpty(maQLDA) && maQLDA == Context.Session.GetString("MaNguoidung");
                                     var isGiamDoc = ChucvuSession == "Giám đốc";
-                                    var isKho = BophanSession == "BP kho";
+                                    // isKho đã được định nghĩa ở trên trong vòng lặp foreach
                                 }
                                 
                                 @if (item.TrangThai == "Quản lí dự án" && isQLDA)

@@ -25,6 +25,35 @@ namespace Webkho_20241021.Areas.TruongBPKho.Services
             var yeucauList = _context.yeucau
                 .ToList();
 
+            // Populate TenYeucau and Bophan từ nguoidungs nếu chưa có
+            var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => new { n.TenNguoidung, n.Bophan });
+            foreach (var yeucau in yeucauList)
+            {
+                // Populate Bophan từ nguoidungs nếu chưa có
+                if (string.IsNullOrWhiteSpace(yeucau.Bophan) && !string.IsNullOrWhiteSpace(yeucau.YCMaNguoidung))
+                {
+                    if (nguoiDungDict.TryGetValue(yeucau.YCMaNguoidung, out var nguoiDung))
+                    {
+                        yeucau.Bophan = nguoiDung.Bophan ?? "";
+                    }
+                }
+
+                // Populate TenYeucau nếu chưa có
+                if (string.IsNullOrWhiteSpace(yeucau.TenYeucau))
+                {
+                    // Nếu là yêu cầu nhập kho đặc biệt (NHAPKHO_), set mặc định
+                    if (!string.IsNullOrEmpty(yeucau.MaYeucau) && yeucau.MaYeucau.StartsWith("NHAPKHO_"))
+                    {
+                        yeucau.TenYeucau = "Yêu cầu nhập kho";
+                    }
+                    else
+                    {
+                        // Các yêu cầu khác, set mặc định là "Yêu cầu vật tư"
+                        yeucau.TenYeucau = "Yêu cầu vật tư";
+                    }
+                }
+            }
+
             // Đồng bộ trạng thái vật tư dựa trên phiếu
             DongBoTrangThaiVatTu();
 

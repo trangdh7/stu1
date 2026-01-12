@@ -29,7 +29,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             var userRole = HttpContext.Session.GetString("Chucvu");
 
             var Yeucaulist = _context.yeucau.ToList();
-            var VTyeucaulist = _context.vtyeucau.ToList();
+            var VTyeucaulist = _context.vtyeucau.Where(vt => vt.SLMoi != 0).ToList(); // Lọc bỏ các dòng có SLMoi = 0
             var PhieuMuaHangList = _context.phieumuahang.ToList();
 
             foreach (var yeucau in Yeucaulist)
@@ -624,10 +624,40 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             }
             else
             {
-                // Lấy dữ liệu từ vtyeucau như bình thường
+                // Lấy dữ liệu từ vtyeucau như bình thường, lọc bỏ các dòng có SLMoi = 0
                 var vatTuList = _context.vtyeucau
-                                     .Where(v => v.VTMaYeucau == MaYeucau).ToList();
-                return Json(vatTuList);
+                                     .Where(v => v.VTMaYeucau == MaYeucau && v.SLMoi != 0).ToList();
+                
+                // Ẩn NgayDuyet nếu vật tư chưa được giám đốc duyệt
+                // Chỉ hiển thị NgayDuyet khi trạng thái là "Đã duyệt", "Đang mua hàng", "Chờ xuất kho", "Đã xuất kho", "Đã nhận hàng"
+                var processedVatTuList = vatTuList.Select(v => new
+                {
+                    v.ID,
+                    v.VTMaYeucau,
+                    v.TenSanpham,
+                    v.MaSanpham,
+                    v.YCMakho,
+                    v.HangSX,
+                    v.NhaCC,
+                    v.SL,
+                    v.SLCu,
+                    v.SLMoi,
+                    v.DonVi,
+                    v.NgayCanHang,
+                    v.NgayNhapkho,
+                    v.NgayBaohanh,
+                    v.ThoiGianBH,
+                    // Chỉ hiển thị NgayDuyet nếu đã được giám đốc duyệt
+                    NgayDuyet = (v.TrangThai == "Đã duyệt" || 
+                                v.TrangThai == "Đang mua hàng" || 
+                                v.TrangThai == "Chờ xuất kho" ||
+                                v.TrangThai == "Đã xuất kho" || 
+                                v.TrangThai == "Đã nhận hàng") ? v.NgayDuyet : null,
+                    v.TrangThai,
+                    v.GhiChu
+                }).ToList();
+                
+                return Json(processedVatTuList);
             }
         }
 
@@ -742,8 +772,20 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     vatTu.NgayDuyet = DateTime.Now;
                     vatTu.GhiChu = GhiChu; // Lưu ghi chú khi duyệt
                     
-                    // ⚠️ KIỂM TRA: Nếu cùng dự án và cùng mã yêu cầu (base code), và số lượng mới bằng số lượng đã cấp → trạng thái "Hoàn thành"
+                    // Lấy yêu cầu và lưu thông tin người duyệt
                     var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucau != null)
+                    {
+                        var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                        if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                        {
+                            yeucau.NguoiDuyet = maNguoiDuyet;
+                            yeucau.NgayDuyet = DateTime.Now;
+                            _context.yeucau.Update(yeucau);
+                        }
+                    }
+                    
+                    // ⚠️ KIỂM TRA: Nếu cùng dự án và cùng mã yêu cầu (base code), và số lượng mới bằng số lượng đã cấp → trạng thái "Hoàn thành"
                     if (yeucau != null && !string.IsNullOrWhiteSpace(yeucau.YCMaDuan) && !string.IsNullOrWhiteSpace(vatTu.MaSanpham))
                     {
                         // Tính base mã yêu cầu để kiểm tra
@@ -869,6 +911,19 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     vatTu.NgayDuyet = DateTime.Now;
                     vatTu.TrangThai = "Giám đốc - Đã từ chối";
                     vatTu.GhiChu = GhiChu; // Lưu ghi chú khi từ chối
+                    
+                    // Lưu thông tin người từ chối vào bảng yeucau
+                    var yeucauReject = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucauReject != null)
+                    {
+                        var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                        if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                        {
+                            yeucauReject.NguoiDuyet = maNguoiDuyet;
+                            yeucauReject.NgayDuyet = DateTime.Now;
+                            _context.yeucau.Update(yeucauReject);
+                        }
+                    }
                 }
 
                 _context.vtyeucau.Update(vatTu);
@@ -1128,8 +1183,20 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             // Lưu thời gian duyệt (FIFO - ai duyệt trước được ưu tiên)
                             vatTu.NgayDuyet = DateTime.Now;
                             
-                            // ⚠️ KIỂM TRA: Nếu cùng dự án và cùng mã yêu cầu (base code), và số lượng mới bằng số lượng đã cấp → trạng thái "Hoàn thành"
+                            // Lưu thông tin người duyệt vào bảng yeucau
                             var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                            if (yeucau != null)
+                            {
+                                var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                                if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                                {
+                                    yeucau.NguoiDuyet = maNguoiDuyet;
+                                    yeucau.NgayDuyet = DateTime.Now;
+                                    _context.yeucau.Update(yeucau);
+                                }
+                            }
+                            
+                            // ⚠️ KIỂM TRA: Nếu cùng dự án và cùng mã yêu cầu (base code), và số lượng mới bằng số lượng đã cấp → trạng thái "Hoàn thành"
                             if (yeucau != null && !string.IsNullOrWhiteSpace(yeucau.YCMaDuan) && !string.IsNullOrWhiteSpace(vatTu.MaSanpham))
                             {
                                 // Tính base mã yêu cầu để kiểm tra
@@ -1743,6 +1810,19 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             vatTu.TrangThai = "Hoàn thành";
                             vatTu.GhiChu = ghiChu;
                             _context.vtyeucau.Update(vatTu);
+                            
+                            // Lưu thông tin người duyệt vào bảng yeucau
+                            var yeucauHoanThanh = yeucau ?? _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                            if (yeucauHoanThanh != null)
+                            {
+                                var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                                if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                                {
+                                    yeucauHoanThanh.NguoiDuyet = maNguoiDuyet;
+                                    yeucauHoanThanh.NgayDuyet = DateTime.Now;
+                                    _context.yeucau.Update(yeucauHoanThanh);
+                                }
+                            }
                         }
                         processedCount++;
                         continue;
@@ -1764,9 +1844,21 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             vatTu.NgayDuyet = DateTime.Now;
                             vatTu.GhiChu = ghiChu; // Lưu ghi chú khi duyệt
 
+                            // Lưu thông tin người duyệt vào bảng yeucau
+                            var yeucauCheckbox = yeucau ?? _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                            if (yeucauCheckbox != null)
+                            {
+                                var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                                if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                                {
+                                    yeucauCheckbox.NguoiDuyet = maNguoiDuyet;
+                                    yeucauCheckbox.NgayDuyet = DateTime.Now;
+                                    _context.yeucau.Update(yeucauCheckbox);
+                                }
+                            }
+
                             // ⚠️ KIỂM TRA: Nếu cùng dự án và cùng mã yêu cầu (base code),
                             // và số lượng mới bằng số lượng đã cấp trước đó → trạng thái "Hoàn thành"
-                            var yeucauCheckbox = yeucau ?? _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
                             if (yeucauCheckbox != null &&
                                 !string.IsNullOrWhiteSpace(yeucauCheckbox.YCMaDuan) &&
                                 !string.IsNullOrWhiteSpace(vatTu.MaSanpham))
@@ -1899,6 +1991,19 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             vatTu.TrangThai = "Giám đốc - Đã từ chối";
                             vatTu.GhiChu = ghiChu; // Lưu ghi chú khi từ chối
                             _context.vtyeucau.Update(vatTu);
+                            
+                            // Lưu thông tin người từ chối vào bảng yeucau
+                            var yeucauRejectCheckbox = yeucau ?? _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                            if (yeucauRejectCheckbox != null)
+                            {
+                                var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                                if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                                {
+                                    yeucauRejectCheckbox.NguoiDuyet = maNguoiDuyet;
+                                    yeucauRejectCheckbox.NgayDuyet = DateTime.Now;
+                                    _context.yeucau.Update(yeucauRejectCheckbox);
+                                }
+                            }
                         }
                     }
 
@@ -1965,7 +2070,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                     MaYeucau = MaYeucau,
                                     MaDuan = yeucau.YCMaDuan,
                                     MaNguoidung = yeucau.YCMaNguoidung,
-                                    NgayNhapkho = DateTime.Now,
+                                    NgayNhapkho = null,
                                     TrangThai = "Chờ nhập kho"
                                 };
                                 _context.phieunhapkho.Add(newPhieuNhap);
@@ -2465,6 +2570,9 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
 
                 // ================== TẠO MÃ YÊU CẦU ĐÚNG CHUẨN ==================
                 
+                // Kiểm tra xem có file Excel được upload không
+                bool hasExcelFile = false;
+                
                 // Lấy mã sản phẩm (ST) từ tên file Excel hoặc từ form
                 string? stPart = null;
                 
@@ -2477,19 +2585,16 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     
                     if (excelFile != null && !string.IsNullOrEmpty(excelFile.FileName))
                     {
+                        hasExcelFile = true; // Đánh dấu có file Excel được upload
                         try
                         {
-                            // Lấy tên file không có extension
+                            
                             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(excelFile.FileName);
                             
-                            // Xử lý tên file có thể có dấu gạch dưới: thay thế bằng khoảng trắng để parse
+                            
                             fileNameWithoutExt = fileNameWithoutExt.Replace('_', ' ');
                             
-                            // Parse tên file: 
-                            // - "DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (mã vật tư đầu tiên)
-                            // - "251005 STUP10.5013 251203" → lấy "STUP10.5013" (bỏ qua số 6 chữ số)
-                            // - "251208 DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (bỏ qua số 6 chữ số)
-                            // Tách theo khoảng trắng
+                           
                             var parts = fileNameWithoutExt.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                             
                             // Tìm phần không phải số 6 chữ số (mã vật tư đầu tiên)
@@ -2505,9 +2610,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                         break;
                                     }
                                 
-                            // Nếu sau khi parse không tìm thấy (có thể tên file chỉ có số hoặc format khác),
-                            // và chỉ có 1 phần duy nhất, lấy phần đó làm mã vật tư
-                            if (string.IsNullOrWhiteSpace(stPart) && parts.Length == 1)
+                             if (string.IsNullOrWhiteSpace(stPart) && parts.Length == 1)
                                 {
                                     stPart = parts[0];
                             }
@@ -2597,6 +2700,13 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 }
                 // ================================================================
 
+                // Nếu Giám đốc upload Excel và trạng thái là "Đã duyệt", tự động set NgayDuyet và NguoiDuyet
+                if (hasExcelFile && chucVu2 == "Giám đốc" && yeucau.TrangThai == "Đã duyệt")
+                {
+                    yeucau.NgayDuyet = DateTime.Now;
+                    yeucau.NguoiDuyet = "Giám đốc";
+                }
+
                 // Đảm bảo danh sách không null để tránh lỗi khi submit từ Excel
                 YCMaKho ??= new List<string>();
                 TenSanpham ??= new List<string>();
@@ -2627,6 +2737,13 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     var maSanPhamItem = i < MaSanpham.Count ? MaSanpham[i] : null;
                     var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                     var slMoiValue = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
+                    
+                    // Bỏ qua dòng nếu số lượng mới bằng 0 (không cần lưu và hiển thị)
+                    if (slMoiValue == 0)
+                    {
+                        continue;
+                    }
+                    
                     var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
                     DateTime? ngayCanHang = null;
                     if (VTNgayCanHang != null && i < VTNgayCanHang.Count && !string.IsNullOrWhiteSpace(VTNgayCanHang[i]))
@@ -3041,7 +3158,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     MaYeucau = thongTinYeuCau.MaYeucau,
                     MaDuan = thongTinYeuCau.YCMaDuan,
                     MaNguoidung = thongTinYeuCau.YCMaNguoidung,
-                    NgayXuatkho = DateTime.Now,
+                    NgayXuatkho = null,
                     TrangThai = "Đang chuẩn bị hàng"
                 };
                 _context.Add(Phieuxuatkho);
@@ -3052,7 +3169,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     MaMuahang = Mamuahang,
                     MaYeucau = thongTinYeuCau.MaYeucau,
                     MaDuan = thongTinYeuCau.YCMaDuan,
-                    NgayMuahang = DateTime.Now,
+                    NgayMuahang = null,
                     MaNguoidung = thongTinYeuCau.YCMaNguoidung,
                     TrangThai = "Đang chờ báo giá"
                 };
@@ -3066,7 +3183,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     MaMuahang = Mamuahang,
                     MaYeucau = thongTinYeuCau.MaYeucau,
                     MaDuan = thongTinYeuCau.YCMaDuan,
-                    NgayMuahang = DateTime.Now,
+                    NgayMuahang = null,
                     MaNguoidung = thongTinYeuCau.YCMaNguoidung,
                     TrangThai = "Đang chờ báo giá"
                 };
@@ -3081,7 +3198,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     MaYeucau = thongTinYeuCau.MaYeucau,
                     MaDuan = thongTinYeuCau.YCMaDuan,
                     MaNguoidung = thongTinYeuCau.YCMaNguoidung,
-                    NgayXuatkho = DateTime.Now,
+                    NgayXuatkho = null,
                     TrangThai = "Đang chuẩn bị hàng"
                 };
                 _context.Add(Phieuxuatkho);
@@ -3205,28 +3322,32 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
 
                     if (soLuongThieu > 0)
                     {
-                        // Nếu có số lượng thiếu, chỉ cập nhật nếu chưa có trạng thái "Chờ xuất kho", "Đã xuất kho" hoặc "Đang mua hàng"
-                        if (VattuYC.TrangThai != "Chờ xuất kho" && VattuYC.TrangThai != "Đã xuất kho" && VattuYC.TrangThai != "Đang mua hàng")
+                        // Không thêm vật tư có trạng thái "Hoàn thành" vào phiếu mua hàng
+                        if (VattuYC.TrangThai != "Hoàn thành")
                         {
-                            VattuYC.TrangThai = "Đang mua hàng";
-                        }
-                        var VTPhieumuahang = new vtphieumuahang
-                        {
-                            MaMuahang = Mamuahang,
-                            MaYeucau = VattuYC.VTMaYeucau,
-                            TenSanpham = VattuYC.TenSanpham,
-                            MaSanpham = VattuYC.MaSanpham,
-                            Makho = VattuYC.YCMakho,
-                            HangSX = VattuYC.HangSX,
-                            NhaCC = VattuYC.NhaCC,
-                            DonVi = VattuYC.DonVi,
-                            SL = soLuongThieu,
-                            NgayBaohanh = VattuYC.NgayBaohanh,
-                            ThoiGianBH = VattuYC.ThoiGianBH,
-                            TrangThai = "Đang chờ báo giá"
-                        };
+                            // Nếu có số lượng thiếu, chỉ cập nhật nếu chưa có trạng thái "Chờ xuất kho", "Đã xuất kho" hoặc "Đang mua hàng"
+                            if (VattuYC.TrangThai != "Chờ xuất kho" && VattuYC.TrangThai != "Đã xuất kho" && VattuYC.TrangThai != "Đang mua hàng")
+                            {
+                                VattuYC.TrangThai = "Đang mua hàng";
+                            }
+                            var VTPhieumuahang = new vtphieumuahang
+                            {
+                                MaMuahang = Mamuahang,
+                                MaYeucau = VattuYC.VTMaYeucau,
+                                TenSanpham = VattuYC.TenSanpham,
+                                MaSanpham = VattuYC.MaSanpham,
+                                Makho = VattuYC.YCMakho,
+                                HangSX = VattuYC.HangSX,
+                                NhaCC = VattuYC.NhaCC,
+                                DonVi = VattuYC.DonVi,
+                                SL = soLuongThieu,
+                                NgayBaohanh = VattuYC.NgayBaohanh,
+                                ThoiGianBH = VattuYC.ThoiGianBH,
+                                TrangThai = "Đang chờ báo giá"
+                            };
 
-                        _context.Add(VTPhieumuahang);
+                            _context.Add(VTPhieumuahang);
+                        }
                     }
                     else
                     {
@@ -3248,25 +3369,29 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 }
                 else
                 {
-                    VattuYC.TrangThai = "Đang mua hàng";
-                    var VTPhieumuahang = new vtphieumuahang
+                    // Không thêm vật tư có trạng thái "Hoàn thành" vào phiếu mua hàng
+                    if (VattuYC.TrangThai != "Hoàn thành")
                     {
-                        MaMuahang = Mamuahang,
-                        MaYeucau = VattuYC.VTMaYeucau,
-                        TenSanpham = VattuYC.TenSanpham,
-                        MaSanpham = VattuYC.MaSanpham,
-                        Makho = VattuYC.YCMakho,
-                        HangSX = VattuYC.HangSX,
-                        NhaCC = VattuYC.NhaCC,
-                        DonVi = VattuYC.DonVi,
-                        SL = soLuongYeuCauThucTe,
-                        NgayBaohanh = VattuYC.NgayBaohanh,
-                        ThoiGianBH = VattuYC.ThoiGianBH,
-                        TrangThai = "Đang chờ báo giá"
-                    };
+                        VattuYC.TrangThai = "Đang mua hàng";
+                        var VTPhieumuahang = new vtphieumuahang
+                        {
+                            MaMuahang = Mamuahang,
+                            MaYeucau = VattuYC.VTMaYeucau,
+                            TenSanpham = VattuYC.TenSanpham,
+                            MaSanpham = VattuYC.MaSanpham,
+                            Makho = VattuYC.YCMakho,
+                            HangSX = VattuYC.HangSX,
+                            NhaCC = VattuYC.NhaCC,
+                            DonVi = VattuYC.DonVi,
+                            SL = soLuongYeuCauThucTe,
+                            NgayBaohanh = VattuYC.NgayBaohanh,
+                            ThoiGianBH = VattuYC.ThoiGianBH,
+                            TrangThai = "Đang chờ báo giá"
+                        };
 
-                    _context.vtyeucau.Update(VattuYC);
-                    _context.Add(VTPhieumuahang);
+                        _context.vtyeucau.Update(VattuYC);
+                        _context.Add(VTPhieumuahang);
+                    }
                 }
             }
 
@@ -3444,7 +3569,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     MaYeucau = maYeucauDacBiet, // Sử dụng mã yêu cầu đặc biệt
                     MaDuan = thongTinYeuCau.YCMaDuan,
                     MaNguoidung = maNguoiTraHang, // Người đã nhận hàng = người phải trả (Quỳnh)
-                    NgayNhapkho = DateTime.Now,
+                    NgayNhapkho = null,
                     TrangThai = trangThaiPhieuNhap
                 };
                 _context.phieunhapkho.Add(phieuNhapTra);
@@ -3532,6 +3657,20 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 .Where(vt => NormalizeMaYeucauBase(vt.MaYeucau) == maYeuCauChuan && vt.MaSanpham == maSanPham)
                 .Sum(vt => vt.SL ?? 0);
 
+            // Fallback: nếu chưa có phiếu xuất kho, lấy số lượng đã xuất/hoàn thành từ các yêu cầu liên quan
+            // Tránh trường hợp yêu cầu trước đã cấp kho nhưng chưa có chi tiết vtphieuxuatkho → không tạo phiếu mua hàng thừa
+            // Load về memory trước để có thể dùng NormalizeMaYeucauBase
+            var daXuatTuYeuCau = _context.vtyeucau
+                .Where(vt => vt.MaSanpham == maSanPham &&
+                    (vt.TrangThai == "Đã xuất kho" ||
+                     vt.TrangThai == "Hoàn thành" ||
+                     vt.TrangThai == "Đã lấy hàng"))
+                .ToList() // Load về memory để có thể dùng NormalizeMaYeucauBase
+                .Where(vt => NormalizeMaYeucauBase(vt.VTMaYeucau) == maYeuCauChuan)
+                .Sum(vt => Math.Max(vt.SLMoi ?? 0, vt.SL ?? 0));
+
+            var tongDaXuat = Math.Max(daXuat, daXuatTuYeuCau);
+
             var daTra = dsDaNhapTra
                 .Where(vt => NormalizeMaYeucauBase(vt.MaYeucau) == maYeuCauChuan
                     && vt.MaSanpham == maSanPham
@@ -3539,7 +3678,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     && vt.DiengiaiNhapKho.IndexOf("trả", StringComparison.OrdinalIgnoreCase) >= 0)
                 .Sum(vt => vt.SL ?? 0);
 
-            return Math.Max(0, daXuat - daTra);
+            return Math.Max(0, tongDaXuat - daTra);
         }
 
         
@@ -3762,6 +3901,12 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             // Kiểm tra xem có cần tạo phiếu xuất kho hoặc phiếu mua hàng không
             foreach (var VattuYC in danhSachVatTuYC)
             {
+                // Bỏ qua vật tư có trạng thái "Hoàn thành" - không tạo phiếu mua hàng cho vật tư này
+                if (VattuYC.TrangThai == "Hoàn thành")
+                {
+                    continue;
+                }
+
                 // Kiểm tra xem vật tư này đã được xử lý chưa (đã có trong bất kỳ phiếu xuất kho hoặc phiếu mua hàng nào của yêu cầu này)
                 var existingVTPhieuXuatKho = _context.vtphieuxuatkho
                     .Any(vt => vt.MaYeucau == Mayeucau && vt.MaSanpham == VattuYC.MaSanpham);
@@ -3824,7 +3969,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     MaYeucau = thongTinYeuCau.MaYeucau,
                     MaDuan = thongTinYeuCau.YCMaDuan,
                     MaNguoidung = thongTinYeuCau.YCMaNguoidung,
-                    NgayXuatkho = DateTime.Now,
+                    NgayXuatkho = null,
                     TrangThai = "Đang chuẩn bị hàng"
                 };
                 _context.Add(Phieuxuatkho);
@@ -3839,7 +3984,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     MaMuahang = Mamuahang,
                     MaYeucau = thongTinYeuCau.MaYeucau,
                     MaDuan = thongTinYeuCau.YCMaDuan,
-                    NgayMuahang = DateTime.Now,
+                    NgayMuahang = null,
                     MaNguoidung = thongTinYeuCau.YCMaNguoidung,
                     TrangThai = "Đang chờ báo giá"
                 };
@@ -3865,6 +4010,12 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             // Xử lý từng vật tư đã duyệt (theo thứ tự FIFO)
             foreach (var VattuYC in danhSachVatTuYCSapXep)
             {
+                // Bỏ qua vật tư có trạng thái "Hoàn thành" - không tạo phiếu mua hàng cho vật tư này
+                if (VattuYC.TrangThai == "Hoàn thành")
+                {
+                    continue;
+                }
+
                 // Kiểm tra xem vật tư này đã được xử lý chưa (đã có trong bất kỳ phiếu xuất kho hoặc phiếu mua hàng nào của yêu cầu này)
                 var existingVTPhieuXuatKho = _context.vtphieuxuatkho
                     .Any(vt => vt.MaYeucau == Mayeucau && vt.MaSanpham == VattuYC.MaSanpham);
@@ -4059,30 +4210,34 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
 
                     if (soLuongThieu > 0 && isPhieuMuaHangCreated)
                     {
-                        // CHỈ cập nhật trạng thái nếu vật tư chưa có trạng thái "Chờ xuất kho", "Đã xuất kho", "Hoàn thành" hoặc "Đang mua hàng"
-                        // Nếu đã có trạng thái "Chờ xuất kho" hoặc "Đã xuất kho", giữ nguyên (vì đã xuất rồi, phần thiếu sẽ mua bổ sung)
-                        // Nếu đã có trạng thái "Hoàn thành", giữ nguyên (vì số lượng mới = số lượng đã cấp, không cần mua/xuất kho)
-                        // Nếu đã có trạng thái "Đang mua hàng", giữ nguyên (vì đã được xử lý trước đó)
-                        if (VattuYC.TrangThai != "Chờ xuất kho" && VattuYC.TrangThai != "Đã xuất kho" && VattuYC.TrangThai != "Hoàn thành" && VattuYC.TrangThai != "Đang mua hàng")
+                        // Không thêm vật tư có trạng thái "Hoàn thành" vào phiếu mua hàng
+                        if (VattuYC.TrangThai != "Hoàn thành")
                         {
-                            VattuYC.TrangThai = "Đang mua hàng";
+                            // CHỈ cập nhật trạng thái nếu vật tư chưa có trạng thái "Chờ xuất kho", "Đã xuất kho", "Hoàn thành" hoặc "Đang mua hàng"
+                            // Nếu đã có trạng thái "Chờ xuất kho" hoặc "Đã xuất kho", giữ nguyên (vì đã xuất rồi, phần thiếu sẽ mua bổ sung)
+                            // Nếu đã có trạng thái "Hoàn thành", giữ nguyên (vì số lượng mới = số lượng đã cấp, không cần mua/xuất kho)
+                            // Nếu đã có trạng thái "Đang mua hàng", giữ nguyên (vì đã được xử lý trước đó)
+                            if (VattuYC.TrangThai != "Chờ xuất kho" && VattuYC.TrangThai != "Đã xuất kho" && VattuYC.TrangThai != "Hoàn thành" && VattuYC.TrangThai != "Đang mua hàng")
+                            {
+                                VattuYC.TrangThai = "Đang mua hàng";
+                            }
+                            var VTPhieumuahang = new vtphieumuahang
+                            {
+                                MaMuahang = Mamuahang,
+                                MaYeucau = VattuYC.VTMaYeucau,
+                                TenSanpham = VattuYC.TenSanpham,
+                                MaSanpham = VattuYC.MaSanpham,
+                                Makho = VattuYC.YCMakho,
+                                HangSX = VattuYC.HangSX,
+                                NhaCC = VattuYC.NhaCC,
+                                DonVi = VattuYC.DonVi,
+                                SL = soLuongThieu,
+                                NgayBaohanh = VattuYC.NgayBaohanh,
+                                ThoiGianBH = VattuYC.ThoiGianBH,
+                                TrangThai = "Đang chờ báo giá"
+                            };
+                            _context.Add(VTPhieumuahang);
                         }
-                        var VTPhieumuahang = new vtphieumuahang
-                        {
-                            MaMuahang = Mamuahang,
-                            MaYeucau = VattuYC.VTMaYeucau,
-                            TenSanpham = VattuYC.TenSanpham,
-                            MaSanpham = VattuYC.MaSanpham,
-                            Makho = VattuYC.YCMakho,
-                            HangSX = VattuYC.HangSX,
-                            NhaCC = VattuYC.NhaCC,
-                            DonVi = VattuYC.DonVi,
-                            SL = soLuongThieu,
-                            NgayBaohanh = VattuYC.NgayBaohanh,
-                            ThoiGianBH = VattuYC.ThoiGianBH,
-                            TrangThai = "Đang chờ báo giá"
-                        };
-                        _context.Add(VTPhieumuahang);
                     }
                     else if (soLuongXuat > 0 && soLuongThieu == 0)
                     {
@@ -4170,30 +4325,34 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     // Không có trong kho tổng và không cần nhập kho, cần mua hàng
                     if (isPhieuMuaHangCreated)
                     {
-                        // CHỈ cập nhật trạng thái nếu vật tư chưa có trạng thái "Chờ xuất kho", "Đã xuất kho", "Hoàn thành" hoặc "Đang mua hàng"
-                        // Nếu đã có trạng thái "Chờ xuất kho", "Đã xuất kho" hoặc "Đang mua hàng", giữ nguyên (vì đã được xử lý trước đó)
-                        // Nếu đã có trạng thái "Hoàn thành", giữ nguyên (vì số lượng mới = số lượng đã cấp, không cần mua/xuất kho)
-                        if (VattuYC.TrangThai != "Chờ xuất kho" && VattuYC.TrangThai != "Đã xuất kho" && VattuYC.TrangThai != "Hoàn thành" && VattuYC.TrangThai != "Đang mua hàng")
+                        // Không thêm vật tư có trạng thái "Hoàn thành" vào phiếu mua hàng
+                        if (VattuYC.TrangThai != "Hoàn thành")
                         {
-                            VattuYC.TrangThai = "Đang mua hàng";
+                            // CHỈ cập nhật trạng thái nếu vật tư chưa có trạng thái "Chờ xuất kho", "Đã xuất kho", "Hoàn thành" hoặc "Đang mua hàng"
+                            // Nếu đã có trạng thái "Chờ xuất kho", "Đã xuất kho" hoặc "Đang mua hàng", giữ nguyên (vì đã được xử lý trước đó)
+                            // Nếu đã có trạng thái "Hoàn thành", giữ nguyên (vì số lượng mới = số lượng đã cấp, không cần mua/xuất kho)
+                            if (VattuYC.TrangThai != "Chờ xuất kho" && VattuYC.TrangThai != "Đã xuất kho" && VattuYC.TrangThai != "Hoàn thành" && VattuYC.TrangThai != "Đang mua hàng")
+                            {
+                                VattuYC.TrangThai = "Đang mua hàng";
+                            }
+                            var VTPhieumuahang = new vtphieumuahang
+                            {
+                                MaMuahang = Mamuahang,
+                                MaYeucau = VattuYC.VTMaYeucau,
+                                TenSanpham = VattuYC.TenSanpham,
+                                MaSanpham = VattuYC.MaSanpham,
+                                Makho = VattuYC.YCMakho,
+                                HangSX = VattuYC.HangSX,
+                                NhaCC = VattuYC.NhaCC,
+                                DonVi = VattuYC.DonVi,
+                                SL = VattuYC.SL,
+                                NgayBaohanh = VattuYC.NgayBaohanh,
+                                ThoiGianBH = VattuYC.ThoiGianBH,
+                                TrangThai = "Đang chờ báo giá"
+                            };
+                            _context.vtyeucau.Update(VattuYC);
+                            _context.Add(VTPhieumuahang);
                         }
-                        var VTPhieumuahang = new vtphieumuahang
-                        {
-                            MaMuahang = Mamuahang,
-                            MaYeucau = VattuYC.VTMaYeucau,
-                            TenSanpham = VattuYC.TenSanpham,
-                            MaSanpham = VattuYC.MaSanpham,
-                            Makho = VattuYC.YCMakho,
-                            HangSX = VattuYC.HangSX,
-                            NhaCC = VattuYC.NhaCC,
-                            DonVi = VattuYC.DonVi,
-                            SL = VattuYC.SL,
-                            NgayBaohanh = VattuYC.NgayBaohanh,
-                            ThoiGianBH = VattuYC.ThoiGianBH,
-                            TrangThai = "Đang chờ báo giá"
-                        };
-                        _context.vtyeucau.Update(VattuYC);
-                        _context.Add(VTPhieumuahang);
                     }
                 }
             }
@@ -4216,11 +4375,16 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 if (phieuXuatKhoDauTien != null && !string.IsNullOrEmpty(phieuXuatKhoDauTien.MaNguoidung))
                 {
                     maNguoiTraHang = phieuXuatKhoDauTien.MaNguoidung;
+                }
+                
+                // Đảm bảo lấy được tên người từ database nếu chưa có hoặc cần cập nhật
+                if (!string.IsNullOrEmpty(maNguoiTraHang))
+                {
                     var nguoiTraHang = _context.nguoidungs
                         .FirstOrDefault(n => n.MaNguoidung == maNguoiTraHang);
-                    if (nguoiTraHang != null)
+                    if (nguoiTraHang != null && !string.IsNullOrEmpty(nguoiTraHang.TenNguoidung))
                     {
-                        tenNguoiTraHang = nguoiTraHang.TenNguoidung ?? "";
+                        tenNguoiTraHang = nguoiTraHang.TenNguoidung;
                     }
                 }
 
@@ -4241,33 +4405,13 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
 
                 if (existingYeucauDacBiet == null)
                 {
-                    var nguoiTraHangInfo = _context.nguoidungs
-                        .FirstOrDefault(n => n.MaNguoidung == maNguoiTraHang);
+                    // Với trường hợp yêu cầu sau nhỏ hơn yêu cầu trước, 
+                    // đặt trạng thái "Chờ nhập kho" để bộ phận kho duyệt (không cần giám đốc và QLDA duyệt)
+                    string trangThaiYeucau = "Chờ nhập kho";
 
-                    // Kiểm tra nếu người tạo là quản lý dự án
-                    string trangThaiYeucau = "Chờ giám đốc duyệt";
-                    if (!string.IsNullOrEmpty(thongTinYeuCau.YCMaDuan))
-                    {
-                        var duan = _context.duans.FirstOrDefault(d => d.MaDuan == thongTinYeuCau.YCMaDuan);
-                        string boPhanNguoiTra = nguoiTraHangInfo?.Bophan ?? "";
-                        string chucVuNguoiTra = nguoiTraHangInfo?.Chucvu ?? "";
-                        
-                        if (duan != null && !string.IsNullOrEmpty(duan.MaNguoiQLDA))
-                        {
-                            var nguoiQLDA = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == duan.MaNguoiQLDA);
-                            if (nguoiQLDA != null && (maNguoiTraHang == nguoiQLDA.MaNguoidung || 
-                                boPhanNguoiTra == nguoiQLDA.Bophan || 
-                                chucVuNguoiTra.Contains("Quản lý dự án") || 
-                                chucVuNguoiTra.Contains("Quản lí dự án")))
-                            {
-                                trangThaiYeucau = "Chờ giám đốc duyệt";
-                            }
-                            else
-                            {
-                                trangThaiYeucau = "Chờ quản lý dự án duyệt";
-                            }
-                        }
-                    }
+                    // Lấy thông tin giám đốc từ session (người đang duyệt yêu cầu)
+                    string maGiamDoc = HttpContext.Session.GetString("MaNguoidung") ?? "";
+                    DateTime ngayPheDuyet = DateTime.Now;
 
                     var newYeucauDacBiet = new yeucau
                     {
@@ -4276,10 +4420,25 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                         YCMaNguoidung = maNguoiTraHang,
                         NguoiYeucau = tenNguoiTraHang,
                         NgayYeucau = DateTime.Now,
-                        TrangThai = trangThaiYeucau
+                        TrangThai = trangThaiYeucau,
+                        // Lưu thông tin người duyệt và ngày phê duyệt là giám đốc
+                        NguoiDuyet = maGiamDoc,
+                        NgayDuyet = ngayPheDuyet
                     };
                     _context.yeucau.Add(newYeucauDacBiet);
                     _context.SaveChanges();
+                }
+                else
+                {
+                    // Nếu yêu cầu đặc biệt đã tồn tại, cập nhật thông tin người duyệt và ngày phê duyệt
+                    string maGiamDoc = HttpContext.Session.GetString("MaNguoidung") ?? "";
+                    if (!string.IsNullOrEmpty(maGiamDoc))
+                    {
+                        existingYeucauDacBiet.NguoiDuyet = maGiamDoc;
+                        existingYeucauDacBiet.NgayDuyet = DateTime.Now;
+                        _context.yeucau.Update(existingYeucauDacBiet);
+                        _context.SaveChanges();
+                    }
                 }
 
                 // Tạo mã phiếu nhập kho
@@ -4293,29 +4452,9 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     sttPNK++;
                 }
 
-                // Xác định trạng thái phiếu nhập kho
-                string trangThaiPhieuNhap = "Chờ giám đốc duyệt";
-                if (!string.IsNullOrEmpty(thongTinYeuCau.YCMaDuan))
-                {
-                    var duan = _context.duans.FirstOrDefault(d => d.MaDuan == thongTinYeuCau.YCMaDuan);
-                    if (duan != null && !string.IsNullOrEmpty(duan.MaNguoiQLDA))
-                    {
-                        var nguoiTraHangInfo = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == maNguoiTraHang);
-                        var nguoiQLDA = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == duan.MaNguoiQLDA);
-                        if (nguoiQLDA != null && nguoiTraHangInfo != null &&
-                            (maNguoiTraHang == nguoiQLDA.MaNguoidung || 
-                             nguoiTraHangInfo.Bophan == nguoiQLDA.Bophan || 
-                             nguoiTraHangInfo.Chucvu?.Contains("Quản lý dự án") == true || 
-                             nguoiTraHangInfo.Chucvu?.Contains("Quản lí dự án") == true))
-                        {
-                            trangThaiPhieuNhap = "Chờ giám đốc duyệt";
-                        }
-                        else
-                        {
-                            trangThaiPhieuNhap = "Chờ quản lý dự án duyệt";
-                        }
-                    }
-                }
+                // Với trường hợp yêu cầu sau nhỏ hơn yêu cầu trước,
+                // đặt trạng thái "Chờ nhập kho" để bộ phận kho duyệt (không cần giám đốc và QLDA duyệt)
+                string trangThaiPhieuNhap = "Chờ nhập kho";
 
                 var phieuNhapTra = new phieunhapkho
                 {
@@ -4356,6 +4495,26 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             }
 
             _context.SaveChanges();
+
+            // Kiểm tra và xóa phiếu mua hàng rỗng (không có vật tư nào)
+            if (isPhieuMuaHangCreated && existingPhieuMuaHang == null)
+            {
+                var soLuongVatTuTrongPMH = _context.vtphieumuahang
+                    .Count(vt => vt.MaMuahang == Mamuahang);
+                
+                if (soLuongVatTuTrongPMH == 0)
+                {
+                    var PhieuMuaHangRong = _context.phieumuahang
+                        .FirstOrDefault(p => p.MaMuahang == Mamuahang);
+                    if (PhieuMuaHangRong != null)
+                    {
+                        _context.phieumuahang.Remove(PhieuMuaHangRong);
+                        _context.SaveChanges();
+                        Console.WriteLine($"Đã xóa phiếu mua hàng rỗng: {Mamuahang}");
+                    }
+                }
+            }
+
             Console.WriteLine("Đã xử lý phiếu yêu cầu cho các vật tư đã duyệt.");
         }
 
@@ -4522,6 +4681,11 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 {
                     TempData["Error"] = "Không thể hoàn tất phiếu vì vẫn còn vật tư chưa được người yêu cầu xác nhận.";
                     return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "Giamdoc" });
+                }
+
+                if (!Phieuxuatkho.NgayXuatkho.HasValue)
+                {
+                    Phieuxuatkho.NgayXuatkho = DateTime.Now;
                 }
 
                 foreach (var VTxuatkho in VTphieuxuatkho)
@@ -4740,7 +4904,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             try
             {
                 // Tạo mã phiếu mua hàng duy nhất
-                int STT = 0;
+                int STT = 1;
                 string MaMuahang;
                 do
                 {
@@ -4882,6 +5046,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 else if (boPhan2 == "BP mua hàng")
                 {
                     Phieumuahang.TrangThai = "Đã nhận hàng";
+                    // Lưu thời gian mua hàng khi bộ phận mua hàng nhận hàng
+                    Phieumuahang.NgayMuahang = DateTime.Now;
                     Taophieunhapkhobyphieumuahang(MaMuahang, phieunhapkho, vtphieunhapkho, phieumuahang, vtphieumuahang);
                 }
                 foreach (var VTPhieumuahang in VTPhieumuahanglist)
@@ -4944,7 +5110,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 MaYeucau = Phieumuahang.MaYeucau,
                 MaDuan = Phieumuahang.MaDuan,
                 MaNguoidung = Phieumuahang.MaNguoidung,
-                NgayNhapkho = DateTime.Now,
+                NgayNhapkho = null,
                 TrangThai = "Chờ nhập kho"
             };
             _context.phieunhapkho.Add(newphieunhapkho);
@@ -5112,7 +5278,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 }
 
                 phieunhapkho.MaNhapkho = MaNhapkho;
-                phieunhapkho.NgayNhapkho = DateTime.Now;
+                phieunhapkho.NgayNhapkho = null;
 
                 // Kiểm tra nếu người tạo là giám đốc
                 bool isGiamDoc = chucVu == "Giám đốc";
@@ -5506,6 +5672,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 {
                     // Kho xử lý nhập kho
                     Phieunhapkho.TrangThai = "Đã nhập kho";
+                    // Lưu thời gian nhập kho khi bộ phận kho nhập kho
+                    Phieunhapkho.NgayNhapkho = DateTime.Now;
                     bool isNhapKhoDuanOrCaNhan = IsNhapKhoDuanOrCaNhan(Phieunhapkho);
                     
                     // Cập nhật tồn kho khi nhập hàng
@@ -5813,7 +5981,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                     MaYeucau = Phieunhapkho.MaYeucau,
                                     MaDuan = yeucau?.YCMaDuan,
                                     MaNguoidung = yeucau?.YCMaNguoidung,
-                                    NgayXuatkho = DateTime.Now,
+                                    NgayXuatkho = null,
                                     TrangThai = "Đang chuẩn bị hàng"
                                 };
                                 _context.phieuxuatkho.Add(phieuXuatLienQuan);
@@ -5897,7 +6065,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             var Phieunhapkho = _context.phieunhapkho.FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
             var VTPhieunhapkholist = _context.vtphieunhapkho.Where(vt => vt.MaNhapkho == MaNhapkho).ToList();
 
-            int STT = 0;
+            int STT = 1;
             string MaXuatkho;
             // Tạo mã phiếu nhập kho duy nhất
             while (true)

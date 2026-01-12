@@ -34,7 +34,7 @@
         <div class="menu-kho">
             <ul class="timkiem">
                 <li class="menu-yeucau">
-                    <a href="/Giamdoc/Yeucau/Yeucau">Vật tư yêu cầu</a>
+                    <a href="/Giamdoc/Yeucau/Yeucau">Yêu cầu vật tư</a>
                     <span class="badge">
                         <span class="notification"></span> 
                     </span>
@@ -89,6 +89,7 @@
                         <td>Ngày yêu cầu</td>
                         <td>Trạng thái</td>
                         <td>Ngày duyệt</td>
+                        <td>Tên người duyệt</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -126,6 +127,16 @@
                                 @if (ngayDuyetSomNhat.HasValue)
                                 {
                                     <span>@ngayDuyetSomNhat.Value.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #999;">-</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.NguoiDuyet))
+                                {
+                                    <span>@item.NguoiDuyet</span>
                                 }
                                 else
                                 {
@@ -216,7 +227,7 @@
                             <td>@item.NhaCC</td>
                             <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
                             <td style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
-                            <td  style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
+                            <td style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
                             <td class="trangthai-vattu trangthai-column" style="display: none;">
@@ -271,12 +282,27 @@
             @if (Context.Session.GetString("Chucvu") == "Giám đốc" && Model.VTyeucau.Any())
             {
                 <div class="action-duyet-right">
-                    <button type="button" id="btnXacNhan" class="btn-xacnhan" style="display:none;" onclick="console.log('[DEBUG YEUCAU] Nút Xác nhận được click'); confirmBulkAction();">Xác nhận</button>
+                    <button type="button" id="btnXacNhan" class="btn-xacnhan" style="display:none;" onclick="showConfirmPopup();">Duyệt</button>
                     <button type="button" id="btnCancel" class="btn-cancel" style="display:none;" onclick="clearBulkAction()">Cancel</button>
                 </div>
             }
         </div>
     </nav>
+    <!-- Popup xác nhận tùy chỉnh -->
+    <div id="customConfirmPopup" class="custom-popup-overlay" style="display: none;" onclick="if(event.target === this) closeConfirmPopup();">
+        <div class="custom-popup-content" onclick="event.stopPropagation();">
+            <div class="custom-popup-header">
+                <h3>Xác nhận duyệt</h3>
+            </div>
+            <div class="custom-popup-body">
+                <p>Bạn có chắc chắn muốn duyệt các vật tư đã chọn?</p>
+            </div>
+            <div class="custom-popup-footer">
+                <button type="button" class="btn-popup-confirm" onclick="handlePopupConfirm()">Xác nhận</button>
+                <button type="button" class="btn-popup-cancel" onclick="closeConfirmPopup()">Cancel</button>
+            </div>
+        </div>
+    </div>
     @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
     @{
         var requestToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
@@ -468,7 +494,7 @@
                                 <td>${nhaCC || '-'}</td>
                                 <td style="text-align: center;">${slCuVal ?? '-'}</td>
                                 <td style="text-align: center;">${slMoiVal ?? '-'}</td>
-                                <td  style="text-align: center;">${slVal ?? '-'}</td>
+                                <td style="text-align: center;">${slVal ?? '-'}</td>
                                 <td>${donViVal}</td>
                                 <td>${ngayCanHangDisplay}</td>`;
                             
@@ -650,6 +676,27 @@
             // Cập nhật nút hành động
             updateActionButtons();
         });
+
+        // Hiển thị popup xác nhận tùy chỉnh
+        function showConfirmPopup() {
+            console.log("[DEBUG YEUCAU] showConfirmPopup được gọi");
+            $('#customConfirmPopup').fadeIn(200);
+        }
+
+        // Đóng popup xác nhận
+        function closeConfirmPopup() {
+            console.log("[DEBUG YEUCAU] closeConfirmPopup được gọi");
+            $('#customConfirmPopup').fadeOut(200);
+        }
+
+        // Xử lý khi ấn nút Xác nhận trong popup
+        function handlePopupConfirm() {
+            console.log("[DEBUG YEUCAU] handlePopupConfirm được gọi");
+            closeConfirmPopup();
+            
+            // Gọi trực tiếp hàm xử lý duyệt
+            confirmBulkAction();
+        }
 
         function confirmBulkAction() {
             console.log("[DEBUG YEUCAU] confirmBulkAction được gọi");
@@ -904,6 +951,75 @@
         .yeucau-info {
             font-size: 16px;
             color: #333;
+        }
+        /* Popup xác nhận tùy chỉnh */
+        .custom-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .custom-popup-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            min-width: 400px;
+            max-width: 500px;
+            overflow: hidden;
+        }
+        .custom-popup-header {
+            background-color: #1976d2;
+            color: white;
+            padding: 15px 20px;
+        }
+        .custom-popup-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .custom-popup-body {
+            padding: 20px;
+            font-size: 15px;
+            color: #333;
+        }
+        .custom-popup-footer {
+            padding: 15px 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn-popup-confirm {
+            padding: 8px 20px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .btn-popup-confirm:hover {
+            background-color: #1565c0;
+        }
+        .btn-popup-cancel {
+            padding: 8px 20px;
+            background-color: #9e9e9e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .btn-popup-cancel:hover {
+            background-color: #757575;
         }
     </style>
 </body>

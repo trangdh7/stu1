@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Phieunhapkho";
     Layout = "~/Areas/TruongBPKho/Views/Layout/Layout.cshtml";
 }
@@ -107,7 +107,7 @@
                             <td>@item.MaYeucau</td>
                             <td>@item.MaDuan</td>
                             <td>@item.MaNguoidung</td>
-                            <td>@item.NgayNhapkho?.ToString("dd/MM/yyyy")</td>
+                            <td>@(item.TrangThai == "Đã nhập kho" ? item.NgayNhapkho?.ToString("dd/MM/yyyy") : "")</td>
                             <td>
                                 <span>@item.TrangThai</span>
                             </td>

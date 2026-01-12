@@ -292,6 +292,8 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                  (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')) ||
                  hasItemsAwaitingQuote)) {
                 $('#submitPhieumuahang').show();
+                // Đảm bảo action-buttons cũng được hiển thị
+                $('#action-buttons').show();
             } else {
                 $('#submitPhieumuahang').hide();
             }
@@ -407,12 +409,12 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                     $('#rejectPhieumuahang').show();
                     $('#action-buttons').show();
                 } else {
+                    // Ẩn nút duyệt/từ chối
                     $('#approvePhieumuahang').hide();
                     $('#rejectPhieumuahang').hide();
+                    // Hiển thị action-buttons nếu nút "Gửi báo giá" đang visible
                     if ($('#submitPhieumuahang').is(':visible')) {
                         $('#action-buttons').show();
-                    } else {
-                        $('#action-buttons').hide();
                     }
                 }
             } else if (!isGiamdoc) {
@@ -709,44 +711,42 @@ $(document).on('click', '#approvePhieumuahang', function() {
         return;
     }
     
-    if (!confirm("Bạn có chắc chắn muốn duyệt phiếu mua hàng này?")) {
-        return;
-    }
-    
-    const pathSegments = window.location.pathname.split('/');
-    const area = pathSegments.length > 1 ? pathSegments[1] : '';
-    const url = `/${area}/Yeucau/XuLyPhieumuahang`;
-    
-    // Tạo form để submit
-    const form = $('<form>', {
-        method: 'POST',
-        action: url
-    });
-    
-    form.append($('<input>', {
-        type: 'hidden',
-        name: 'MaMuahang',
-        value: selectedMamuahang
-    }));
-    
-    form.append($('<input>', {
-        type: 'hidden',
-        name: 'action',
-        value: 'approve'
-    }));
-    
-    // Thêm token chống CSRF nếu có
-    const token = $('input[name="__RequestVerificationToken"]').val();
-    if (token) {
+    if (window.confirm("Bạn có chắc chắn muốn duyệt phiếu mua hàng này?")) {
+        const pathSegments = window.location.pathname.split('/');
+        const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        const url = `/${area}/Yeucau/XuLyPhieumuahang`;
+        
+        // Tạo form để submit
+        const form = $('<form>', {
+            method: 'POST',
+            action: url
+        });
+        
         form.append($('<input>', {
             type: 'hidden',
-            name: '__RequestVerificationToken',
-            value: token
+            name: 'MaMuahang',
+            value: selectedMamuahang
         }));
+        
+        form.append($('<input>', {
+            type: 'hidden',
+            name: 'action',
+            value: 'approve'
+        }));
+        
+        // Thêm token chống CSRF nếu có
+        const token = $('input[name="__RequestVerificationToken"]').val();
+        if (token) {
+            form.append($('<input>', {
+                type: 'hidden',
+                name: '__RequestVerificationToken',
+                value: token
+            }));
+        }
+        
+        $('body').append(form);
+        form.submit();
     }
-    
-    $('body').append(form);
-    form.submit();
 });
 
 // Xử lý nút từ chối phiếu mua hàng
@@ -756,42 +756,40 @@ $(document).on('click', '#rejectPhieumuahang', function() {
         return;
     }
     
-    if (!confirm("Bạn có chắc chắn muốn từ chối phiếu mua hàng này?")) {
-        return;
-    }
-    
-    const pathSegments = window.location.pathname.split('/');
-    const area = pathSegments.length > 1 ? pathSegments[1] : '';
-    const url = `/${area}/Yeucau/XuLyPhieumuahang`;
-    
-    // Tạo form để submit
-    const form = $('<form>', {
-        method: 'POST',
-        action: url
-    });
-    
-    form.append($('<input>', {
-        type: 'hidden',
-        name: 'MaMuahang',
-        value: selectedMamuahang
-    }));
-    
-    form.append($('<input>', {
-        type: 'hidden',
-        name: 'action',
-        value: 'reject'
-    }));
-    
-    // Thêm token chống CSRF nếu có
-    const token = $('input[name="__RequestVerificationToken"]').val();
-    if (token) {
+    if (window.confirm("Bạn có chắc chắn muốn từ chối phiếu mua hàng này?")) {
+        const pathSegments = window.location.pathname.split('/');
+        const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        const url = `/${area}/Yeucau/XuLyPhieumuahang`;
+        
+        // Tạo form để submit
+        const form = $('<form>', {
+            method: 'POST',
+            action: url
+        });
+        
         form.append($('<input>', {
             type: 'hidden',
-            name: '__RequestVerificationToken',
-            value: token
+            name: 'MaMuahang',
+            value: selectedMamuahang
         }));
+        
+        form.append($('<input>', {
+            type: 'hidden',
+            name: 'action',
+            value: 'reject'
+        }));
+        
+        // Thêm token chống CSRF nếu có
+        const token = $('input[name="__RequestVerificationToken"]').val();
+        if (token) {
+            form.append($('<input>', {
+                type: 'hidden',
+                name: '__RequestVerificationToken',
+                value: token
+            }));
+        }
+        
+        $('body').append(form);
+        form.submit();
     }
-    
-    $('body').append(form);
-    form.submit();
 });

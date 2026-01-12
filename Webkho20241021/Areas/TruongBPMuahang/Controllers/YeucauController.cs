@@ -46,6 +46,35 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
 
             _context.SaveChanges();
 
+            // Populate TenYeucau and Bophan từ nguoidungs nếu chưa có
+            var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => new { n.TenNguoidung, n.Bophan });
+            foreach (var yeucau in Yeucaulist)
+            {
+                // Populate Bophan từ nguoidungs nếu chưa có
+                if (string.IsNullOrWhiteSpace(yeucau.Bophan) && !string.IsNullOrWhiteSpace(yeucau.YCMaNguoidung))
+                {
+                    if (nguoiDungDict.TryGetValue(yeucau.YCMaNguoidung, out var nguoiDung))
+                    {
+                        yeucau.Bophan = nguoiDung.Bophan ?? "";
+                    }
+                }
+
+                // Populate TenYeucau nếu chưa có
+                if (string.IsNullOrWhiteSpace(yeucau.TenYeucau))
+                {
+                    // Nếu là yêu cầu nhập kho đặc biệt (NHAPKHO_), set mặc định
+                    if (!string.IsNullOrEmpty(yeucau.MaYeucau) && yeucau.MaYeucau.StartsWith("NHAPKHO_"))
+                    {
+                        yeucau.TenYeucau = "Yêu cầu nhập kho";
+                    }
+                    else
+                    {
+                        // Các yêu cầu khác, set mặc định là "Yêu cầu vật tư"
+                        yeucau.TenYeucau = "Yêu cầu vật tư";
+                    }
+                }
+            }
+
             var SortedYeucaulist = Yeucaulist
                 .OrderByDescending(y => y.TrangThai == userRole)
                 .ThenBy(y => YeucauUpdateHelper.GetBaseRequestCode(y.MaYeucau ?? "")) // Nhóm theo mã cơ bản
@@ -69,7 +98,7 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     .ToList();
             }
 
-            var VTyeucaulist = _context.vtyeucau.ToList();
+            var VTyeucaulist = _context.vtyeucau.Where(vt => vt.SLMoi != 0).ToList(); // Lọc bỏ các dòng có SLMoi = 0
             var Duans = _context.duans.ToList();
 
             var model = new Yeucauviewmodel
@@ -300,9 +329,9 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
             }
             else
             {
-                // Lấy dữ liệu từ vtyeucau như bình thường
+                // Lấy dữ liệu từ vtyeucau như bình thường, lọc bỏ các dòng có SLMoi = 0
                 var vatTuList = _context.vtyeucau
-                                     .Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                                     .Where(v => v.VTMaYeucau == MaYeucau && v.SLMoi != 0).ToList();
                 return Json(vatTuList);
             }
         }
@@ -565,6 +594,18 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
 
                     _context.vtyeucau.Update(vatTu);
                     processedCount++;
+                }
+
+                // Lưu thông tin người duyệt vào bảng yeucau (ghi đè mã người duyệt mới nhất)
+                if (yeucau != null && processedCount > 0)
+                {
+                    var maNguoiDuyet = HttpContext.Session.GetString("MaNguoidung");
+                    if (!string.IsNullOrWhiteSpace(maNguoiDuyet))
+                    {
+                        yeucau.NguoiDuyet = maNguoiDuyet;
+                        yeucau.NgayDuyet = DateTime.Now;
+                        _context.yeucau.Update(yeucau);
+                    }
                 }
 
                 _context.SaveChanges();
@@ -1260,8 +1301,7 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     // Tạo mã yêu cầu: NNNNNN ST HiepNT
                     yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}";
                     
-                    // Đảm bảo tính duy nhất cho mã yêu cầu (bao gồm cả tên người)
-                    // Nếu cùng người gửi cùng mã cơ bản, thêm suffix để phân biệt
+                    // Luôn tạo yêu cầu mới - nếu trùng mã thì thêm suffix để tạo mã mới
                     int suffixNumber = 1;
                     string originalMaYeucau = yeucau.MaYeucau;
                     while (true)
@@ -1272,7 +1312,7 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                         {
                             break;
                         }
-                        // Nếu trùng, thêm số suffix
+                        // Nếu trùng, thêm số suffix để tạo mã mới
                         yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
                         suffixNumber++;
                     }
@@ -1286,35 +1326,25 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     // Tạo mã yêu cầu: YYMMDD ST HiepNT
                     yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
                     
-                    // Kiểm tra xem có yêu cầu đã tồn tại với cùng mã yêu cầu cơ bản không (bỏ phần tên người)
-                    var existingYeucau = YeucauUpdateHelper.FindExistingRequest(_context, yeucau.MaYeucau);
-                    
-                    if (existingYeucau != null)
+                    // Luôn tạo yêu cầu mới - nếu trùng mã thì thêm suffix để tạo mã mới
+                    int suffixNumber = 1;
+                    string originalMaYeucau = yeucau.MaYeucau;
+                    while (true)
                     {
-                        // Cập nhật yêu cầu hiện có thay vì tạo mới
-                        yeucau = existingYeucau;
-                    }
-                    else
-                    {
-                        // Đảm bảo tính duy nhất cho mã yêu cầu mới
-                        int suffixNumber = 1;
-                        while (true)
+                        var exists = _context.yeucau
+                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
+                        if (exists == null)
                         {
-                            var exists = _context.yeucau
-                                                 .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                            if (exists == null)
-                            {
-                                break;
-                            }
-                            // Nếu trùng, thêm số suffix
-                            yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}{suffixNumber}";
-                            suffixNumber++;
+                            break;
                         }
+                        // Nếu trùng, thêm số suffix để tạo mã mới
+                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
+                        suffixNumber++;
                     }
                 }
                 // ================================================================
 
-                // Luôn tạo yêu cầu mới để theo dõi từng người gửi
+                // Luôn tạo yêu cầu mới
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
@@ -1330,6 +1360,13 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     {
                         var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                         var slMoiValue = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
+                        
+                        // Bỏ qua dòng nếu số lượng mới bằng 0 (không cần lưu và hiển thị)
+                        if (slMoiValue == 0)
+                        {
+                            continue;
+                        }
+                        
                         var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
                         
                         // Tính số lượng mới (ưu tiên SLMoi, sau đó SLCu, cuối cùng là SL)
@@ -1414,6 +1451,13 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     {
                         var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                         var slMoiValue = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
+                        
+                        // Bỏ qua dòng nếu số lượng mới bằng 0 (không cần lưu và hiển thị)
+                        if (slMoiValue == 0)
+                        {
+                            continue;
+                        }
+                        
                         var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
                         
                         // Tính số lượng mới (ưu tiên SLMoi, sau đó SLCu, cuối cùng là SL)
@@ -2055,6 +2099,10 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
             }
             else if (Phieuxuatkho.TrangThai == "Chờ lấy hàng")
             {
+                if (!Phieuxuatkho.NgayXuatkho.HasValue)
+                {
+                    Phieuxuatkho.NgayXuatkho = DateTime.Now;
+                }
                 if (Phieuxuatkho.MaDuan != null)
                 {
                     foreach (var VTxuatkho in VTphieuxuatkho)
@@ -2357,6 +2405,8 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 else if (boPhan2 == "BP mua hàng")
                 {
                     Phieumuahang.TrangThai = "Đã nhận hàng";
+                    // Lưu thời gian mua hàng khi bộ phận mua hàng nhận hàng
+                    Phieumuahang.NgayMuahang = DateTime.Now;
                     Taophieunhapkhobyphieumuahang(MaMuahang, phieunhapkho, vtphieunhapkho, phieumuahang, vtphieumuahang);
                 }
                 foreach (var VTPhieumuahang in VTPhieumuahanglist)
@@ -2826,7 +2876,7 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
             var Phieunhapkho = _context.phieunhapkho.FirstOrDefault(p => p.MaNhapkho == MaNhapkho);
             var VTPhieunhapkholist = _context.vtphieunhapkho.Where(vt => vt.MaNhapkho == MaNhapkho).ToList();
 
-            int STT = 0;
+            int STT = 1;
             string MaXuatkho;
             // Tạo mã phiếu nhập kho duy nhất
             while (true)
@@ -2848,7 +2898,8 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 MaYeucau = Phieunhapkho.MaYeucau,
                 MaDuan = Phieunhapkho.MaDuan,
                 MaNguoidung = Phieunhapkho.MaNguoidung,
-                NgayXuatkho = DateTime.Now,
+                NgayXuatkho = null,
+                NgayChuanBi = DateTime.Now,
                 TrangThai = "Đang chuẩn bị hàng"
             };
             _context.phieuxuatkho.Add(newphieuxuatkho);
