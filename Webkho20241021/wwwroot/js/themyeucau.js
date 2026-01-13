@@ -597,6 +597,11 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel.`, false);
             }
+            // Đảm bảo input date vẫn có thể tương tác sau khi upload file
+            if (ngayCanHangDefault) {
+                ngayCanHangDefault.disabled = false;
+                ngayCanHangDefault.readOnly = false;
+            }
         });
     }
 
@@ -779,6 +784,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     setFeedback(`Đã nhập ${allRows.length} dòng từ tệp Excel.`, false);
                 }
+                // Đảm bảo input date vẫn có thể tương tác sau khi upload file
+                if (ngayCanHangDefault) {
+                    ngayCanHangDefault.disabled = false;
+                    ngayCanHangDefault.readOnly = false;
+                }
             }
         };
 
@@ -791,6 +801,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!file) {
             setFeedback("Chưa chọn tệp Excel.", true);
             clearTable();
+            // Đảm bảo input date vẫn có thể tương tác
+            if (ngayCanHangDefault) {
+                ngayCanHangDefault.disabled = false;
+                ngayCanHangDefault.readOnly = false;
+            }
             return;
         }
 
@@ -798,6 +813,11 @@ document.addEventListener("DOMContentLoaded", function () {
             setFeedback("Vui lòng chọn tệp Excel (.xlsx, .xls, .xlsm).", true);
             fileInput.value = "";
             clearTable();
+            // Đảm bảo input date vẫn có thể tương tác
+            if (ngayCanHangDefault) {
+                ngayCanHangDefault.disabled = false;
+                ngayCanHangDefault.readOnly = false;
+            }
             return;
         }
 
@@ -807,7 +827,18 @@ document.addEventListener("DOMContentLoaded", function () {
             setFeedback("Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn 10MB.", true);
             fileInput.value = "";
             clearTable();
+            // Đảm bảo input date vẫn có thể tương tác
+            if (ngayCanHangDefault) {
+                ngayCanHangDefault.disabled = false;
+                ngayCanHangDefault.readOnly = false;
+            }
             return;
+        }
+
+        // Đảm bảo input date vẫn có thể tương tác trước khi xử lý file
+        if (ngayCanHangDefault) {
+            ngayCanHangDefault.disabled = false;
+            ngayCanHangDefault.readOnly = false;
         }
 
         setFeedback("Đang xử lý tệp Excel, vui lòng đợi...", false);

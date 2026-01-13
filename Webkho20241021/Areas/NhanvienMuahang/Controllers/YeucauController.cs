@@ -8,7 +8,7 @@ using System.Linq;
 using System.IO;
 using Webkho_20241021.Areas.NhanvienMuahang.Data;
 using Webkho_20241021.Models;
-using Webkho_20241021.Areas.TruongBPKho.Services;
+using Webkho_20241021.Services;
 using Webkho_20241021.Services;
 using OfficeOpenXml;
 
@@ -1578,21 +1578,8 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                         .Where(v => v.VTMaYeucau == maYc)
                         .ToList();
 
-                    var allDoneOrRejected = vtList.All(v =>
-                        v.TrangThai == "Đã xuất kho" ||
-                        (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
-
-                    var hasDangMuaHang = vtList.Any(v => v.TrangThai == "Đang mua hàng");
-
-                    if (allDoneOrRejected)
-                    {
-                        yeuCau.TrangThai = "Đã xuất kho";
-                    }
-                    else if (hasDangMuaHang)
-                    {
-                        yeuCau.TrangThai = "Đang mua hàng";
-                    }
-
+                    // Sử dụng helper để đồng bộ trạng thái
+                    yeuCau.TrangThai = YeucauUpdateHelper.TinhTrangThaiYeuCau(vtList);
                     _context.yeucau.Update(yeuCau);
                 }
                 Phieuxuatkho.TrangThai = "Đã lấy hàng";

@@ -8,7 +8,7 @@ using System.Linq;
 using System.IO;
 using Webkho_20241021.Areas.TruongBPKetoan.Data;
 using Webkho_20241021.Models;
-using Webkho_20241021.Areas.TruongBPKho.Services;
+using Webkho_20241021.Services;
 using Webkho_20241021.Services;
 using OfficeOpenXml;
 
@@ -96,7 +96,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                     .ToList();
             }
 
-            var VTyeucaulist = _context.vtyeucau.Where(vt => vt.SLMoi != 0).ToList(); // Lọc bỏ các dòng có SLMoi = 0
+            var VTyeucaulist = _context.vtyeucau.ToList(); // Giữ cả dòng SLMoi = 0 để phản ánh trạng thái nhập/xuất
             var Duans = _context.duans.ToList();
 
             var model = new Yeucauviewmodel
@@ -324,7 +324,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
             {
                 // Lấy dữ liệu từ vtyeucau như bình thường, lọc bỏ các dòng có SLMoi = 0
                 vatTuList = _context.vtyeucau
-                                 .Where(v => v.VTMaYeucau == MaYeucau && v.SLMoi != 0).ToList();
+                                .Where(v => v.VTMaYeucau == MaYeucau).ToList();
             }
             
             // Lấy thông tin yêu cầu để lấy tên người yêu cầu
@@ -2158,59 +2158,8 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         .Where(v => v.VTMaYeucau == maYc)
                         .ToList();
 
-                    var hasDangMuaHang = vtList.Any(v => v.TrangThai == "Đang mua hàng");
-                    var hasChoXuatKho = vtList.Any(v => v.TrangThai == "Chờ xuất kho");
-                    var hasDaXuatKho = vtList.Any(v => v.TrangThai == "Đã xuất kho");
-                    var hasDaNhapKho = vtList.Any(v => v.TrangThai == "Đã nhập kho");
-                    var allDoneOrRejected = vtList.All(v =>
-                        v.TrangThai == "Đã xuất kho" ||
-                        (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
-
-                    if (hasDaNhapKho)
-                    {
-                        // Nếu có vật tư đã nhập kho, kiểm tra xem tất cả vật tư đã nhập kho chưa
-                        var allDaNhapKho = vtList.All(v =>
-                            v.TrangThai == "Đã nhập kho" ||
-                            (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
-                        
-                        if (allDaNhapKho)
-                        {
-                            yeuCau.TrangThai = "Đã nhập kho";
-                        }
-                        else
-                        {
-                            // Có một số vật tư đã nhập kho nhưng chưa tất cả, kiểm tra các trạng thái khác
-                            if (hasDangMuaHang)
-                            {
-                                yeuCau.TrangThai = "Đang mua hàng";
-                            }
-                            else if (hasChoXuatKho)
-                            {
-                                yeuCau.TrangThai = "Chờ xuất kho";
-                            }
-                            else if (hasDaXuatKho)
-                            {
-                                yeuCau.TrangThai = "Đã xuất kho";
-                            }
-                            else
-                            {
-                                yeuCau.TrangThai = "Đã nhập kho";
-                            }
-                        }
-                    }
-                    else if (allDoneOrRejected)
-                    {
-                        yeuCau.TrangThai = "Đã xuất kho";
-                    }
-                    else if (hasDangMuaHang)
-                    {
-                        yeuCau.TrangThai = "Đang mua hàng";
-                    }
-                    else if (hasChoXuatKho)
-                    {
-                        yeuCau.TrangThai = "Chờ xuất kho";
-                    }
-
+                    // Sử dụng helper để đồng bộ trạng thái
+                    yeuCau.TrangThai = YeucauUpdateHelper.TinhTrangThaiYeuCau(vtList);
                     _context.yeucau.Update(yeuCau);
                 }
                 }

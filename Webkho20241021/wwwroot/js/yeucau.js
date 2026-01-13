@@ -88,7 +88,8 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                 let STT = 1;
                 data.forEach(function (item) {
                     // Xác định màu cho ghi chú (đỏ nếu bị từ chối)
-                    var ghiChuColor = (item.trangThai && (item.trangThai.indexOf('Đã từ chối') !== -1 || item.trangThai.indexOf('từ chối') !== -1)) ? '#f44336' : 'inherit';
+                    var isRejected = (item.trangThai && (item.trangThai.toLowerCase().indexOf('từ chối') !== -1)) || (item.TrangThai && (item.TrangThai.toLowerCase().indexOf('từ chối') !== -1));
+                    var ghiChuColor = isRejected ? '#f44336' : 'inherit';
                     // Hỗ trợ cả camelCase và PascalCase
                     const tenSanpham = item.tenSanpham || item.TenSanpham || '';
                     const maSanpham = item.maSanpham || item.MaSanpham || '';
@@ -109,7 +110,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                     };
 
                     // Tạo một dòng mới khớp tiêu đề bảng
-                    let row = `<tr>
+                    let row = `<tr class="${isRejected ? 'rejected-row' : ''}">
                         <td>${STT++}</td>
                         <td>${tenSanpham}</td>
                         <td>${maSanpham}</td>
@@ -266,6 +267,9 @@ function initializeYeucauFilters() {
         return;
     }
 
+    // Cập nhật dropdown trạng thái dựa trên dữ liệu hiện tại khi khởi tạo
+    updateStatusFilterOptions();
+
     const triggerFilter = function () {
         filterYeucauTable();
     };
@@ -278,6 +282,41 @@ function initializeYeucauFilters() {
     }
 
     filterYeucauTable();
+}
+
+function updateStatusFilterOptions() {
+    const $statusFilter = $('#statusFilter');
+    if (!$statusFilter.length) {
+        return;
+    }
+
+    // Thu thập tất cả trạng thái từ các hàng đang hiển thị
+    const statusSet = new Set();
+    $('.table tbody tr:visible').each(function () {
+        const statusText = $(this).find('td').eq(8).text().trim();
+        if (statusText) {
+            statusSet.add(statusText);
+        }
+    });
+
+    // Lưu giá trị hiện tại
+    const currentValue = $statusFilter.val();
+
+    // Xóa tất cả options trừ "Tất cả"
+    $statusFilter.find('option:not([value=""])').remove();
+
+    // Sắp xếp và thêm các trạng thái mới
+    const sortedStatuses = Array.from(statusSet).sort();
+    sortedStatuses.forEach(function (status) {
+        $statusFilter.append($('<option></option>').attr('value', status).text(status));
+    });
+
+    // Khôi phục giá trị đã chọn nếu vẫn còn tồn tại
+    if (currentValue && $statusFilter.find('option[value="' + currentValue + '"]').length > 0) {
+        $statusFilter.val(currentValue);
+    } else {
+        $statusFilter.val('');
+    }
 }
 
 function filterYeucauTable() {
@@ -300,6 +339,47 @@ function filterYeucauTable() {
             visibleCount++;
         }
     });
+
+    // Sắp xếp lại các hàng: "Đã từ chối" xuống cuối cùng
+    const $tbody = $('.table tbody');
+    const $rows = $tbody.find('tr').toArray();
+    
+    // Tách thành 2 nhóm: không phải "Đã từ chối" và "Đã từ chối"
+    const normalRows = [];
+    const rejectedRows = [];
+    
+    $rows.forEach(function(row) {
+        const $row = $(row);
+        const statusText = $row.find('td').eq(8).text().trim().toLowerCase();
+        const isRejected = statusText.indexOf('đã từ chối') !== -1;
+        
+        if (isRejected) {
+            rejectedRows.push(row);
+        } else {
+            normalRows.push(row);
+        }
+    });
+    
+    // Xóa tất cả hàng khỏi DOM
+    $tbody.empty();
+    
+    // Thêm lại: hàng thường trước, hàng "Đã từ chối" sau
+    normalRows.forEach(function(row) {
+        $tbody.append(row);
+    });
+    rejectedRows.forEach(function(row) {
+        $tbody.append(row);
+    });
+    
+    // Cập nhật lại số thứ tự (STT) sau khi sắp xếp
+    let stt = 1;
+    $tbody.find('tr').each(function() {
+        $(this).find('td').first().text(stt);
+        stt++;
+    });
+
+    // Cập nhật dropdown trạng thái dựa trên các hàng đang hiển thị
+    updateStatusFilterOptions();
 
     const hasData = visibleCount > 0;
     $('#noYeucauMessage').toggle(!hasData);

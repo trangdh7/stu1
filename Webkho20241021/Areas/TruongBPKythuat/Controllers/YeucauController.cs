@@ -9,7 +9,7 @@ using System.IO;
 using System.Text.Json;
 using Webkho_20241021.Areas.TruongBPKythuat.Data;
 using Webkho_20241021.Models;
-using Webkho_20241021.Areas.TruongBPKho.Services;
+using Webkho_20241021.Services;
 using Webkho_20241021.Services;
 using OfficeOpenXml;
 
@@ -97,7 +97,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     .ToList();
             }
 
-            var VTyeucaulist = _context.vtyeucau.Where(vt => vt.SLMoi != 0).ToList(); // Lọc bỏ các dòng có SLMoi = 0
+            var VTyeucaulist = _context.vtyeucau.ToList(); // Giữ tất cả vật tư, kể cả SLMoi = 0 để không mất trạng thái nhập/xuất
             var Duans = _context.duans.ToList();
 
             var model = new Yeucauviewmodel
@@ -325,7 +325,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
             {
                 // Lấy dữ liệu từ vtyeucau như bình thường, lọc bỏ các dòng có SLMoi = 0
                 var vatTuList = _context.vtyeucau
-                                     .Where(v => v.VTMaYeucau == MaYeucau && v.SLMoi != 0).ToList();
+                                    .Where(v => v.VTMaYeucau == MaYeucau).ToList();
                 return Json(vatTuList);
             }
         }
@@ -373,7 +373,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 
                 // Xác định trạng thái tiếp theo dựa trên việc có mã dự án hay không
                 string nextTrangThaiVT = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ giám đốc duyệt";
-                string nextTrangThaiYC = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ Giám đốc duyệt";
+                string nextTrangThaiYC = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ giám đốc duyệt";
 
                 if (action == "approve")
                 {
@@ -469,7 +469,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 
                 // Xác định trạng thái tiếp theo dựa trên việc có mã dự án hay không
                 string nextTrangThaiVT = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ giám đốc duyệt";
-                string nextTrangThaiYC = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ Giám đốc duyệt";
+                string nextTrangThaiYC = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ giám đốc duyệt";
 
                 int processedCount = 0;
                 int skippedCount = 0;
@@ -702,7 +702,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 
                 // Xác định trạng thái tiếp theo dựa trên việc có mã dự án hay không
                 string nextTrangThaiVT = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ giám đốc duyệt";
-                string nextTrangThaiYC = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ Giám đốc duyệt";
+                string nextTrangThaiYC = hasMaDuan ? "Chờ quản lý dự án duyệt" : "Chờ giám đốc duyệt";
                 
                 foreach (var vatTu in vatTuList)
                 {
@@ -1110,7 +1110,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
                     {
-                        yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                        yeucau.TrangThai = "Chờ giám đốc duyệt";
                     }
                     else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
                     {
@@ -1118,7 +1118,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
                     {
-                        yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                        yeucau.TrangThai = "Chờ giám đốc duyệt";
                     }
                     else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
                     {
@@ -1126,7 +1126,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     }
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
                     {
-                        yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                        yeucau.TrangThai = "Chờ giám đốc duyệt";
                     }
                     else if (chucVu2 == "Giám đốc")
                     {
@@ -1156,18 +1156,16 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         
                         try
                         {
-                            // Lấy tên file không có extension
+                           
                             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(excelFile.FileName);
                             fileNameFromExcel = fileNameWithoutExt;
                             
-                            // Xử lý tên file có thể có dấu gạch dưới: thay thế bằng khoảng trắng để parse
+                            
                             fileNameWithoutExt = fileNameWithoutExt.Replace('_', ' ');
                             
-                            // Parse tên file: "251005 STUP10.5013 251204" → lấy "STUP10.5013"
-                            // Tách theo khoảng trắng
-                            var parts = fileNameWithoutExt.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                             
-                            // Tìm phần không phải số 6 chữ số (mã sản phẩm từ tên file)
+                            var parts = fileNameWithoutExt.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                           
                             stPart = parts.FirstOrDefault(p => !(p.Length == 6 && p.All(char.IsDigit)));
 
                             // Nếu sau khi parse không tìm thấy (tất cả đều là số), dùng lại tên file
@@ -1178,15 +1176,13 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         }
                         catch (Exception ex)
                         {
-                            // Nếu parse tên file lỗi, KHÔNG fallback về MaSanpham
-                            // Vì cần đọc từ tên file, không phải từ mã vật tư trong Excel
+                            
                             Console.WriteLine($"Lỗi khi parse tên file Excel để lấy mã sản phẩm: {ex.Message}");
                         }
                     }
                 }
                 
-                // Nếu có file Excel nhưng chưa lấy được stPart, fallback nhẹ: dùng luôn tên file
-                // Nếu có file Excel mà vẫn chưa lấy được stPart, dùng tên file
+                
                 if (string.IsNullOrWhiteSpace(stPart) && hasExcelFile && !string.IsNullOrWhiteSpace(fileNameFromExcel))
                 {
                     stPart = fileNameFromExcel.Replace("_", " ").Trim();
@@ -1250,7 +1246,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     // Lấy ngày hiện tại dạng YYMMDD
                     string datePart = DateTime.Now.ToString("yyMMdd");
                     
-                    // Tạo mã yêu cầu: YYMMDD ST HiepNT
+                
                     yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
                     
                     // Luôn tạo yêu cầu mới - nếu trùng mã thì thêm suffix để tạo mã mới
@@ -2020,21 +2016,8 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         .Where(v => v.VTMaYeucau == maYc)
                         .ToList();
 
-                    var allDoneOrRejected = vtList.All(v =>
-                        v.TrangThai == "Đã xuất kho" ||
-                        (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
-
-                    var hasDangMuaHang = vtList.Any(v => v.TrangThai == "Đang mua hàng");
-
-                    if (allDoneOrRejected)
-                    {
-                        yeuCau.TrangThai = "Đã xuất kho";
-                    }
-                    else if (hasDangMuaHang)
-                    {
-                        yeuCau.TrangThai = "Đang mua hàng";
-                    }
-
+                    // Sử dụng helper để đồng bộ trạng thái
+                    yeuCau.TrangThai = YeucauUpdateHelper.TinhTrangThaiYeuCau(vtList);
                     _context.yeucau.Update(yeuCau);
                 }
                 }
@@ -2369,7 +2352,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                 }
                 else
                 {
-                    phieunhapkho.TrangThai = "Chờ Giám đốc duyệt"; // Giám đốc duyệt
+                    phieunhapkho.TrangThai = "Chờ giám đốc duyệt"; // Giám đốc duyệt
                 }
 
                 if (string.IsNullOrEmpty(phieunhapkho.MaYeucau))
@@ -2435,7 +2418,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                             TrangThai = (LoaiNhapkho == "duan" && !string.IsNullOrEmpty(phieunhapkho.MaDuan))
                                 ? "Chờ quản lý dự án duyệt"
                                 : (LoaiNhapkho == "canhan"
-                                    ? "Chờ Giám đốc duyệt"
+                                    ? "Chờ giám đốc duyệt"
                                     : "Đã duyệt")
                         };
                         _context.yeucau.Add(newYeucauDacBiet);

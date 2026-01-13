@@ -29,6 +29,15 @@
                 || normalized.StartsWith("Chờ giám đốc", System.StringComparison.OrdinalIgnoreCase)
                 || normalized.Contains("chờ giám đốc", System.StringComparison.OrdinalIgnoreCase);
         };
+
+        // Lấy danh sách trạng thái từ bảng Yeucau (yêu cầu chính) - chỉ lấy những trạng thái có trong dữ liệu hiện tại
+        var statusOptions = (Model?.Yeucau ?? new List<Webkho_20241021.Models.yeucau>())
+            .Select(y => string.IsNullOrWhiteSpace(y.TrangThai) ? "Chờ giám đốc duyệt" : y.TrangThai.Trim())
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .GroupBy(s => s, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .OrderBy(s => s)
+            .ToList();
     }
     <nav class="bodyyeucau">
         <div class="menu-kho">
@@ -40,7 +49,7 @@
                     </span>
                 </li>
                 <li class="menu-muahang">
-                    <a href="/Giamdoc/Yeucau/Phieumuahang">Vật tư mua hàng</a>
+                    <a href="/Giamdoc/Yeucau/Phieumuahang">Yêu cầu mua hàng</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -68,12 +77,10 @@
                 <label for="statusFilter">Lọc trạng thái:</label>
                 <select id="statusFilter">
                     <option value="">Tất cả</option>
-                    <option value="Chờ giám đốc duyệt">Chờ giám đốc duyệt</option>
-                    <option value="Đã duyệt">Đã duyệt</option>
-                    <option value="Đang mua hàng">Đang mua hàng</option>
-                    <option value="Đã xuất kho">Đã xuất kho</option>
-                    <option value="Đã nhận hàng">Đã nhận hàng</option>
-                    <option value="Đã từ chối">Đã từ chối</option>
+                    @foreach (var status in statusOptions)
+                    {
+                        <option value="@status">@status</option>
+                    }
                 </select>
             </div>
             <table class="table">
@@ -95,8 +102,28 @@
                 <tbody>
                     @{
                         int STT = 1;
+                        // Sắp xếp: "Chờ giám đốc duyệt" luôn lên đầu, "Đã từ chối" xuống cuối
+                        var sortedYeucau = Model.Yeucau
+                            .OrderBy(y =>
+                            {
+                                var trangThai = string.IsNullOrWhiteSpace(y.TrangThai) ? "Chờ giám đốc duyệt" : y.TrangThai.Trim();
+
+                                if (isAwaitingDirectorStatusFunc(trangThai))
+                                {
+                                    return 0; // Ưu tiên cao nhất
+                                }
+
+                                if (trangThai.IndexOf("Đã từ chối", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    return 2; // Đẩy xuống cuối
+                                }
+
+                                return 1; // Các trạng thái còn lại
+                            })
+                            .ThenBy(y => y.NgayYeucau ?? DateTime.MinValue)
+                            .ToList();
                     }
-                    @foreach (var item in Model.Yeucau)
+                    @foreach (var item in sortedYeucau)
                     {
                         var duan = Model.Duans.FirstOrDefault(d => d.MaDuan == item.YCMaDuan);
                         string maNguoiQLDA = duan?.MaNguoiQLDA;
@@ -104,12 +131,31 @@
                         var trangThaiYeucau = string.IsNullOrWhiteSpace(item.TrangThai) ? "Chờ giám đốc duyệt" : item.TrangThai.Trim();
                         var yeucauAwaiting = isAwaitingDirectorStatusFunc(item.TrangThai);
                         var yeucauRowClass = yeucauAwaiting ? "awaiting-director" : "";
+                        
+                        // Thêm class màu nền dựa trên trạng thái
+                        string statusRowClass = "";
+                        if (trangThaiYeucau.IndexOf("Đã từ chối", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            statusRowClass = "status-rejected";
+                        }
+                        else if (trangThaiYeucau.IndexOf("Đang mua hàng", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            statusRowClass = "status-purchasing";
+                        }
+                        else if (trangThaiYeucau.IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            statusRowClass = "status-dispatched";
+                        }
+                        
+                        var finalRowClass = string.IsNullOrEmpty(yeucauRowClass) ? statusRowClass : 
+                                           (string.IsNullOrEmpty(statusRowClass) ? yeucauRowClass : $"{yeucauRowClass} {statusRowClass}");
+                        
                         // Tính ngày duyệt sớm nhất từ các vật tư trong yêu cầu
                         var ngayDuyetSomNhat = Model.VTyeucau
                             .Where(vt => vt.VTMaYeucau == item.MaYeucau && vt.NgayDuyet.HasValue)
                             .OrderBy(vt => vt.NgayDuyet)
                             .FirstOrDefault()?.NgayDuyet;
-                        <tr class="@yeucauRowClass" onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')" style="cursor: pointer;">
+                        <tr class="@finalRowClass" onclick="showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')" style="cursor: pointer;">
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
@@ -155,7 +201,7 @@
         <div class="action">
             <ul class="hanhdong">
                 <li>
-                    <a href="/Giamdoc/Yeucau/ThemYeucau">Thêm yêu cầu</a>
+                    <button type="button" onclick="location.href='/Giamdoc/Yeucau/ThemYeucau'">Thêm yêu cầu</button>
                 </li>
             </ul>
         </div>
@@ -176,7 +222,7 @@
                         <td>NCC</td>
                         <td>SL Cũ</td>
                         <td>SL Mới</td>
-                        <td>SL</td>
+                        <td hidden>SL</td>
                         <td>ĐV</td>
                         <td>Ngày cần</td>
                         <td class="trangthai-column-header" style="display: none;">Trạng thái</td>
@@ -211,14 +257,15 @@
                                        trangThai == "Đã xuất kho" || 
                                        trangThai == "Đã nhận hàng";
                         // Vật tư bị từ chối nếu trạng thái chứa "Đã từ chối" (bao gồm "Giám đốc - Đã từ chối")
-                        var isRejected = trangThai.Contains("Đã từ chối");
+                        var isRejected = trangThai.IndexOf("từ chối", StringComparison.OrdinalIgnoreCase) >= 0;
                         // Chỉ được phép duyệt hàng loạt nếu đúng bước "Chờ giám đốc duyệt" (bao gồm dữ liệu cũ chưa set trạng thái)
                         var isAwaitingDirector = isAwaitingDirectorStatusFunc(item.TrangThai);
                         var maYeucau = Model.Yeucau.FirstOrDefault()?.MaYeucau ?? "";
                         var canSelectForBulk = canApprove && isAwaitingDirector;
                         // Chỉ hiển thị nút duyệt khi trạng thái là "Chờ giám đốc duyệt"    
                         var canActOnItem = canApprove && isAwaitingDirector && !isApproved && !isRejected;
-                        <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau">
+                        var rowClass = isRejected ? "rejected-row" : "";
+                        <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau" class="@rowClass">
                             <td>@if (canSelectForBulk) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
                             <td>@STT2</td>
                             <td>@item.TenSanpham</td>
@@ -227,7 +274,7 @@
                             <td>@item.NhaCC</td>
                             <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
                             <td style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
-                            <td style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
+                            <td hidden style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
                             <td class="trangthai-vattu trangthai-column" style="display: none;">
@@ -295,11 +342,26 @@
                 <h3>Xác nhận duyệt</h3>
             </div>
             <div class="custom-popup-body">
-                <p>Bạn có chắc chắn muốn duyệt các vật tư đã chọn?</p>
+                <p id="confirmPopupMessage">Bạn có chắc chắn muốn duyệt các vật tư đã chọn?</p>
             </div>
             <div class="custom-popup-footer">
                 <button type="button" class="btn-popup-confirm" onclick="handlePopupConfirm()">Xác nhận</button>
                 <button type="button" class="btn-popup-cancel" onclick="closeConfirmPopup()">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <div id="rejectAllPopup" class="custom-popup-overlay" style="display: none;" onclick="if(event.target === this) closeRejectAllPopup();">
+        <div class="custom-popup-content" onclick="event.stopPropagation();">
+            <div class="custom-popup-header">
+                <h3>Từ chối vật tư</h3>
+            </div>
+            <div class="custom-popup-body">
+                <label for="rejectAllReason">Nhập lý do từ chối:</label>
+                <textarea id="rejectAllReason" style="width:100%; min-height:90px; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:4px;" placeholder="Nhập lý do từ chối..."></textarea>
+            </div>
+            <div class="custom-popup-footer">
+                <button type="button" class="btn-popup-confirm" onclick="applyRejectReason()">Xong</button>
+                <button type="button" class="btn-popup-cancel" onclick="closeRejectAllPopup()">Hủy</button>
             </div>
         </div>
     </div>
@@ -313,6 +375,7 @@
         var currentMaYeucau = '';
         var currentNguoiYeucau = '';
         var requestToken = '@requestToken';
+        var pendingBulkAction = null;
 
         function normalizeTrangThai(value) {
             if (!value || !value.trim()) {
@@ -375,21 +438,7 @@
         });
 
         function updateDuyetTatCaButton() {
-            var hasSelectable = $('.vt-checkbox').length > 0;
-            if (hasSelectable) {
-                $('#btnDuyetTatCa').show();
-                $('#btnTuChoiTatCa').show();
-            } else {
-                $('#btnDuyetTatCa').hide();
-                $('#btnTuChoiTatCa').hide();
-            }
-
-            // Luôn ẩn nút xác nhận & xóa tất cả khi không còn vật tư chọn được
-            if (!hasSelectable) {
-                $('#btnXacNhan').hide();
-                $('#btnXoaTatCa').hide();
-                pendingBulkAction = null;
-            }
+            // Không cần nữa vì đã xóa nút "Từ chối tất cả"
         }
 
         function showVTYeucau(MaYeucau, NguoiYeucau, MaYeucauFull) {
@@ -456,8 +505,8 @@
                                        trangThai === 'Chờ xuất kho' ||
                                        trangThai === 'Đã xuất kho' || 
                                        trangThai === 'Đã nhận hàng';
-                            // Bị từ chối nếu trạng thái chứa "Đã từ chối" (bao gồm "Giám đốc - Đã từ chối")
-                            var isRejected = trangThai && trangThai.indexOf('Đã từ chối') !== -1;
+                            // Bị từ chối nếu trạng thái chứa "từ chối" (không phân biệt hoa thường)
+                            var isRejected = (trangThai || '').toLowerCase().indexOf('từ chối') !== -1;
                             // Được phép chọn hàng loạt khi đúng bước "Chờ giám đốc duyệt"
                             var isAwaitingDirector = isAwaitingDirectorStatus(trangThai);
                             var canSelectForBulk = canApproveYeucau && isAwaitingDirector;
@@ -470,22 +519,35 @@
 
                             var hangSX = item.hangSX ?? item.HangSX ?? '';
                             var nhaCC = item.nhaCC ?? item.NhaCC ?? '';
-                            // SL Cũ: chỉ lấy đúng SLCu, không tự suy diễn
-                            var slCuVal = item.slCu ?? item.SLCu;
-                            // SL Mới: ưu tiên SLMoi; nếu không có SLMoi nhưng có SLCu thì lấy SLCu
-                            var slMoiVal = item.slMoi ?? item.SLMoi;
+                            
+                            // Chuẩn hoá dữ liệu số lượng từ mọi kiểu đặt tên có thể (camelCase / PascalCase)
+                            var slCuVal = item.slCu ?? item.SLCu ?? item.sLCu ?? item.SlCu;
+                            var slMoiVal = item.slMoi ?? item.SLMoi ?? item.sLMoi ?? item.SlMoi;
+                            var slGocVal = item.sl ?? item.SL ?? item.sL ?? item.Sl;
+
+                            // Nếu là phiếu nhập kho mà chỉ có SL gốc thì dùng cho cả cột mới để đảm bảo luôn thấy số
+                            if ((slMoiVal == null || slMoiVal === undefined) && (slGocVal != null && slGocVal !== undefined)) {
+                                slMoiVal = slGocVal;
+                            }
+                            // Nếu vẫn chưa có thì fallback về SLCu
                             if ((slMoiVal == null || slMoiVal === undefined) && (slCuVal != null && slCuVal !== undefined)) {
                                 slMoiVal = slCuVal;
                             }
-                            // SL: ưu tiên SL gốc, nếu không có thì fallback SLMoi rồi SLCu
-                            var slVal = item.sl ?? item.SL ?? slMoiVal ?? slCuVal;
+
+                            // Giá trị hiển thị ở cột SL tổng (dùng cho yêu cầu nhập kho)
+                            var slVal = slGocVal;
+                            if (slVal == null || slVal === undefined) {
+                                slVal = slMoiVal != null && slMoiVal !== undefined ? slMoiVal : slCuVal;
+                            }
+
                             var donViVal = item.donVi ?? item.DonVi ?? '-';
                             var ngayCanHangVal = item.ngayCanHang ?? item.NgayCanHang;
                             var ngayCanHangDisplay = formatDateOnly(ngayCanHangVal);
                             
                             // Tích checkbox mặc định cho các vật tư đang chờ duyệt (có thể thao tác)
                             var checkboxChecked = canActOnItem ? ' checked' : '';
-                            var row = `<tr data-mavattu="${maVatTu}" data-mayeucau="${MaYeucau}">
+                            var rowClass = isRejected ? 'rejected-row' : '';
+                            var row = `<tr class="${rowClass}" data-mavattu="${maVatTu}" data-mayeucau="${MaYeucau}">
                                 <td>${canSelectForBulk ? '<input type="checkbox" class="vt-checkbox" value="' + maVatTuEscaped + '" data-mayeucau="' + MaYeucauEscaped + '" data-mavattu="' + maVatTuEscaped + '"' + checkboxChecked + ' />' : ''}</td>
                                 <td>${STT++}</td>
                                 <td>${item.tenSanpham || item.TenSanpham || ''}</td>
@@ -494,7 +556,7 @@
                                 <td>${nhaCC || '-'}</td>
                                 <td style="text-align: center;">${slCuVal ?? '-'}</td>
                                 <td style="text-align: center;">${slMoiVal ?? '-'}</td>
-                                <td style="text-align: center;">${slVal ?? '-'}</td>
+                                <td hidden style="text-align: center;">${slVal ?? '-'}</td>
                                 <td>${donViVal}</td>
                                 <td>${ngayCanHangDisplay}</td>`;
                             
@@ -544,7 +606,7 @@
                             row += `</td></tr>`;
                             $('#vtYeucauBody').append(row);
                         });
-                        
+
                         // Kiểm tra và hiển thị/ẩn cột trạng thái sau khi load dữ liệu
                         checkAndToggleTrangThaiColumn();
                         // Cập nhật nút hành động sau khi load dữ liệu
@@ -556,7 +618,7 @@
                         // Cập nhật nút hành động khi không có dữ liệu
                         updateActionButtons();
                     }
-
+                    
                     // Highlight hàng tương ứng trong bảng chính
                     let $rowToHighlight = $();
                     $('.table tbody tr').each(function () {
@@ -611,7 +673,6 @@
                 $('.trangthai-column-header, .trangthai-column').css('display', 'none');
             }
         }
-
         // Kiểm tra khi trang load xong
         $(document).ready(function() {
             checkAndToggleTrangThaiColumn();
@@ -677,9 +738,65 @@
             updateActionButtons();
         });
 
-        // Hiển thị popup xác nhận tùy chỉnh
+        // Hiển thị popup xác nhận duyệt hoặc từ chối
         function showConfirmPopup() {
             console.log("[DEBUG YEUCAU] showConfirmPopup được gọi");
+            
+            // Kiểm tra xem có checkbox nào được tích không
+            var checkedCount = $('.vt-checkbox:checked').length;
+            var totalCount = $('.vt-checkbox').length;
+            
+            // Nếu không có checkbox nào được tích -> kiểm tra xem đã có lý do từ chối chưa
+            if (checkedCount === 0 && totalCount > 0) {
+                // Kiểm tra xem còn vật tư bị từ chối nào CHƯA có lý do không
+                var conThieuLyDo = false;
+                
+                $('.vt-checkbox').each(function() {
+                    var $checkbox = $(this);
+                    var $row = $checkbox.closest('tr');
+                    
+                    // Kiểm tra từ input ghi chú (ưu tiên)
+                    var $ghichuInput = $row.find('.ghichu-input');
+                    var ghiChu = '';
+                    
+                    if ($ghichuInput.length > 0) {
+                        // Đọc từ input
+                        ghiChu = ($ghichuInput.val() || '').trim();
+                    } else {
+                        // Nếu không có input, kiểm tra span (fallback)
+                        var $noteSpan = $row.find('.ghichu-column span');
+                        if ($noteSpan.length > 0) {
+                            ghiChu = ($noteSpan.text() || '').trim();
+                        }
+                    }
+                    
+                    console.log("[DEBUG YEUCAU] Vật tư:", $checkbox.val(), "ghiChu:", ghiChu);
+                    
+                    // Nếu không có ghi chú hoặc ghi chú rỗng -> còn thiếu lý do
+                    if (!ghiChu || ghiChu === '') {
+                        conThieuLyDo = true;
+                        console.log("[DEBUG YEUCAU] ❌ Vật tư", $checkbox.val(), "chưa có lý do từ chối");
+                        return false; // break loop
+                    }
+                });
+                
+                // Nếu còn thiếu lý do -> hiển thị popup từ chối để nhập lý do
+                if (conThieuLyDo) {
+                    console.log("[DEBUG YEUCAU] ⚠️ Còn thiếu lý do từ chối -> hiển thị popup nhập lý do");
+                    $('#rejectAllReason').val('');
+                    $('#rejectAllPopup').fadeIn(200);
+                    return;
+                }
+                
+                // Nếu tất cả vật tư bị từ chối đã có lý do -> hiển thị popup xác nhận
+                console.log("[DEBUG YEUCAU] ✅ Tất cả vật tư đã có lý do -> hiển thị popup xác nhận");
+                $('#confirmPopupMessage').text('Bạn có chắc chắn muốn từ chối các vật tư đã chọn?');
+                $('#customConfirmPopup').fadeIn(200);
+                return;
+            }
+            
+            // Nếu có checkbox được tích -> hiển thị popup xác nhận duyệt
+            $('#confirmPopupMessage').text('Bạn có chắc chắn muốn duyệt các vật tư đã chọn?');
             $('#customConfirmPopup').fadeIn(200);
         }
 
@@ -687,6 +804,8 @@
         function closeConfirmPopup() {
             console.log("[DEBUG YEUCAU] closeConfirmPopup được gọi");
             $('#customConfirmPopup').fadeOut(200);
+            // Khi cancel, chỉ đóng popup, giữ nguyên trạng thái để người dùng có thể chỉnh sửa
+            // Người dùng có thể dùng nút Cancel chính để reset nếu muốn
         }
 
         // Xử lý khi ấn nút Xác nhận trong popup
@@ -772,6 +891,49 @@
             
             // Cập nhật nút hành động
             updateActionButtons();
+        }
+
+        function closeRejectAllPopup() {
+            $('#rejectAllPopup').fadeOut(200);
+        }
+
+        function applyRejectReason() {
+            var reason = ($('#rejectAllReason').val() || '').trim();
+            if (!reason) {
+                alert('Vui lòng nhập lý do từ chối.');
+                return;
+            }
+
+            console.log("[DEBUG YEUCAU] applyRejectReason - Lý do:", reason);
+
+            // Điền lý do từ chối vào các vật tư không được tích (bị từ chối)
+            $('.vt-checkbox').each(function () {
+                var $checkbox = $(this);
+                var $row = $checkbox.closest('tr');
+                
+                // Nếu checkbox không được tích, đó là vật tư bị từ chối
+                if (!$checkbox.is(':checked')) {
+                    $row.addClass('rejected-row');
+                    var $noteInput = $row.find('.ghichu-input');
+                    if ($noteInput.length) {
+                        // Fill vào input và trigger change event để đảm bảo UI cập nhật
+                        $noteInput.val(reason).trigger('change');
+                        console.log("[DEBUG YEUCAU] Đã fill lý do vào input cho vật tư:", $checkbox.val());
+                    } else {
+                        // Fallback: fill vào span nếu không có input
+                        var $noteSpan = $row.find('.ghichu-column span');
+                        if ($noteSpan.length) {
+                            $noteSpan.text(reason).css('color', '#f44336');
+                            console.log("[DEBUG YEUCAU] Đã fill lý do vào span cho vật tư:", $checkbox.val());
+                        }
+                    }
+                }
+            });
+
+            console.log("[DEBUG YEUCAU] ✅ Đã fill xong lý do từ chối cho tất cả vật tư");
+            
+            // Ẩn popup sau khi điền dữ liệu
+            closeRejectAllPopup();
         }
 
         function submitApprovalVatTuWithCheckbox(maYeucau, vatTuData) {
@@ -898,26 +1060,25 @@
         }
         .vt-checkbox {
             cursor: pointer;
-            width: 18px;
-            height: 18px;
-            accent-color: #4caf50;
-        }
-        .vt-checkbox:checked {
-            accent-color: #4caf50;
         }
         #selectAllVT {
-            width: 18px;
-            height: 18px;
-            accent-color: #4caf50;
-        }
-        #selectAllVT:checked {
-            accent-color: #4caf50;
+            cursor: pointer;
         }
         .pending-approval {
             background-color: #fff9c4 !important;
         }
         .rejected-row {
             background-color: #ffcdd2 !important;
+        }
+        /* Màu nền cho các hàng theo trạng thái trong bảng chính */
+        .status-rejected {
+            background-color:rgb(251, 120, 140) !important; /* Đỏ nhạt */
+        }
+        .status-purchasing {
+            background-color: #e3f2fd !important; /* Xanh dương nhạt */
+        }
+        .status-dispatched {
+            background-color: #e8f5e9 !important; /* Xanh lá cây nhạt */
         }
         .btn-cancel {
             padding: 8px 16px;

@@ -8,7 +8,7 @@ using System.Linq;
 using System.IO;
 using Webkho_20241021.Areas.NhanvienKetoan.Data;
 using Webkho_20241021.Models;
-using Webkho_20241021.Areas.TruongBPKho.Services;
+using Webkho_20241021.Services;
 using Webkho_20241021.Services;
 using OfficeOpenXml;
 
@@ -2013,59 +2013,8 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                         .Where(v => v.VTMaYeucau == maYc)
                         .ToList();
 
-                    var hasDangMuaHang = vtList.Any(v => v.TrangThai == "Đang mua hàng");
-                    var hasChoXuatKho = vtList.Any(v => v.TrangThai == "Chờ xuất kho");
-                    var hasDaXuatKho = vtList.Any(v => v.TrangThai == "Đã xuất kho");
-                    var hasDaNhapKho = vtList.Any(v => v.TrangThai == "Đã nhập kho");
-                    var allDoneOrRejected = vtList.All(v =>
-                        v.TrangThai == "Đã xuất kho" ||
-                        (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
-
-                    if (hasDaNhapKho)
-                    {
-                        // Nếu có vật tư đã nhập kho, kiểm tra xem tất cả vật tư đã nhập kho chưa
-                        var allDaNhapKho = vtList.All(v =>
-                            v.TrangThai == "Đã nhập kho" ||
-                            (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
-                        
-                        if (allDaNhapKho)
-                        {
-                            yeuCau.TrangThai = "Đã nhập kho";
-                        }
-                        else
-                        {
-                            // Có một số vật tư đã nhập kho nhưng chưa tất cả, kiểm tra các trạng thái khác
-                            if (hasDangMuaHang)
-                            {
-                                yeuCau.TrangThai = "Đang mua hàng";
-                            }
-                            else if (hasChoXuatKho)
-                            {
-                                yeuCau.TrangThai = "Chờ xuất kho";
-                            }
-                            else if (hasDaXuatKho)
-                            {
-                                yeuCau.TrangThai = "Đã xuất kho";
-                            }
-                            else
-                            {
-                                yeuCau.TrangThai = "Đã nhập kho";
-                            }
-                        }
-                    }
-                    else if (allDoneOrRejected)
-                    {
-                        yeuCau.TrangThai = "Đã xuất kho";
-                    }
-                    else if (hasDangMuaHang)
-                    {
-                        yeuCau.TrangThai = "Đang mua hàng";
-                    }
-                    else if (hasChoXuatKho)
-                    {
-                        yeuCau.TrangThai = "Chờ xuất kho";
-                    }
-
+                    // Sử dụng helper để đồng bộ trạng thái
+                    yeuCau.TrangThai = YeucauUpdateHelper.TinhTrangThaiYeuCau(vtList);
                     _context.yeucau.Update(yeuCau);
                 }
                 }
