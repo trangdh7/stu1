@@ -1,22 +1,9 @@
 @using System.IO
 @using System.Linq
-@model List<Webkho_20241021.Models.ExcelFile>
+@model List<Webkho_20241021.Models.yeucau>
 @{
-    ViewData["Title"] = "Danh sách file Excel";
+    ViewData["Title"] = "So sánh yêu cầu";
     Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
-    var invalidFileChars = System.IO.Path.GetInvalidFileNameChars();
-    Func<string, string> sanitizeFileName = value =>
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return string.Empty;
-        }
-
-        return new string(value
-            .Select(ch => invalidFileChars.Contains(ch) ? '_' : ch)
-            .ToArray());
-    };
-    var currentDownloader = sanitizeFileName(User?.Identity?.Name ?? "nguoi_dung");
 }
 
 <!DOCTYPE html>
@@ -24,16 +11,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Danh sách file Excel</title>
+    <title>So sánh yêu cầu</title>
     <link rel="stylesheet" href="~/css/danhsachfileexcel.css"/>
 </head>
 <body>
     <div class="bodyyeucau">
-        <h2>Danh sách file Excel đã tải lên</h2>
-
-        <div class="alert-note">
-            ⚠️ Cân nhắc trước khi xóa file Excel.
-        </div>
+        <h2>So sánh yêu cầu</h2>
 
         @if (TempData["Success"] != null || TempData["Error"] != null)
         {
@@ -44,15 +27,19 @@
 
         @{
             var selectedMaDuan = ViewBag.MaDuan as string;
+            var duanList = ViewBag.DuanList as List<Webkho_20241021.Models.duans>;
         }
         <div class="filter-section">
             <form method="get" action="@Url.Action("DanhSachFileExcel", "Yeucau", new { area = "QuanLiDuAn" })">
                 <input type="text" name="q" placeholder="Tìm kiếm..." value="@ViewBag.Q" />
                 <select name="maDuan">
                     <option value="" @(string.IsNullOrEmpty(selectedMaDuan) ? "selected" : "")>Tất cả dự án</option>
-                    @foreach (var duan in ViewBag.Duans)
+                    @if (duanList != null)
                     {
-                        <option value="@duan.MaDuan" @(selectedMaDuan == duan.MaDuan ? "selected" : "")>@duan.MaDuan - @duan.TenDuan</option>
+                        @foreach (var duan in duanList)
+                        {
+                            <option value="@duan.MaDuan" @(selectedMaDuan == duan.MaDuan ? "selected" : "")>@duan.MaDuan - @duan.TenDuan</option>
+                        }
                     }
                 </select>
                 <button type="submit">Tìm kiếm</button>
@@ -63,8 +50,8 @@
         <div class="action-bar">
             <button type="button" class="select-all" onclick="toggleSelectAll()">Chọn tất cả</button>
             <button type="button" onclick="clearSelection()">Bỏ chọn</button>
-            <span class="selected-count" id="selectedCount">Đã chọn: 0 file</span>
-            <button type="button" id="btnCompare" onclick="compareSelected()" disabled>So sánh các file đã chọn</button>
+            <span class="selected-count" id="selectedCount">Đã chọn: 0 yêu cầu</span>
+            <button type="button" id="btnCompare" onclick="compareSelected()" disabled>So sánh các yêu cầu đã chọn</button>
         </div>
 
         <div class="table-container">
@@ -75,13 +62,12 @@
                             <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" />
                         </th>
                         <th>STT</th>
-                        <th>Tên file</th>
                         <th>Mã yêu cầu</th>
+                        <th>Tên yêu cầu</th>
                         <th>Mã dự án</th>
-                        <th>Người upload</th>
-                        <th>Ngày upload</th>
-                        <th>Kích thước</th>
-                        <th>Thao tác</th>
+                        <th>Người yêu cầu</th>
+                        <th>Ngày yêu cầu</th>
+                        <th>Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -89,79 +75,29 @@
                         int currentPage = ViewBag.Page ?? 1;
                         int pageSize = 10;
                         int stt = (currentPage - 1) * pageSize + 1;
-                        var yeucauList = ViewBag.YeucauList as List<Webkho_20241021.Models.yeucau>;
-                        var duanList = ViewBag.DuanList as List<Webkho_20241021.Models.duans>;
                     }
-                    @foreach (var file in Model)
+                    @foreach (var yeucau in Model)
                     {
-                        var yeucau = yeucauList?.FirstOrDefault(y => y.MaYeucau == file.MaYeucau);
-                        var duan = duanList?.FirstOrDefault(d => d.MaDuan == file.MaDuan);
+                        var duan = duanList?.FirstOrDefault(d => d.MaDuan == yeucau.YCMaDuan);
                         <tr>
                             <td>
-                                <input type="checkbox" class="file-checkbox" value="@file.ID" onchange="updateSelectedCount()" />
+                                <input type="checkbox" class="yeucau-checkbox" value="@yeucau.MaYeucau" onchange="updateSelectedCount()" />
                             </td>
                             <td>@stt</td>
-                            <td>@file.TenFile</td>
-                            <td>@file.MaYeucau</td>
-                            <td>@(duan != null ? $"{file.MaDuan} - {duan.TenDuan}" : file.MaDuan)</td>
-                            <td>@file.NguoiUpload</td>
-                            <td>@(file.NgayUpload?.ToString("dd/MM/yyyy HH:mm") ?? "")</td>
-                            <td>@((file.KichThuocFile ?? 0) / 1024) KB</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <a href="@Url.Action("XemFileExcel", "Yeucau", new { area = "QuanLiDuAn", id = file.ID })" class="btn-view">Xem</a>
-                                    @if (!string.IsNullOrEmpty(file.DuongDanFile))
-                                    {
-                                        var originalNameRaw = string.IsNullOrWhiteSpace(file.TenFile)
-                                            ? $"File_{file.ID}"
-                                            : System.IO.Path.GetFileNameWithoutExtension(file.TenFile);
-                                        var originalName = sanitizeFileName(originalNameRaw);
-                                        if (string.IsNullOrEmpty(originalName))
-                                        {
-                                            originalName = $"File_{file.ID}";
-                                        }
-                                        var originalExt = System.IO.Path.GetExtension(file.TenFile);
-                                        if (string.IsNullOrWhiteSpace(originalExt))
-                                        {
-                                            originalExt = ".xlsx";
-                                        }
-                                        var uploaderName = sanitizeFileName(file.NguoiUpload ?? "nguoi_upload");
-                                        if (string.IsNullOrEmpty(uploaderName))
-                                        {
-                                            uploaderName = "nguoi_upload";
-                                        }
-                                        var downloadName = $"{originalName}_{uploaderName}{originalExt}";
-
-                                        <a href="@file.DuongDanFile"
-                                           target="_blank"
-                                           download="@downloadName"
-                                           class="btn-download">
-                                            Tải về
-                                        </a>
-                                    }
-                                    <form id="deleteForm-@file.ID"
-                                          method="post"
-                                          action="@Url.Action("XoaFileExcel", "Yeucau", new { area = "QuanLiDuAn" })"
-                                          class="inline-delete-form">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@file.ID" />
-                                        <button type="button"
-                                                class="btn-delete"
-                                                data-form="deleteForm-@file.ID"
-                                                data-file="@file.TenFile">
-                                            Xóa
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
+                            <td>@yeucau.MaYeucau</td>
+                            <td>@yeucau.TenYeucau</td>
+                            <td>@(duan != null ? $"{yeucau.YCMaDuan} - {duan.TenDuan}" : yeucau.YCMaDuan)</td>
+                            <td>@yeucau.NguoiYeucau</td>
+                            <td>@(yeucau.NgayYeucau?.ToString("dd/MM/yyyy HH:mm") ?? "")</td>
+                            <td>@yeucau.TrangThai</td>
                         </tr>
                         stt++;
                     }
                     @if (Model.Count == 0)
                     {
                         <tr>
-                            <td colspan="9" style="text-align: center; padding: 20px;">
-                                Không có file Excel nào được tìm thấy.
+                            <td colspan="8" style="text-align: center; padding: 20px;">
+                                Không có yêu cầu nào được tìm thấy.
                             </td>
                         </tr>
                     }
@@ -184,7 +120,7 @@
     <script>
         function toggleSelectAll() {
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-            const checkboxes = document.querySelectorAll('.file-checkbox');
+            const checkboxes = document.querySelectorAll('.yeucau-checkbox');
             const isChecked = selectAllCheckbox.checked;
             
             checkboxes.forEach(checkbox => {
@@ -195,7 +131,7 @@
         }
 
         function clearSelection() {
-            const checkboxes = document.querySelectorAll('.file-checkbox');
+            const checkboxes = document.querySelectorAll('.yeucau-checkbox');
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
             
             checkboxes.forEach(checkbox => {
@@ -207,21 +143,21 @@
         }
 
         function updateSelectedCount() {
-            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const checkboxes = document.querySelectorAll('.yeucau-checkbox:checked');
             const count = checkboxes.length;
             const selectedCountEl = document.getElementById('selectedCount');
             const btnCompare = document.getElementById('btnCompare');
             
-            selectedCountEl.textContent = `Đã chọn: ${count} file`;
+            selectedCountEl.textContent = `Đã chọn: ${count} yêu cầu`;
             
-            if (count > 0) {
+            if (count >= 2) {
                 btnCompare.disabled = false;
             } else {
                 btnCompare.disabled = true;
             }
 
             // Cập nhật checkbox "Chọn tất cả"
-            const allCheckboxes = document.querySelectorAll('.file-checkbox');
+            const allCheckboxes = document.querySelectorAll('.yeucau-checkbox');
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
             if (allCheckboxes.length > 0) {
                 selectAllCheckbox.checked = count === allCheckboxes.length;
@@ -229,36 +165,18 @@
         }
 
         function compareSelected() {
-            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
-            const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+            const checkboxes = document.querySelectorAll('.yeucau-checkbox:checked');
+            const selectedMaYeucau = Array.from(checkboxes).map(cb => cb.value);
             
-            if (selectedIds.length < 2) {
-                alert('Vui lòng chọn ít nhất 2 file để so sánh!');
+            if (selectedMaYeucau.length < 2) {
+                alert('Vui lòng chọn ít nhất 2 yêu cầu để so sánh!');
                 return;
             }
             
-            // Chuyển đến trang so sánh với danh sách ID
-            const idsParam = selectedIds.join(',');
-            window.location.href = '@Url.Action("SoSanhNhieuFile", "Yeucau", new { area = "QuanLiDuAn" })?ids=' + idsParam;
+            // Chuyển đến trang so sánh với danh sách mã yêu cầu
+            const idsParam = selectedMaYeucau.join(',');
+            window.location.href = '@Url.Action("SoSanhNhieuFile", "Yeucau", new { area = "QuanLiDuAn" })?ids=' + encodeURIComponent(idsParam);
         }
-
-        document.addEventListener('click', function (event) {
-            if (!event.target.classList.contains('btn-delete')) {
-                return;
-            }
-
-            const button = event.target;
-            const formId = button.getAttribute('data-form');
-            const fileName = button.getAttribute('data-file') || 'file Excel';
-            const message = `Cân nhắc trước khi xóa file "${fileName}". Bạn có chắc muốn xóa?`;
-
-            if (confirm(message)) {
-                const form = document.getElementById(formId);
-                if (form) {
-                    form.submit();
-                }
-            }
-        });
 
         // Tự động ẩn thông báo sau 5 giây
         document.addEventListener('DOMContentLoaded', function() {

@@ -2067,21 +2067,8 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     .Where(v => v.VTMaYeucau == maYc)
                     .ToList();
 
-                var allDoneOrRejected = vtList.All(v =>
-                    v.TrangThai == "Đã xuất kho" ||
-                    (!string.IsNullOrEmpty(v.TrangThai) && v.TrangThai.Contains("Đã từ chối")));
-
-                var hasDangMuaHang = vtList.Any(v => v.TrangThai == "Đang mua hàng");
-
-                if (allDoneOrRejected)
-                {
-                    yeuCau.TrangThai = "Đã xuất kho";
-                }
-                else if (hasDangMuaHang)
-                {
-                    yeuCau.TrangThai = "Đang mua hàng";
-                }
-
+                // Sử dụng helper để đồng bộ trạng thái
+                yeuCau.TrangThai = YeucauUpdateHelper.TinhTrangThaiYeuCau(vtList);
                 _context.yeucau.Update(yeuCau);
             }
             _context.SaveChanges();

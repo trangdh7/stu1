@@ -1024,21 +1024,22 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 pageSize = 10;
             }
 
-            var query = _context.ExcelFiles
+            var query = _context.yeucau
                 .AsNoTracking()
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var keyword = q.Trim();
-                query = query.Where(f =>
-                    (f.TenFile != null && f.TenFile.Contains(keyword)) ||
-                    (f.MaYeucau != null && f.MaYeucau.Contains(keyword)));
+                query = query.Where(y =>
+                    (y.MaYeucau != null && y.MaYeucau.Contains(keyword)) ||
+                    (y.TenYeucau != null && y.TenYeucau.Contains(keyword)) ||
+                    (y.NguoiYeucau != null && y.NguoiYeucau.Contains(keyword)));
             }
 
             if (!string.IsNullOrWhiteSpace(maDuan))
             {
-                query = query.Where(f => f.MaDuan == maDuan);
+                query = query.Where(y => y.YCMaDuan == maDuan);
             }
 
             var totalItems = query.Count();
@@ -1048,49 +1049,23 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 page = totalPages;
             }
 
-            var excelFiles = query
-                .OrderByDescending(f => f.NgayUpload ?? DateTime.MinValue)
-                .ThenByDescending(f => f.ID)
+            var yeucauList = query
+                .OrderByDescending(y => y.NgayYeucau ?? DateTime.MinValue)
+                .ThenByDescending(y => y.MaYeucau)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
 
             var duanList = _context.duans.OrderBy(d => d.MaDuan).ToList();
 
-            var yeucauIds = excelFiles
-                .Where(f => !string.IsNullOrEmpty(f.MaYeucau))
-                .Select(f => f.MaYeucau!)
-                .Distinct()
-                .ToList();
-
-            var yeucauList = yeucauIds.Any()
-                ? _context.yeucau
-                    .Where(y => yeucauIds.Contains(y.MaYeucau))
-                    .AsNoTracking()
-                    .ToList()
-                : new List<yeucau>();
-
-            var yeucauLookup = yeucauList.ToDictionary(y => y.MaYeucau, y => y);
-            foreach (var file in excelFiles)
-            {
-                if (string.IsNullOrEmpty(file.MaDuan) &&
-                    !string.IsNullOrEmpty(file.MaYeucau) &&
-                    yeucauLookup.TryGetValue(file.MaYeucau, out var yc) &&
-                    !string.IsNullOrEmpty(yc.YCMaDuan))
-                {
-                    file.MaDuan = yc.YCMaDuan;
-                }
-            }
-
             ViewBag.Duans = duanList;
             ViewBag.DuanList = duanList;
-            ViewBag.YeucauList = yeucauList;
             ViewBag.Q = q;
             ViewBag.MaDuan = maDuan;
             ViewBag.Page = page;
             ViewBag.TotalPages = totalPages;
 
-            return View(excelFiles);
+            return View(yeucauList);
         }
 
         [HttpPost]
@@ -1250,7 +1225,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     g.Key.TenSanpham,
                     g.Key.HangSX,
                     g.Key.DonVi,
-                    TongSL = g.Sum(x => x.vt.SL ?? 0),
+                    TongSL = g.OrderByDescending(x => x.file.NgayUpload)
+                               .ThenByDescending(x => x.file.ID)
+                               .ThenByDescending(x => x.file.MaYeucau)
+                               .First().vt.SL ?? 0,
                     SoLuongFile = g.Select(x => x.file.ID).Distinct().Count()
                 })
                 .ToList();
@@ -1318,51 +1296,44 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 return RedirectToAction(nameof(DanhSachFileExcel));
             }
 
-            var idList = ids
+            var maYeucauList = ids
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(id => int.TryParse(id, out var parsed) ? parsed : (int?)null)
-                .Where(id => id.HasValue)
-                .Select(id => id!.Value)
+                .Select(id => id.Trim())
+                .Where(id => !string.IsNullOrEmpty(id))
                 .Distinct()
                 .ToList();
 
-            if (!idList.Any())
+            if (!maYeucauList.Any())
             {
                 return RedirectToAction(nameof(DanhSachFileExcel));
             }
 
-            var excelFiles = _context.ExcelFiles
+            var yeucauList = _context.yeucau
                 .AsNoTracking()
-                .Where(f => idList.Contains(f.ID))
-                .OrderBy(f => f.NgayUpload ?? DateTime.MinValue)
-                .ThenBy(f => f.ID)
+                .Where(y => maYeucauList.Contains(y.MaYeucau))
+                .OrderBy(y => y.NgayYeucau ?? DateTime.MinValue)
+                .ThenBy(y => y.MaYeucau)
                 .ToList();
 
-            if (!excelFiles.Any())
+            if (!yeucauList.Any())
             {
                 return RedirectToAction(nameof(DanhSachFileExcel));
             }
 
-            var filesByYeucau = excelFiles
-                .Where(f => !string.IsNullOrEmpty(f.MaYeucau))
-                .GroupBy(f => f.MaYeucau!)
-                .ToDictionary(g => g.Key, g => g.First());
+            var yeucauDict = yeucauList.ToDictionary(y => y.MaYeucau, y => y);
 
-            var yeucauIds = filesByYeucau.Keys.ToList();
-            var vatTuList = yeucauIds.Any()
+            var vatTuList = maYeucauList.Any()
                 ? _context.vtyeucau
-                    .Where(v => v.VTMaYeucau != null && yeucauIds.Contains(v.VTMaYeucau))
+                    .Where(v => v.VTMaYeucau != null && maYeucauList.Contains(v.VTMaYeucau))
                     .AsNoTracking()
                     .ToList()
                 : new List<vtyeucau>();
 
             var comparisonDict = new Dictionary<string, VatTuComparisonViewModel>();
-            var firstFileId = excelFiles.First().ID;
-            var lastFileId = excelFiles.Last().ID;
 
             foreach (var vt in vatTuList)
             {
-                if (vt.VTMaYeucau == null || !filesByYeucau.TryGetValue(vt.VTMaYeucau, out var file))
+                if (vt.VTMaYeucau == null || !yeucauDict.TryGetValue(vt.VTMaYeucau, out var yeucau))
                 {
                     continue;
                 }
@@ -1382,13 +1353,26 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                 comparison.ChiTiet.Add(new FileVatTuDetail
                 {
-                    FileID = file.ID,
-                    TenFile = file.TenFile ?? "",
-                    NgayUpload = file.NgayUpload ?? DateTime.MinValue,
+                    FileID = 0,
+                    TenFile = yeucau.TenYeucau ?? yeucau.MaYeucau,
+                    NgayUpload = yeucau.NgayYeucau ?? DateTime.MinValue,
                     MaYeucau = vt.VTMaYeucau,
-                    SL = vt.SL ?? 0
+                    SL = vt.SL ?? 0,
+                    TrangThai = vt.TrangThai ?? ""
                 });
-                comparison.TongSL += vt.SL ?? 0;
+            }
+
+            // Tính TongSL = số lượng của yêu cầu mới nhất (theo NgayYeucau)
+            foreach (var comparison in comparisonDict.Values)
+            {
+                if (comparison.ChiTiet.Any())
+                {
+                    var yeucauMoiNhat = comparison.ChiTiet
+                        .OrderByDescending(c => c.NgayUpload)
+                        .ThenByDescending(c => c.MaYeucau)
+                        .First();
+                    comparison.TongSL = yeucauMoiNhat.SL;
+                }
             }
 
             var vatTuComparison = comparisonDict.Values
@@ -1396,76 +1380,33 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 .ThenBy(v => v.TenSanpham)
                 .ToList();
 
-            // Lấy danh sách các mã yêu cầu từ các file excel
-            var maYeucauList = excelFiles
-                .Where(f => !string.IsNullOrEmpty(f.MaYeucau))
-                .Select(f => f.MaYeucau!)
-                .Distinct()
-                .ToList();
-
-            // Lấy tất cả các phiếu xuất kho liên quan đến các mã yêu cầu này
-            var phieuXuatKhoList = maYeucauList.Any()
-                ? _context.phieuxuatkho
-                    .Where(px => maYeucauList.Contains(px.MaYeucau))
-                    .AsNoTracking()
-                    .ToList()
-                : new List<phieuxuatkho>();
-
-            // Lấy danh sách các phiếu xuất kho đã hoàn thành
-            var phieuXuatKhoDaXacNhan = phieuXuatKhoList
-                .Where(px => px.TrangThai == "Hoàn thành")
-                .Select(px => px.MaXuatkho)
-                .Where(mx => !string.IsNullOrEmpty(mx))
-                .ToList();
-
-            // Lấy tất cả vật tư đã xuất kho với trạng thái đã xác nhận
-            var vtXuatKhoList = phieuXuatKhoDaXacNhan.Any()
-                ? _context.vtphieuxuatkho
-                    .Where(vt => !string.IsNullOrEmpty(vt.MaXuatkho) && phieuXuatKhoDaXacNhan.Contains(vt.MaXuatkho))
-                    .AsNoTracking()
-                    .ToList()
-                : new List<vtphieuxuatkho>();
-
             int totalDu = 0;
             int totalTonDong = 0;
             foreach (var item in vatTuComparison)
             {
-                // Tính "Đã cấp phát" = tổng số lượng vật tư đã được xuất kho và hoàn thành
-                // Đối chiếu theo MaSanpham và MaYeucau
+                // Tính "Đã cấp phát" = số lượng của yêu cầu mới nhất có trạng thái "Đã xuất kho"
                 var daCapPhat = 0;
                 
-                // Lấy các mã yêu cầu liên quan đến vật tư này
-                var maYeucauCuaVatTu = item.ChiTiet
-                    .Select(c => c.MaYeucau)
-                    .Where(my => !string.IsNullOrEmpty(my))
-                    .Distinct()
-                    .ToList();
-
-                if (maYeucauCuaVatTu.Any() && !string.IsNullOrEmpty(item.MaSanpham))
+                if (item.ChiTiet.Any())
                 {
-                    // Lấy các phiếu xuất kho của các mã yêu cầu này đã hoàn thành
-                    var phieuXuatKhoCuaVatTu = phieuXuatKhoList
-                        .Where(px => maYeucauCuaVatTu.Contains(px.MaYeucau) 
-                            && px.TrangThai == "Hoàn thành")
-                        .Select(px => px.MaXuatkho)
-                        .Where(mx => !string.IsNullOrEmpty(mx))
-                        .ToList();
-
-                    if (phieuXuatKhoCuaVatTu.Any())
+                    // Lấy yêu cầu mới nhất có trạng thái "Đã xuất kho"
+                    var yeucauDaXuatKho = item.ChiTiet
+                        .Where(c => !string.IsNullOrEmpty(c.TrangThai) && 
+                                    c.TrangThai.Trim().Equals("Đã xuất kho", StringComparison.OrdinalIgnoreCase))
+                        .OrderByDescending(c => c.NgayUpload)
+                        .ThenByDescending(c => c.MaYeucau)
+                        .FirstOrDefault();
+                    
+                    if (yeucauDaXuatKho != null)
                     {
-                        // Tính tổng số lượng vật tư đã xuất kho với mã sản phẩm này
-                        // Chỉ tính các vật tư trong các phiếu đã hoàn thành
-                        daCapPhat = vtXuatKhoList
-                            .Where(vt => phieuXuatKhoCuaVatTu.Contains(vt.MaXuatkho) 
-                                && vt.MaSanpham == item.MaSanpham)
-                            .Sum(vt => vt.SL ?? 0);
+                        daCapPhat = yeucauDaXuatKho.SL;
                     }
                 }
 
                 // Tính "Tồn đọng" = Tổng SL - Đã cấp phát
                 var tonDong = Math.Max(0, item.TongSL - daCapPhat);
 
-                // Tính "Dư" = Đã cấp phát - Tồn đọng (nếu đã cấp phát nhiều hơn tổng số lượng yêu cầu)
+                // Tính "Dư" = Đã cấp phát - Tổng SL (nếu đã cấp phát nhiều hơn tổng số lượng yêu cầu mới nhất)
                 var du = Math.Max(0, daCapPhat - item.TongSL);
 
                 item.CapPhat = daCapPhat;
@@ -1476,11 +1417,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 totalDu += item.Du;
             }
 
-            ViewBag.ExcelFiles = excelFiles;
+            ViewBag.YeucauList = yeucauList;
             ViewBag.VatTuComparison = vatTuComparison;
             ViewBag.TotalTonDong = totalTonDong;
             ViewBag.TotalDu = totalDu;
-            ViewBag.HasMultipleFiles = excelFiles.Count > 1;
+            ViewBag.HasMultipleYeucau = yeucauList.Count > 1;
 
             return View();
         }

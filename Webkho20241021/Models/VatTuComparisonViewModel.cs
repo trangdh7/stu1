@@ -20,6 +20,7 @@ namespace Webkho_20241021.Models
         public DateTime NgayUpload { get; set; }
         public string MaYeucau { get; set; } = "";
         public int SL { get; set; }
+        public string TrangThai { get; set; } = "";
     }
 }
 

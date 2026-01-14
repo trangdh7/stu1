@@ -1,7 +1,7 @@
 @{
-    ViewData["Title"] = "So sánh file Excel";
+    ViewData["Title"] = "So sánh yêu cầu";
     Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
-    var excelFiles = ViewBag.ExcelFiles as List<Webkho_20241021.Models.ExcelFile>;
+    var yeucauList = ViewBag.YeucauList as List<Webkho_20241021.Models.yeucau>;
     var vatTuComparison = ViewBag.VatTuComparison as List<Webkho_20241021.Models.VatTuComparisonViewModel>;
 }
 
@@ -10,7 +10,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>So sánh file Excel</title>
+    <title>So sánh yêu cầu</title>
 
     <!-- CSS tách riêng -->
     <link rel="stylesheet" href="~/css/so-sanh-excel.css" />
@@ -22,21 +22,21 @@
         </a>
 
         <div class="header-section">
-            <h2>So sánh file Excel</h2>
+            <h2>So sánh yêu cầu</h2>
             
             <div class="header-content">
                 <div class="header-stat">
-                    <strong>Số file được so sánh:</strong>
-                    <span>@(excelFiles?.Count ?? 0)</span>
+                    <strong>Số yêu cầu được so sánh:</strong>
+                    <span>@(yeucauList?.Count ?? 0)</span>
                 </div>
             </div>
 
             <ul class="file-list">
-                @foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                @foreach (var yeucau in yeucauList ?? new List<Webkho_20241021.Models.yeucau>())
                 {
                     <li>
-                        <strong>@file.TenFile</strong>
-                        <div>Mã YC: <strong>@file.MaYeucau</strong> • @(file.NgayUpload?.ToString("dd/MM/yyyy HH:mm") ?? "")</div>
+                        <strong>@yeucau.TenYeucau</strong>
+                        <div>Mã YC: <strong>@yeucau.MaYeucau</strong> • @(yeucau.NgayYeucau?.ToString("dd/MM/yyyy HH:mm") ?? "")</div>
                     </li>
                 }
             </ul>
@@ -44,7 +44,7 @@
             <div class="header-note">
                 <small>
                     ℹ️ <strong>Ghi chú:</strong> 
-                    <br />• <strong>"Đã cấp phát":</strong> Tổng số lượng vật tư đã được xuất kho và xác nhận nhận hàng thành công.
+                    <br />• <strong>"Đã cấp phát":</strong> Tổng số lượng vật tư đã được xuất kho.
                     <br />• <strong>"Tồn đọng":</strong> Số lượng vật tư còn lại chưa được cấp phát = Tổng SL - Đã cấp phát
                     <br />• <strong>"Dư":</strong> Số lượng dư thừa khi đã cấp phát nhiều hơn tổng số lượng yêu cầu = Đã cấp phát - Tổng SL
                 </small>
@@ -83,11 +83,11 @@
                             <th class="vat-tu-column">Tên thiết bị/hàng hóa</th>
                             <th class="vat-tu-column">Hãng SX</th>
                             <th class="vat-tu-column">ĐV</th>
-                            @foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                            @foreach (var yeucau in yeucauList ?? new List<Webkho_20241021.Models.yeucau>())
                             {
                                 <th class="file-column">
-                                    @file.TenFile<br />
-                                    <small>@(file.NgayUpload?.ToString("dd/MM/yyyy") ?? "")</small>
+                                    @yeucau.TenYeucau<br />
+                                    <small>@(yeucau.NgayYeucau?.ToString("dd/MM/yyyy") ?? "")</small>
                                 </th>
                             }
                             <th class="vat-tu-column col-tong-sl">Tổng SL</th>
@@ -107,17 +107,17 @@
 
                                 @{
                                     var quantities = new List<int>();
-                                    foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                                    foreach (var yeucau in yeucauList ?? new List<Webkho_20241021.Models.yeucau>())
                                     {
-                                        var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.FileID == file.ID);
+                                        var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.MaYeucau == yeucau.MaYeucau);
                                         var sl = chiTiet != null ? chiTiet.SL : 0;
                                         quantities.Add(sl);
                                     }
                                     var hasDifference = quantities.Distinct().Count() > 1;
 
-                                    foreach (var file in excelFiles ?? new List<Webkho_20241021.Models.ExcelFile>())
+                                    foreach (var yeucau in yeucauList ?? new List<Webkho_20241021.Models.yeucau>())
                                     {
-                                        var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.FileID == file.ID);
+                                        var chiTiet = vatTu.ChiTiet?.FirstOrDefault(c => c.MaYeucau == yeucau.MaYeucau);
                                         var sl = chiTiet != null ? chiTiet.SL : 0;
 
                                         var cellClass = "file-column";
