@@ -124,10 +124,21 @@ namespace Webkho_20241021.Services
                 .Where(y => !string.IsNullOrWhiteSpace(y.MaYeucau))
                 .ToList()
                 .Where(y => string.Equals(GetBaseRequestCode(y.MaYeucau), baseCode, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            // ⭐ SỬA BUG: Loại trừ các yêu cầu đã bị từ chối
+            var maYeucauBiTuChoi = allRelatedMaYeucau
+                .Where(y => !string.IsNullOrEmpty(y.TrangThai) && 
+                           y.TrangThai.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase))
                 .Select(y => y.MaYeucau)
                 .ToList();
 
-            if (!allRelatedMaYeucau.Any())
+            var allRelatedMaYeucauHopLe = allRelatedMaYeucau
+                .Where(y => !maYeucauBiTuChoi.Contains(y.MaYeucau))
+                .Select(y => y.MaYeucau)
+                .ToList();
+
+            if (!allRelatedMaYeucauHopLe.Any())
                 return 0;
 
             // Lấy các phiếu xuất kho của các mã yêu cầu này đã/đang cấp (kể cả đang chuẩn bị hàng)
@@ -141,8 +152,9 @@ namespace Webkho_20241021.Services
             };
 
             // Materialize query trước, sau đó lọc case-insensitive trong memory
+            // ⭐ SỬA BUG: Chỉ lấy phiếu xuất kho từ các yêu cầu hợp lệ (không bị từ chối)
             var phieuXuatKhoCuaVatTu = context.phieuxuatkho
-                .Where(px => allRelatedMaYeucau.Contains(px.MaYeucau))
+                .Where(px => allRelatedMaYeucauHopLe.Contains(px.MaYeucau))
                 .ToList()
                 .Where(px => !string.IsNullOrEmpty(px.TrangThai) 
                              && trangThaiPhieuDuocTinh.Contains(px.TrangThai, StringComparer.OrdinalIgnoreCase))
@@ -174,7 +186,8 @@ namespace Webkho_20241021.Services
                              && !string.IsNullOrWhiteSpace(vt.MaSanpham))
                 .ToList()
                 .Where(vt => !string.IsNullOrEmpty(vt.TrangThai)
-                             && trangThaiVTDuocTinh.Contains(vt.TrangThai, StringComparer.OrdinalIgnoreCase))
+                             && trangThaiVTDuocTinh.Contains(vt.TrangThai, StringComparer.OrdinalIgnoreCase)
+                             && !maYeucauBiTuChoi.Contains(vt.MaYeucau ?? "")) // ⭐ Loại trừ phiếu xuất từ yêu cầu đã bị từ chối
                 .ToList();
 
             int soLuongDaCap = vtDaXuatList

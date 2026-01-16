@@ -19,9 +19,12 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
     public class YeucauController : Controller
     {
         private readonly ApplicationDbContext _context;
-        public YeucauController(ApplicationDbContext context)
+        private readonly EmailService _emailService;
+
+        public YeucauController(ApplicationDbContext context, EmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
         public IActionResult Yeucau(string search = "")
         {
@@ -848,7 +851,19 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
 
-                // Lưu file Excel nếu có
+                // Gửi thông báo cho Trưởng BP kỹ thuật khi nhân viên tạo yêu cầu
+                _ = Task.Run(async () =>
+                {
+                    System.Diagnostics.Debug.WriteLine($"[NV Kythuat] Gửi email Trưởng BP cho yêu cầu {yeucau.MaYeucau}");
+                    await _emailService.SendNotificationToDepartmentHeadAsync(
+                        yeucau.MaYeucau,
+                        yeucau.NguoiYeucau ?? "",
+                        yeucau.Bophan ?? ""
+                    );
+                    System.Diagnostics.Debug.WriteLine($"[NV Kythuat] Đã gọi xong SendNotificationToDepartmentHeadAsync cho {yeucau.MaYeucau}");
+                });
+
+                // Lưu thông tin file Excel vào database (không lưu file vào đĩa để tiết kiệm dung lượng)
                 try
                 {
                     if (Request.Form.Files != null && Request.Form.Files.Count > 0)
@@ -859,27 +874,12 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         
                         if (excelFile != null && excelFile.Length > 0)
                         {
-                            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "excel");
-                            if (!Directory.Exists(uploadsFolder))
-                            {
-                                Directory.CreateDirectory(uploadsFolder);
-                            }
-
-                            // Tên file theo cấu trúc mới: MaYeucau (đã bao gồm NNNNNN ST)
-                            var uniqueFileName = $"{yeucau.MaYeucau.Replace(" ", "_")}_{Path.GetFileName(excelFile.FileName)}";
-                            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                            using (var stream = new FileStream(filePath, FileMode.Create))
-                            {
-                                excelFile.CopyTo(stream);
-                            }
-
                             var excelFileRecord = new ExcelFile
                             {
                                 MaYeucau = yeucau.MaYeucau,
                                 MaDuan = yeucau.YCMaDuan,
                                 TenFile = excelFile.FileName,
-                                DuongDanFile = $"/uploads/excel/{uniqueFileName}",
+                                DuongDanFile = null, // Không lưu file vào đĩa
                                 NgayUpload = DateTime.Now,
                                 NguoiUpload = maNv2,
                                 KichThuocFile = excelFile.Length
@@ -893,7 +893,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 catch (Exception ex)
                 {
                     // Log lỗi nhưng không dừng quá trình xử lý
-                    Console.WriteLine($"Lỗi khi lưu file Excel: {ex.Message}");
+                    Console.WriteLine($"Lỗi khi lưu thông tin file Excel: {ex.Message}");
                     Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 }
 

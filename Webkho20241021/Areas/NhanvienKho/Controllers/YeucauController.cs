@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Threading.Tasks;
+using System.Diagnostics;
 using Webkho_20241021.Areas.NhanvienKho.Data;
 using Webkho_20241021.Models;
 using Webkho_20241021.Services;
@@ -20,8 +22,11 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
     [Authorize(Roles = "Nhân viên-BP kho,Nhân viên kho")]
     public class YeucauController : BaseYeucauController
     {
-        public YeucauController(ApplicationDbContext context) : base(context)
+        private readonly EmailService _emailService;
+
+        public YeucauController(ApplicationDbContext context, EmailService emailService) : base(context)
         {
+            _emailService = emailService;
         }
 
         public IActionResult Yeucau(string search = "")
@@ -1561,6 +1566,49 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
             }
 
             _context.SaveChanges();
+
+            // Gửi thông báo cho người yêu cầu khi xuất kho thành công
+            var maYeucauListForNotif = VTphieuxuatkho
+                .Select(v => v.MaYeucau)
+                .Where(ma => !string.IsNullOrEmpty(ma))
+                .Distinct()
+                .ToList();
+
+            foreach (var maYc in maYeucauListForNotif)
+            {
+                try
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[NV Kho] Gửi email cho người yêu cầu khi xuất kho. MaYeucau = {maYc}, MaXuatkho = {MaXuatkho}");
+                        await _emailService.SendNotificationToRequesterOnIssueAsync(maYc, MaXuatkho);
+                        System.Diagnostics.Debug.WriteLine($"[NV Kho] Đã gọi xong SendNotificationToRequesterOnIssueAsync cho MaYeucau = {maYc}");
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[NV Kho/Xuliphieuxuatkho] Lỗi gửi email xuất kho cho {maYc}: {ex.Message}");
+                }
+            }
+
+            // Gửi email thông báo cho bộ phận kho khi xuất kho
+            if (maYeucauListForNotif.Any())
+            {
+                try
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[NV Kho] Gửi email thông báo kho khi xuất kho. MaXuatkho = {MaXuatkho}");
+                        await _emailService.SendNotificationToWarehouseOnXuatKhoAsync(MaXuatkho, maYeucauListForNotif.First());
+                        System.Diagnostics.Debug.WriteLine($"[NV Kho] Đã gọi xong SendNotificationToWarehouseOnXuatKhoAsync cho MaXuatkho = {MaXuatkho}");
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[NV Kho/Xuliphieuxuatkho] Lỗi gửi email thông báo kho khi xuất kho: {ex.Message}");
+                }
+            }
+
             TempData["Success"] = "Xuất kho thành công! Phiếu đã hoàn thành và được khóa.";
 
             return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "NhanvienKho" });

@@ -2144,12 +2144,15 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                 _context.phieumuahang.Update(Phieumuahang);
                 _context.SaveChanges();
 
-                // Gửi thông báo cho bộ phận mua hàng khi kế toán thanh toán
+                // Gửi thông báo cho bộ phận mua hàng và người yêu cầu khi kế toán thanh toán
                 if (boPhan2 == "BP kế toán" && Phieumuahang.TrangThai == "Đã thanh toán")
                 {
                     _ = Task.Run(async () =>
                     {
+                        System.Diagnostics.Debug.WriteLine($"[NV KếToán] Gửi email thông báo thanh toán. MaMuahang = {MaMuahang}");
                         await _emailService.SendNotificationToPurchasingOnPaymentAsync(MaMuahang);
+                        await _emailService.SendNotificationToRequesterOnPaymentAsync(MaMuahang);
+                        System.Diagnostics.Debug.WriteLine($"[NV KếToán] Đã gọi xong các email thông báo thanh toán. MaMuahang = {MaMuahang}");
                     });
                 }
             }

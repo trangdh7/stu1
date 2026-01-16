@@ -927,11 +927,13 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                 // Gửi thông báo cho trưởng phòng khi nhân viên tạo yêu cầu
                 _ = Task.Run(async () =>
                 {
+                    System.Diagnostics.Debug.WriteLine($"[NV MuaHang] Gửi email Trưởng BP cho yêu cầu {yeucau.MaYeucau}");
                     await _emailService.SendNotificationToDepartmentHeadAsync(
                         yeucau.MaYeucau, 
                         yeucau.NguoiYeucau ?? "", 
                         yeucau.Bophan ?? ""
                     );
+                    System.Diagnostics.Debug.WriteLine($"[NV MuaHang] Đã gọi xong SendNotificationToDepartmentHeadAsync cho {yeucau.MaYeucau}");
                 });
 
                 for (int i = 0; i < YCMaKho.Count; i++)
@@ -1597,7 +1599,20 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                 {
                     _ = Task.Run(async () =>
                     {
+                        System.Diagnostics.Debug.WriteLine($"[NV MuaHang] Gửi email cho người yêu cầu khi xuất kho. MaYeucau = {maYc}, MaXuatkho = {MaXuatkho}");
                         await _emailService.SendNotificationToRequesterOnIssueAsync(maYc, MaXuatkho);
+                        System.Diagnostics.Debug.WriteLine($"[NV MuaHang] Đã gọi xong SendNotificationToRequesterOnIssueAsync cho MaYeucau = {maYc}");
+                    });
+                }
+
+                // Gửi email thông báo cho bộ phận kho khi xuất kho
+                if (maYeucauListForNotif.Any())
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[NV MuaHang] Gửi email thông báo kho khi xuất kho. MaXuatkho = {MaXuatkho}");
+                        await _emailService.SendNotificationToWarehouseOnXuatKhoAsync(MaXuatkho, maYeucauListForNotif.First());
+                        System.Diagnostics.Debug.WriteLine($"[NV MuaHang] Đã gọi xong SendNotificationToWarehouseOnXuatKhoAsync cho MaXuatkho = {MaXuatkho}");
                     });
                 }
             }
@@ -2455,6 +2470,19 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                 }
 
                 _context.phieunhapkho.Update(Phieunhapkho);
+                
+                // Gửi email thông báo cho người yêu cầu khi nhập kho xong
+                if (Phieunhapkho.TrangThai == "Đã nhập kho")
+                {
+                    try
+                    {
+                        _ = _emailService.SendNotificationToRequesterOnNhapKhoAsync(MaNhapkho);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[NhanvienMuahang/Xuliphieunhapkho] Lỗi gửi email nhập kho cho người yêu cầu: {ex.Message}");
+                    }
+                }
             }
             else if (action == "reject")
             {

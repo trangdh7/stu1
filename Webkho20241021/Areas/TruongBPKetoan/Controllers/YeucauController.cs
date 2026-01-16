@@ -11,6 +11,7 @@ using Webkho_20241021.Models;
 using Webkho_20241021.Services;
 using Webkho_20241021.Services;
 using OfficeOpenXml;
+using Microsoft.Extensions.DependencyInjection;
 
 
 namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
@@ -20,10 +21,38 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
     public class YeucauController : Controller
     {
         private readonly ApplicationDbContext _context;
-        public YeucauController(ApplicationDbContext context)
+        private readonly EmailService _emailService;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        public YeucauController(ApplicationDbContext context, EmailService emailService, IServiceScopeFactory serviceScopeFactory)
         {
             _context = context;
+            _emailService = emailService;
+            _serviceScopeFactory = serviceScopeFactory;
         }
+
+        private void SendRejectionEmailAsync(string maYeucau, string ghiChu = "")
+        {
+            // Tạo scope mới để tránh lỗi DbContext thread-safe
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using (var scope = _serviceScopeFactory.CreateScope())
+                    {
+                        var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan] Bắt đầu gửi email từ chối cho {maYeucau}");
+                        await emailService.SendNotificationToRequesterOnRejectionAsync(maYeucau, ghiChu);
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan] Đã gửi email từ chối cho {maYeucau}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan] Lỗi gửi email từ chối cho {maYeucau}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan] Stack trace: {ex.StackTrace}");
+                }
+            });
+        }
+
         public IActionResult Yeucau(string search = "")
         {
             var userRole = HttpContext.Session.GetString("Chucvu");
@@ -458,6 +487,16 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 _context.vtyeucau.Update(vatTu);
                 _context.SaveChanges();
 
+                // Gửi email thông báo từ chối nếu trạng thái yêu cầu là "Đã từ chối"
+                if (action == "reject")
+                {
+                    var yeucauAfterReject = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucauAfterReject != null && yeucauAfterReject.TrangThai == "Đã từ chối")
+                    {
+                        SendRejectionEmailAsync(MaYeucau, "");
+                    }
+                }
+
                 return Json(new { success = true, message = action == "approve" ? "Đã duyệt vật tư thành công." : "Đã từ chối vật tư." });
             }
             catch (Exception ex)
@@ -633,6 +672,41 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         yeucau.TrangThai = nextTrangThaiYC;
                         _context.yeucau.Update(yeucau);
                         _context.SaveChanges();
+
+                        // Sau khi Trưởng BP kế toán duyệt xong bằng checkbox:
+                        // - Gửi mail cho người yêu cầu
+                        // - Gửi mail cho bước tiếp theo (QLDA nếu có dự án, hoặc Giám đốc nếu không có dự án)
+                        try
+                        {
+                            if (!string.IsNullOrWhiteSpace(yeucau.NguoiYeucau))
+                            {
+                                var trangThaiThongBao = hasMaDuan
+                                    ? "Đã được Trưởng BP-BP kế toán duyệt - chuyển quản lý dự án"
+                                    : "Đã được Trưởng BP-BP kế toán duyệt - chờ Giám đốc duyệt";
+
+                                _ = _emailService.SendNotificationToEmployeeAsync(
+                                    yeucau.MaYeucau,
+                                    yeucau.NguoiYeucau,
+                                    trangThaiThongBao
+                                );
+                            }
+
+                            if (hasMaDuan && !string.IsNullOrWhiteSpace(yeucau.YCMaDuan))
+                            {
+                                _ = _emailService.SendNotificationToProjectManagerAsync(
+                                    yeucau.MaYeucau,
+                                    yeucau.YCMaDuan
+                                );
+                            }
+                            else
+                            {
+                                _ = _emailService.SendNotificationToDirectorAsync(yeucau.MaYeucau);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/XuLyVatTuYeucauWithCheckbox] Lỗi gửi email sau duyệt: {ex.Message}");
+                        }
                     }
                 }
 
@@ -1043,6 +1117,12 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
                         {
                             yeucau.TrangThai = "Quản lí dự án";
+                            // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                            var duanForEmail = _context.duans.FirstOrDefault(d => d.MaDuan == yeucau.YCMaDuan);
+                            if (duanForEmail != null)
+                            {
+                                _ = _emailService.SendNotificationToProjectManagerAsync(yeucau.MaYeucau, duanForEmail.MaDuan);
+                            }
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
                         {
@@ -1051,10 +1131,22 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
                         {
                             yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                            // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                            var duanForEmail = _context.duans.FirstOrDefault(d => d.MaDuan == yeucau.YCMaDuan);
+                            if (duanForEmail != null)
+                            {
+                                _ = _emailService.SendNotificationToProjectManagerAsync(yeucau.MaYeucau, duanForEmail.MaDuan);
+                            }
                         }
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kế toán")
                         {
                             yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                            // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                            var duanForEmail = _context.duans.FirstOrDefault(d => d.MaDuan == yeucau.YCMaDuan);
+                            if (duanForEmail != null)
+                            {
+                                _ = _emailService.SendNotificationToProjectManagerAsync(yeucau.MaYeucau, duanForEmail.MaDuan);
+                            }
                         }
                         else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
                         {
@@ -1063,6 +1155,12 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
                         {
                             yeucau.TrangThai = "Quản lí dự án";
+                            // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                            var duanForEmail = _context.duans.FirstOrDefault(d => d.MaDuan == yeucau.YCMaDuan);
+                            if (duanForEmail != null)
+                            {
+                                _ = _emailService.SendNotificationToProjectManagerAsync(yeucau.MaYeucau, duanForEmail.MaDuan);
+                            }
                         }
                         else if (chucVu2 == "Giám đốc")
                         {
@@ -1079,6 +1177,8 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                     else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
                     {
                         yeucau.TrangThai = "Giám đốc";
+                        // Gửi thông báo đến Giám đốc sau khi Trưởng BP duyệt (không có dự án)
+                        _ = _emailService.SendNotificationToDirectorAsync(yeucau.MaYeucau);
                     }
                     else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
                     {
@@ -1516,6 +1616,69 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 {
                     Xuliphieuyeucau(yeucau.MaYeucau, phieuxuatkho, vtphieuxuatkho, phieumuahang, vtphieumuahang, yeucau, vtyeucau);
                 }
+
+                // Gửi thông báo email sau khi tạo yêu cầu mới
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] ===== GỬI EMAIL SAU KHI TẠO YÊU CẦU ===== MaYeucau = {yeucau.MaYeucau}");
+                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] Trạng thái yêu cầu: {yeucau.TrangThai}");
+
+                    // Lưu các giá trị cần thiết trước khi vào Task.Run
+                    var maYeucauForEmail = yeucau.MaYeucau;
+                    var trangThaiForEmail = yeucau.TrangThai;
+                    var maDuanForEmail = yeucau.YCMaDuan;
+
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] Bắt đầu gửi email trong Task.Run");
+
+                            // Tạo scope mới để có DbContext và EmailService mới
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] Đã tạo scope và lấy EmailService mới");
+
+                                // Gửi email dựa trên trạng thái
+                                if (string.Equals(trangThaiForEmail, "Chờ quản lý dự án duyệt", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(maDuanForEmail))
+                                {
+                                    // Có dự án: Gửi cho QLDA
+                                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] Gửi email cho QLDA. MaDuan = {maDuanForEmail}");
+                                    await emailService.SendNotificationToProjectManagerAsync(maYeucauForEmail, maDuanForEmail);
+                                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] ✅ Đã gửi email cho QLDA xong.");
+                                }
+                                else if (string.Equals(trangThaiForEmail, "Chờ Giám đốc duyệt", StringComparison.OrdinalIgnoreCase) || 
+                                         string.Equals(trangThaiForEmail, "Giám đốc", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    // Không có dự án: Gửi cho Giám đốc
+                                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] Gửi email cho Giám đốc.");
+                                    await emailService.SendNotificationToDirectorAsync(maYeucauForEmail);
+                                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] ✅ Đã gửi email cho Giám đốc xong.");
+                                }
+                                else
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] ⚠️ Trạng thái '{trangThaiForEmail}' không cần gửi email.");
+                                }
+                            }
+                        }
+                        catch (Exception exInner)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] ❌ Lỗi trong Task.Run khi gửi email: {exInner.Message}");
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] Stack trace: {exInner.StackTrace}");
+                            if (exInner.InnerException != null)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL/Task] Inner exception: {exInner.InnerException.Message}");
+                            }
+                        }
+                    });
+                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] ✅ Đã khởi tạo Task.Run để gửi email");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] ❌ Lỗi khi khởi tạo Task.Run: {ex.Message}");
+                }
             }
             else
             {
@@ -1582,11 +1745,18 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                             {
                                 // Dự án: Chờ quản lý dự án duyệt
                                 Yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                                // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                                if (duan != null)
+                                {
+                                    _ = _emailService.SendNotificationToProjectManagerAsync(Yeucau.MaYeucau, duan.MaDuan);
+                                }
                             }
                             else if (Yeucau.MaYeucau.StartsWith("NHAPKHO_CANHAN_"))
                             {
                                 // Cá nhân: Chờ Giám đốc duyệt
                                 Yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                                // Gửi thông báo đến Giám đốc sau khi Trưởng BP duyệt (không có dự án)
+                                _ = _emailService.SendNotificationToDirectorAsync(Yeucau.MaYeucau);
                             }
                         }
                         else
@@ -1596,6 +1766,8 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                             {
                                 // Có dự án: Chờ quản lý dự án duyệt
                                 Yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                                // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                                _ = _emailService.SendNotificationToProjectManagerAsync(Yeucau.MaYeucau, duan.MaDuan);
                                 
                                 // Đồng bộ trạng thái cho tất cả vật tư (bao gồm cả null/empty)
                                 var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
@@ -1616,6 +1788,8 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                             {
                                 // Cá nhân: Chờ Giám đốc duyệt
                                 Yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                                // Gửi thông báo đến Giám đốc sau khi Trưởng BP duyệt (không có dự án)
+                                _ = _emailService.SendNotificationToDirectorAsync(Yeucau.MaYeucau);
                                 
                                 // Đồng bộ trạng thái cho tất cả vật tư (bao gồm cả null/empty)
                                 var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
@@ -1650,6 +1824,8 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         if (chucVu2 != "Giám đốc")
                         {
                             Yeucau.TrangThai = "Chờ Giám đốc duyệt";
+                            // Gửi thông báo đến Giám đốc sau khi QLDA duyệt
+                            _ = _emailService.SendNotificationToDirectorAsync(Yeucau.MaYeucau);
                             
                             // Đồng bộ trạng thái tất cả vật tư khi chuyển sang "Chờ Giám đốc duyệt" (bao gồm cả null/empty)
                             var allVatTu = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
@@ -1679,18 +1855,26 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                             if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
                             {
                                 Yeucau.TrangThai = "Quản lí dự án";
+                                // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                                _ = _emailService.SendNotificationToProjectManagerAsync(Yeucau.MaYeucau, duan.MaDuan);
                             }
                             else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
                             {
                                 Yeucau.TrangThai = "Quản lí dự án";
+                                // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                                _ = _emailService.SendNotificationToProjectManagerAsync(Yeucau.MaYeucau, duan.MaDuan);
                             }
                             else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
                             {
                                 Yeucau.TrangThai = "Quản lí dự án";
+                                // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                                _ = _emailService.SendNotificationToProjectManagerAsync(Yeucau.MaYeucau, duan.MaDuan);
                             }
                             else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kế toán")
                             {
                                 Yeucau.TrangThai = "Quản lí dự án";
+                                // Gửi thông báo đến QLDA sau khi Trưởng BP duyệt
+                                _ = _emailService.SendNotificationToProjectManagerAsync(Yeucau.MaYeucau, duan.MaDuan);
                             }
                             else if (chucVu2 == "Giám đốc")
                             {
@@ -2287,12 +2471,34 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                     _context.vtphieumuahang.Update(VTPhieumuahang);
                 }
                 _context.phieumuahang.Update(Phieumuahang);
+                _context.SaveChanges();
+
+                // Gửi email thông báo khi kế toán thanh toán
+                if (boPhan2 == "BP kế toán" && Phieumuahang.TrangThai == "Đã thanh toán")
+                {
+                    try
+                    {
+                        // Gửi email cho BP mua hàng
+                        _ = _emailService.SendNotificationToPurchasingOnPaymentAsync(MaMuahang);
+                        
+                        // Gửi email cho người yêu cầu
+                        _ = _emailService.SendNotificationToRequesterOnPaymentAsync(MaMuahang);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/XuLyPhieumuahang] Lỗi gửi email thanh toán: {ex.Message}");
+                    }
+                }
             }
             else if (action == "reject")
             {
                 Xulituchoiyeucau(MaMuahang, null, null, phieumuahang, vtphieumuahang);
+                _context.SaveChanges();
             }
-            _context.SaveChanges();
+            else
+            {
+                _context.SaveChanges();
+            }
             return RedirectToAction("Phieumuahang", "Yeucau", new { area = "TruongBPKetoan" });
         }
 
@@ -2349,6 +2555,16 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 _context.vtphieunhapkho.Add(newvtphieunhapkho);
             }
             _context.SaveChanges();
+
+            // Gửi email thông báo cho nhân viên kho khi có phiếu nhập kho mới cần xử lý
+            try
+            {
+                _ = _emailService.SendNotificationToWarehouseOnNhapKhoAsync(MaNhapkho);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/Taophieunhapkhobyphieumuahang] Lỗi gửi email nhập kho: {ex.Message}");
+            }
 
             return RedirectToAction("Phieumuahang", "Yeucau", new { area = "TruongBPKetoan" });
         }

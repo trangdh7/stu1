@@ -179,13 +179,14 @@ namespace Webkho_20241021.Areas.Admin.Controllers
                     }
                 }
 
-                // Tạo bản ghi trong bảng nguoidungs
+                // Tạo bản ghi trong bảng nguoidungs (đồng bộ thông tin nhân sự + email)
                 var nguoidung = new nguoidungs
                 {
                     TenNguoidung = Name,
                     MaNguoidung = MaNV,
                     Chucvu = Chucvu,
-                    Bophan = Bophan
+                    Bophan = Bophan,
+                    Email = Email
                 };
 
                 _context.nguoidungs.Add(nguoidung);
@@ -291,13 +292,14 @@ namespace Webkho_20241021.Areas.Admin.Controllers
                     await _userManager.AddToRoleAsync(user, roleToAssign);
                 }
 
-                // Cập nhật bảng nguoidungs
+                // Cập nhật bảng nguoidungs (đồng bộ thông tin nhân sự + email)
                 var nguoidung = _context.nguoidungs.FirstOrDefault(nd => nd.MaNguoidung == user.manv);
                 if (nguoidung != null)
                 {
                     nguoidung.TenNguoidung = Name;
                     nguoidung.Chucvu = Chucvu;
                     nguoidung.Bophan = Bophan;
+                    nguoidung.Email = Email;
                     _context.nguoidungs.Update(nguoidung);
                 }
                 else
@@ -307,7 +309,8 @@ namespace Webkho_20241021.Areas.Admin.Controllers
                         TenNguoidung = Name,
                         MaNguoidung = MaNV,
                         Chucvu = Chucvu,
-                        Bophan = Bophan
+                        Bophan = Bophan,
+                        Email = Email
                     };
                     _context.nguoidungs.Add(nguoidung);
                 }

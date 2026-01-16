@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using OfficeOpenXml;
+using Microsoft.Extensions.DependencyInjection;
 
 
 namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
@@ -21,11 +22,37 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
-        public YeucauController(ApplicationDbContext context, EmailService emailService)
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        public YeucauController(ApplicationDbContext context, EmailService emailService, IServiceScopeFactory serviceScopeFactory)
         {
             _context = context;
             _emailService = emailService;
+            _serviceScopeFactory = serviceScopeFactory;
         }
+
+        private void SendRejectionEmailAsync(string maYeucau, string ghiChu = "")
+        {
+            // Tạo scope mới để tránh lỗi DbContext thread-safe
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using (var scope = _serviceScopeFactory.CreateScope())
+                    {
+                        var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                        System.Diagnostics.Debug.WriteLine($"[QuanLiDuAn] Bắt đầu gửi email từ chối cho {maYeucau}");
+                        await emailService.SendNotificationToRequesterOnRejectionAsync(maYeucau, ghiChu);
+                        System.Diagnostics.Debug.WriteLine($"[QuanLiDuAn] Đã gửi email từ chối cho {maYeucau}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[QuanLiDuAn] Lỗi gửi email từ chối cho {maYeucau}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[QuanLiDuAn] Stack trace: {ex.StackTrace}");
+                }
+            });
+        }
+
         public IActionResult Yeucau(string search = "")
         {
             var userRole = HttpContext.Session.GetString("Chucvu");
@@ -110,6 +137,15 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                 else if (hasRejected && !hasApproved)
                                 {
                                     yeucau.TrangThai = "Đã từ chối";
+                                    _context.yeucau.Update(yeucau);
+                                    _context.SaveChanges();
+                                    
+                                    // Gửi email thông báo từ chối
+                                    var maYeucau = yeucau.MaYeucau;
+                                    if (!string.IsNullOrEmpty(maYeucau))
+                                    {
+                                        SendRejectionEmailAsync(maYeucau, "");
+                                    }
                                 }
                             }
                         }
@@ -476,6 +512,16 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                 UpdateYeucauStatusAfterVatTuChange(MaYeucau);
 
+                // Gửi email thông báo từ chối nếu trạng thái yêu cầu là "Đã từ chối"
+                if (action == "reject")
+                {
+                    var yeucauAfterReject = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucauAfterReject != null && yeucauAfterReject.TrangThai == "Đã từ chối")
+                    {
+                        SendRejectionEmailAsync(MaYeucau, GhiChu ?? "");
+                    }
+                }
+
                 return Json(new { success = true, message = action == "approve" ? "Đã duyệt vật tư thành công." : "Đã từ chối vật tư.", ghiChu = vatTu.GhiChu });
             }
             catch (Exception ex)
@@ -538,24 +584,68 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 var updated = UpdateYeucauStatusAfterVatTuChange(MaYeucau);
 
                 // Gửi thông báo khi QLDA duyệt
+                System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau] ===== DEBUG EMAIL ===== MaYeucau = {MaYeucau}");
+                System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau] action = {action}, processedCount = {processedCount}");
                 if (action == "approve" && processedCount > 0)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau] ✅ Điều kiện gửi email ĐÚNG. Đang tìm yeucau...");
                     var yeucauForNotif = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
                     if (yeucauForNotif != null)
                     {
+                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau] ✅ Tìm thấy yeucau. NguoiYeucau = '{yeucauForNotif.NguoiYeucau}'");
+                        
+                        // Lưu các giá trị cần thiết trước khi vào Task.Run
+                        var maYeucauForEmail = MaYeucau;
+                        var nguoiYeuCauForEmail = yeucauForNotif.NguoiYeucau ?? "";
+                        
                         _ = Task.Run(async () =>
                         {
-                            // Thông báo cho nhân viên
-                            await _emailService.SendNotificationToEmployeeAsync(
-                                MaYeucau,
-                                yeucauForNotif.NguoiYeucau ?? "",
-                                "Đã được quản lý dự án duyệt"
-                            );
+                            try
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] 🚀 Bắt đầu gửi email cho nhân viên và giám đốc. MaYeucau = {maYeucauForEmail}");
 
-                            // Thông báo cho giám đốc
-                            await _emailService.SendNotificationToDirectorAsync(MaYeucau);
+                                // Tạo scope mới để có DbContext và EmailService mới
+                                using (var scope = _serviceScopeFactory.CreateScope())
+                                {
+                                    var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                    
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] Đã tạo scope và lấy EmailService mới");
+
+                                    // Thông báo cho nhân viên
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] Gọi SendNotificationToEmployeeAsync...");
+                                    await emailService.SendNotificationToEmployeeAsync(
+                                        maYeucauForEmail,
+                                        nguoiYeuCauForEmail,
+                                        "Đã được quản lý dự án duyệt"
+                                    );
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] ✅ Đã gửi email cho nhân viên xong.");
+
+                                    // Thông báo cho giám đốc
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] Gọi SendNotificationToDirectorAsync...");
+                                    await emailService.SendNotificationToDirectorAsync(maYeucauForEmail);
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] ✅ Đã gửi email cho giám đốc xong.");
+                                }
+                            }
+                            catch (Exception exInner)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] ❌ Lỗi trong Task.Run khi gửi email: {exInner.Message}");
+                                System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] Stack trace: {exInner.StackTrace}");
+                                if (exInner.InnerException != null)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] Inner exception: {exInner.InnerException.Message}");
+                                }
+                            }
                         });
+                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau] ✅ Đã khởi tạo Task.Run để gửi email");
                     }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau] ❌ Không tìm thấy yeucau với MaYeucau = {MaYeucau}");
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau] ❌ Điều kiện gửi email KHÔNG đúng: action = {action}, processedCount = {processedCount}");
                 }
 
                 if (processedCount == 0)
@@ -605,6 +695,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                 int processedCount = 0;
                 int skippedCount = 0;
+                bool anyApproved = false;
 
                 foreach (var item in vatTuList)
                 {
@@ -733,14 +824,19 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     bool isRejected = isAlreadyRejected(currentStatus);
                     bool canProcess = isAwaiting && !isAlreadyApprovedStatus && !isRejected;
                     
+                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] Vật tư {maSanpham}: isApproved={isApproved}, currentStatus='{currentStatus}', isAwaiting={isAwaiting}, isAlreadyApprovedStatus={isAlreadyApprovedStatus}, isRejected={isRejected}, canProcess={canProcess}");
+                    
                     if (!canProcess)
                     {
+                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] Vật tư {maSanpham} bị skip vì canProcess=false");
                         skippedCount++;
                         continue;
                     }
 
                     if (isApproved)
                     {
+                        anyApproved = true;
+                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] ✅ Vật tư {maSanpham} được approve. anyApproved = {anyApproved}");
                         // Duyệt vật tư
                         if (isNhapKhoRequest)
                         {
@@ -849,6 +945,86 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         _context.phieunhapkho.Update(phieunhapkho);
                         _context.SaveChanges();
                     }
+                }
+
+                // Debug: Kiểm tra điều kiện gửi email
+                System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] ===== DEBUG EMAIL ===== MaYeucau = {MaYeucau}");
+                System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] processedCount = {processedCount}");
+                System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] anyApproved = {anyApproved}");
+
+                // Sau khi QLDA xử lý vật tư bằng checkbox:
+                // Nếu có ít nhất một vật tư được duyệt (anyApproved) và có yêu cầu tương ứng,
+                // gửi mail cho người yêu cầu và Giám đốc giống luồng xử lý từng dòng.
+                if (processedCount > 0 && anyApproved)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] ✅ Điều kiện gửi email ĐÚNG. Đang tìm yeucau...");
+                    var yeucauForNotif = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucauForNotif != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] ✅ Tìm thấy yeucau. NguoiYeucau = '{yeucauForNotif.NguoiYeucau}'");
+                        try
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] 🚀 Bắt đầu gửi email cho nhân viên và giám đốc. MaYeucau = {MaYeucau}");
+
+                            // Lưu các giá trị cần thiết trước khi vào Task.Run
+                            var maYeucauForEmail = MaYeucau;
+                            var nguoiYeuCauForEmail = yeucauForNotif.NguoiYeucau ?? "";
+
+                            // Sử dụng Task.Run với scope mới để tránh lỗi ObjectDisposedException
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] Bắt đầu gửi email trong Task.Run với scope mới");
+
+                                    // Tạo scope mới để có DbContext và EmailService mới
+                                    using (var scope = _serviceScopeFactory.CreateScope())
+                                    {
+                                        var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                        
+                                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] Đã tạo scope và lấy EmailService mới");
+
+                                        // Thông báo cho nhân viên
+                                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] Gọi SendNotificationToEmployeeAsync...");
+                                        await emailService.SendNotificationToEmployeeAsync(
+                                            maYeucauForEmail,
+                                            nguoiYeuCauForEmail,
+                                            "Đã được quản lý dự án duyệt"
+                                        );
+                                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] ✅ Đã gửi email cho nhân viên xong.");
+
+                                        // Thông báo cho giám đốc
+                                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] Gọi SendNotificationToDirectorAsync...");
+                                        await emailService.SendNotificationToDirectorAsync(maYeucauForEmail);
+                                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] ✅ Đã gửi email cho giám đốc xong.");
+                                    }
+                                }
+                                catch (Exception exInner)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] ❌ Lỗi trong Task.Run khi gửi email: {exInner.Message}");
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] Stack trace: {exInner.StackTrace}");
+                                    if (exInner.InnerException != null)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] Inner exception: {exInner.InnerException.Message}");
+                                    }
+                                }
+                            });
+                            System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] ✅ Đã khởi tạo Task.Run để gửi email");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] ❌ Lỗi khi khởi tạo Task.Run: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] Stack trace: {ex.StackTrace}");
+                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] ❌ Không tìm thấy yeucau với MaYeucau = {MaYeucau}");
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox] ❌ Điều kiện gửi email KHÔNG đúng: processedCount = {processedCount}, anyApproved = {anyApproved}");
                 }
 
                 string message = $"Đã xử lý {processedCount} vật tư thành công.";
@@ -2007,15 +2183,13 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 }
                 else
                 {
-                    // ===== Trường hợp KHÔNG có Mã Dự Án: YYMMDD ST HiepNT =====
-                    // Lấy ngày hiện tại dạng YYMMDD
+                    
                     string datePart = DateTime.Now.ToString("yyMMdd");
                     
-                    // Tạo mã yêu cầu: YYMMDD ST HiepNT
+                    
                     yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
                     
-                    // Đảm bảo tính duy nhất cho mã yêu cầu (bao gồm cả tên người)
-                    // Nếu cùng người gửi cùng mã cơ bản, thêm suffix để phân biệt
+                    
                     int suffixNumber = 1;
                     string originalMaYeucau = yeucau.MaYeucau;
                     while (true)
@@ -2036,6 +2210,20 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 // Luôn tạo yêu cầu mới để theo dõi từng người gửi
                 _context.yeucau.Add(yeucau);
                 _context.SaveChanges();
+
+                // Nếu yêu cầu do QLDA/BP dự án tạo ra và trạng thái là "Chờ giám đốc duyệt"
+                // thì gửi email thông báo ngay cho Giám đốc
+                if (string.Equals(yeucau.TrangThai, "Chờ giám đốc duyệt", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        _ = _emailService.SendNotificationToDirectorAsync(yeucau.MaYeucau);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[QLDA/ThemyeucauSQL] Lỗi gửi mail Giám đốc cho {yeucau.MaYeucau}: {ex.Message}");
+                    }
+                }
 
                 // Lưu thông tin file Excel vào database (không lưu file vào đĩa để tiết kiệm dung lượng)
                 try
@@ -2365,6 +2553,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         if (chucVu2 != "Giám đốc")
                         {
                             Yeucau.TrangThai = "Giám đốc";
+                            // Gửi thông báo đến Giám đốc sau khi QLDA duyệt
+                            _ = _emailService.SendNotificationToDirectorAsync(Yeucau.MaYeucau);
                         }
                         else
                         {
