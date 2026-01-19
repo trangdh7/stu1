@@ -2073,6 +2073,9 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                 // ================== TẠO MÃ YÊU CẦU ĐÚNG CHUẨN ==================
                 
+                // Kiểm tra xem có file Excel được upload không
+                bool hasExcelFile = false;
+                
                 // Lấy mã sản phẩm (ST) từ tên file Excel hoặc từ form
                 string? stPart = null;
                 
@@ -2085,6 +2088,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     
                     if (excelFile != null && !string.IsNullOrEmpty(excelFile.FileName))
                     {
+                        hasExcelFile = true; // Đánh dấu có file Excel được upload
                         try
                         {
                             // Lấy tên file không có extension
@@ -2206,6 +2210,12 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     }
                 }
                 // ================================================================
+
+                // Nếu QLDA upload Excel, tự động set NguoiDuyet là tên QLDA
+                if (hasExcelFile && (laBoPhanDuAn || laChucVuQLDA || laQLDADuAn))
+                {
+                    yeucau.NguoiDuyet = maNv2;
+                }
 
                 // Luôn tạo yêu cầu mới để theo dõi từng người gửi
                 _context.yeucau.Add(yeucau);
