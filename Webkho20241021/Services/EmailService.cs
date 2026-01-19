@@ -236,6 +236,13 @@ namespace Webkho_20241021.Services
 
         public async Task<bool> SendEmailAsync(string toEmail, string subject, string body)
         {
+            // Khai báo biến ở ngoài để các catch block có thể truy cập
+            string smtpServer = "";
+            int smtpPort = 465;
+            string fromEmail = "";
+            string fromPassword = "";
+            string fromName = "";
+            
             try
             {
                 Debug.WriteLine("===== BẮT ĐẦU GỬI EMAIL =====");
@@ -250,7 +257,7 @@ namespace Webkho_20241021.Services
                 }
 
                 // Lấy cấu hình SMTP dựa trên FromEmail (email gửi đi)
-                var (smtpServer, smtpPort, fromEmail, fromPassword, fromName) = GetSmtpSettings();
+                (smtpServer, smtpPort, fromEmail, fromPassword, fromName) = GetSmtpSettings();
 
                 Debug.WriteLine($"SMTP: {smtpServer}:{smtpPort}");
                 Debug.WriteLine($"FromEmail: {fromEmail}");
