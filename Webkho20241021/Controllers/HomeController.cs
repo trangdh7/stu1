@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Webkho_20241021.Models;
+using Webkho_20241021.Services;
+using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore.Authentication;
@@ -16,17 +18,23 @@ namespace Webkho_20241021.Controllers
         private readonly SignInManager<User> _signInManager;
         private readonly ApplicationDbContext _context;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly EmailService _emailService;
+        private readonly IConfiguration _configuration;
 
         public HomeController(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
             ApplicationDbContext context,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager,
+            EmailService emailService,
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _context = context;
             _roleManager = roleManager;
+            _emailService = emailService;
+            _configuration = configuration;
         }
 
         public IActionResult Dangnhap()
@@ -662,6 +670,73 @@ namespace Webkho_20241021.Controllers
         {
             Response.StatusCode = 404;
             return View("NotFound");
+        }
+
+        [AllowAnonymous]
+        public IActionResult TestEmail()
+        {
+            // Hiển thị thông tin cấu hình email
+            var emailConfig = new
+            {
+                FromEmail = _configuration["EmailSettings:FromEmail"],
+                SmtpServer = _configuration["EmailSettings:SmtpServer"],
+                SmtpPort = _configuration["EmailSettings:SmtpPort"],
+                FromPassword = string.IsNullOrEmpty(_configuration["EmailSettings:FromPassword"]) 
+                    ? "(chưa cấu hình)" 
+                    : $"Đã cấu hình (độ dài: {_configuration["EmailSettings:FromPassword"].Length})",
+                StuEmailSettings = new
+                {
+                    SmtpServer = _configuration["EmailSettings:StuEmailSettings:SmtpServer"],
+                    SmtpPort = _configuration["EmailSettings:StuEmailSettings:SmtpPort"],
+                    FromPassword = string.IsNullOrEmpty(_configuration["EmailSettings:StuEmailSettings:FromPassword"])
+                        ? "(sẽ lấy từ EmailSettings)"
+                        : $"Đã cấu hình riêng (độ dài: {_configuration["EmailSettings:StuEmailSettings:FromPassword"].Length})"
+                }
+            };
+
+            ViewBag.EmailConfig = emailConfig;
+            return View("TestEmail");
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> SendTestEmail(string testEmail)
+        {
+            if (string.IsNullOrEmpty(testEmail))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập email để test" });
+            }
+
+            try
+            {
+                var subject = "Test Email - Hệ thống Quản lý Kho";
+                var body = $@"
+                    <html>
+                    <body style='font-family: Arial, sans-serif; padding: 20px;'>
+                        <h2 style='color: #2c3e50;'>Email Test Thành Công!</h2>
+                        <p>Đây là email test từ hệ thống quản lý kho.</p>
+                        <p><strong>Thời gian:</strong> {DateTime.Now:dd/MM/yyyy HH:mm:ss}</p>
+                        <p><strong>Server:</strong> {Environment.MachineName}</p>
+                        <hr style='border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;' />
+                        <p style='color: #7f8c8d; font-size: 12px;'>Nếu bạn nhận được email này, nghĩa là cấu hình email trên server đã hoạt động đúng.</p>
+                    </body>
+                    </html>";
+
+                var result = await _emailService.SendEmailAsync(testEmail, subject, body);
+
+                if (result)
+                {
+                    return Json(new { success = true, message = $"Email đã được gửi thành công đến {testEmail}. Vui lòng kiểm tra hộp thư." });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Không thể gửi email. Vui lòng kiểm tra logs và cấu hình." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Lỗi khi gửi email: {ex.Message}" });
+            }
         }
     }
 }
