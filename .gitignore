@@ -11,3 +11,13 @@ obj/
 # Publish outputs
 *.pubxml.user
 *.publish.xml
+
+# Sensitive configuration files (chứa mật khẩu)
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.json
+!appsettings.json
+
+# Connection strings và secrets
+**/secrets.json
+**/*.secrets.json

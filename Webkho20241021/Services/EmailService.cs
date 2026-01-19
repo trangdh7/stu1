@@ -3,6 +3,10 @@ using System.Net.Mail;
 using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Webkho_20241021.Models;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
+using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace Webkho_20241021.Services
 {
@@ -164,6 +168,72 @@ namespace Webkho_20241021.Services
         }
 
 
+        private string GetConfigValue(string configKey, string envVarName, string defaultValue = "")
+        {
+            // Ưu tiên đọc từ biến môi trường (an toàn hơn)
+            var envValue = Environment.GetEnvironmentVariable(envVarName);
+            if (!string.IsNullOrEmpty(envValue))
+            {
+                Debug.WriteLine($" Đọc {envVarName} từ biến môi trường");
+                return envValue;
+            }
+            
+           
+            var configValue = _configuration[configKey];
+            if (!string.IsNullOrEmpty(configValue))
+            {
+                return configValue;
+            }
+            
+            return defaultValue;
+        }
+
+        private (string smtpServer, int smtpPort, string fromEmail, string fromPassword, string fromName) GetSmtpSettings()
+        {
+            // Lấy cấu hình email gửi đi (FromEmail) từ EmailSettings
+            var fromEmail = _configuration["EmailSettings:FromEmail"];
+            
+            
+            if (!string.IsNullOrEmpty(fromEmail) && fromEmail.Contains("@"))
+            {
+                var domain = fromEmail.Split('@')[1].ToLower();
+                
+                // Nếu FromEmail là @stu.com.vn thì dùng email server mắt bão
+                if (domain == "stu.com.vn")
+                {
+                    Debug.WriteLine($"📧 Phát hiện FromEmail @stu.com.vn, sử dụng email server mắt bão");
+                    // Ưu tiên dùng StuEmailSettings, nếu không có thì dùng EmailSettings
+                    var smtpServer = _configuration["EmailSettings:StuEmailSettings:SmtpServer"] 
+                        ?? _configuration["EmailSettings:SmtpServer"] 
+                        ?? "pro01.emailserver.vn";
+                    var smtpPort = int.Parse(_configuration["EmailSettings:StuEmailSettings:SmtpPort"] 
+                        ?? _configuration["EmailSettings:SmtpPort"] 
+                        ?? "465");
+                    // Ưu tiên đọc mật khẩu từ biến môi trường
+                    var fromPassword = GetConfigValue(
+                        "EmailSettings:StuEmailSettings:FromPassword",
+                        "EmailSettings__StuEmailSettings__FromPassword",
+                        GetConfigValue("EmailSettings:FromPassword", "EmailSettings__FromPassword", "")
+                    );
+                    var fromName = _configuration["EmailSettings:StuEmailSettings:FromName"] 
+                        ?? _configuration["EmailSettings:FromName"] 
+                        ?? "Hệ thống Quản lý Kho";
+                    
+                    return (smtpServer, smtpPort, fromEmail ?? "", fromPassword, fromName);
+                }
+            }
+            
+            // Mặc định dùng EmailSettings
+            Debug.WriteLine($"📧 Sử dụng cấu hình EmailSettings mặc định");
+            var defaultSmtpServer = _configuration["EmailSettings:SmtpServer"] ?? "pro01.emailserver.vn";
+            var defaultSmtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "465");
+            // Ưu tiên đọc mật khẩu từ biến môi trường
+            var defaultFromPassword = GetConfigValue("EmailSettings:FromPassword", "EmailSettings__FromPassword", "");
+            var defaultFromName = _configuration["EmailSettings:FromName"] ?? "Hệ thống Quản lý Kho";
+            
+            return (defaultSmtpServer, defaultSmtpPort, fromEmail ?? "", defaultFromPassword, defaultFromName);
+        }
+
         public async Task<bool> SendEmailAsync(string toEmail, string subject, string body)
         {
             try
@@ -173,11 +243,14 @@ namespace Webkho_20241021.Services
                 Debug.WriteLine($"Subject: {subject}");
                 Debug.WriteLine($"Body length: {body?.Length ?? 0}");
 
-                var smtpServer = _configuration["EmailSettings:SmtpServer"] ?? "smtp.gmail.com";
-                var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-                var fromEmail = _configuration["EmailSettings:FromEmail"];
-                var fromPassword = _configuration["EmailSettings:FromPassword"];
-                var fromName = _configuration["EmailSettings:FromName"] ?? "Hệ thống Quản lý Kho";
+                if (string.IsNullOrEmpty(toEmail))
+                {
+                    Debug.WriteLine("⚠️ Email người nhận rỗng, bỏ qua gửi.");
+                    return false;
+                }
+
+                // Lấy cấu hình SMTP dựa trên FromEmail (email gửi đi)
+                var (smtpServer, smtpPort, fromEmail, fromPassword, fromName) = GetSmtpSettings();
 
                 Debug.WriteLine($"SMTP: {smtpServer}:{smtpPort}");
                 Debug.WriteLine($"FromEmail: {fromEmail}");
@@ -189,31 +262,51 @@ namespace Webkho_20241021.Services
                     return false;
                 }
 
-                if (string.IsNullOrEmpty(toEmail))
+                // Use MailKit for better SMTP support, especially for port 465
+                using (var client = new SmtpClient())
                 {
-                    Debug.WriteLine("⚠️ Email người nhận rỗng, bỏ qua gửi.");
-                    return false;
-                }
-
-                using (var client = new SmtpClient(smtpServer, smtpPort))
-                {
-                    client.EnableSsl = true;
-                    client.Credentials = new NetworkCredential(fromEmail, fromPassword);
-
-                    using (var message = new MailMessage())
+                    // Port 465 requires SSL from the start (implicit SSL)
+                    // Port 587 uses STARTTLS (explicit SSL)
+                    if (smtpPort == 465)
                     {
-                        message.From = new MailAddress(fromEmail, fromName);
-                        message.To.Add(toEmail);
-                        message.Subject = subject;
-                        message.Body = body;
-                        message.IsBodyHtml = true;
-
-                        Debug.WriteLine("👉 Gọi client.SendMailAsync...");
-                        await client.SendMailAsync(message);
-                        Debug.WriteLine($"✅ Email sent successfully to {toEmail}");
-                        return true;
+                        Debug.WriteLine("📧 Using port 465 - implicit SSL required");
+                        await client.ConnectAsync(smtpServer, smtpPort, SecureSocketOptions.SslOnConnect);
                     }
+                    else
+                    {
+                        Debug.WriteLine($"📧 Using port {smtpPort} - STARTTLS will be used");
+                        await client.ConnectAsync(smtpServer, smtpPort, SecureSocketOptions.StartTls);
+                    }
+
+                    // Authenticate
+                    await client.AuthenticateAsync(fromEmail, fromPassword);
+
+                    // Create message using MimeKit
+                    var message = new MimeMessage();
+                    message.From.Add(new MailboxAddress(fromName, fromEmail));
+                    message.To.Add(new MailboxAddress("", toEmail));
+                    message.Subject = subject;
+                    
+                    var bodyBuilder = new BodyBuilder
+                    {
+                        HtmlBody = body
+                    };
+                    message.Body = bodyBuilder.ToMessageBody();
+
+                    Debug.WriteLine("👉 Gọi client.SendAsync...");
+                    await client.SendAsync(message);
+                    await client.DisconnectAsync(true);
+                    
+                    Debug.WriteLine($"✅ Email sent successfully to {toEmail}");
+                    return true;
                 }
+            }
+            catch (SmtpException smtpEx)
+            {
+                Debug.WriteLine($"❌ SMTP Error sending email to {toEmail}: {smtpEx.Message}");
+                Debug.WriteLine($"Status Code: {smtpEx.StatusCode}");
+                Debug.WriteLine(smtpEx.ToString());
+                return false;
             }
             catch (Exception ex)
             {
