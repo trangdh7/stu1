@@ -168,23 +168,24 @@ namespace Webkho_20241021.Services
         }
 
 
-        private string GetConfigValue(string configKey, string envVarName, string defaultValue = "")
+        private string GetConfigValue(string configKey, string defaultValue = "")
         {
-            // Ưu tiên đọc từ biến môi trường (an toàn hơn)
-            var envValue = Environment.GetEnvironmentVariable(envVarName);
-            if (!string.IsNullOrEmpty(envValue))
-            {
-                Debug.WriteLine($" Đọc {envVarName} từ biến môi trường");
-                return envValue;
-            }
-            
-           
+            // Đọc từ appsettings.json
             var configValue = _configuration[configKey];
             if (!string.IsNullOrEmpty(configValue))
             {
+                Debug.WriteLine($"✓ Đọc {configKey} từ appsettings.json");
                 return configValue;
             }
             
+            // Nếu không có, dùng giá trị mặc định
+            if (!string.IsNullOrEmpty(defaultValue))
+            {
+                Debug.WriteLine($"⚠ Sử dụng giá trị mặc định cho {configKey}");
+                return defaultValue;
+            }
+            
+            Debug.WriteLine($"⚠ KHÔNG TÌM THẤY {configKey} trong appsettings");
             return defaultValue;
         }
 
@@ -209,12 +210,10 @@ namespace Webkho_20241021.Services
                     var smtpPort = int.Parse(_configuration["EmailSettings:StuEmailSettings:SmtpPort"] 
                         ?? _configuration["EmailSettings:SmtpPort"] 
                         ?? "465");
-                    // Ưu tiên đọc mật khẩu từ biến môi trường
-                    var fromPassword = GetConfigValue(
-                        "EmailSettings:StuEmailSettings:FromPassword",
-                        "EmailSettings__StuEmailSettings__FromPassword",
-                        GetConfigValue("EmailSettings:FromPassword", "EmailSettings__FromPassword", "")
-                    );
+                    // Đọc mật khẩu từ appsettings
+                    var fromPassword = _configuration["EmailSettings:StuEmailSettings:FromPassword"]
+                        ?? _configuration["EmailSettings:FromPassword"]
+                        ?? "";
                     var fromName = _configuration["EmailSettings:StuEmailSettings:FromName"] 
                         ?? _configuration["EmailSettings:FromName"] 
                         ?? "Hệ thống Quản lý Kho";
@@ -227,8 +226,8 @@ namespace Webkho_20241021.Services
             Debug.WriteLine($"📧 Sử dụng cấu hình EmailSettings mặc định");
             var defaultSmtpServer = _configuration["EmailSettings:SmtpServer"] ?? "pro01.emailserver.vn";
             var defaultSmtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "465");
-            // Ưu tiên đọc mật khẩu từ biến môi trường
-            var defaultFromPassword = GetConfigValue("EmailSettings:FromPassword", "EmailSettings__FromPassword", "");
+            // Đọc mật khẩu từ appsettings
+            var defaultFromPassword = _configuration["EmailSettings:FromPassword"] ?? "";
             var defaultFromName = _configuration["EmailSettings:FromName"] ?? "Hệ thống Quản lý Kho";
             
             return (defaultSmtpServer, defaultSmtpPort, fromEmail ?? "", defaultFromPassword, defaultFromName);
@@ -263,9 +262,19 @@ namespace Webkho_20241021.Services
                 Debug.WriteLine($"FromEmail: {fromEmail}");
                 Debug.WriteLine($"FromPassword empty? {string.IsNullOrEmpty(fromPassword)}");
 
-                if (string.IsNullOrEmpty(fromEmail) || string.IsNullOrEmpty(fromPassword))
+                if (string.IsNullOrEmpty(fromEmail))
                 {
-                    Debug.WriteLine("⚠️ Thiếu cấu hình EmailSettings trong appsettings.json");
+                    Debug.WriteLine("❌ LỖI: Thiếu FromEmail trong EmailSettings. Kiểm tra appsettings.json hoặc appsettings.Development.json");
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(fromPassword))
+                {
+                    Debug.WriteLine("❌ LỖI: Thiếu FromPassword trong EmailSettings!");
+                    Debug.WriteLine("   Cách khắc phục:");
+                    Debug.WriteLine("   Thêm FromPassword vào appsettings.json hoặc appsettings.Development.json:");
+                    Debug.WriteLine("      \"FromPassword\": \"your-email-password\"");
+                    Debug.WriteLine("      \"StuEmailSettings\": { \"FromPassword\": \"your-email-password\" }");
                     return false;
                 }
 
