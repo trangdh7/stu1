@@ -89,7 +89,7 @@ namespace Webkho_20241021.Services
   <tr>
     <!-- Logo -->
     <td width=""80"" valign=""top"">
-      <img src=""{{logoUrl}}"" alt=""STU Logo"" style=""height:48px;display:block;"" />
+      <img src=""{logoUrl}"" alt=""STU Logo"" style=""height:48px;display:block;"" />
     </td>
 
     <!-- Spacer -->
@@ -265,52 +265,148 @@ namespace Webkho_20241021.Services
                 // Use MailKit for better SMTP support, especially for port 465
                 using (var client = new SmtpClient())
                 {
-                    // Port 465 requires SSL from the start (implicit SSL)
-                    // Port 587 uses STARTTLS (explicit SSL)
-                    if (smtpPort == 465)
+                    try
                     {
-                        Debug.WriteLine("📧 Using port 465 - implicit SSL required");
-                        await client.ConnectAsync(smtpServer, smtpPort, SecureSocketOptions.SslOnConnect);
+                        // Set timeout
+                        client.Timeout = 30000; // 30 seconds
+
+                        // Port 465 requires SSL from the start (implicit SSL)
+                        // Port 587 uses STARTTLS (explicit SSL)
+                        SecureSocketOptions sslOption;
+                        if (smtpPort == 465)
+                        {
+                            Debug.WriteLine("Using port 465 - implicit SSL required");
+                            // Try SslOnConnect first, if fails try Auto
+                            sslOption = SecureSocketOptions.SslOnConnect;
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"📧 Using port {smtpPort} - STARTTLS will be used");
+                            sslOption = SecureSocketOptions.StartTls;
+                        }
+
+                        Debug.WriteLine($"🔌 Đang kết nối đến {smtpServer}:{smtpPort}...");
+                        
+                        // Try to connect - if SSL certificate validation fails, try with Auto
+                        try
+                        {
+                            await client.ConnectAsync(smtpServer, smtpPort, sslOption);
+                        }
+                        catch (MailKit.Security.SslHandshakeException sslEx)
+                        {
+                            Debug.WriteLine($"⚠️ SSL handshake failed, thử với Auto mode...");
+                            Debug.WriteLine($"Lỗi: {sslEx.Message}");
+                            // Retry with Auto which is more lenient
+                            await client.ConnectAsync(smtpServer, smtpPort, SecureSocketOptions.Auto);
+                        }
+                        
+                        Debug.WriteLine("✅ Đã kết nối thành công");
+
+                        // Authenticate
+                        Debug.WriteLine($"🔐 Đang xác thực với {fromEmail}...");
+                        await client.AuthenticateAsync(fromEmail, fromPassword);
+                        Debug.WriteLine("✅ Xác thực thành công");
+
+                        // Create message using MimeKit
+                        var message = new MimeMessage();
+                        message.From.Add(new MailboxAddress(fromName, fromEmail));
+                        message.To.Add(new MailboxAddress("", toEmail));
+                        message.Subject = subject;
+                        
+                        var bodyBuilder = new BodyBuilder
+                        {
+                            HtmlBody = body
+                        };
+                        message.Body = bodyBuilder.ToMessageBody();
+
+                        Debug.WriteLine("👉 Đang gửi email...");
+                        await client.SendAsync(message);
+                        await client.DisconnectAsync(true);
+                        
+                        Debug.WriteLine($"✅ Email sent successfully to {toEmail}");
+                        return true;
                     }
-                    else
+                    catch (MailKit.Security.AuthenticationException authEx)
                     {
-                        Debug.WriteLine($"📧 Using port {smtpPort} - STARTTLS will be used");
-                        await client.ConnectAsync(smtpServer, smtpPort, SecureSocketOptions.StartTls);
+                        Debug.WriteLine($"❌ Lỗi xác thực: {authEx.Message}");
+                        Debug.WriteLine($"Chi tiết: {authEx}");
+                        if (client.IsConnected)
+                        {
+                            await client.DisconnectAsync(true);
+                        }
+                        throw;
                     }
-
-                    // Authenticate
-                    await client.AuthenticateAsync(fromEmail, fromPassword);
-
-                    // Create message using MimeKit
-                    var message = new MimeMessage();
-                    message.From.Add(new MailboxAddress(fromName, fromEmail));
-                    message.To.Add(new MailboxAddress("", toEmail));
-                    message.Subject = subject;
-                    
-                    var bodyBuilder = new BodyBuilder
+                    catch (MailKit.Net.Smtp.SmtpCommandException smtpEx)
                     {
-                        HtmlBody = body
-                    };
-                    message.Body = bodyBuilder.ToMessageBody();
-
-                    Debug.WriteLine("👉 Gọi client.SendAsync...");
-                    await client.SendAsync(message);
-                    await client.DisconnectAsync(true);
-                    
-                    Debug.WriteLine($"✅ Email sent successfully to {toEmail}");
-                    return true;
+                        Debug.WriteLine($"❌ Lỗi SMTP command: {smtpEx.Message}");
+                        Debug.WriteLine($"Status Code: {smtpEx.StatusCode}");
+                        Debug.WriteLine($"Chi tiết: {smtpEx}");
+                        if (client.IsConnected)
+                        {
+                            await client.DisconnectAsync(true);
+                        }
+                        throw;
+                    }
+                    catch (System.Net.Sockets.SocketException socketEx)
+                    {
+                        Debug.WriteLine($"❌ Lỗi kết nối mạng: {socketEx.Message}");
+                        Debug.WriteLine($"Error Code: {socketEx.ErrorCode}");
+                        Debug.WriteLine($"Chi tiết: {socketEx}");
+                        Debug.WriteLine($"⚠️ Có thể do firewall chặn port {smtpPort} hoặc không thể kết nối đến {smtpServer}");
+                        if (client.IsConnected)
+                        {
+                            await client.DisconnectAsync(true);
+                        }
+                        throw;
+                    }
+                    catch (System.OperationCanceledException timeoutEx)
+                    {
+                        Debug.WriteLine($"❌ Lỗi timeout: {timeoutEx.Message}");
+                        Debug.WriteLine($"⚠️ Kết nối đến {smtpServer}:{smtpPort} bị timeout");
+                        if (client.IsConnected)
+                        {
+                            await client.DisconnectAsync(true);
+                        }
+                        throw;
+                    }
                 }
             }
-            catch (SmtpException smtpEx)
+            catch (MailKit.Security.AuthenticationException authEx)
             {
-                Debug.WriteLine($"❌ SMTP Error sending email to {toEmail}: {smtpEx.Message}");
+                Debug.WriteLine($"❌ Lỗi xác thực email đến {toEmail}: {authEx.Message}");
+                Debug.WriteLine($"⚠️ Kiểm tra lại username và password trong appsettings.json hoặc biến môi trường");
+                Debug.WriteLine(authEx.ToString());
+                return false;
+            }
+            catch (MailKit.Net.Smtp.SmtpCommandException smtpEx)
+            {
+                Debug.WriteLine($"❌ Lỗi SMTP command khi gửi email đến {toEmail}: {smtpEx.Message}");
                 Debug.WriteLine($"Status Code: {smtpEx.StatusCode}");
+                Debug.WriteLine($"⚠️ Server SMTP không chấp nhận lệnh hoặc có lỗi trong quá trình gửi");
                 Debug.WriteLine(smtpEx.ToString());
+                return false;
+            }
+            catch (System.Net.Sockets.SocketException socketEx)
+            {
+                Debug.WriteLine($"❌ Lỗi kết nối mạng khi gửi email đến {toEmail}: {socketEx.Message}");
+                Debug.WriteLine($"Error Code: {socketEx.ErrorCode}");
+                Debug.WriteLine($"⚠️ KHẢ NĂNG CAO: Firewall trên server đang chặn port {smtpPort}");
+                Debug.WriteLine($"⚠️ Hoặc server không thể kết nối đến {smtpServer}:{smtpPort}");
+                Debug.WriteLine($"⚠️ Giải pháp: Mở port {smtpPort} (outbound) trên firewall của server");
+                Debug.WriteLine(socketEx.ToString());
+                return false;
+            }
+            catch (System.OperationCanceledException timeoutEx)
+            {
+                Debug.WriteLine($"❌ Timeout khi gửi email đến {toEmail}: {timeoutEx.Message}");
+                Debug.WriteLine($"⚠️ Kết nối đến SMTP server bị timeout - có thể do mạng chậm hoặc firewall");
+                Debug.WriteLine(timeoutEx.ToString());
                 return false;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"❌ Error sending email to {toEmail}: {ex.Message}");
+                Debug.WriteLine($"❌ Lỗi không xác định khi gửi email đến {toEmail}: {ex.Message}");
+                Debug.WriteLine($"Loại lỗi: {ex.GetType().FullName}");
                 Debug.WriteLine(ex.ToString());
                 return false;
             }
