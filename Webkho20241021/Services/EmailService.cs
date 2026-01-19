@@ -191,46 +191,41 @@ namespace Webkho_20241021.Services
 
         private (string smtpServer, int smtpPort, string fromEmail, string fromPassword, string fromName) GetSmtpSettings()
         {
-            // Lấy cấu hình email gửi đi (FromEmail) từ EmailSettings
+            // Đọc cấu hình email - chỉ cần cấu hình EmailSettings (1 chỗ duy nhất)
+            // StuEmailSettings sẽ tự động lấy từ EmailSettings nếu không được cấu hình riêng
             var fromEmail = _configuration["EmailSettings:FromEmail"];
             
+            // Ưu tiên StuEmailSettings, nếu không có thì lấy từ EmailSettings
+            var smtpServer = _configuration["EmailSettings:StuEmailSettings:SmtpServer"] 
+                ?? _configuration["EmailSettings:SmtpServer"] 
+                ?? "pro01.emailserver.vn";
+            var smtpPort = int.Parse(_configuration["EmailSettings:StuEmailSettings:SmtpPort"] 
+                ?? _configuration["EmailSettings:SmtpPort"] 
+                ?? "465");
             
-            if (!string.IsNullOrEmpty(fromEmail) && fromEmail.Contains("@"))
+            // Password - chỉ cần cấu hình ở EmailSettings:FromPassword (1 chỗ duy nhất)
+            var fromPassword = _configuration["EmailSettings:StuEmailSettings:FromPassword"]
+                ?? _configuration["EmailSettings:FromPassword"];
+            var fromName = _configuration["EmailSettings:StuEmailSettings:FromName"] 
+                ?? _configuration["EmailSettings:FromName"] 
+                ?? "Hệ thống Quản lý Kho";
+            
+            Debug.WriteLine($"🔍 Đang đọc cấu hình email...");
+            Debug.WriteLine($"   FromEmail: {fromEmail ?? "(null)"}");
+            Debug.WriteLine($"   SmtpServer: {smtpServer}");
+            Debug.WriteLine($"   SmtpPort: {smtpPort}");
+            
+            if (string.IsNullOrWhiteSpace(fromPassword))
             {
-                var domain = fromEmail.Split('@')[1].ToLower();
-                
-                // Nếu FromEmail là @stu.com.vn thì dùng email server mắt bão
-                if (domain == "stu.com.vn")
-                {
-                    Debug.WriteLine($"📧 Phát hiện FromEmail @stu.com.vn, sử dụng email server mắt bão");
-                    // Ưu tiên dùng StuEmailSettings, nếu không có thì dùng EmailSettings
-                    var smtpServer = _configuration["EmailSettings:StuEmailSettings:SmtpServer"] 
-                        ?? _configuration["EmailSettings:SmtpServer"] 
-                        ?? "pro01.emailserver.vn";
-                    var smtpPort = int.Parse(_configuration["EmailSettings:StuEmailSettings:SmtpPort"] 
-                        ?? _configuration["EmailSettings:SmtpPort"] 
-                        ?? "465");
-                    // Đọc mật khẩu từ appsettings
-                    var fromPassword = _configuration["EmailSettings:StuEmailSettings:FromPassword"]
-                        ?? _configuration["EmailSettings:FromPassword"]
-                        ?? "";
-                    var fromName = _configuration["EmailSettings:StuEmailSettings:FromName"] 
-                        ?? _configuration["EmailSettings:FromName"] 
-                        ?? "Hệ thống Quản lý Kho";
-                    
-                    return (smtpServer, smtpPort, fromEmail ?? "", fromPassword, fromName);
-                }
+                Debug.WriteLine($"❌ KHÔNG TÌM THẤY PASSWORD! Kiểm tra EmailSettings:FromPassword trong appsettings.json");
+                fromPassword = "";
+            }
+            else
+            {
+                Debug.WriteLine($"✓ Đã tìm thấy password (độ dài: {fromPassword.Length})");
             }
             
-            // Mặc định dùng EmailSettings
-            Debug.WriteLine($"📧 Sử dụng cấu hình EmailSettings mặc định");
-            var defaultSmtpServer = _configuration["EmailSettings:SmtpServer"] ?? "pro01.emailserver.vn";
-            var defaultSmtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "465");
-            // Đọc mật khẩu từ appsettings
-            var defaultFromPassword = _configuration["EmailSettings:FromPassword"] ?? "";
-            var defaultFromName = _configuration["EmailSettings:FromName"] ?? "Hệ thống Quản lý Kho";
-            
-            return (defaultSmtpServer, defaultSmtpPort, fromEmail ?? "", defaultFromPassword, defaultFromName);
+            return (smtpServer, smtpPort, fromEmail ?? "", fromPassword ?? "", fromName);
         }
 
         public async Task<bool> SendEmailAsync(string toEmail, string subject, string body)
@@ -271,10 +266,14 @@ namespace Webkho_20241021.Services
                 if (string.IsNullOrEmpty(fromPassword))
                 {
                     Debug.WriteLine("❌ LỖI: Thiếu FromPassword trong EmailSettings!");
+                    Debug.WriteLine($"   Giá trị hiện tại: (rỗng)");
                     Debug.WriteLine("   Cách khắc phục:");
-                    Debug.WriteLine("   Thêm FromPassword vào appsettings.json hoặc appsettings.Development.json:");
-                    Debug.WriteLine("      \"FromPassword\": \"your-email-password\"");
-                    Debug.WriteLine("      \"StuEmailSettings\": { \"FromPassword\": \"your-email-password\" }");
+                    Debug.WriteLine("   1. Kiểm tra file appsettings.json có tồn tại không");
+                    Debug.WriteLine("   2. Đảm bảo có section EmailSettings với FromPassword");
+                    Debug.WriteLine("   Ví dụ cấu hình:");
+                    Debug.WriteLine("      \"EmailSettings\": {");
+                    Debug.WriteLine("        \"FromPassword\": \"your-email-password\"");
+                    Debug.WriteLine("      }");
                     return false;
                 }
 

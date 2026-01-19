@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Webkho_20241021.Models;
 using OfficeOpenXml;
 using System.Linq;
@@ -128,7 +129,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Dangnhap}/{id?}");
 
-// ✅ Kiểm tra kết nối MySQL khi khởi động ứng dụng
+// ✅ Kiểm tra kết nối MySQL và cấu hình Email khi khởi động ứng dụng
 using (var scope = app.Services.CreateScope())
 {       
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -144,6 +145,32 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         Console.WriteLine("⚠️ Lỗi kết nối MySQL: " + ex.Message);
+    }
+    
+    // Kiểm tra cấu hình Email
+    try
+    {
+        var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var fromEmail = config["EmailSettings:FromEmail"];
+        var fromPassword = config["EmailSettings:FromPassword"];
+        
+        Console.WriteLine("📧 Kiểm tra cấu hình Email:");
+        Console.WriteLine($"   FromEmail: {fromEmail ?? "(null)"}");
+        Console.WriteLine($"   FromPassword: {(string.IsNullOrEmpty(fromPassword) ? "(null hoặc rỗng)" : $"Đã có (độ dài: {fromPassword.Length})")}");
+        
+        if (string.IsNullOrEmpty(fromPassword))
+        {
+            Console.WriteLine("⚠️ CẢNH BÁO: FromPassword không được cấu hình trong appsettings.json!");
+            Console.WriteLine("   Vui lòng kiểm tra và cập nhật password trong file appsettings.json");
+        }
+        else
+        {
+            Console.WriteLine("✅ Cấu hình Email đã được thiết lập đúng");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("⚠️ Lỗi kiểm tra cấu hình Email: " + ex.Message);
     }
 }
 
