@@ -1856,6 +1856,10 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         }
                     }
                     _context.SaveChanges();
+                    
+                    // Đồng bộ trạng thái yêu cầu dựa trên trạng thái của các vật tư
+                    YeucauUpdateHelper.DongBoTrangThaiYeuCau(_context, yeucau.MaYeucau);
+                    _context.SaveChanges();
                 }
                 if (yeucau.TrangThai == "Đã duyệt")
                 {

@@ -598,6 +598,159 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
         }
 
         [HttpPost]
+        public IActionResult XuLyVatTuYeucauWithCheckbox(string MaYeucau, string VatTuData)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(VatTuData))
+                {
+                    return Json(new { success = false, message = "Không có dữ liệu vật tư." });
+                }
+
+                // Parse JSON data
+                var vatTuList = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(VatTuData);
+                if (vatTuList == null || !vatTuList.Any())
+                {
+                    return Json(new { success = false, message = "Dữ liệu vật tư không hợp lệ." });
+                }
+
+                var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                if (yeucau == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy yêu cầu." });
+                }
+
+                var chucVu = HttpContext.Session.GetString("Chucvu");
+                var boPhan = HttpContext.Session.GetString("Bophan");
+
+                // Nhân viên không thể duyệt, chỉ gửi yêu cầu với trạng thái "Chờ Trưởng BP-BP mua hàng duyệt"
+                if (chucVu != "Nhân viên" || boPhan != "BP mua hàng")
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này." });
+                }
+
+                int processedCount = 0;
+                int skippedCount = 0;
+
+                foreach (var item in vatTuList)
+                {
+                    var maSanpham = item.ContainsKey("MaSanpham") ? item["MaSanpham"]?.ToString() : null;
+                    var isSelected = item.ContainsKey("IsApproved") && 
+                                    item["IsApproved"] is System.Text.Json.JsonElement jsonElement && 
+                                    jsonElement.GetBoolean();
+                    var ghiChu = item.ContainsKey("GhiChu") ? item["GhiChu"]?.ToString() : null;
+
+                    if (string.IsNullOrEmpty(maSanpham))
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    var vatTu = _context.vtyeucau
+                        .FirstOrDefault(v => v.VTMaYeucau == MaYeucau && v.MaSanpham == maSanpham);
+
+                    if (vatTu == null)
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // Helper function để kiểm tra xem vật tư đã được gửi lên trưởng BP chưa
+                    Func<string, bool> isAlreadySent = status =>
+                    {
+                        if (string.IsNullOrWhiteSpace(status))
+                        {
+                            return false;
+                        }
+                        var normalized = status.Trim();
+                        return normalized.Equals("Chờ Trưởng BP-BP mua hàng duyệt", StringComparison.OrdinalIgnoreCase)
+                            || normalized.StartsWith("Chờ Trưởng BP", StringComparison.OrdinalIgnoreCase)
+                            || normalized == "Đã duyệt"
+                            || normalized == "Đang mua hàng"
+                            || normalized == "Đã xuất kho"
+                            || normalized == "Đã nhận hàng"
+                            || normalized == "Chờ giám đốc duyệt"
+                            || normalized == "Chờ quản lý dự án duyệt";
+                    };
+
+                    // Helper function để kiểm tra xem vật tư đã bị từ chối chưa
+                    Func<string, bool> isAlreadyRejected = status =>
+                    {
+                        if (string.IsNullOrWhiteSpace(status))
+                        {
+                            return false;
+                        }
+                        return status.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase);
+                    };
+
+                    // Chỉ xử lý các vật tư chưa được gửi lên trưởng BP và chưa bị từ chối
+                    if (isAlreadySent(vatTu.TrangThai) || isAlreadyRejected(vatTu.TrangThai))
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    if (isSelected)
+                    {
+                        // Nhân viên chọn vật tư để gửi yêu cầu lên trưởng BP
+                        vatTu.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
+                        if (!string.IsNullOrWhiteSpace(ghiChu))
+                        {
+                            vatTu.GhiChu = ghiChu;
+                        }
+                    }
+                    // Nếu không chọn, giữ nguyên trạng thái
+
+                    _context.vtyeucau.Update(vatTu);
+                    processedCount++;
+                }
+
+                // Cập nhật trạng thái yêu cầu nếu có ít nhất một vật tư được chọn
+                if (yeucau != null && processedCount > 0)
+                {
+                    // Kiểm tra xem có vật tư nào đang chờ trưởng BP duyệt không
+                    var hasPendingItems = _context.vtyeucau
+                        .Any(v => v.VTMaYeucau == MaYeucau && 
+                                 v.TrangThai == "Chờ Trưởng BP-BP mua hàng duyệt");
+
+                    if (hasPendingItems && yeucau.TrangThai != "Chờ Trưởng BP-BP mua hàng duyệt")
+                    {
+                        yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
+                        _context.yeucau.Update(yeucau);
+                    }
+
+                    // Gửi thông báo cho trưởng BP
+                    try
+                    {
+                        _ = _emailService.SendNotificationToDepartmentHeadAsync(
+                            yeucau.MaYeucau,
+                            yeucau.NguoiYeucau ?? "",
+                            "BP mua hàng"
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[NhanvienMuahang/XuLyVatTuYeucauWithCheckbox] Lỗi gửi email: {ex.Message}");
+                    }
+                }
+
+                _context.SaveChanges();
+
+                string message = $"Đã gửi {processedCount} vật tư lên trưởng BP thành công.";
+                if (skippedCount > 0)
+                {
+                    message += $" ({skippedCount} vật tư đã được gửi trước đó hoặc không hợp lệ)";
+                }
+
+                return Json(new { success = true, message = message });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
         public IActionResult ThemyeucauSQL(yeucau yeucau, vtyeucau vtyeucau,
                                            duans duans, phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, List<string> YCMaKho,
                                            List<string> TenSanpham, List<string> MaSanpham,

@@ -500,12 +500,13 @@ namespace Webkho_20241021.Services
         /// <summary>
         /// Tính trạng thái yêu cầu dựa trên danh sách vật tư yêu cầu với ưu tiên:
         /// 1. "Chờ giám đốc duyệt" (nếu có vật tư chờ duyệt)
-        /// 2. "Đang mua hàng" (nếu có bất kỳ vật tư nào đang mua hàng)
-        /// 3. "Chờ xuất kho" (nếu có vật tư chờ xuất, và không có mua hàng)
-        /// 4. "Đã xuất kho" (nếu tất cả đã xuất hoặc hoàn thành, không có chờ xuất/mua hàng)
-        /// 5. "Đã nhập kho" (nếu có nhập kho nhưng chưa xuất)
-        /// 6. "Đã từ chối" (nếu tất cả bị từ chối)
-        /// 7. "Hoàn thành" (nếu tất cả hoàn thành, không có từ chối)
+        /// 2. "Chờ quản lý dự án duyệt" (nếu có vật tư chờ quản lý dự án duyệt)
+        /// 3. "Đang mua hàng" (nếu có bất kỳ vật tư nào đang mua hàng)
+        /// 4. "Chờ xuất kho" (nếu có vật tư chờ xuất, và không có mua hàng)
+        /// 5. "Đã xuất kho" (nếu tất cả đã xuất hoặc hoàn thành, không có chờ xuất/mua hàng)
+        /// 6. "Đã nhập kho" (nếu có nhập kho nhưng chưa xuất)
+        /// 7. "Đã từ chối" (nếu tất cả bị từ chối)
+        /// 8. "Hoàn thành" (nếu tất cả hoàn thành, không có từ chối)
         /// </summary>
         public static string TinhTrangThaiYeuCau(List<vtyeucau> vtList)
         {
@@ -530,6 +531,10 @@ namespace Webkho_20241021.Services
             bool hasChoGiamDoc = vtList.Any(v => 
                 string.IsNullOrWhiteSpace(v.TrangThai) || 
                 (!string.IsNullOrEmpty(v.TrangThai) && ContainsIgnoreAccent(v.TrangThai, "giám đốc duyệt")));
+
+            bool hasChoQLDA = vtList.Any(v => 
+                !string.IsNullOrEmpty(v.TrangThai) && 
+                ContainsIgnoreAccent(v.TrangThai, "quản lý dự án duyệt"));
 
             bool hasDangMuaHang = vtList.Any(v => 
                 !string.IsNullOrEmpty(v.TrangThai) && 
@@ -559,6 +564,9 @@ namespace Webkho_20241021.Services
             // Áp dụng ưu tiên theo thứ tự
             if (hasChoGiamDoc)
                 return TrangThaiVatTu.ChoGiamDoc;
+            
+            if (hasChoQLDA)
+                return TrangThaiVatTu.ChoQLDA;
             
             if (hasDangMuaHang)
                 return TrangThaiVatTu.DangMuaHang; // Ưu tiên cao nhất sau chờ duyệt

@@ -484,13 +484,28 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                     return Json(new { success = false, message = "Dữ liệu vật tư không hợp lệ." });
                 }
 
+                var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                if (yeucau == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy yêu cầu." });
+                }
+
+                var chucVu = HttpContext.Session.GetString("Chucvu");
+                var boPhan = HttpContext.Session.GetString("Bophan");
+
+                // Nhân viên không thể duyệt, chỉ gửi yêu cầu với trạng thái "Chờ Trưởng BP-BP kế toán duyệt"
+                if (chucVu != "Nhân viên" || boPhan != "BP kế toán")
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này." });
+                }
+
                 int processedCount = 0;
                 int skippedCount = 0;
 
                 foreach (var item in vatTuList)
                 {
                     var maSanpham = item.ContainsKey("MaSanpham") ? item["MaSanpham"]?.ToString() : null;
-                    var isApproved = item.ContainsKey("IsApproved") && 
+                    var isSelected = item.ContainsKey("IsApproved") && 
                                     item["IsApproved"] is System.Text.Json.JsonElement jsonElement && 
                                     jsonElement.GetBoolean();
                     var ghiChu = item.ContainsKey("GhiChu") ? item["GhiChu"]?.ToString() : null;
@@ -510,32 +525,22 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                         continue;
                     }
 
-                    // Helper function để kiểm tra xem vật tư có đang chờ Trưởng BP kế toán duyệt không
-                    Func<string, bool> isAwaitingTruongBPKetoanStatus = status =>
-                    {
-                        if (string.IsNullOrWhiteSpace(status))
-                        {
-                            return true;
-                        }
-                        var normalized = status.Trim();
-                        return normalized.Equals("Chờ Trưởng BP-BP kế toán duyệt", StringComparison.OrdinalIgnoreCase)
-                            || normalized.StartsWith("Chờ Trưởng BP", StringComparison.OrdinalIgnoreCase)
-                            || normalized.Contains("chờ trưởng bp", StringComparison.OrdinalIgnoreCase);
-                    };
-
-                    // Helper function để kiểm tra xem vật tư đã được duyệt chưa
-                    Func<string, bool> isAlreadyApproved = status =>
+                    // Helper function để kiểm tra xem vật tư đã được gửi lên trưởng BP chưa
+                    Func<string, bool> isAlreadySent = status =>
                     {
                         if (string.IsNullOrWhiteSpace(status))
                         {
                             return false;
                         }
                         var normalized = status.Trim();
-                        return normalized == "Đã duyệt" ||
-                               normalized == "Đang mua hàng" ||
-                               normalized == "Đã xuất kho" ||
-                               normalized == "Đã nhận hàng" ||
-                               normalized == "Chờ giám đốc duyệt";
+                        return normalized.Equals("Chờ Trưởng BP-BP kế toán duyệt", StringComparison.OrdinalIgnoreCase)
+                            || normalized.StartsWith("Chờ Trưởng BP", StringComparison.OrdinalIgnoreCase)
+                            || normalized == "Đã duyệt"
+                            || normalized == "Đang mua hàng"
+                            || normalized == "Đã xuất kho"
+                            || normalized == "Đã nhận hàng"
+                            || normalized == "Chờ giám đốc duyệt"
+                            || normalized == "Chờ quản lý dự án duyệt";
                     };
 
                     // Helper function để kiểm tra xem vật tư đã bị từ chối chưa
@@ -548,53 +553,63 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                         return status.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase);
                     };
 
-                    // Kiểm tra số lượng yêu cầu - nếu bằng 0 thì đặt trạng thái "Hoàn thành" và bỏ qua
-                    int soLuongYeuCau = vatTu.SL ?? 0;
-                    if (soLuongYeuCau == 0)
-                    {
-                        // Nếu số lượng = 0, không cần mua hàng, đặt trạng thái "Hoàn thành"
-                        vatTu.NgayDuyet = DateTime.Now;
-                        vatTu.TrangThai = "Hoàn thành";
-                        vatTu.GhiChu = null;
-                        _context.vtyeucau.Update(vatTu);
-                        processedCount++;
-                        continue;
-                    }
-
-                    // Chỉ xử lý các vật tư đang chờ Trưởng BP kế toán duyệt và chưa được duyệt/từ chối
-                    if (!isAwaitingTruongBPKetoanStatus(vatTu.TrangThai) || 
-                        isAlreadyApproved(vatTu.TrangThai) || 
-                        isAlreadyRejected(vatTu.TrangThai))
+                    // Chỉ xử lý các vật tư chưa được gửi lên trưởng BP và chưa bị từ chối
+                    if (isAlreadySent(vatTu.TrangThai) || isAlreadyRejected(vatTu.TrangThai))
                     {
                         skippedCount++;
                         continue;
                     }
 
-                    if (isApproved)
+                    if (isSelected)
                     {
-                        // Duyệt vật tư
-                        vatTu.NgayDuyet = DateTime.Now;
-                        vatTu.TrangThai = "Chờ giám đốc duyệt";
-                        vatTu.GhiChu = null; // Xóa ghi chú khi duyệt
+                        // Nhân viên chọn vật tư để gửi yêu cầu lên trưởng BP
+                        vatTu.TrangThai = "Chờ Trưởng BP-BP kế toán duyệt";
+                        if (!string.IsNullOrWhiteSpace(ghiChu))
+                        {
+                            vatTu.GhiChu = ghiChu;
+                        }
                     }
-                    else
-                    {
-                        // Từ chối vật tư
-                        vatTu.NgayDuyet = DateTime.Now;
-                        vatTu.TrangThai = "Đã từ chối";
-                        vatTu.GhiChu = ghiChu; // Lưu ghi chú khi từ chối
-                    }
+                    // Nếu không chọn, giữ nguyên trạng thái
 
                     _context.vtyeucau.Update(vatTu);
                     processedCount++;
                 }
 
+                // Cập nhật trạng thái yêu cầu nếu có ít nhất một vật tư được chọn
+                if (yeucau != null && processedCount > 0)
+                {
+                    // Kiểm tra xem có vật tư nào đang chờ trưởng BP duyệt không
+                    var hasPendingItems = _context.vtyeucau
+                        .Any(v => v.VTMaYeucau == MaYeucau && 
+                                 v.TrangThai == "Chờ Trưởng BP-BP kế toán duyệt");
+
+                    if (hasPendingItems && yeucau.TrangThai != "Chờ Trưởng BP-BP kế toán duyệt")
+                    {
+                        yeucau.TrangThai = "Chờ Trưởng BP-BP kế toán duyệt";
+                        _context.yeucau.Update(yeucau);
+                    }
+
+                    // Gửi thông báo cho trưởng BP
+                    try
+                    {
+                        _ = _emailService.SendNotificationToDepartmentHeadAsync(
+                            yeucau.MaYeucau,
+                            yeucau.NguoiYeucau ?? "",
+                            "BP kế toán"
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[NhanvienKetoan/XuLyVatTuYeucauWithCheckbox] Lỗi gửi email: {ex.Message}");
+                    }
+                }
+
                 _context.SaveChanges();
 
-                string message = $"Đã xử lý {processedCount} vật tư thành công.";
+                string message = $"Đã gửi {processedCount} vật tư lên trưởng BP thành công.";
                 if (skippedCount > 0)
                 {
-                    message += $" ({skippedCount} vật tư đã được xử lý trước đó hoặc không ở trạng thái chờ duyệt)";
+                    message += $" ({skippedCount} vật tư đã được gửi trước đó hoặc không hợp lệ)";
                 }
 
                 return Json(new { success = true, message = message });
