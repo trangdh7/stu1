@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Areas.TruongBPKho.Data;
 using Webkho_20241021.Helpers;
 using Webkho_20241021.Models;
+using Webkho_20241021.Services;
 
 namespace Webkho_20241021.Areas.TruongBPKho.Services
 {
@@ -60,7 +61,11 @@ namespace Webkho_20241021.Areas.TruongBPKho.Services
             // Cập nhật trạng thái yêu cầu
             CapNhatTrangThaiYeucau(yeucauList);
 
-            var result = yeucauList
+            // Lọc bằng service dùng chung
+            var VTyeucaulist = _context.vtyeucau.ToList();
+            var validYeucauList = DataFilterService.FilterYeucau(yeucauList, VTyeucaulist);
+
+            var result = validYeucauList
                 .OrderByDescending(y => y.TrangThai == userRole)
                 .ThenByDescending(y => y.NgayYeucau)
                 .AsQueryable();
@@ -71,7 +76,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Services
             return new Yeucauviewmodel
             {
                 Yeucau = result.ToList(),
-                VTyeucau = _context.vtyeucau.ToList(),
+                VTyeucau = VTyeucaulist,
                 Duans = _context.duans.ToList()
             };
         }

@@ -77,7 +77,13 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                 }
             }
 
-            var SortedYeucaulist = Yeucaulist
+            var VTyeucaulist = _context.vtyeucau.ToList();
+            var Duans = _context.duans.ToList();
+
+            // Lọc bằng service dùng chung
+            var validYeucaulist = DataFilterService.FilterYeucau(Yeucaulist, VTyeucaulist);
+
+            var SortedYeucaulist = validYeucaulist
                 .OrderByDescending(y => y.TrangThai == userRole)
                 .ThenBy(y => YeucauUpdateHelper.GetBaseRequestCode(y.MaYeucau ?? "")) // Nhóm theo mã cơ bản
                 .ThenByDescending(y => y.NgayYeucau) // Trong cùng nhóm, sắp xếp theo ngày giảm dần
@@ -100,9 +106,6 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     .ToList();
             }
 
-            var VTyeucaulist = _context.vtyeucau.ToList();
-            var Duans = _context.duans.ToList();
-
             var model = new Yeucauviewmodel
             {
                 Yeucau = SortedYeucaulist,
@@ -116,7 +119,14 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
 
         public IActionResult Phieuxuatkho(string search = "")
         {
-            var Phieuxuatkholist = _context.phieuxuatkho
+            var VTphieuxuatkholist = _context.vtphieuxuatkho.ToList();
+
+            var allPhieuxuatkholist = _context.phieuxuatkho.ToList();
+
+            // Lọc bằng service dùng chung
+            var validPhieuxuatkholist = DataFilterService.FilterPhieuxuatkho(allPhieuxuatkholist, VTphieuxuatkholist);
+
+            var Phieuxuatkholist = validPhieuxuatkholist
             .OrderByDescending(y => y.TrangThai == "Chờ lấy hàng")
             .ThenByDescending(y => y.TrangThai == "Đang chuẩn bị hàng")
             .ThenByDescending(y => y.NgayXuatkho)
@@ -137,8 +147,6 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     )
                     .ToList();
             }
-
-            var VTphieuxuatkholist = _context.vtphieuxuatkho.ToList();
             var model = new Phieuxuatkhoviewmodel
             {
                 Phieuxuatkho = Phieuxuatkholist,
@@ -150,7 +158,14 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
 
         public IActionResult Phieunhapkho(string search = "")
         {
-            var Phieunhapkholist = _context.phieunhapkho
+            var VTphieunhapkholist = _context.vtphieunhapkho.ToList();
+
+            var allPhieunhapkholist = _context.phieunhapkho.ToList();
+
+            // Lọc bằng service dùng chung
+            var validPhieunhapkholist = DataFilterService.FilterPhieunhapkho(allPhieunhapkholist, VTphieunhapkholist);
+
+            var Phieunhapkholist = validPhieunhapkholist
             .OrderByDescending(y => y.NgayNhapkho)
             .ToList();
 
@@ -168,8 +183,6 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     )
                     .ToList();
             }
-
-            var VTphieunhapkholist = _context.vtphieunhapkho.ToList();
             var Duanslist = _context.duans.ToList();
             var model = new Phieunhapkhoviewmodel
             {
@@ -183,7 +196,13 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
 
         public IActionResult Phieumuahang(string search = "")
         {
-            var Phieumuahanglist = _context.phieumuahang
+            var VTphieumuahanglist = _context.vtphieumuahang.ToList();
+
+            // Lọc bằng service dùng chung
+            var allPhieumuahanglist = _context.phieumuahang.ToList();
+            var validPhieumuahanglist = DataFilterService.FilterPhieumuahang(allPhieumuahanglist, VTphieumuahanglist);
+
+            var Phieumuahanglist = validPhieumuahanglist
             .OrderByDescending(y => y.TrangThai == "Đang chờ báo giá")
             .ThenByDescending(y => y.NgayMuahang)
             .ToList();
@@ -213,8 +232,6 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     )
                     .ToList();
             }
-
-            var VTphieumuahanglist = _context.vtphieumuahang.ToList();
             var model = new Phieumuahangviewmodel
             {
                 Phieumuahang = Phieumuahanglist,

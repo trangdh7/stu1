@@ -1,0 +1,161 @@
+@model Webkho_20241021.Areas.Admin.Models.EmailSettingsViewModel
+@{
+    ViewBag.Title = "Cấu hình Email";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+}
+
+<div class="email-settings-page">
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+            </div>
+            <div class="header-text">
+                <h1>Cấu hình Email</h1>
+                <p>Quản lý thiết lập SMTP và thông tin email gửi đi</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-container">
+        <form id="settingsForm" asp-action="Index" method="post">
+            @Html.AntiForgeryToken()
+
+            <!-- SMTP -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <div>
+                        <h2>Cấu hình SMTP</h2>
+                        <p class="section-subtitle">Thiết lập máy chủ email</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- SMTP Server -->
+                    <div class="setting-item full-width">
+                        <div class="setting-label">
+                            <label>SMTP Server</label>
+                            <span class="label-hint">vd: smtp.gmail.com</span>
+                        </div>
+
+                        <input type="text"
+                               name="SmtpServer"
+                               id="SmtpServer"
+                               class="form-input"
+                               value="@Model.SmtpServer"
+                               placeholder="smtp.gmail.com" />
+                    </div>
+
+                    <!-- SMTP Port -->
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <label>SMTP Port</label>
+                            <span class="label-hint">587 hoặc 465</span>
+                        </div>
+
+                        <input type="number"
+                               name="SmtpPort"
+                               id="SmtpPort"
+                               class="form-input"
+                               value="@(Model.SmtpPort == 0 ? "" : Model.SmtpPort.ToString())"
+                               placeholder="587" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sender -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <div>
+                        <h2>Thông tin người gửi</h2>
+                        <p class="section-subtitle">Email và tên hiển thị</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- From Email -->
+                    <div class="setting-item full-width">
+                        <div class="setting-label">
+                            <label>Email gửi đi</label>
+                        </div>
+
+                        <input type="email"
+                               name="FromEmail"
+                               id="FromEmail"
+                               class="form-input"
+                               value="@Model.FromEmail"
+                               placeholder="email@example.com" />
+                    </div>
+
+                    <!-- From Name -->
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <label>Tên hiển thị</label>
+                        </div>
+
+                        <input type="text"
+                               name="FromName"
+                               id="FromName"
+                               class="form-input"
+                               value="@Model.FromName"
+                               placeholder="Tên hiển thị" />
+                    </div>
+
+                    <!-- Password -->
+                    <div class="setting-item full-width">
+                        <div class="setting-label">
+                            <label>Mật khẩu</label>
+                            <span class="label-hint">Để trống nếu không đổi</span>
+                        </div>
+
+                        <div class="password-input-wrapper">
+                            <input asp-for="FromPassword"
+                                   type="password"
+                                   class="form-input"
+                                   id="FromPassword"
+                                   value="@Model.FromPassword"
+                                   placeholder="Nhập mật khẩu" />
+                            <button type="button" class="toggle-password" id="togglePasswordBtn" onclick="togglePassword(event)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-off-icon">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon" style="display: none;">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.FromPassword))
+                        {
+                            <small style="color: var(--success-color); font-size: 0.85rem; margin-top: 0.5rem; display: block;">
+                                ✓ Đã có mật khẩu được lưu
+                            </small>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Lưu cấu hình</button>
+                <button type="submit"
+                        formaction="@Url.Action("ClearCache", "EmailSettings", new { area = "Admin" })"
+                        class="btn btn-secondary">
+                    Làm mới cache
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+    <link href="~/css/email-settings.css" rel="stylesheet" />
+}
+
+@section Scripts {
+    <script src="~/js/email-settings.js"></script>
+}

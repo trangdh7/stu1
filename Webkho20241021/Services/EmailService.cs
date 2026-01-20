@@ -14,12 +14,17 @@ namespace Webkho_20241021.Services
     {
         private readonly IConfiguration _configuration;
         private readonly ApplicationDbContext _context;
+        private readonly IEmailSettingsProvider _emailSettingsProvider;
         private readonly string _baseUrl;
 
-        public EmailService(IConfiguration configuration, ApplicationDbContext context)
+        public EmailService(
+            IConfiguration configuration,
+            ApplicationDbContext context,
+            IEmailSettingsProvider emailSettingsProvider)
         {
             _configuration = configuration;
             _context = context;
+            _emailSettingsProvider = emailSettingsProvider;
             _baseUrl = _configuration["AppSettings:BaseUrl"] ?? "https://stu.vn";
         }
 
@@ -189,26 +194,39 @@ namespace Webkho_20241021.Services
             return defaultValue;
         }
 
-        private (string smtpServer, int smtpPort, string fromEmail, string fromPassword, string fromName) GetSmtpSettings()
+        private async Task<(string smtpServer, int smtpPort, string fromEmail, string fromPassword, string fromName)> GetSmtpSettingsAsync()
         {
-            // Đọc cấu hình email - chỉ cần cấu hình EmailSettings (1 chỗ duy nhất)
-            // StuEmailSettings sẽ tự động lấy từ EmailSettings nếu không được cấu hình riêng
-            var fromEmail = _configuration["EmailSettings:FromEmail"];
-            
-            // Ưu tiên StuEmailSettings, nếu không có thì lấy từ EmailSettings
-            var smtpServer = _configuration["EmailSettings:StuEmailSettings:SmtpServer"] 
-                ?? _configuration["EmailSettings:SmtpServer"] 
+            var dbSettings = await _emailSettingsProvider.GetAsync();
+
+            // Fallback từ appsettings nếu DB chưa có
+            var fallbackSmtpServer = _configuration["EmailSettings:StuEmailSettings:SmtpServer"]
+                ?? _configuration["EmailSettings:SmtpServer"]
                 ?? "pro01.emailserver.vn";
-            var smtpPort = int.Parse(_configuration["EmailSettings:StuEmailSettings:SmtpPort"] 
-                ?? _configuration["EmailSettings:SmtpPort"] 
-                ?? "465");
-            
-            // Password - chỉ cần cấu hình ở EmailSettings:FromPassword (1 chỗ duy nhất)
-            var fromPassword = _configuration["EmailSettings:StuEmailSettings:FromPassword"]
+            var fallbackSmtpPort = int.TryParse(
+                    _configuration["EmailSettings:StuEmailSettings:SmtpPort"] ?? _configuration["EmailSettings:SmtpPort"],
+                    out var portFromConfig)
+                ? portFromConfig
+                : 465;
+            var fallbackFromEmail = _configuration["EmailSettings:FromEmail"] ?? "";
+            var fallbackFromPassword = _configuration["EmailSettings:StuEmailSettings:FromPassword"]
                 ?? _configuration["EmailSettings:FromPassword"];
-            var fromName = _configuration["EmailSettings:StuEmailSettings:FromName"] 
-                ?? _configuration["EmailSettings:FromName"] 
+            var fallbackFromName = _configuration["EmailSettings:StuEmailSettings:FromName"]
+                ?? _configuration["EmailSettings:FromName"]
                 ?? "Hệ thống Quản lý Kho";
+
+            var smtpServer = string.IsNullOrWhiteSpace(dbSettings?.SmtpServer)
+                ? fallbackSmtpServer
+                : dbSettings.SmtpServer;
+            var smtpPort = dbSettings?.SmtpPort > 0 ? dbSettings.SmtpPort : fallbackSmtpPort;
+            var fromEmail = string.IsNullOrWhiteSpace(dbSettings?.FromEmail)
+                ? fallbackFromEmail
+                : dbSettings.FromEmail;
+            var fromPassword = string.IsNullOrWhiteSpace(dbSettings?.FromPassword)
+                ? (fallbackFromPassword ?? string.Empty)
+                : dbSettings.FromPassword!;
+            var fromName = string.IsNullOrWhiteSpace(dbSettings?.FromName)
+                ? fallbackFromName
+                : dbSettings.FromName!;
             
             Debug.WriteLine($"🔍 Đang đọc cấu hình email...");
             Debug.WriteLine($"   FromEmail: {fromEmail ?? "(null)"}");
@@ -217,7 +235,7 @@ namespace Webkho_20241021.Services
             
             if (string.IsNullOrWhiteSpace(fromPassword))
             {
-                Debug.WriteLine($"❌ KHÔNG TÌM THẤY PASSWORD! Kiểm tra EmailSettings:FromPassword trong appsettings.json");
+                Debug.WriteLine($"❌ KHÔNG TÌM THẤY PASSWORD! Kiểm tra EmailSettings trong DB hoặc appsettings.json");
                 fromPassword = "";
             }
             else
@@ -251,7 +269,7 @@ namespace Webkho_20241021.Services
                 }
 
                 // Lấy cấu hình SMTP dựa trên FromEmail (email gửi đi)
-                (smtpServer, smtpPort, fromEmail, fromPassword, fromName) = GetSmtpSettings();
+                (smtpServer, smtpPort, fromEmail, fromPassword, fromName) = await GetSmtpSettingsAsync();
 
                 Debug.WriteLine($"SMTP: {smtpServer}:{smtpPort}");
                 Debug.WriteLine($"FromEmail: {fromEmail}");

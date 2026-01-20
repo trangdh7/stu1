@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Areas.TruongBPKho.Data;
 using Webkho_20241021.Helpers;
 using Webkho_20241021.Models;
+using Webkho_20241021.Services;
 
 namespace Webkho_20241021.Services
 {
@@ -22,8 +23,15 @@ namespace Webkho_20241021.Services
         /// </summary>
         public Phieuxuatkhoviewmodel GetDanhSachPhieuxuatkho(string search = "")
         {
-            var phieuxuatkholist = _context.phieuxuatkho
+            var VTphieuxuatkholist = _context.vtphieuxuatkho.ToList();
+            var allPhieuxuatkholist = _context.phieuxuatkho
                 .Where(p => string.IsNullOrEmpty(p.MaYeucau) || !p.MaYeucau.StartsWith("NHAPKHO_"))
+                .ToList();
+
+            // Lọc bằng service dùng chung
+            var validPhieuxuatkholist = DataFilterService.FilterPhieuxuatkho(allPhieuxuatkholist, VTphieuxuatkholist);
+
+            var phieuxuatkholist = validPhieuxuatkholist
                 .OrderByDescending(y => y.TrangThai == "Chờ lấy hàng")
                 .ThenByDescending(y => y.TrangThai == "Đang chuẩn bị hàng")
                 .ThenByDescending(y => y.NgayXuatkho)
@@ -35,7 +43,7 @@ namespace Webkho_20241021.Services
             return new Phieuxuatkhoviewmodel
             {
                 Phieuxuatkho = phieuxuatkholist.ToList(),
-                VTphieuxuatkho = _context.vtphieuxuatkho.ToList()
+                VTphieuxuatkho = VTphieuxuatkholist
             };
         }
 
@@ -44,7 +52,14 @@ namespace Webkho_20241021.Services
         /// </summary>
         public Phieunhapkhoviewmodel GetDanhSachPhieunhapkho(string search = "")
         {
-            var phieunhapkholist = _context.phieunhapkho
+            var VTphieunhapkholist = _context.vtphieunhapkho.ToList();
+            var allPhieunhapkholist = _context.phieunhapkho.ToList();
+
+            // Lọc bằng service dùng chung
+            var validPhieunhapkholist = DataFilterService.FilterPhieunhapkho(allPhieunhapkholist, VTphieunhapkholist)
+                .AsQueryable();
+
+            var phieunhapkholist = validPhieunhapkholist
                 .OrderByDescending(y => y.TrangThai == "Chờ nhập kho")
                 .ThenByDescending(y => y.NgayNhapkho)
                 .AsQueryable();
@@ -55,7 +70,7 @@ namespace Webkho_20241021.Services
             return new Phieunhapkhoviewmodel
             {
                 Phieunhapkho = phieunhapkholist.ToList(),
-                VTphieunhapkho = _context.vtphieunhapkho.ToList(),
+                VTphieunhapkho = VTphieunhapkholist,
                 Duans = _context.duans.ToList()
             };
         }
@@ -65,7 +80,14 @@ namespace Webkho_20241021.Services
         /// </summary>
         public Phieumuahangviewmodel GetDanhSachPhieumuahang(string search = "")
         {
-            var phieumuahanglist = _context.phieumuahang
+            var VTphieumuahanglist = _context.vtphieumuahang.ToList();
+            var allPhieumuahanglist = _context.phieumuahang.ToList();
+
+            // Lọc bằng service dùng chung
+            var validPhieumuahanglist = DataFilterService.FilterPhieumuahang(allPhieumuahanglist, VTphieumuahanglist)
+                .AsQueryable();
+
+            var phieumuahanglist = validPhieumuahanglist
                 .OrderByDescending(y => y.TrangThai == "Đang chờ báo giá")
                 .ThenByDescending(y => y.NgayMuahang)
                 .AsQueryable();
@@ -80,7 +102,7 @@ namespace Webkho_20241021.Services
             return new Phieumuahangviewmodel
             {
                 Phieumuahang = phieuList,
-                VTphieumuahang = _context.vtphieumuahang.ToList()
+                VTphieumuahang = VTphieumuahanglist
             };
         }
 

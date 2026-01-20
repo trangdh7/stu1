@@ -9,6 +9,7 @@ using System.Linq;
 using System.Security.Claims;
 using Webkho_20241021.Helpers;
 using Microsoft.AspNetCore.Http.Features;
+using Webkho_20241021.Services;
 
 // Cấu hình license cho EPPlus 8+
 ExcelPackage.License.SetNonCommercialPersonal("Webkho Management System");
@@ -31,8 +32,10 @@ builder.Services.AddDbContext<ApplicationDbContext_user>(options =>
 
 // Thêm dịch vụ vào container
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
 
-// Đăng ký EmailService
+// Đăng ký EmailService và provider cấu hình email động
+builder.Services.AddScoped<IEmailSettingsProvider, EmailSettingsProvider>();
 builder.Services.AddScoped<Webkho_20241021.Services.EmailService>();
 
 // Cấu hình FormOptions để tăng giới hạn form values (hỗ trợ upload file Excel lớn)

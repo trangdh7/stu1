@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 
@@ -13,6 +13,7 @@ namespace Webkho_20241021.Models
             : base(options) { }
 
         public DbSet<User> User { get; set; }
+        public DbSet<EmailSetting> EmailSettings { get; set; }
         public DbSet<duans> duans { get; set; }
         public DbSet<khoduans> khoduans { get; set; }
         public DbSet<khonguoidungs> khonguoidungs { get; set; }
@@ -44,6 +45,9 @@ namespace Webkho_20241021.Models
 
             modelBuilder.Entity<phieuxuatkho>()
                 .HasKey(k => new { k.MaXuatkho, k.MaYeucau });
+
+            modelBuilder.Entity<EmailSetting>()
+                .ToTable("emailsettings");
 
             // Cấu hình tên bảng cho ExcelFile
             modelBuilder.Entity<ExcelFile>()
