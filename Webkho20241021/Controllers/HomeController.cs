@@ -428,10 +428,8 @@ namespace Webkho_20241021.Controllers
                 Console.WriteLine($"Redirecting to TruongBPMuahang area");
                 return RedirectToAction("Trangchu", "Home", new { area = "TruongBPMuahang" });
             }
-            else if (normalizedRole == "Nhân viên-BP kho" || 
-                     normalizedRole == "Nhân viên kho" ||
-                     (normalizedRole.Contains("Nhân viên") && normalizedRole.Contains("BP kho")) ||
-                     (normalizedRole.Contains("Nhân viên") && normalizedRole.Contains("kho") && !normalizedRole.Contains("kỹ thuật") && !normalizedRole.Contains("kế toán") && !normalizedRole.Contains("mua hàng")))
+            else if (normalizedRole == "Nhân viên-BP kho" ||
+                     (normalizedRole.Contains("Nhân viên") && normalizedRole.Contains("BP kho")))
             {
                 Console.WriteLine($"=== RedirectToArea: Nhân viên kho ===");
                 Console.WriteLine($"RedirectToArea: normalizedRole = '{normalizedRole}', original role = '{role}'");

@@ -19,7 +19,7 @@ using OfficeOpenXml;
 namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 {
     [Area("NhanvienKho")]
-    [Authorize(Roles = "Nhân viên-BP kho,Nhân viên kho")]
+    [Authorize(Roles = "Nhân viên-BP kho")]
     public class YeucauController : BaseYeucauController
     {
         private readonly EmailService _emailService;
@@ -31,7 +31,49 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 
         public IActionResult Yeucau(string search = "")
         {
+            // Kiểm tra quyền truy cập - kiểm tra cả Claims và Session
             var userRole = HttpContext.Session.GetString("Chucvu");
+            var selectedRole = HttpContext.Session.GetString("SelectedRole");
+            var bophan = HttpContext.Session.GetString("Bophan");
+            
+            // Kiểm tra role trong Claims
+            var userRolesInClaims = User?.Claims?
+                .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList() ?? new List<string>();
+            
+            // Kiểm tra xem user có quyền truy cập không - chỉ role "Nhân viên-BP kho"
+            bool hasAccess = false;
+            if (!string.IsNullOrEmpty(selectedRole))
+            {
+                hasAccess = selectedRole == "Nhân viên-BP kho" ||
+                           userRolesInClaims.Contains("Nhân viên-BP kho");
+            }
+            else if (!string.IsNullOrEmpty(userRole) && !string.IsNullOrEmpty(bophan))
+            {
+                var combinedRole = $"{userRole}-{bophan}";
+                hasAccess = combinedRole == "Nhân viên-BP kho" ||
+                           userRolesInClaims.Contains("Nhân viên-BP kho");
+            }
+            // Nếu không có selectedRole, kiểm tra trực tiếp trong Claims
+            if (!hasAccess && userRolesInClaims.Any())
+            {
+                hasAccess = userRolesInClaims.Contains("Nhân viên-BP kho");
+            }
+            
+            if (!hasAccess && !User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Dangnhap", "Home", new { area = "" });
+            }
+            
+            if (!hasAccess)
+            {
+                // Log để debug
+                Console.WriteLine($"Yeucau: Access denied. UserRole: '{userRole}', SelectedRole: '{selectedRole}', Bophan: '{bophan}'");
+                Console.WriteLine($"Yeucau: Roles in Claims: [{string.Join(", ", userRolesInClaims)}]");
+                return Forbid();
+            }
+            
             var model = _yeucauService.GetDanhSachYeucau(userRole, search);
             ViewBag.Search = search;
             return View(model);

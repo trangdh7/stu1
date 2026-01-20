@@ -1,4 +1,4 @@
-﻿
+
 @{
     ViewData["Title"] = "Trangchu";
     Layout = "~/Areas/NhanvienMuahang/Views/Layout/Layout.cshtml";
@@ -53,10 +53,11 @@
                         <a href="@Url.Action("ThemYeucau", "Yeucau", new { area = "NhanvienMuahang" })"><i class='bx bx-folder-plus' style='color:#0c6215'></i></a>
                         <a href="@Url.Action("ThemYeucau", "Yeucau", new { area = "NhanvienMuahang" })">Thêm yêu cầu</a>
                     </li>
-                    <li>
+                    @* Ẩn link Vật tư mới *@
+                    @* <li>
                         <a href="@Url.Action("VatTuMoi", "Home", new { area = "NhanvienMuahang" })"><i class='bx bx-package' style='color:#8b5cf6'></i></a>
                         <a href="@Url.Action("VatTuMoi", "Home", new { area = "NhanvienMuahang" })">Vật tư mới</a>
-                    </li>
+                    </li> *@
                 </ul>
             </nav>
         </nav>

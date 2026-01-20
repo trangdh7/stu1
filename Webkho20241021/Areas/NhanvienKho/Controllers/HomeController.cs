@@ -12,7 +12,7 @@ using Webkho_20241021.Helpers;
 namespace Webkho_20241021.Areas.NhanvienKho.Controllers
 {
     [Area("NhanvienKho")]
-    [Authorize(Roles = "Nhân viên-BP kho,Nhân viên kho")]
+    [Authorize(Roles = "Nhân viên-BP kho")]
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _context;

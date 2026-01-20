@@ -1,6 +1,6 @@
-﻿@{
-    ViewData["Title"] = "Import";
-    Layout = "~/Areas/NhanvienKythuat/Views/Layout/Layout.cshtml";
+@{
+    ViewData["Title"] = "Import Vật Tư";
+    Layout = "~/Areas/NhanvienMuahang/Views/Layout/Layout.cshtml";
 }
 
 <!DOCTYPE html>
@@ -13,65 +13,226 @@
     <script>
         function handleFileUpload(event) {
             const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    populateTable(jsonData);
-                };
-                reader.readAsArrayBuffer(file);
+            if (!file) {
+                alert('Vui lòng chọn file Excel');
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                // Đọc dạng mảng để tự tìm dòng tiêu đề thực sự
+                const rowsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                if (!rowsArray || !rowsArray.length) {
+                    alert('File rỗng hoặc không đọc được dữ liệu.');
+                    clearPreview();
+                    return;
+                }
+
+                // Tìm dòng header có chứa các cột đặc trưng như "Tên hàng" hoặc "Tên vật tư" và "Mã hàng" hoặc "Mã vật tư"
+                const headerIndex = rowsArray.findIndex(r => {
+                    const joined = r.join(' ').toLowerCase();
+                    return (/tên\s*(hàng|vật\s*tư|sản\s*phẩm)/.test(joined) || /ten\s*(hang|vat\s*tu|san\s*pham)/.test(joined)) &&
+                           (/mã\s*(hàng|vật\s*tư|sản\s*phẩm)/.test(joined) || /ma\s*(hang|vat\s*tu|san\s*pham)/.test(joined));
+                });
+
+                if (headerIndex === -1) {
+                    // Fallback: dùng cách cũ theo key nếu file đã chuẩn key kỹ thuật
+                    const jsonFallback = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                    const rowsFallback = jsonFallback.filter(r =>
+                        (r.TenSanpham || r.TênSảnPhẩm || r.TenSP || r.TenSanPham || r['Tên vật tư'] || r['Tên hàng']) ||
+                        (r.MaSanpham || r.MãSảnPhẩm || r.MaSP || r.MaSanPham || r['Mã vật tư'] || r['Mã hàng'])
+                    );
+                    if (!rowsFallback.length) {
+                        alert('Không tìm thấy dòng tiêu đề phù hợp. Vui lòng đảm bảo file có cột "Tên hàng"/"Tên vật tư" và "Mã hàng"/"Mã vật tư".');
+                        clearPreview();
+                        return;
+                    }
+                    populateTableFromJson(rowsFallback);
+                    return;
+                }
+
+                const headerRow1 = rowsArray[headerIndex].map(h => (h || '').toString().trim());
+                const headerRow2 = (rowsArray[headerIndex + 1] || []).map(h => (h || '').toString().trim());
+                const maxLen = Math.max(headerRow1.length, headerRow2.length);
+                const header = [];
+                for (let i = 0; i < maxLen; i++) {
+                    const h1 = (headerRow1[i] || '').trim();
+                    const h2 = (headerRow2[i] || '').trim();
+                    const merged = (h1 && h2) ? (h1 + ' ' + h2) : (h1 || h2);
+                    header.push(merged);
+                }
+
+                // Kiểm tra xem dòng tiếp theo có phải là sub-header không
+                const isSubHeader = headerRow2.some(c => /yêu\s*cầu|yeu\s*cau|thực\s*nhập|thuc\s*nhap|số\s*lượng|so\s*luong/i.test((c || '').toString()));
+                const dataRows = rowsArray.slice(headerIndex + (isSubHeader ? 2 : 1));
+
+                // Map tên cột -> index
+                function idx(regex) {
+                    const i = header.findIndex(h => regex.test(h.toLowerCase()));
+                    return i >= 0 ? i : -1;
+                }
+
+                const idxTen = idx(/tên\s*(hàng|vật\s*tư|sản\s*phẩm)|ten\s*(hang|vat\s*tu|san\s*pham)/);
+                const idxMa = idx(/mã\s*(hàng|vật\s*tư|sản\s*phẩm)|ma\s*(hang|vat\s*tu|san\s*pham)/);
+                const idxHangSX = idx(/hãng\s*sx|hang\s*sx|hãng\s*sản\s*xuất|hang\s*san\s*xuat/);
+                const idxDonVi = idx(/đvt|dvt|đơn\s*vị|don\s*vi/);
+                // Tìm cột số lượng - ưu tiên các tên phổ biến
+                const idxSL = idx(/số\s*lượng|so\s*luong|sl|soluong|số\s*lượng\s*nhập|so\s*luong\s*nhap/);
+                const idxNCC = idx(/ncc|nhà\s*cung\s*cấp|nha\s*cung\s*cap/);
+                const idxNgay = idx(/ngày|ngay/);
+                const idxNgayBaohanh = idx(/ngày\s*bảo\s*hành|ngay\s*bao\s*hanh|bảo\s*hành|bao\s*hanh/);
+                const idxThoiGianBH = idx(/thời\s*gian\s*bh|thoi\s*gian\s*bh|thời\s*gian\s*bảo\s*hành|thoi\s*gian\s*bao\s*hanh/);
+
+                const rows = [];
+                for (const r of dataRows) {
+                    // Bỏ qua dòng trống hoàn toàn
+                    if (!r || r.every(c => (c + '').trim() === '')) continue;
+
+                    const TenSanpham = idxTen !== -1 ? (r[idxTen] + '').trim() : '';
+                    const MaSanpham = idxMa !== -1 ? (r[idxMa] + '').trim() : '';
+                    const HangSX = idxHangSX !== -1 ? (r[idxHangSX] + '').trim() : '';
+                    const NhaCC = idxNCC !== -1 ? (r[idxNCC] + '').trim() : '';
+                    // Lấy số lượng - chuyển đổi sang số
+                    const rawSL = idxSL !== -1 ? r[idxSL] : '';
+                    const SL = (rawSL === '' || rawSL == null || rawSL === undefined) ? '' : 
+                               Number(String(rawSL).replace(/\./g,'').replace(/,/g,''));
+                    const DonVi = idxDonVi !== -1 ? (r[idxDonVi] + '').trim() : '';
+                    const NgayBaohanh = idxNgayBaohanh !== -1 ? formatExcelDateToDatetimeLocal(r[idxNgayBaohanh]) : '';
+                    const ThoiGianBH = idxThoiGianBH !== -1 ? formatExcelDateToDatetimeLocal(r[idxThoiGianBH]) : '';
+
+                    if (!TenSanpham && !MaSanpham) continue; // lọc dòng vô nghĩa
+
+                    rows.push({
+                        TenSanpham,
+                        MaSanpham,
+                        HangSX,
+                        NhaCC,
+                        SL,
+                        DonVi,
+                        NgayBaohanh,
+                        ThoiGianBH
+                    });
+                }
+
+                if (!rows.length) {
+                    alert('Không có dòng dữ liệu hợp lệ sau khi phân tích.');
+                    clearPreview();
+                    return;
+                }
+                populateTable(rows);
+            };
+            reader.readAsArrayBuffer(file);
         }
 
         function formatExcelDateToDatetimeLocal(dateString) {
-            // Kiểm tra nếu chuỗi ngày không hợp lệ hoặc rỗng
             if (!dateString) return '';
-
-            // Giả sử chuỗi ngày có định dạng dd/MM/yyyy
-            const [day, month, year] = dateString.split('/');
-
-            if (day && month && year && day.length <= 2 && month.length <= 2) {
-                // Định dạng lại theo `yyyy-MM-dd` để dùng trong thẻ input
-                return `${year}-${day.padStart(2, '0')}-${month.padStart(2, '0')}`;
+            if (dateString instanceof Date) {
+                const year = dateString.getFullYear();
+                const month = (dateString.getMonth() + 1).toString().padStart(2, '0');
+                const day = dateString.getDate().toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
             }
-
-            return ''; // Trả về chuỗi rỗng nếu không thể định dạng đúng
+            // Excel serial date number
+            if (typeof dateString === 'number') {
+                try {
+                    const excelEpoch = new Date(1899, 11, 30);
+                    const date = new Date(excelEpoch.getTime() + dateString * 24 * 60 * 60 * 1000);
+                    const year = date.getFullYear();
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const day = date.getDate().toString().padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                } catch (_) { /* ignore */ }
+            }
+            // Try parse string like dd/MM/yyyy
+            const parts = String(dateString).split('/');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2];
+                if (day.length <= 2 && month.length <= 2) {
+                    return `${year}-${month}-${day}`;
+                }
+            }
+            // Try parse yyyy-MM-dd
+            const partsDash = String(dateString).split('-');
+            if (partsDash.length === 3) {
+                return String(dateString);
+            }
+            return '';
         }
 
-        function populateTable(data) {
+        function clearPreview() {
             const tbody = document.querySelector('.form-table tbody');
-            tbody.innerHTML = ''; // Clear existing rows
-
-            for (let i = 1; i < data.length; i++) { // Skip header row
-                if (data[i].length <= 1) continue; // Skip rows with 1 or fewer columns
-
-                const formattedNgayBaohanh = formatExcelDateToDatetimeLocal(data[i][7]);
-                const formattedThoiGianBH = formatExcelDateToDatetimeLocal(data[i][8]);
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${i}</td>
-                    <td style="width: 20%;"><input type="text" name="TenSanpham" value="${data[i][1] || ''}" placeholder="Tên vật tư" required /></td>
-                    <td><input type="text" name="MaSanpham" value="${data[i][2] || ''}" placeholder="Mã vật tư" required /></td>
-                    <td><input type="text" name="HangSX" value="${data[i][3] || ''}" placeholder="Hãng SX" /></td>
-                    <td><input type="text" name="NhaCC" value="${data[i][4] || ''}" placeholder="Nhà cung cấp" /></td>
-                    <td><input type="number" name="SL" value="${data[i][5] || ''}" placeholder="Số lượng" required /></td>
-                    <td><input type="text" name="DonVi" value="${data[i][6] || ''}" placeholder="Đơn vị" required /></td>
-                    <td><input type="date" name="NgayBaohanh" value="${formattedNgayBaohanh}" placeholder="Ngày bảo hành" /></td>
-                    <td><input type="date" name="ThoiGianBH" value="${formattedThoiGianBH}" placeholder="Thời gian BH" /></td>
-                `;
-                tbody.appendChild(row);
+            if (tbody) {
+                tbody.innerHTML = '';
             }
         }
 
+        function populateTable(rows) {
+            const tbody = document.querySelector('.form-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            rows.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td style="width: 20%;"><input type="text" name="TenSanpham" value="${(row.TenSanpham || '').replace(/"/g, '&quot;')}" placeholder="Tên vật tư" required /></td>
+                    <td><input type="text" name="MaSanpham" value="${(row.MaSanpham || '').replace(/"/g, '&quot;')}" placeholder="Mã vật tư" required /></td>
+                    <td><input type="text" name="HangSX" value="${(row.HangSX || '').replace(/"/g, '&quot;')}" placeholder="Hãng SX" /></td>
+                    <td><input type="text" name="NhaCC" value="${(row.NhaCC || '').replace(/"/g, '&quot;')}" placeholder="Nhà cung cấp" /></td>
+                    <td><input type="number" name="SL" value="${row.SL || ''}" placeholder="Số lượng" required /></td>
+                    <td><input type="text" name="DonVi" value="${(row.DonVi || '').replace(/"/g, '&quot;')}" placeholder="Đơn vị" required /></td>
+                    <td><input type="date" name="NgayBaohanh" value="${row.NgayBaohanh || ''}" placeholder="Ngày bảo hành" /></td>
+                    <td><input type="date" name="ThoiGianBH" value="${row.ThoiGianBH || ''}" placeholder="Thời gian BH" /></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function populateTableFromJson(jsonData) {
+            const tbody = document.querySelector('.form-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let index = 0;
+            jsonData.forEach((row) => {
+                const TenSanpham = (row.TenSanpham || row.TênSảnPhẩm || row.TenSP || row.TenSanPham || row['Tên vật tư'] || row['Tên hàng'] || '').toString().trim();
+                const MaSanpham = (row.MaSanpham || row.MãSảnPhẩm || row.MaSP || row.MaSanPham || row['Mã vật tư'] || row['Mã hàng'] || '').toString().trim();
+                const HangSX = (row.HangSX || row.HãngSX || '').toString().trim();
+                const NhaCC = (row.NhaCC || row.NhàCC || row.NhaCungCap || '').toString().trim();
+                const SL = row.SL || row.SoLuong || row.Soluong || row['Số lượng'] || '';
+                const DonVi = (row.DonVi || row.ĐơnVị || row.DVT || '').toString().trim();
+                const NgayBaohanh = formatExcelDateToDatetimeLocal(row.NgayBaohanh || row.NgàyBảoHành || '');
+                const ThoiGianBH = formatExcelDateToDatetimeLocal(row.ThoiGianBH || row.ThờiGianBH || '');
+
+                if (!TenSanpham && !MaSanpham) return; // skip empty rows
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td style="width: 20%;"><input type="text" name="TenSanpham" value="${TenSanpham.replace(/"/g, '&quot;')}" placeholder="Tên vật tư" required /></td>
+                    <td><input type="text" name="MaSanpham" value="${MaSanpham.replace(/"/g, '&quot;')}" placeholder="Mã vật tư" required /></td>
+                    <td><input type="text" name="HangSX" value="${HangSX.replace(/"/g, '&quot;')}" placeholder="Hãng SX" /></td>
+                    <td><input type="text" name="NhaCC" value="${NhaCC.replace(/"/g, '&quot;')}" placeholder="Nhà cung cấp" /></td>
+                    <td><input type="number" name="SL" value="${SL}" placeholder="Số lượng" required /></td>
+                    <td><input type="text" name="DonVi" value="${DonVi.replace(/"/g, '&quot;')}" placeholder="Đơn vị" required /></td>
+                    <td><input type="date" name="NgayBaohanh" value="${NgayBaohanh}" placeholder="Ngày bảo hành" /></td>
+                    <td><input type="date" name="ThoiGianBH" value="${ThoiGianBH}" placeholder="Thời gian BH" /></td>
+                `;
+                tbody.appendChild(tr);
+                index++;
+            });
+        }
     </script>
 </head>
 <body>
-    @using (Html.BeginForm("ImportSQL", "Home", new { area = "NhanvienKythuat" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
+    @using (Html.BeginForm("ImportSQL", "Home", new { area = "NhanvienMuahang" }, FormMethod.Post, false, new { enctype = "multipart/form-data" }))
     {
         <div class="formyeucau">
             <div class="tieude">
@@ -80,7 +241,7 @@
             <div class="row">
                 <div class="field">
                     <label for="file">File import</label>
-                    <input type="file" id="file" name="file" onchange="handleFileUpload(event)" />
+                    <input type="file" id="file" name="file" onchange="handleFileUpload(event)" accept=".xlsx,.xls" />
                 </div>
             </div>
             <div class="action">
