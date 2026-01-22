@@ -206,7 +206,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const headerHasText = (colIndex) =>
             headerRows.some((row) => {
                 if (!row || row[colIndex] === undefined) return false;
-                return normalizeHeader(row[colIndex]) !== "";
+                const normalized = normalizeHeader(row[colIndex]);
+                return normalized !== "" && normalized.length >= 2; // Yêu cầu ít nhất 2 ký tự để tránh nhầm lẫn
             });
 
         const orderedKeys = [
@@ -226,6 +227,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (mapping[key] !== undefined) {
                 lastKnownColumn = mapping[key];
                 return;
+            }
+            // Không tự động điền cho các cột quan trọng như slcu, slmoi để tránh nhầm lẫn
+            if (key === "slcu" || key === "slmoi") {
+                return; // Bỏ qua, không tự động điền
             }
             if (lastKnownColumn === undefined) {
                 return;
@@ -269,17 +274,67 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function parseDateValue(value) {
         if (!value) return "";
+        
+        // Xử lý số Excel date code
         if (typeof value === "number") {
             const dateObj = XLSX.SSF.parse_date_code(value);
             if (!dateObj) return "";
             const jsDate = new Date(Date.UTC(dateObj.y, dateObj.m - 1, dateObj.d));
             return jsDate.toISOString().slice(0, 10);
         }
-        const parsed = new Date(value);
-        if (isNaN(parsed.getTime())) {
-            return "";
+        
+        // Xử lý chuỗi ngày
+        const strValue = value.toString().trim();
+        
+        // Kiểm tra định dạng DDMMYYYY (8 chữ số liền nhau)
+        const ddmmyyyyMatch = strValue.match(/^(\d{2})(\d{2})(\d{4})$/);
+        if (ddmmyyyyMatch) {
+            const day = parseInt(ddmmyyyyMatch[1], 10);
+            const month = parseInt(ddmmyyyyMatch[2], 10);
+            const year = parseInt(ddmmyyyyMatch[3], 10);
+            if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= 2100) {
+                const jsDate = new Date(year, month - 1, day);
+                if (jsDate.getFullYear() === year && jsDate.getMonth() === month - 1 && jsDate.getDate() === day) {
+                    return jsDate.toISOString().slice(0, 10);
+                }
+            }
         }
-        return parsed.toISOString().slice(0, 10);
+        
+        // Kiểm tra định dạng DD/MM/YYYY hoặc DD-MM-YYYY
+        const ddmmyyyySlashMatch = strValue.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (ddmmyyyySlashMatch) {
+            const day = parseInt(ddmmyyyySlashMatch[1], 10);
+            const month = parseInt(ddmmyyyySlashMatch[2], 10);
+            const year = parseInt(ddmmyyyySlashMatch[3], 10);
+            if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= 2100) {
+                const jsDate = new Date(year, month - 1, day);
+                if (jsDate.getFullYear() === year && jsDate.getMonth() === month - 1 && jsDate.getDate() === day) {
+                    return jsDate.toISOString().slice(0, 10);
+                }
+            }
+        }
+        
+        // Kiểm tra định dạng YYYY-MM-DD (ISO)
+        const yyyymmddMatch = strValue.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+        if (yyyymmddMatch) {
+            const year = parseInt(yyyymmddMatch[1], 10);
+            const month = parseInt(yyyymmddMatch[2], 10);
+            const day = parseInt(yyyymmddMatch[3], 10);
+            if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= 2100) {
+                const jsDate = new Date(year, month - 1, day);
+                if (jsDate.getFullYear() === year && jsDate.getMonth() === month - 1 && jsDate.getDate() === day) {
+                    return jsDate.toISOString().slice(0, 10);
+                }
+            }
+        }
+        
+        // Thử parse với Date object (cho các định dạng khác)
+        const parsed = new Date(value);
+        if (!isNaN(parsed.getTime())) {
+            return parsed.toISOString().slice(0, 10);
+        }
+        
+        return "";
     }
 
     function isValidFutureDate(dateString) {
@@ -292,12 +347,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function parseQuantity(value) {
+        // Chỉ xử lý khi có giá trị thực sự, không điền bừa
         if (value === null || value === undefined || value === "") return "";
-        const num = Number(value);
+        const strValue = value.toString().trim();
+        if (strValue === "") return "";
+        
+        const num = Number(strValue);
         if (isNaN(num)) {
-            return value.toString();
+            // Nếu không phải số, trả về rỗng thay vì giữ nguyên giá trị
+            return "";
         }
-        return num.toString();
+        // Làm tròn lên cho số thập phân (ví dụ: 30.5 -> 31)
+        const rounded = Math.ceil(num);
+        return rounded.toString();
     }
 
     function appendHiddenInput(name, value) {
@@ -526,10 +588,18 @@ document.addEventListener("DOMContentLoaded", function () {
         let hasInvalidDate = false;
 
         const rows = dataRows
-            .map((row) => {
-                const getValue = (key) =>
-                    headerIndex[key] !== undefined ? row[headerIndex[key]] : "";
-                const parsedDate = parseDateValue(getValue("ngay")) || defaultDate;
+            .map((row, rowIndex) => {
+                const getValue = (key) => {
+                    if (headerIndex[key] === undefined) return "";
+                    const cellValue = row[headerIndex[key]];
+                    // Kiểm tra nếu cell là undefined, null, hoặc chuỗi rỗng
+                    if (cellValue === undefined || cellValue === null || cellValue === "") return "";
+                    // Kiểm tra nếu là chuỗi chỉ có khoảng trắng
+                    if (typeof cellValue === "string" && cellValue.trim() === "") return "";
+                    return cellValue;
+                };
+                const dateValue = getValue("ngay");
+                const parsedDate = dateValue ? parseDateValue(dateValue) : "";
                 let rowData = {
                     TenSanpham: (getValue("ten") || "").toString().trim(),
                     MaSanpham: (getValue("ma") || "").toString().trim(),
@@ -538,20 +608,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     SLCu: parseQuantity(getValue("slcu")),
                     SLMoi: parseQuantity(getValue("slmoi")),
                     NhaCC: (getValue("nhacc") || "").toString().trim(),
-                    NgayCanHang: parsedDate,
+                    NgayCanHang: parsedDate || defaultDate,
                     GhiChu: (getValue("ghichu") || "").toString().trim(),
                     YCMakho: (getValue("kho") || "").toString().trim(),
-                    hasManualDate: Boolean(getValue("ngay"))
+                    hasManualDate: Boolean(dateValue)
                 };
                 rowData.SLToSave = resolveFinalQuantity(rowData);
                 rowData = applyKhoData(rowData);
                 if (!rowData.hasManualDate) {
                     rowData.NgayCanHang = defaultDate;
                 }
-                // Kiểm tra ngày hợp lệ (phải là ngày tương lai)
-                if (rowData.NgayCanHang && !isValidFutureDate(rowData.NgayCanHang)) {
+                // Kiểm tra ngày hợp lệ (phải là ngày tương lai) - chỉ kiểm tra nếu có ngày từ Excel
+                if (rowData.hasManualDate && rowData.NgayCanHang && !isValidFutureDate(rowData.NgayCanHang)) {
                     hasInvalidDate = true;
-                    rowData.NgayCanHang = today; // Tự động đặt về ngày hôm nay nếu là ngày quá khứ
+                    // Không tự động sửa, giữ nguyên để người dùng thấy lỗi
                 }
                 return rowData;
             })
@@ -593,7 +663,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         renderRows(rows).then(() => {
             if (hasInvalidDate) {
-                setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel. Lưu ý: Một số ngày cần hàng trong quá khứ đã được tự động điều chỉnh thành ngày hôm nay.`, false);
+                setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel. Có ngày cần hàng ở quá khứ, vui lòng kiểm tra lại.`, true);
             } else {
                 setFeedback(`Đã nhập ${rows.length} dòng từ tệp Excel.`, false);
             }
@@ -690,9 +760,17 @@ document.addEventListener("DOMContentLoaded", function () {
             // Xử lý batch hiện tại
             const batchRows = batch
                 .map((row) => {
-                    const getValue = (key) =>
-                        headerIndex[key] !== undefined ? row[headerIndex[key]] : "";
-                    const parsedDate = parseDateValue(getValue("ngay")) || defaultDate;
+                    const getValue = (key) => {
+                        if (headerIndex[key] === undefined) return "";
+                        const cellValue = row[headerIndex[key]];
+                        // Kiểm tra nếu cell là undefined, null, hoặc chuỗi rỗng
+                        if (cellValue === undefined || cellValue === null || cellValue === "") return "";
+                        // Kiểm tra nếu là chuỗi chỉ có khoảng trắng
+                        if (typeof cellValue === "string" && cellValue.trim() === "") return "";
+                        return cellValue;
+                    };
+                    const dateValue = getValue("ngay");
+                    const parsedDate = dateValue ? parseDateValue(dateValue) : "";
                     let rowData = {
                         TenSanpham: (getValue("ten") || "").toString().trim(),
                         MaSanpham: (getValue("ma") || "").toString().trim(),
@@ -701,20 +779,20 @@ document.addEventListener("DOMContentLoaded", function () {
                         SLCu: parseQuantity(getValue("slcu")),
                         SLMoi: parseQuantity(getValue("slmoi")),
                         NhaCC: (getValue("nhacc") || "").toString().trim(),
-                        NgayCanHang: parsedDate,
+                        NgayCanHang: parsedDate || defaultDate,
                         GhiChu: (getValue("ghichu") || "").toString().trim(),
                         YCMakho: (getValue("kho") || "").toString().trim(),
-                        hasManualDate: Boolean(getValue("ngay"))
+                        hasManualDate: Boolean(dateValue)
                     };
                     rowData.SLToSave = resolveFinalQuantity(rowData);
                     rowData = applyKhoData(rowData);
                     if (!rowData.hasManualDate) {
                         rowData.NgayCanHang = defaultDate;
                     }
-                    // Kiểm tra ngày hợp lệ (phải là ngày tương lai)
-                    if (rowData.NgayCanHang && !isValidFutureDate(rowData.NgayCanHang)) {
+                    // Kiểm tra ngày hợp lệ (phải là ngày tương lai) - chỉ kiểm tra nếu có ngày từ Excel
+                    if (rowData.hasManualDate && rowData.NgayCanHang && !isValidFutureDate(rowData.NgayCanHang)) {
                         hasInvalidDate = true;
-                        rowData.NgayCanHang = today;
+                        // Không tự động sửa, giữ nguyên để người dùng thấy lỗi
                     }
                     return rowData;
                 })
@@ -780,7 +858,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 await renderRows(allRows);
                 if (hasInvalidDate) {
-                    setFeedback(`Đã nhập ${allRows.length} dòng từ tệp Excel. Lưu ý: Một số ngày cần hàng trong quá khứ đã được tự động điều chỉnh thành ngày hôm nay.`, false);
+                    setFeedback(`Đã nhập ${allRows.length} dòng từ tệp Excel. Có ngày cần hàng ở quá khứ, vui lòng kiểm tra lại.`, true);
                 } else {
                     setFeedback(`Đã nhập ${allRows.length} dòng từ tệp Excel.`, false);
                 }
