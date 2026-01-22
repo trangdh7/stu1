@@ -626,6 +626,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 return rowData;
             })
             .filter((row) => {
+                // Bắt buộc phải có mã VT, nếu không có thì bỏ qua dòng này
+                if (!row.MaSanpham || row.MaSanpham.trim() === "") return false;
                 if (!row.TenSanpham) return false;
                 if (
                     normalizedHeaderTexts.slmoi &&
@@ -797,6 +799,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     return rowData;
                 })
                 .filter((row) => {
+                    // Bắt buộc phải có mã VT, nếu không có thì bỏ qua dòng này
+                    if (!row.MaSanpham || row.MaSanpham.trim() === "") return false;
                     if (!row.TenSanpham) return false;
                     if (
                         normalizedHeaderTexts.slmoi &&
