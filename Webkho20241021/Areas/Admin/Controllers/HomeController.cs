@@ -554,6 +554,248 @@ namespace Webkho_20241021.Areas.Admin.Controllers
                 return Json(new { success = false, message = $"Lỗi: {ex.Message}" });
             }
         }
+
+        // Quản lý bản ghi lỗi/null - Hiển thị danh sách
+        public IActionResult QuanLyBanGhiLoi()
+        {
+            // Tìm các yeucau không có vtyeucau
+            var yeucauRong = _context.yeucau
+                .Where(y => !_context.vtyeucau.Any(vt => vt.VTMaYeucau == y.MaYeucau))
+                .ToList();
+
+            // Tìm các phieunhapkho không có vtphieunhapkho
+            var phieunhapkhoRong = _context.phieunhapkho
+                .Where(p => !_context.vtphieunhapkho.Any(vt => vt.MaNhapkho == p.MaNhapkho))
+                .ToList();
+
+            // Tìm các phieuxuatkho không có vtphieuxuatkho
+            var phieuxuatkhoRong = _context.phieuxuatkho
+                .Where(p => !_context.vtphieuxuatkho.Any(vt => vt.MaXuatkho == p.MaXuatkho))
+                .ToList();
+
+            // Tìm các phieumuahang không có vtphieumuahang
+            var phieumuahangRong = _context.phieumuahang
+                .Where(p => !_context.vtphieumuahang.Any(vt => vt.MaMuahang == p.MaMuahang))
+                .ToList();
+
+            ViewBag.YeucauRong = yeucauRong;
+            ViewBag.PhieunhapkhoRong = phieunhapkhoRong;
+            ViewBag.PhieuxuatkhoRong = phieuxuatkhoRong;
+            ViewBag.PhieumuahangRong = phieumuahangRong;
+
+            return View();
+        }
+
+        // Xóa yeucau rỗng
+        [HttpPost]
+        public IActionResult XoaYeucauRong(string maYeucau)
+        {
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(maYeucau))
+                    {
+                        return Json(new { success = false, message = "Mã yêu cầu không được để trống!" });
+                    }
+
+                    var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == maYeucau);
+                    if (yeucau == null)
+                    {
+                        return Json(new { success = false, message = "Không tìm thấy yêu cầu!" });
+                    }
+
+                    // Kiểm tra xem có vtyeucau không
+                    var hasVtyeucau = _context.vtyeucau.Any(vt => vt.VTMaYeucau == maYeucau);
+                    if (hasVtyeucau)
+                    {
+                        return Json(new { success = false, message = "Yêu cầu này có dữ liệu vật tư, không thể xóa!" });
+                    }
+
+                    _context.yeucau.Remove(yeucau);
+                    _context.SaveChanges();
+                    transaction.Commit();
+
+                    return Json(new { success = true, message = "Xóa yêu cầu thành công!" });
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return Json(new { success = false, message = $"Lỗi khi xóa: {ex.Message}" });
+                }
+            }
+        }
+
+        // Xóa phieunhapkho rỗng
+        [HttpPost]
+        public IActionResult XoaPhieunhapkhoRong(string maNhapkho)
+        {
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(maNhapkho))
+                    {
+                        return Json(new { success = false, message = "Mã phiếu nhập kho không được để trống!" });
+                    }
+
+                    var phieu = _context.phieunhapkho.FirstOrDefault(p => p.MaNhapkho == maNhapkho);
+                    if (phieu == null)
+                    {
+                        return Json(new { success = false, message = "Không tìm thấy phiếu nhập kho!" });
+                    }
+
+                    // Kiểm tra xem có vtphieunhapkho không
+                    var hasVt = _context.vtphieunhapkho.Any(vt => vt.MaNhapkho == maNhapkho);
+                    if (hasVt)
+                    {
+                        return Json(new { success = false, message = "Phiếu nhập kho này có dữ liệu vật tư, không thể xóa!" });
+                    }
+
+                    _context.phieunhapkho.Remove(phieu);
+                    _context.SaveChanges();
+                    transaction.Commit();
+
+                    return Json(new { success = true, message = "Xóa phiếu nhập kho thành công!" });
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return Json(new { success = false, message = $"Lỗi khi xóa: {ex.Message}" });
+                }
+            }
+        }
+
+        // Xóa phieuxuatkho rỗng
+        [HttpPost]
+        public IActionResult XoaPhieuxuatkhoRong(string maXuatkho)
+        {
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(maXuatkho))
+                    {
+                        return Json(new { success = false, message = "Mã phiếu xuất kho không được để trống!" });
+                    }
+
+                    var phieu = _context.phieuxuatkho.FirstOrDefault(p => p.MaXuatkho == maXuatkho);
+                    if (phieu == null)
+                    {
+                        return Json(new { success = false, message = "Không tìm thấy phiếu xuất kho!" });
+                    }
+
+                    // Kiểm tra xem có vtphieuxuatkho không
+                    var hasVt = _context.vtphieuxuatkho.Any(vt => vt.MaXuatkho == maXuatkho);
+                    if (hasVt)
+                    {
+                        return Json(new { success = false, message = "Phiếu xuất kho này có dữ liệu vật tư, không thể xóa!" });
+                    }
+
+                    _context.phieuxuatkho.Remove(phieu);
+                    _context.SaveChanges();
+                    transaction.Commit();
+
+                    return Json(new { success = true, message = "Xóa phiếu xuất kho thành công!" });
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return Json(new { success = false, message = $"Lỗi khi xóa: {ex.Message}" });
+                }
+            }
+        }
+
+        // Xóa phieumuahang rỗng
+        [HttpPost]
+        public IActionResult XoaPhieumuahangRong(string maMuahang)
+        {
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(maMuahang))
+                    {
+                        return Json(new { success = false, message = "Mã phiếu mua hàng không được để trống!" });
+                    }
+
+                    var phieu = _context.phieumuahang.FirstOrDefault(p => p.MaMuahang == maMuahang);
+                    if (phieu == null)
+                    {
+                        return Json(new { success = false, message = "Không tìm thấy phiếu mua hàng!" });
+                    }
+
+                    // Kiểm tra xem có vtphieumuahang không
+                    var hasVt = _context.vtphieumuahang.Any(vt => vt.MaMuahang == maMuahang);
+                    if (hasVt)
+                    {
+                        return Json(new { success = false, message = "Phiếu mua hàng này có dữ liệu vật tư, không thể xóa!" });
+                    }
+
+                    _context.phieumuahang.Remove(phieu);
+                    _context.SaveChanges();
+                    transaction.Commit();
+
+                    return Json(new { success = true, message = "Xóa phiếu mua hàng thành công!" });
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return Json(new { success = false, message = $"Lỗi khi xóa: {ex.Message}" });
+                }
+            }
+        }
+
+        // Xóa tất cả bản ghi rỗng
+        [HttpPost]
+        public IActionResult XoaTatCaBanGhiRong()
+        {
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    int count = 0;
+
+                    // Xóa yeucau rỗng
+                    var yeucauRong = _context.yeucau
+                        .Where(y => !_context.vtyeucau.Any(vt => vt.VTMaYeucau == y.MaYeucau))
+                        .ToList();
+                    count += yeucauRong.Count;
+                    _context.yeucau.RemoveRange(yeucauRong);
+
+                    // Xóa phieunhapkho rỗng
+                    var phieunhapkhoRong = _context.phieunhapkho
+                        .Where(p => !_context.vtphieunhapkho.Any(vt => vt.MaNhapkho == p.MaNhapkho))
+                        .ToList();
+                    count += phieunhapkhoRong.Count;
+                    _context.phieunhapkho.RemoveRange(phieunhapkhoRong);
+
+                    // Xóa phieuxuatkho rỗng
+                    var phieuxuatkhoRong = _context.phieuxuatkho
+                        .Where(p => !_context.vtphieuxuatkho.Any(vt => vt.MaXuatkho == p.MaXuatkho))
+                        .ToList();
+                    count += phieuxuatkhoRong.Count;
+                    _context.phieuxuatkho.RemoveRange(phieuxuatkhoRong);
+
+                    // Xóa phieumuahang rỗng
+                    var phieumuahangRong = _context.phieumuahang
+                        .Where(p => !_context.vtphieumuahang.Any(vt => vt.MaMuahang == p.MaMuahang))
+                        .ToList();
+                    count += phieumuahangRong.Count;
+                    _context.phieumuahang.RemoveRange(phieumuahangRong);
+
+                    _context.SaveChanges();
+                    transaction.Commit();
+
+                    return Json(new { success = true, message = $"Đã xóa {count} bản ghi rỗng thành công!" });
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return Json(new { success = false, message = $"Lỗi khi xóa: {ex.Message}" });
+                }
+            }
+        }
     }
 }
 

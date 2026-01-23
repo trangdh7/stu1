@@ -1617,11 +1617,16 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                     Xuliphieuyeucau(yeucau.MaYeucau, phieuxuatkho, vtphieuxuatkho, phieumuahang, vtphieumuahang, yeucau, vtyeucau);
                 }
 
-                // Gửi thông báo email sau khi tạo yêu cầu mới
-                try
+                // Gửi thông báo email cho QLDA hoặc Giám đốc khi Trưởng BP Kế toán tạo yêu cầu
+                if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kế toán")
                 {
-                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] ===== GỬI EMAIL SAU KHI TẠO YÊU CẦU ===== MaYeucau = {yeucau.MaYeucau}");
-                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] Trạng thái yêu cầu: {yeucau.TrangThai}");
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] ===== BẮT ĐẦU GỬI EMAIL SAU KHI TẠO YÊU CẦU =====");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] MaYeucau = {yeucau.MaYeucau}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] Trạng thái yêu cầu: {yeucau.TrangThai}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] YCMaDuan = {yeucau.YCMaDuan ?? "(null)"}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] hasMaDuan = {!string.IsNullOrWhiteSpace(yeucau.YCMaDuan)}");
 
                     // Lưu các giá trị cần thiết trước khi vào Task.Run
                     var maYeucauForEmail = yeucau.MaYeucau;
@@ -1673,11 +1678,13 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                             }
                         }
                     });
-                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] ✅ Đã khởi tạo Task.Run để gửi email");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] ❌ Lỗi khi khởi tạo Task.Run: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] ✅ Đã khởi tạo Task.Run để gửi email");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] ❌ Lỗi khi khởi tạo Task.Run: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKetoan/ThemyeucauSQL] Stack trace: {ex.StackTrace}");
+                    }
                 }
             }
             else

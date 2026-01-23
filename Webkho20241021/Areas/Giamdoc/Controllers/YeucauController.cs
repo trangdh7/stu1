@@ -1780,6 +1780,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
 
                 int processedCount = 0;
                 int skippedCount = 0;
+                bool anyApproved = false; // dùng để quyết định gửi thông báo phản hồi khi có duyệt
 
                 foreach (var item in vatTuList)
                 {
@@ -1902,6 +1903,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     if (soLuongYeuCau == 0)
                     {
                         // Nếu số lượng = 0, không cần mua hàng, đặt trạng thái "Hoàn thành"
+                        anyApproved = true;
                         if (isNhapKhoRequest)
                         {
                             vtPhieuNhap.TrangThai = "Hoàn thành";
@@ -1933,6 +1935,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
 
                     if (isApproved)
                     {
+                        anyApproved = true;
                         // Duyệt vật tư
                         if (isNhapKhoRequest)
                         {
@@ -2288,13 +2291,43 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             var phieuXuatKhoMoi = phieuXuatKhoSau.Except(phieuXuatKhoTruoc).ToList();
                             if (phieuXuatKhoMoi.Any())
                             {
-                                _ = _emailService.SendNotificationToWarehouseAsync(MaYeucau, true);
+                                var maYeuCauForEmail = MaYeucau;
+                                _ = Task.Run(async () =>
+                                {
+                                    try
+                                    {
+                                        using (var scope = _serviceScopeFactory.CreateScope())
+                                        {
+                                            var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                            await emailService.SendNotificationToWarehouseAsync(maYeuCauForEmail, true);
+                                        }
+                                    }
+                                    catch (Exception exInner)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyVatTuYeucauWithCheckbox] Lỗi gửi email Kho: {exInner.Message}");
+                                    }
+                                });
                             }
 
                             var phieuMuaHangMoi = phieuMuaHangSau.Except(phieuMuaHangTruoc).ToList();
                             if (phieuMuaHangMoi.Any())
                             {
-                                _ = _emailService.SendNotificationToPurchasingAsync(MaYeucau);
+                                var maYeuCauForEmail = MaYeucau;
+                                _ = Task.Run(async () =>
+                                {
+                                    try
+                                    {
+                                        using (var scope = _serviceScopeFactory.CreateScope())
+                                        {
+                                            var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                            await emailService.SendNotificationToPurchasingAsync(maYeuCauForEmail);
+                                        }
+                                    }
+                                    catch (Exception exInner)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyVatTuYeucauWithCheckbox] Lỗi gửi email Mua hàng: {exInner.Message}");
+                                    }
+                                });
                             }
 
                             _context.Entry(yeucau).Reload();
@@ -2459,6 +2492,50 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     {
                         System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyVatTuYeucauWithCheckbox] Kiểm tra cuối: Trạng thái yêu cầu là 'Giám đốc - Đã từ chối', gửi email. MaYeucau={MaYeucau}");
                         SendRejectionEmailAsync(MaYeucau, "");
+                    }
+                }
+
+                // Gửi thông báo phản hồi cho người yêu cầu khi Giám đốc có duyệt ít nhất một vật tư (checkbox)
+                // (Trước đó logic này đang thiếu nên người yêu cầu không nhận được thông báo như các luồng Trưởng BP/QLDA)
+                if (processedCount > 0 && anyApproved)
+                {
+                    var yeucauForNotif = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+                    if (yeucauForNotif != null &&
+                        !string.IsNullOrWhiteSpace(yeucauForNotif.NguoiYeucau) &&
+                        !string.Equals(yeucauForNotif.TrangThai, "Giám đốc - Đã từ chối", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var maYeucauForEmail = MaYeucau;
+                            var nguoiYeuCauForEmail = yeucauForNotif.NguoiYeucau ?? "";
+                            var trangThaiThongBao = !string.IsNullOrWhiteSpace(yeucauForNotif.TrangThai)
+                                ? $"Đã được Giám đốc duyệt - {yeucauForNotif.TrangThai}"
+                                : "Đã được Giám đốc duyệt";
+
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    using (var scope = _serviceScopeFactory.CreateScope())
+                                    {
+                                        var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                        await emailService.SendNotificationToEmployeeAsync(
+                                            maYeucauForEmail,
+                                            nguoiYeuCauForEmail,
+                                            trangThaiThongBao
+                                        );
+                                    }
+                                }
+                                catch (Exception exInner)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyVatTuYeucauWithCheckbox] Lỗi gửi email phản hồi duyệt: {exInner.Message}");
+                                }
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyVatTuYeucauWithCheckbox] Lỗi khởi tạo gửi email phản hồi duyệt: {ex.Message}");
+                        }
                     }
                 }
 
@@ -3112,14 +3189,44 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     var phieuXuatKhoMoi = phieuXuatKhoSau.Except(phieuXuatKhoTruoc).ToList();
                     if (phieuXuatKhoMoi.Any())
                     {
-                        _ = _emailService.SendNotificationToWarehouseAsync(Yeucau.MaYeucau, true);
+                        var maYeuCauForEmail = Yeucau.MaYeucau;
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                using (var scope = _serviceScopeFactory.CreateScope())
+                                {
+                                    var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                    await emailService.SendNotificationToWarehouseAsync(maYeuCauForEmail, true);
+                                }
+                            }
+                            catch (Exception exInner)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyYeucau] Lỗi gửi email Kho: {exInner.Message}");
+                            }
+                        });
                     }
                     
                     // Gửi email nếu có phiếu mua hàng mới
                     var phieuMuaHangMoi = phieuMuaHangSau.Except(phieuMuaHangTruoc).ToList();
                     if (phieuMuaHangMoi.Any())
                     {
-                        _ = _emailService.SendNotificationToPurchasingAsync(Yeucau.MaYeucau);
+                        var maYeuCauForEmail = Yeucau.MaYeucau;
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                using (var scope = _serviceScopeFactory.CreateScope())
+                                {
+                                    var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                    await emailService.SendNotificationToPurchasingAsync(maYeuCauForEmail);
+                                }
+                            }
+                            catch (Exception exInner)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyYeucau] Lỗi gửi email Mua hàng: {exInner.Message}");
+                            }
+                        });
                     }
                 }
                 else if (duan != null)
@@ -3148,14 +3255,44 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             var phieuXuatKhoMoi = phieuXuatKhoSau.Except(phieuXuatKhoTruoc).ToList();
                             if (phieuXuatKhoMoi.Any())
                             {
-                                _ = _emailService.SendNotificationToWarehouseAsync(Yeucau.MaYeucau, true);
+                                var maYeuCauForEmail = Yeucau.MaYeucau;
+                                _ = Task.Run(async () =>
+                                {
+                                    try
+                                    {
+                                        using (var scope = _serviceScopeFactory.CreateScope())
+                                        {
+                                            var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                            await emailService.SendNotificationToWarehouseAsync(maYeuCauForEmail, true);
+                                        }
+                                    }
+                                    catch (Exception exInner)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyYeucau] Lỗi gửi email Kho: {exInner.Message}");
+                                    }
+                                });
                             }
                             
                             // Gửi email nếu có phiếu mua hàng mới
                             var phieuMuaHangMoi = phieuMuaHangSau.Except(phieuMuaHangTruoc).ToList();
                             if (phieuMuaHangMoi.Any())
                             {
-                                _ = _emailService.SendNotificationToPurchasingAsync(Yeucau.MaYeucau);
+                                var maYeuCauForEmail = Yeucau.MaYeucau;
+                                _ = Task.Run(async () =>
+                                {
+                                    try
+                                    {
+                                        using (var scope = _serviceScopeFactory.CreateScope())
+                                        {
+                                            var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                            await emailService.SendNotificationToPurchasingAsync(maYeuCauForEmail);
+                                        }
+                                    }
+                                    catch (Exception exInner)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyYeucau] Lỗi gửi email Mua hàng: {exInner.Message}");
+                                    }
+                                });
                             }
                         }
                     }
@@ -3196,14 +3333,44 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                 var phieuXuatKhoMoi = phieuXuatKhoSau.Except(phieuXuatKhoTruoc).ToList();
                                 if (phieuXuatKhoMoi.Any())
                                 {
-                                    _ = _emailService.SendNotificationToWarehouseAsync(Yeucau.MaYeucau, true);
+                                    var maYeuCauForEmail = Yeucau.MaYeucau;
+                                    _ = Task.Run(async () =>
+                                    {
+                                        try
+                                        {
+                                            using (var scope = _serviceScopeFactory.CreateScope())
+                                            {
+                                                var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                                await emailService.SendNotificationToWarehouseAsync(maYeuCauForEmail, true);
+                                            }
+                                        }
+                                        catch (Exception exInner)
+                                        {
+                                            System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyYeucau] Lỗi gửi email Kho: {exInner.Message}");
+                                        }
+                                    });
                                 }
                                 
                                 // Gửi email nếu có phiếu mua hàng mới
                                 var phieuMuaHangMoi = phieuMuaHangSau.Except(phieuMuaHangTruoc).ToList();
                                 if (phieuMuaHangMoi.Any())
                                 {
-                                    _ = _emailService.SendNotificationToPurchasingAsync(Yeucau.MaYeucau);
+                                    var maYeuCauForEmail = Yeucau.MaYeucau;
+                                    _ = Task.Run(async () =>
+                                    {
+                                        try
+                                        {
+                                            using (var scope = _serviceScopeFactory.CreateScope())
+                                            {
+                                                var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                                await emailService.SendNotificationToPurchasingAsync(maYeuCauForEmail);
+                                            }
+                                        }
+                                        catch (Exception exInner)
+                                        {
+                                            System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyYeucau] Lỗi gửi email Mua hàng: {exInner.Message}");
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -3230,14 +3397,44 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                 var phieuXuatKhoMoi = phieuXuatKhoSau.Except(phieuXuatKhoTruoc).ToList();
                                 if (phieuXuatKhoMoi.Any())
                                 {
-                                    _ = _emailService.SendNotificationToWarehouseAsync(Yeucau.MaYeucau, true);
+                                    var maYeuCauForEmail = Yeucau.MaYeucau;
+                                    _ = Task.Run(async () =>
+                                    {
+                                        try
+                                        {
+                                            using (var scope = _serviceScopeFactory.CreateScope())
+                                            {
+                                                var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                                await emailService.SendNotificationToWarehouseAsync(maYeuCauForEmail, true);
+                                            }
+                                        }
+                                        catch (Exception exInner)
+                                        {
+                                            System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyYeucau] Lỗi gửi email Kho: {exInner.Message}");
+                                        }
+                                    });
                                 }
                                 
                                 // Gửi email nếu có phiếu mua hàng mới
                                 var phieuMuaHangMoi = phieuMuaHangSau.Except(phieuMuaHangTruoc).ToList();
                                 if (phieuMuaHangMoi.Any())
                                 {
-                                    _ = _emailService.SendNotificationToPurchasingAsync(Yeucau.MaYeucau);
+                                    var maYeuCauForEmail = Yeucau.MaYeucau;
+                                    _ = Task.Run(async () =>
+                                    {
+                                        try
+                                        {
+                                            using (var scope = _serviceScopeFactory.CreateScope())
+                                            {
+                                                var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                                await emailService.SendNotificationToPurchasingAsync(maYeuCauForEmail);
+                                            }
+                                        }
+                                        catch (Exception exInner)
+                                        {
+                                            System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyYeucau] Lỗi gửi email Mua hàng: {exInner.Message}");
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -5422,11 +5619,23 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 {
                     try
                     {
-                        // Gửi email cho kế toán
-                        _ = _emailService.SendNotificationToAccountingOnApprovalAsync(MaMuahang);
-                        
-                        // Gửi email cho người yêu cầu
-                        _ = _emailService.SendNotificationToRequesterOnApprovalAsync(MaMuahang);
+                        var maMuahangForEmail = MaMuahang;
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                using (var scope = _serviceScopeFactory.CreateScope())
+                                {
+                                    var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                    await emailService.SendNotificationToAccountingOnApprovalAsync(maMuahangForEmail);
+                                    await emailService.SendNotificationToRequesterOnApprovalAsync(maMuahangForEmail);
+                                }
+                            }
+                            catch (Exception exInner)
+                            {
+                                Console.WriteLine($"[Giamdoc/XuLyPhieumuahang] Lỗi gửi email khi duyệt: {exInner.Message}");
+                            }
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -6003,7 +6212,22 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     _context.phieunhapkho.Update(Phieunhapkho);
                     
                     // Gửi thông báo đến kho sau khi Giám đốc duyệt phiếu nhập kho
-                    _ = _emailService.SendNotificationToWarehouseOnNhapKhoAsync(Phieunhapkho.MaNhapkho);
+                    var maNhapkhoForEmail = Phieunhapkho.MaNhapkho;
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                await emailService.SendNotificationToWarehouseOnNhapKhoAsync(maNhapkhoForEmail);
+                            }
+                        }
+                        catch (Exception exInner)
+                        {
+                            Console.WriteLine($"[Giamdoc/XuLyPhieunhapkho] Lỗi gửi email kho (nhập kho): {exInner.Message}");
+                        }
+                    });
                     
                     // Cập nhật NgayDuyet cho tất cả vật tư yêu cầu đã được giám đốc duyệt
                     // Lấy danh sách tất cả các MaYeucau từ các vật tư trong phiếu

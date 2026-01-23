@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Webkho_20241021.Models;
 using System.Linq;
@@ -258,6 +258,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                  && !string.IsNullOrEmpty(vtx.MaYeucau)   // chỉ phiếu xuất thuộc yêu cầu dự án
                                  && px.MaNguoidung == maNv                // chỉ phiếu do Giám đốc hiện tại tạo/xuất
                                  && (vtx.SL ?? 0) > 0                      // chỉ lấy vật tư còn số lượng > 0
+                                 && vtx.TrangThai != "Đã trả kho"          // loại bỏ vật tư đã trả kho (đã nhập lại kho tổng)
                            // Join với duans để lấy tên dự án
                            join da in _context.duans on px.MaDuan equals da.MaDuan into daGroup
                            from da in daGroup.DefaultIfEmpty()
@@ -285,6 +286,11 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     var firstVtx = firstItem?.vtx;
                     var firstDa = g.Select(x => x.da).FirstOrDefault(x => x != null);
                     var tongSL = g.Sum(x => x.vtx.SL ?? 0);
+                    
+                    // Xác định trạng thái: Nếu vật tư còn trong kho dự án (SL > 0), trạng thái là "Đã xuất kho"
+                    // Vì đây là kho dự án cá nhân, nên tất cả items ở đây đều đã được xuất từ kho tổng
+                    // Không dùng TrangThai từ vtphieunhapkho vì đó là trạng thái khi nhập lại kho tổng
+                    string trangThai = "Đã xuất kho"; // Mặc định là "Đã xuất kho" vì items trong kho dự án đã được xuất từ kho tổng
 
                     return new
                     {
@@ -299,7 +305,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             // Tổng số lượng còn lại (đã được TruKhoDuanKhiNhapKho trừ khi nhập kho)
                             SL = tongSL,
                             DonVi = firstVtn?.DonVi ?? firstVtx?.DonVi,
-                            TrangThai = tongSL > 0 ? "Đã xuất kho" : "Đã trả kho"
+                            TrangThai = trangThai
                         },
                         MaDuan = g.Key.MaDuan
                     };

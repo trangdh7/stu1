@@ -10,6 +10,9 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
 
 
 namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
@@ -20,11 +23,13 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public YeucauController(ApplicationDbContext context, EmailService emailService)
+        public YeucauController(ApplicationDbContext context, EmailService emailService, IServiceScopeFactory serviceScopeFactory)
         {
             _context = context;
             _emailService = emailService;
+            _serviceScopeFactory = serviceScopeFactory;
         }
         public IActionResult Yeucau(string search = "")
         {
@@ -852,16 +857,47 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 _context.SaveChanges();
 
                 // Gửi thông báo cho Trưởng BP kỹ thuật khi nhân viên tạo yêu cầu
-                _ = Task.Run(async () =>
+                // Lưu các giá trị vào biến local trước khi vào Task.Run để tránh closure issue
+                try
                 {
-                    System.Diagnostics.Debug.WriteLine($"[NV Kythuat] Gửi email Trưởng BP cho yêu cầu {yeucau.MaYeucau}");
-                    await _emailService.SendNotificationToDepartmentHeadAsync(
-                        yeucau.MaYeucau,
-                        yeucau.NguoiYeucau ?? "",
-                        yeucau.Bophan ?? ""
-                    );
-                    System.Diagnostics.Debug.WriteLine($"[NV Kythuat] Đã gọi xong SendNotificationToDepartmentHeadAsync cho {yeucau.MaYeucau}");
-                });
+                    var maYeucauForEmail = yeucau.MaYeucau;
+                    var nguoiYeuCauForEmail = yeucau.NguoiYeucau ?? "";
+                    var boPhanForEmail = yeucau.Bophan ?? "BP kỹ thuật";
+                    
+                    Debug.WriteLine($"[NV Kythuat] Chuẩn bị gửi email Trưởng BP");
+                    Debug.WriteLine($"MaYeucau={maYeucauForEmail}");
+                    Debug.WriteLine($"NguoiYeuCau={nguoiYeuCauForEmail}");
+                    Debug.WriteLine($"BoPhan={boPhanForEmail}");
+
+                    // Tạo scope mới để tránh lỗi DbContext thread-safe
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            Debug.WriteLine($"[NV Kythuat] Task.Run START - Gửi email Trưởng BP cho yêu cầu {maYeucauForEmail}");
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                await emailService.SendNotificationToDepartmentHeadAsync(
+                                    maYeucauForEmail,
+                                    nguoiYeuCauForEmail,
+                                    boPhanForEmail
+                                );
+                                Debug.WriteLine($"[NV Kythuat] Task.Run END - Đã gọi xong SendNotificationToDepartmentHeadAsync cho {maYeucauForEmail}");
+                            }
+                        }
+                        catch (Exception exInner)
+                        {
+                            Debug.WriteLine($"[NV Kythuat][ERROR] Task.Run - Gửi email Trưởng BP thất bại: {exInner.Message}");
+                            Debug.WriteLine($"StackTrace: {exInner.StackTrace}");
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[NV Kythuat][ERROR] Init - Gửi email Trưởng BP thất bại: {ex.Message}");
+                    Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+                }
 
                 // Lưu thông tin file Excel vào database (không lưu file vào đĩa để tiết kiệm dung lượng)
                 try

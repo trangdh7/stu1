@@ -366,34 +366,56 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                         // - Gửi mail cho bước tiếp theo (QLDA nếu có dự án, hoặc Giám đốc nếu không có dự án)
                         try
                         {
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] ===== BẮT ĐẦU GỬI EMAIL SAU KHI DUYỆT VẬT TƯ =====");
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] MaYeucau = {yeucau.MaYeucau}");
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] TrangThai = {yeucau.TrangThai}");
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] YCMaDuan = {yeucau.YCMaDuan ?? "(null)"}");
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] hasMaDuan = {hasMaDuan}");
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] NguoiYeucau = {yeucau.NguoiYeucau ?? "(null)"}");
+
                             if (!string.IsNullOrWhiteSpace(yeucau.NguoiYeucau))
                             {
                                 var trangThaiThongBao = hasMaDuan
                                     ? "Đã được Trưởng BP-BP kho duyệt - chuyển quản lý dự án"
                                     : "Đã được Trưởng BP-BP kho duyệt - chờ Giám đốc duyệt";
 
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] Gửi email cho người yêu cầu: {yeucau.NguoiYeucau}");
                                 _ = _emailService.SendNotificationToEmployeeAsync(
                                     yeucau.MaYeucau,
                                     yeucau.NguoiYeucau,
                                     trangThaiThongBao
                                 );
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] ✅ Đã gọi SendNotificationToEmployeeAsync");
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] ⚠️ NguoiYeucau rỗng, bỏ qua gửi email cho người yêu cầu");
                             }
 
                             if (hasMaDuan && !string.IsNullOrWhiteSpace(yeucau.YCMaDuan))
                             {
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] Gửi email cho QLDA. MaYeucau = {yeucau.MaYeucau}, YCMaDuan = {yeucau.YCMaDuan}");
                                 _ = _emailService.SendNotificationToProjectManagerAsync(
                                     yeucau.MaYeucau,
                                     yeucau.YCMaDuan
                                 );
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] ✅ Đã gọi SendNotificationToProjectManagerAsync");
                             }
                             else
                             {
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] Gửi email cho Giám đốc. MaYeucau = {yeucau.MaYeucau}");
                                 _ = _emailService.SendNotificationToDirectorAsync(yeucau.MaYeucau);
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] ✅ Đã gọi SendNotificationToDirectorAsync");
                             }
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] Lỗi gửi email sau duyệt: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] ❌ Lỗi gửi email sau duyệt: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] Stack trace: {ex.StackTrace}");
+                            if (ex.InnerException != null)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/XuLyVatTuYeucauWithCheckbox] Inner exception: {ex.InnerException.Message}");
+                            }
                         }
                     }
                 }
@@ -1406,6 +1428,64 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 {
                     // Sau khi yêu cầu được duyệt hoàn toàn, tạo/cập nhật các phiếu liên quan
                     Xuliphieuyeucau(yeucau.MaYeucau);
+                }
+
+                // Gửi thông báo email cho QLDA hoặc Giám đốc khi Trưởng BP Kho tạo yêu cầu
+                if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
+                {
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL] ===== BẮT ĐẦU GỬI EMAIL SAU KHI TẠO YÊU CẦU =====");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL] MaYeucau = {yeucau.MaYeucau}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL] TrangThai = {yeucau.TrangThai}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL] YCMaDuan = {yeucau.YCMaDuan ?? "(null)"}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL] hasMaDuan = {!string.IsNullOrWhiteSpace(yeucau.YCMaDuan)}");
+
+                        var maYeucauForEmail = yeucau.MaYeucau;
+                        var hasMaDuanForEmail = !string.IsNullOrWhiteSpace(yeucau.YCMaDuan);
+                        var maDuanForEmail = yeucau.YCMaDuan;
+
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL/Task] Bắt đầu gửi email trong Task.Run");
+                                using (var scope = _serviceScopeFactory.CreateScope())
+                                {
+                                    var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                    System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL/Task] Đã tạo scope và lấy EmailService");
+
+                                    if (hasMaDuanForEmail && !string.IsNullOrWhiteSpace(maDuanForEmail))
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL/Task] Gửi email cho QLDA. MaYeucau = {maYeucauForEmail}, MaDuan = {maDuanForEmail}");
+                                        await emailService.SendNotificationToProjectManagerAsync(maYeucauForEmail, maDuanForEmail);
+                                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL/Task] ✅ Đã gửi email cho QLDA xong.");
+                                    }
+                                    else
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL/Task] Gửi email cho Giám đốc. MaYeucau = {maYeucauForEmail}");
+                                        await emailService.SendNotificationToDirectorAsync(maYeucauForEmail);
+                                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL/Task] ✅ Đã gửi email cho Giám đốc xong.");
+                                    }
+                                }
+                            }
+                            catch (Exception exInner)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL/Task] ❌ Lỗi trong Task.Run khi gửi email: {exInner.Message}");
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL/Task] Stack trace: {exInner.StackTrace}");
+                                if (exInner.InnerException != null)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL/Task] Inner exception: {exInner.InnerException.Message}");
+                                }
+                            }
+                        });
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL] ✅ Đã khởi tạo Task.Run để gửi email");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL] ❌ Lỗi khi khởi tạo Task.Run: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPKho/ThemyeucauSQL] Stack trace: {ex.StackTrace}");
+                    }
                 }
             }
             else

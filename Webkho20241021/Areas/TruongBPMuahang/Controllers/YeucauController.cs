@@ -1600,6 +1600,64 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 {
                     Xuliphieuyeucau(yeucau.MaYeucau, phieuxuatkho, vtphieuxuatkho, phieumuahang, vtphieumuahang, yeucau, vtyeucau);
                 }
+
+                // Gửi thông báo email cho QLDA hoặc Giám đốc khi Trưởng BP Mua hàng tạo yêu cầu
+                if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
+                {
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL] ===== BẮT ĐẦU GỬI EMAIL SAU KHI TẠO YÊU CẦU =====");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL] MaYeucau = {yeucau.MaYeucau}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL] TrangThai = {yeucau.TrangThai}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL] YCMaDuan = {yeucau.YCMaDuan ?? "(null)"}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL] hasMaDuan = {!string.IsNullOrWhiteSpace(yeucau.YCMaDuan)}");
+
+                        var maYeucauForEmail = yeucau.MaYeucau;
+                        var hasMaDuanForEmail = !string.IsNullOrWhiteSpace(yeucau.YCMaDuan);
+                        var maDuanForEmail = yeucau.YCMaDuan;
+
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL/Task] Bắt đầu gửi email trong Task.Run");
+                                using (var scope = _serviceScopeFactory.CreateScope())
+                                {
+                                    var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                    System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL/Task] Đã tạo scope và lấy EmailService");
+
+                                    if (hasMaDuanForEmail && !string.IsNullOrWhiteSpace(maDuanForEmail))
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL/Task] Gửi email cho QLDA. MaYeucau = {maYeucauForEmail}, MaDuan = {maDuanForEmail}");
+                                        await emailService.SendNotificationToProjectManagerAsync(maYeucauForEmail, maDuanForEmail);
+                                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL/Task] ✅ Đã gửi email cho QLDA xong.");
+                                    }
+                                    else
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL/Task] Gửi email cho Giám đốc. MaYeucau = {maYeucauForEmail}");
+                                        await emailService.SendNotificationToDirectorAsync(maYeucauForEmail);
+                                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL/Task] ✅ Đã gửi email cho Giám đốc xong.");
+                                    }
+                                }
+                            }
+                            catch (Exception exInner)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL/Task] ❌ Lỗi trong Task.Run khi gửi email: {exInner.Message}");
+                                System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL/Task] Stack trace: {exInner.StackTrace}");
+                                if (exInner.InnerException != null)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL/Task] Inner exception: {exInner.InnerException.Message}");
+                                }
+                            }
+                        });
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL] ✅ Đã khởi tạo Task.Run để gửi email");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL] ❌ Lỗi khi khởi tạo Task.Run: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"[TruongBPMuahang/ThemyeucauSQL] Stack trace: {ex.StackTrace}");
+                    }
+                }
             }
             else
             {

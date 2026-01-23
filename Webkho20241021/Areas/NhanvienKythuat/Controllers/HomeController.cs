@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Webkho_20241021.Models;
 using System.Linq;
@@ -238,6 +238,8 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         join px in _context.phieuxuatkho on vtx.MaXuatkho equals px.MaXuatkho
                         where !string.IsNullOrEmpty(px.MaDuan) && !string.IsNullOrEmpty(vtx.MaYeucau) // Chỉ lấy phiếu xuất kho dự án
                             && px.MaNguoidung == maNv // Lọc theo người dùng hiện tại
+                            && (vtx.SL ?? 0) > 0 // Chỉ lấy vật tư còn số lượng > 0
+                            && vtx.TrangThai != "Đã trả kho" // loại bỏ vật tư đã trả kho (đã nhập lại kho tổng)
                         // Join với duans để lấy tên dự án
                         join da in _context.duans on px.MaDuan equals da.MaDuan into daGroup
                         from da in daGroup.DefaultIfEmpty()
@@ -258,7 +260,9 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                                 DuAn = da != null ? da.TenDuan : px.MaDuan, // Dùng tên dự án nếu có
                                 SL = vtn != null ? (vtn.SL ?? 0) : (vtx.SL ?? 0),
                                 DonVi = vtn != null ? vtn.DonVi : vtx.DonVi,
-                                TrangThai = vtn != null ? vtn.TrangThai : vtx.TrangThai // Trạng thái của kho dự án cá nhân
+                                // Trạng thái: Vì đây là kho dự án cá nhân, tất cả items ở đây đều đã được xuất từ kho tổng
+                                // Nên trạng thái luôn là "Đã xuất kho", không dùng TrangThai từ vtphieunhapkho
+                                TrangThai = "Đã xuất kho"
                             },
                             MaDuan = px.MaDuan
                         }).Distinct();

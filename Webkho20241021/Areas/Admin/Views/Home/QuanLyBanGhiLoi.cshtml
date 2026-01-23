@@ -1,0 +1,466 @@
+@using Webkho_20241021.Models
+@{
+    ViewData["Title"] = "Quản lý bản ghi lỗi";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>Quản lý bản ghi lỗi</title>
+    <style>
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin: 0;
+        }
+
+        .btn-danger-all {
+            background-color: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-danger-all:hover {
+            background-color: #c82333;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .count-badge {
+            background-color: #ffc107;
+            color: #333;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Quản lý bản ghi lỗi / rỗng</h1>
+            <button class="btn-danger-all" onclick="xoaTatCa()">
+                <i class='bx bx-trash'></i> Xóa tất cả bản ghi rỗng
+            </button>
+        </div>
+
+        <div id="alertMessage" class="alert"></div>
+
+        <!-- Yêu cầu rỗng -->
+        <div class="section">
+            <div class="section-title">
+                Yêu cầu rỗng (không có vật tư)
+                <span class="count-badge">@ViewBag.YeucauRong.Count</span>
+            </div>
+            @if (ViewBag.YeucauRong != null && ((List<yeucau>)ViewBag.YeucauRong).Count > 0)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã yêu cầu</th>
+                            <th>Tên yêu cầu</th>
+                            <th>Người yêu cầu</th>
+                            <th>Bộ phận</th>
+                            <th>Ngày yêu cầu</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in (List<yeucau>)ViewBag.YeucauRong)
+                        {
+                            <tr>
+                                <td>@item.MaYeucau</td>
+                                <td>@item.TenYeucau</td>
+                                <td>@item.NguoiYeucau</td>
+                                <td>@item.Bophan</td>
+                                <td>@(item.NgayYeucau?.ToString("dd/MM/yyyy HH:mm") ?? "")</td>
+                                <td>@item.TrangThai</td>
+                                <td>
+                                    <button class="btn-delete" onclick="xoaYeucau('@item.MaYeucau')">
+                                        <i class='bx bx-trash'></i> Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-message">Không có yêu cầu rỗng nào</div>
+            }
+        </div>
+
+        <!-- Phiếu nhập kho rỗng -->
+        <div class="section">
+            <div class="section-title">
+                Phiếu nhập kho rỗng (không có vật tư)
+                <span class="count-badge">@ViewBag.PhieunhapkhoRong.Count</span>
+            </div>
+            @if (ViewBag.PhieunhapkhoRong != null && ((List<phieunhapkho>)ViewBag.PhieunhapkhoRong).Count > 0)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã nhập kho</th>
+                            <th>Mã yêu cầu</th>
+                            <th>Mã dự án</th>
+                            <th>Ngày nhập kho</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in (List<phieunhapkho>)ViewBag.PhieunhapkhoRong)
+                        {
+                            <tr>
+                                <td>@item.MaNhapkho</td>
+                                <td>@item.MaYeucau</td>
+                                <td>@item.MaDuan</td>
+                                <td>@(item.NgayNhapkho?.ToString("dd/MM/yyyy HH:mm") ?? "")</td>
+                                <td>@item.TrangThai</td>
+                                <td>
+                                    <button class="btn-delete" onclick="xoaPhieunhapkho('@item.MaNhapkho')">
+                                        <i class='bx bx-trash'></i> Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-message">Không có phiếu nhập kho rỗng nào</div>
+            }
+        </div>
+
+        <!-- Phiếu xuất kho rỗng -->
+        <div class="section">
+            <div class="section-title">
+                Phiếu xuất kho rỗng (không có vật tư)
+                <span class="count-badge">@ViewBag.PhieuxuatkhoRong.Count</span>
+            </div>
+            @if (ViewBag.PhieuxuatkhoRong != null && ((List<phieuxuatkho>)ViewBag.PhieuxuatkhoRong).Count > 0)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã xuất kho</th>
+                            <th>Mã yêu cầu</th>
+                            <th>Mã dự án</th>
+                            <th>Ngày xuất kho</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in (List<phieuxuatkho>)ViewBag.PhieuxuatkhoRong)
+                        {
+                            <tr>
+                                <td>@item.MaXuatkho</td>
+                                <td>@item.MaYeucau</td>
+                                <td>@item.MaDuan</td>
+                                <td>@(item.NgayXuatkho?.ToString("dd/MM/yyyy HH:mm") ?? "")</td>
+                                <td>@item.TrangThai</td>
+                                <td>
+                                    <button class="btn-delete" onclick="xoaPhieuxuatkho('@item.MaXuatkho')">
+                                        <i class='bx bx-trash'></i> Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-message">Không có phiếu xuất kho rỗng nào</div>
+            }
+        </div>
+
+        <!-- Phiếu mua hàng rỗng -->
+        <div class="section">
+            <div class="section-title">
+                Phiếu mua hàng rỗng (không có vật tư)
+                <span class="count-badge">@ViewBag.PhieumuahangRong.Count</span>
+            </div>
+            @if (ViewBag.PhieumuahangRong != null && ((List<phieumuahang>)ViewBag.PhieumuahangRong).Count > 0)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã mua hàng</th>
+                            <th>Mã yêu cầu</th>
+                            <th>Mã dự án</th>
+                            <th>Ngày mua hàng</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in (List<phieumuahang>)ViewBag.PhieumuahangRong)
+                        {
+                            <tr>
+                                <td>@item.MaMuahang</td>
+                                <td>@item.MaYeucau</td>
+                                <td>@item.MaDuan</td>
+                                <td>@(item.NgayMuahang?.ToString("dd/MM/yyyy HH:mm") ?? "")</td>
+                                <td>@item.TrangThai</td>
+                                <td>
+                                    <button class="btn-delete" onclick="xoaPhieumuahang('@item.MaMuahang')">
+                                        <i class='bx bx-trash'></i> Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-message">Không có phiếu mua hàng rỗng nào</div>
+            }
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function showAlert(message, isSuccess) {
+            var alertDiv = document.getElementById('alertMessage');
+            alertDiv.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-danger') + ' show';
+            alertDiv.textContent = message;
+            setTimeout(function() {
+                alertDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        function xoaYeucau(maYeucau) {
+            if (!confirm('Bạn có chắc chắn muốn xóa yêu cầu ' + maYeucau + '?')) {
+                return;
+            }
+
+            $.ajax({
+                url: '/Admin/Home/XoaYeucauRong',
+                type: 'POST',
+                data: { maYeucau: maYeucau },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, true);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        showAlert(response.message, false);
+                    }
+                },
+                error: function() {
+                    showAlert('Có lỗi xảy ra khi xóa yêu cầu!', false);
+                }
+            });
+        }
+
+        function xoaPhieunhapkho(maNhapkho) {
+            if (!confirm('Bạn có chắc chắn muốn xóa phiếu nhập kho ' + maNhapkho + '?')) {
+                return;
+            }
+
+            $.ajax({
+                url: '/Admin/Home/XoaPhieunhapkhoRong',
+                type: 'POST',
+                data: { maNhapkho: maNhapkho },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, true);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        showAlert(response.message, false);
+                    }
+                },
+                error: function() {
+                    showAlert('Có lỗi xảy ra khi xóa phiếu nhập kho!', false);
+                }
+            });
+        }
+
+        function xoaPhieuxuatkho(maXuatkho) {
+            if (!confirm('Bạn có chắc chắn muốn xóa phiếu xuất kho ' + maXuatkho + '?')) {
+                return;
+            }
+
+            $.ajax({
+                url: '/Admin/Home/XoaPhieuxuatkhoRong',
+                type: 'POST',
+                data: { maXuatkho: maXuatkho },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, true);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        showAlert(response.message, false);
+                    }
+                },
+                error: function() {
+                    showAlert('Có lỗi xảy ra khi xóa phiếu xuất kho!', false);
+                }
+            });
+        }
+
+        function xoaPhieumuahang(maMuahang) {
+            if (!confirm('Bạn có chắc chắn muốn xóa phiếu mua hàng ' + maMuahang + '?')) {
+                return;
+            }
+
+            $.ajax({
+                url: '/Admin/Home/XoaPhieumuahangRong',
+                type: 'POST',
+                data: { maMuahang: maMuahang },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, true);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        showAlert(response.message, false);
+                    }
+                },
+                error: function() {
+                    showAlert('Có lỗi xảy ra khi xóa phiếu mua hàng!', false);
+                }
+            });
+        }
+
+        function xoaTatCa() {
+            if (!confirm('Bạn có chắc chắn muốn xóa TẤT CẢ các bản ghi rỗng? Hành động này không thể hoàn tác!')) {
+                return;
+            }
+
+            $.ajax({
+                url: '/Admin/Home/XoaTatCaBanGhiRong',
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, true);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showAlert(response.message, false);
+                    }
+                },
+                error: function() {
+                    showAlert('Có lỗi xảy ra khi xóa tất cả bản ghi!', false);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
