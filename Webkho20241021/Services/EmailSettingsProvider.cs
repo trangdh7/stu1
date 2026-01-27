@@ -100,7 +100,7 @@ namespace Webkho_20241021.Services
                                ?? _configuration["EmailSettings:FromPassword"];
             var fromName = _configuration["EmailSettings:StuEmailSettings:FromName"]
                            ?? _configuration["EmailSettings:FromName"]
-                           ?? "Hệ thống Quản lý Kho";
+                           ?? "stu jsc";
 
             _logger.LogInformation("Seed EmailSettings from configuration");
 
