@@ -608,13 +608,17 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         
                         // Lưu các giá trị cần thiết trước khi vào Task.Run
                         var maYeucauForEmail = MaYeucau;
-                        var nguoiYeuCauForEmail = yeucauForNotif.NguoiYeucau ?? "";
+                        // Ưu tiên dùng YCMaNguoidung để lookup email chính xác (TenNguoidung có thể không khớp)
+                        var nguoiNhanForEmail = !string.IsNullOrWhiteSpace(yeucauForNotif.YCMaNguoidung)
+                            ? yeucauForNotif.YCMaNguoidung!
+                            : (yeucauForNotif.NguoiYeucau ?? "");
                         
                         _ = Task.Run(async () =>
                         {
                             try
                             {
                                 System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] 🚀 Bắt đầu gửi email cho nhân viên và giám đốc. MaYeucau = {maYeucauForEmail}");
+                                System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] RecipientKey (YCMaNguoidung|NguoiYeucau) = '{nguoiNhanForEmail}'");
 
                                 // Tạo scope mới để có DbContext và EmailService mới
                                 using (var scope = _serviceScopeFactory.CreateScope())
@@ -627,7 +631,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                     System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] Gọi SendNotificationToEmployeeAsync...");
                                     await emailService.SendNotificationToEmployeeAsync(
                                         maYeucauForEmail,
-                                        nguoiYeuCauForEmail,
+                                        nguoiNhanForEmail,
                                         "Đã được quản lý dự án duyệt"
                                     );
                                     System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyTatCaVatTuYeucau/Task] ✅ Đã gửi email cho nhân viên xong.");
@@ -980,7 +984,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                             // Lưu các giá trị cần thiết trước khi vào Task.Run
                             var maYeucauForEmail = MaYeucau;
-                            var nguoiYeuCauForEmail = yeucauForNotif.NguoiYeucau ?? "";
+                            // Ưu tiên dùng YCMaNguoidung để lookup email chính xác (TenNguoidung có thể không khớp)
+                            var nguoiNhanForEmail = !string.IsNullOrWhiteSpace(yeucauForNotif.YCMaNguoidung)
+                                ? yeucauForNotif.YCMaNguoidung!
+                                : (yeucauForNotif.NguoiYeucau ?? "");
 
                             // Sử dụng Task.Run với scope mới để tránh lỗi ObjectDisposedException
                             _ = Task.Run(async () =>
@@ -988,6 +995,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                 try
                                 {
                                     System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] Bắt đầu gửi email trong Task.Run với scope mới");
+                                    System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] RecipientKey (YCMaNguoidung|NguoiYeucau) = '{nguoiNhanForEmail}'");
 
                                     // Tạo scope mới để có DbContext và EmailService mới
                                     using (var scope = _serviceScopeFactory.CreateScope())
@@ -1000,7 +1008,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                         System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] Gọi SendNotificationToEmployeeAsync...");
                                         await emailService.SendNotificationToEmployeeAsync(
                                             maYeucauForEmail,
-                                            nguoiYeuCauForEmail,
+                                            nguoiNhanForEmail,
                                             "Đã được quản lý dự án duyệt"
                                         );
                                         System.Diagnostics.Debug.WriteLine($"[QLDA/XuLyVatTuYeucauWithCheckbox/Task] ✅ Đã gửi email cho nhân viên xong.");

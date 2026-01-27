@@ -65,7 +65,12 @@ namespace Webkho_20241021.Services
             entity.SmtpServer = input.SmtpServer?.Trim() ?? entity.SmtpServer;
             entity.SmtpPort = input.SmtpPort != 0 ? input.SmtpPort : entity.SmtpPort;
             entity.FromEmail = input.FromEmail?.Trim() ?? entity.FromEmail;
-            entity.FromName = input.FromName?.Trim() ?? entity.FromName;
+            // Luôn lưu tên hiển thị ở dạng IN HOA để đồng bộ
+            var newFromName = input.FromName?.Trim();
+            if (!string.IsNullOrWhiteSpace(newFromName))
+            {
+                entity.FromName = newFromName.ToUpperInvariant();
+            }
 
             if (!string.IsNullOrWhiteSpace(input.FromPassword))
             {
