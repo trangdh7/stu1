@@ -72,7 +72,7 @@ namespace Webkho_20241021.Services
       <img src='{logoUrl}' alt='STU Logo' style='height:48px;' />
     </td>
     <td align='right' style='padding:10px 0; font-size:18px; font-weight:bold; color:#2c3e50;'>
-      STUJSC
+      STU JSC
     </td>
   </tr>
 </table>";

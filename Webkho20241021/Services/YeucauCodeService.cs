@@ -60,12 +60,12 @@ namespace Webkho_20241021.Services
             {
                 string maDuanPart = FormatLast6Digits(ycMaDuan);
                 string datePart = datePartFromFile ?? now.ToString("yyMMdd");
-                return $"{maDuanPart} YC {stPart} {datePart}";
+                return $"{maDuanPart}YC {stPart} {datePart}";
             }
 
             // Không dự án: YYMMDD YCCN ST
             string dateNoProject = datePartFromFile ?? now.ToString("yyMMdd");
-            return $"{dateNoProject} YCCN {stPart}";
+            return $"{dateNoProject}YCCN {stPart}";
         }
 
         private enum SuffixStyle
