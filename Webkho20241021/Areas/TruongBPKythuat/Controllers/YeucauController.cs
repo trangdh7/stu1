@@ -26,11 +26,14 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        public YeucauController(ApplicationDbContext context, EmailService emailService, IServiceScopeFactory serviceScopeFactory)
+        private readonly IYeucauCodeService _yeucauCodeService;
+
+        public YeucauController(ApplicationDbContext context, EmailService emailService, IServiceScopeFactory serviceScopeFactory, IYeucauCodeService yeucauCodeService)
         {
             _context = context;
             _emailService = emailService;
             _serviceScopeFactory = serviceScopeFactory;
+            _yeucauCodeService = yeucauCodeService;
         }
 
         private void SendRejectionEmailAsync(string maYeucau, string ghiChu = "")
@@ -634,7 +637,8 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                         var normalized = status.Trim();
                         return normalized.Equals("Chờ Trưởng BP-BP kỹ thuật duyệt", StringComparison.OrdinalIgnoreCase)
                             || normalized.StartsWith("Chờ Trưởng BP", StringComparison.OrdinalIgnoreCase)
-                            || normalized.Contains("chờ trưởng bp", StringComparison.OrdinalIgnoreCase);
+                            || normalized.Contains("chờ trưởng bp", StringComparison.OrdinalIgnoreCase)
+                            || normalized.Equals("Chờ duyệt", StringComparison.OrdinalIgnoreCase);
                     };
 
                     // Helper function để kiểm tra xem vật tư đã được duyệt chưa
@@ -1304,236 +1308,64 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     ? null
                     : _context.duans.FirstOrDefault(d => d.MaDuan == yeucau.YCMaDuan);
 
-                if (duan != null)
-                {
-                    string maNguoiQLDA = duan.MaNguoiQLDA;
-                    if (maNv2 == maNguoiQLDA)
-                    {
-                        if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
-                        {
-                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
-                        }
-                        else if (chucVu2 == "Trưởng BP")
-                        {
-                            yeucau.TrangThai = "Giám đốc";
-                        }
-                        else if (chucVu2 == "Giám đốc")
-                        {
-                            yeucau.TrangThai = "Đã duyệt";
+                // ================== RÚT GỌN LOGIC TRẠNG THÁI ==================
+                bool hasDuan = duan != null;
+                bool isGiamDoc = chucVu2 == "Giám đốc";
+                bool isTruongBP = chucVu2 == "Trưởng BP";
+                bool isNhanVien = chucVu2 == "Nhân viên";
+                bool isBPKythuat = boPhan2 == "BP kỹ thuật";
+                bool isBPKho = boPhan2 == "BP kho";
+                bool isBPMuaHang = boPhan2 == "BP mua hàng";
+                bool isBPKeToan = boPhan2 == "BP kế toán";
+                bool isTruongBPKythuat = isTruongBP && isBPKythuat;
+                bool isQLDA = hasDuan && !string.IsNullOrWhiteSpace(duan?.MaNguoiQLDA) && maNv2 == duan!.MaNguoiQLDA;
 
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kế toán")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng BP-BP kế toán duyệt";
-                        }
-                    }
-                    else
+                if (isGiamDoc)
+                {
+                    yeucau.TrangThai = "Đã duyệt";
+                }
+                else if (isNhanVien)
+                {
+                    if (isBPKythuat) yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
+                    else if (isBPKho) yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
+                    else if (isBPMuaHang) yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
+                    else if (isBPKeToan) yeucau.TrangThai = "Chờ Trưởng BP-BP kế toán duyệt";
+                }
+                else if (!hasDuan)
+                {
+                    // Không có dự án: Trưởng BP -> chờ giám đốc duyệt
+                    if (isTruongBP)
                     {
-                        if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
-                        }
-                        else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
-                        {
-                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
-                        }
-                        else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
-                        {
-                            yeucau.TrangThai = "Quản lí dự án";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
-                        }
-                        else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
-                        {
-                            yeucau.TrangThai = "Quản lí dự án";
-                        }
-                        else if (chucVu2 == "Giám đốc")
-                        {
-                            yeucau.TrangThai = "Đã duyệt";
-                        }
+                        yeucau.TrangThai = "Chờ giám đốc duyệt";
                     }
+                }
+                else if (isQLDA)
+                {
+                    // Có dự án & người tạo là QLDA
+                    if (isTruongBPKythuat) yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                    else if (isTruongBP) yeucau.TrangThai = "Giám đốc";
                 }
                 else
                 {
-                    if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
-                    {
-                        yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
-                    }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
-                    {
-                        yeucau.TrangThai = "Chờ giám đốc duyệt";
-                    }
-                    else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
-                    {
-                        yeucau.TrangThai = "Chờ Trưởng BP-BP kho duyệt";
-                    }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
-                    {
-                        yeucau.TrangThai = "Chờ giám đốc duyệt";
-                    }
-                    else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
-                    {
-                        yeucau.TrangThai = "Chờ Trưởng BP-BP mua hàng duyệt";
-                    }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
-                    {
-                        yeucau.TrangThai = "Chờ giám đốc duyệt";
-                    }
-                    else if (chucVu2 == "Giám đốc")
-                    {
-                        yeucau.TrangThai = "Đã duyệt";
-
-                    }
+                    // Có dự án & người tạo KHÔNG phải QLDA
+                    if (isTruongBPKythuat) yeucau.TrangThai = "Chờ quản lý dự án duyệt";
+                    else if (isTruongBP && (isBPKho || isBPMuaHang)) yeucau.TrangThai = "Quản lí dự án";
                 }
 
                 // ================== TẠO MÃ YÊU CẦU ĐÚNG CHUẨN ==================
-                
-                // Lấy mã sản phẩm (ST) từ TÊN FILE Excel - KHÔNG đọc từ mã vật tư trong Excel
-                string? stPart = null;
-                string? fileNameFromExcel = null; // lưu lại tên file để fallback nếu parse trống
-                bool hasExcelFile = false; // Đánh dấu có file Excel hay không
-                
-                // Ưu tiên đọc từ tên file Excel nếu có
-                if (Request.Form.Files != null && Request.Form.Files.Count > 0)
-                {
-                    // Lấy bất kỳ file Excel nào (không phụ thuộc name control)
-                    var excelFile = Request.Form.Files.FirstOrDefault(f =>
-                        !string.IsNullOrEmpty(f.FileName) &&
-                        (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase)));
-                    
-                    if (excelFile != null && !string.IsNullOrEmpty(excelFile.FileName))
-                    {
-                        hasExcelFile = true; // Đánh dấu có file Excel
-                        
-                        try
-                        {
-                           
-                            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(excelFile.FileName);
-                            fileNameFromExcel = fileNameWithoutExt;
-                            
-                            
-                            fileNameWithoutExt = fileNameWithoutExt.Replace('_', ' ');
-                            
-                            
-                            var parts = fileNameWithoutExt.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                           
-                            stPart = parts.FirstOrDefault(p => !(p.Length == 6 && p.All(char.IsDigit)));
 
-                            // Nếu sau khi parse không tìm thấy (tất cả đều là số), dùng lại tên file
-                            if (string.IsNullOrWhiteSpace(stPart) && parts.Length > 0)
-                            {
-                                stPart = fileNameWithoutExt;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            
-                            Console.WriteLine($"Lỗi khi parse tên file Excel để lấy mã sản phẩm: {ex.Message}");
-                        }
-                    }
-                }
-                
-                
-                if (string.IsNullOrWhiteSpace(stPart) && hasExcelFile && !string.IsNullOrWhiteSpace(fileNameFromExcel))
-                {
-                    stPart = fileNameFromExcel.Replace("_", " ").Trim();
-                }
+                // Đánh dấu có file Excel hay không (phục vụ logic auto-approve & email phía dưới)
+                bool hasExcelFile = Request.Form.Files != null && Request.Form.Files.Any(f =>
+                    !string.IsNullOrEmpty(f.FileName) &&
+                    (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase)));
 
-                // CHỈ fallback về MaSanpham form nếu THỰC SỰ không có file Excel
-                if (string.IsNullOrWhiteSpace(stPart) && !hasExcelFile)
-                {
-                    if (MaSanpham != null && MaSanpham.Count > 0)
-                    {
-                        stPart = MaSanpham.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m));
-                    }
-                }
-                
-                if (string.IsNullOrWhiteSpace(stPart))
-                {
-                    stPart = "VT";
-                }
-                stPart = stPart.Replace(" ", ""); // Bỏ dấu cách
-                
-                // Lấy tên viết tắt từ MaNguoidung (không dùng hàm parse)
-                string tenVietTat = maNv2 ?? yeucau.YCMaNguoidung ?? "NGUOIDUNG";
-                
-                if (!string.IsNullOrEmpty(yeucau.YCMaDuan))
-                {
-                    // ===== Trường hợp có Mã Dự Án: NNNNNN ST HiepNT =====
-                    // Lấy 6 chữ số từ mã dự án
-                    string maDuanFormatted = "000000";
-                    var maDuanDigits = new string(yeucau.YCMaDuan.Where(char.IsDigit).ToArray());
-                    if (maDuanDigits.Length > 6)
-                    {
-                        maDuanFormatted = maDuanDigits.Substring(maDuanDigits.Length - 6);
-                    }
-                    else
-                    {
-                        maDuanFormatted = maDuanDigits.PadLeft(6, '0');
-                    }
-                    
-                    // Tạo mã yêu cầu: NNNNNN ST HiepNT
-                    yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}";
-                    
-                    // Luôn tạo yêu cầu mới - nếu trùng mã thì thêm suffix để tạo mã mới
-                    int suffixNumber = 1;
-                    string originalMaYeucau = yeucau.MaYeucau;
-                    while (true)
-                    {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
-                        {
-                            break;
-                        }
-                        // Nếu trùng, thêm số suffix để tạo mã mới
-                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
-                        suffixNumber++;
-                    }
-                }
-                else
-                {
-                    // ===== Trường hợp KHÔNG có Mã Dự Án: YYMMDD ST HiepNT =====
-                    // Lấy ngày hiện tại dạng YYMMDD
-                    string datePart = DateTime.Now.ToString("yyMMdd");
-                    
-                
-                    yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
-                    
-                    // Luôn tạo yêu cầu mới - nếu trùng mã thì thêm suffix để tạo mã mới
-                    int suffixNumber = 1;
-                    string originalMaYeucau = yeucau.MaYeucau;
-                    while (true)
-                    {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
-                        {
-                            break;
-                        }
-                        // Nếu trùng, thêm số suffix để tạo mã mới
-                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
-                        suffixNumber++;
-                    }
-                }
+                // Sinh mã yêu cầu dùng chung (tách ra service để khỏi phải sửa từng controller)
+                yeucau.MaYeucau = _yeucauCodeService.GenerateMaYeucauCommon(
+                    yeucau.YCMaDuan,
+                    MaSanpham,
+                    Request.Form.Files,
+                    DateTime.Now);
+
                 // ================================================================
 
                 // Đảm bảo danh sách không null để tránh lỗi khi submit từ Excel
@@ -1613,7 +1445,7 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
 
                 // Gửi thông báo email khi Trưởng BP kỹ thuật tự tạo yêu cầu (gửi lên QLDA hoặc Giám đốc)
                 if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật" && 
-                    (yeucau.TrangThai == "Chờ quản lý dự án duyệt" || yeucau.TrangThai == "Chờ giám đốc duyệt"))
+                    (yeucau.TrangThai == "Chờ quản lý dự án duyệt" || yeucau.TrangThai == "Chờ giám đốc duyệt" || yeucau.TrangThai == "Giám đốc"))
                 {
                     try
                     {
@@ -1878,6 +1710,20 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
             }
             else
             {
+                // Yêu cầu nhập kho:
+                // - có dự án -> chờ quản lí dự án duyệt
+                // - không có -> chờ giám đốc duyệt
+                yeucau.NgayYeucau = DateTime.Now;
+                yeucau.YCMaDuan = yeucau.YCMaDuan?.Trim();
+                if (!string.IsNullOrWhiteSpace(yeucau.YCMaDuan))
+                {
+                    yeucau.TrangThai = "Chờ quản lí dự án duyệt";
+                }
+                else
+                {
+                    yeucau.TrangThai = "Chờ giám đốc duyệt";
+                }
+
                 int nextNumber = 1;
 
                 while (true)

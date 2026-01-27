@@ -32,7 +32,8 @@
                 || normalized.Equals("Trưởng BP-BP kỹ thuật", System.StringComparison.OrdinalIgnoreCase)
                 || normalized.Equals("Chờ Trưởng BP-BP kỹ thuật duyệt", System.StringComparison.OrdinalIgnoreCase)
                 || normalized.StartsWith("Chờ Trưởng BP", System.StringComparison.OrdinalIgnoreCase)
-                || normalized.Contains("chờ trưởng bp", System.StringComparison.OrdinalIgnoreCase);
+                || normalized.Contains("chờ trưởng bp", System.StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("Chờ duyệt", System.StringComparison.OrdinalIgnoreCase);
         };
     }
     <nav class="bodyyeucau">
@@ -332,7 +333,8 @@
                 || normalized === 'trưởng bp-bp kỹ thuật'
                 || normalized === 'chờ trưởng bp-bp kỹ thuật duyệt'
                 || normalized.startsWith('chờ trưởng bp')
-                || normalized.includes('chờ trưởng bp');
+                || normalized.includes('chờ trưởng bp')
+                || normalized === 'chờ duyệt';
         }
 
         function formatDateOnly(value) {

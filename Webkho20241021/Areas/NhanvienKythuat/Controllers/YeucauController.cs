@@ -24,12 +24,14 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IYeucauCodeService _yeucauCodeService;
 
-        public YeucauController(ApplicationDbContext context, EmailService emailService, IServiceScopeFactory serviceScopeFactory)
+        public YeucauController(ApplicationDbContext context, EmailService emailService, IServiceScopeFactory serviceScopeFactory, IYeucauCodeService yeucauCodeService)
         {
             _context = context;
             _emailService = emailService;
             _serviceScopeFactory = serviceScopeFactory;
+            _yeucauCodeService = yeucauCodeService;
         }
         public IActionResult Yeucau(string search = "")
         {
@@ -584,505 +586,299 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
             return Json(results);
         }
 
-        [HttpPost]
-        public IActionResult ThemyeucauSQL(yeucau yeucau, vtyeucau vtyeucau,
-                                           duans duans, phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, List<string> YCMaKho,
-                                           List<string> TenSanpham, List<string> MaSanpham,
-                                           List<string> HangSX, List<string> NhaCC, List<int?> SL,
-                                           List<int?> SLCu, List<int?> SLMoi,
-                                           List<string> DonVi, List<string> GhiChu, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
-        {
-            // Kiểm tra null để tránh lỗi khi upload file Excel lớn
-            if (yeucau == null)
+            [HttpPost]
+            public IActionResult ThemyeucauSQL(yeucau yeucau, vtyeucau vtyeucau,
+                                            duans duans, phieunhapkho phieunhapkho, vtphieunhapkho vtphieunhapkho, List<string> YCMaKho,
+                                            List<string> TenSanpham, List<string> MaSanpham,
+                                            List<string> HangSX, List<string> NhaCC, List<int?> SL,
+                                            List<int?> SLCu, List<int?> SLMoi,
+                                            List<string> DonVi, List<string> GhiChu, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
             {
-                yeucau = new yeucau();
-            }
-
-            DateTime? GetNgayCanHangAt(int index)
-            {
-                // Đọc đúng name của input: VTNgayCanHang
-                if (Request.Form.TryGetValue("VTNgayCanHang", out var dateValues))
+                // Kiểm tra null để tránh lỗi khi upload file Excel lớn
+                if (yeucau == null)
                 {
-                    if (index >= 0 && index < dateValues.Count)
-                    {
-                        var raw = dateValues[index];
-                        if (!string.IsNullOrWhiteSpace(raw) && DateTime.TryParse(raw, out var parsedDate))
-                        {
-                            return parsedDate;
-                        }
-                    }
+                    yeucau = new yeucau();
                 }
 
-                // Không fallback sang yeucau.NgayCanHang để tránh lệch dữ liệu
-                return null;
-            }
-
-            if (yeucau.TenYeucau != "Yêu cầu nhập kho")
-            {
-                yeucau.NgayYeucau = DateTime.Now;
-
-                var chucVu2 = HttpContext.Session.GetString("Chucvu");
-                var boPhan2 = HttpContext.Session.GetString("Bophan");
-                var maNv2 = HttpContext.Session.GetString("MaNguoidung");
-
-                yeucau.YCMaDuan = yeucau.YCMaDuan?.Trim();
-                var duan = string.IsNullOrEmpty(yeucau.YCMaDuan)
-                    ? null
-                    : _context.duans.FirstOrDefault(d => d.MaDuan == yeucau.YCMaDuan);
-
-                if (duan != null)
+                DateTime? GetNgayCanHangAt(int index)
                 {
-                    string maNguoiQLDA = duan.MaNguoiQLDA;
-                    if (maNv2 == maNguoiQLDA)
+                    // Đọc đúng name của input: VTNgayCanHang
+                    if (Request.Form.TryGetValue("VTNgayCanHang", out var dateValues))
                     {
-                        if (chucVu2 == "Trưởng BP")
+                        if (index >= 0 && index < dateValues.Count)
                         {
-                            yeucau.TrangThai = "Giám đốc";
-                        }
-                        else if (chucVu2 == "Giám đốc")
-                        {
-                            yeucau.TrangThai = "Đã duyệt";
-
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kho duyệt";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP mua hàng duyệt";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kế toán")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kế toán duyệt";
-                        }
-                    }
-                    else
-                    {
-                        if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
-                        }
-                        else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
-                        {
-                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kho duyệt";
-                        }
-                        else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
-                        {
-                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
-                        }
-                        else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
-                        {
-                            yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP mua hàng duyệt";
-                        }
-                        else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
-                        {
-                            yeucau.TrangThai = "Chờ quản lý dự án duyệt";
-                        }
-                        else if (chucVu2 == "Giám đốc")
-                        {
-                            yeucau.TrangThai = "Đã duyệt";
-                        }
-                    }
-                }
-                else
-                {
-                    if (chucVu2 == "Nhân viên" && boPhan2 == "BP kỹ thuật")
-                    {
-                        yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
-                    }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kỹ thuật")
-                    {
-                        yeucau.TrangThai = "Giám đốc";
-                    }
-                    else if (chucVu2 == "Nhân viên" && boPhan2 == "BP kho")
-                    {
-                        yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP kho duyệt";
-                    }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP kho")
-                    {
-                        yeucau.TrangThai = "Giám đốc";
-                    }
-                    else if (chucVu2 == "Nhân viên" && boPhan2 == "BP mua hàng")
-                    {
-                        yeucau.TrangThai = "Chờ Trưởng Phòng bộ phận BP mua hàng duyệt";
-                    }
-                    else if (chucVu2 == "Trưởng BP" && boPhan2 == "BP mua hàng")
-                    {
-                        yeucau.TrangThai = "Giám đốc";
-                    }
-                    else if (chucVu2 == "Giám đốc")
-                    {
-                        yeucau.TrangThai = "Đã duyệt";
-
-                    } 
-                }
-
-                // ================== TẠO MÃ YÊU CẦU ĐÚNG CHUẨN ==================
-                
-                // Lấy mã sản phẩm (ST) từ tên file Excel hoặc từ form
-                string? stPart = null;
-                
-                // Ưu tiên đọc từ tên file Excel nếu có
-                if (Request.Form.Files != null && Request.Form.Files.Count > 0)
-                {
-                    var excelFile = Request.Form.Files.FirstOrDefault(f => 
-                        f.Name == "excel-upload" || 
-                        (!string.IsNullOrEmpty(f.FileName) && (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))));
-                    
-                    if (excelFile != null && !string.IsNullOrEmpty(excelFile.FileName))
-                    {
-                        try
-                        {
-                            // Lấy tên file không có extension
-                            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(excelFile.FileName);
-                            
-                            // Xử lý tên file có thể có dấu gạch dưới: thay thế bằng khoảng trắng để parse
-                            fileNameWithoutExt = fileNameWithoutExt.Replace('_', ' ');
-                            
-                            // Parse tên file: 
-                            // - "DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (mã vật tư đầu tiên)
-                            // - "251005 STUP10.5013 251203" → lấy "STUP10.5013" (bỏ qua số 6 chữ số)
-                            // - "251208 DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (bỏ qua số 6 chữ số)
-                            // Tách theo khoảng trắng
-                            var parts = fileNameWithoutExt.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                            
-                            // Tìm phần không phải số 6 chữ số (mã vật tư đầu tiên)
-                            foreach (var part in parts)
+                            var raw = dateValues[index];
+                            if (!string.IsNullOrWhiteSpace(raw) && DateTime.TryParse(raw, out var parsedDate))
                             {
-                                // Bỏ qua các phần là số 6 chữ số (mã dự án hoặc ngày)
-                                if (part.Length == 6 && part.All(char.IsDigit))
-                                {
-                                    continue;
-                                }
-                                // Phần không phải số 6 chữ số là mã vật tư đầu tiên
-                                stPart = part;
-                                break;
-                            }
-                            
-                            // Nếu sau khi parse không tìm thấy (có thể tên file chỉ có số hoặc format khác),
-                            // và chỉ có 1 phần duy nhất, lấy phần đó làm mã vật tư
-                            if (string.IsNullOrWhiteSpace(stPart) && parts.Length == 1)
-                            {
-                                stPart = parts[0];
+                                return parsedDate;
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            // Nếu parse tên file lỗi, fallback về MaSanpham từ form
-                            Console.WriteLine($"Lỗi khi parse tên file Excel để lấy mã sản phẩm: {ex.Message}");
-                        }
-                    }
-                }
-                
-                // Nếu không đọc được từ tên file, lấy từ MaSanpham form
-                if (string.IsNullOrWhiteSpace(stPart))
-                {
-                if (MaSanpham != null && MaSanpham.Count > 0)
-                {
-                    stPart = MaSanpham.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m));
-                }
-                }
-                
-                if (string.IsNullOrWhiteSpace(stPart))
-                {
-                    stPart = "VT";
-                }
-                stPart = stPart.Replace(" ", ""); // Bỏ dấu cách
-                
-                // Lấy tên viết tắt từ MaNguoidung (không dùng hàm parse)
-                string tenVietTat = maNv2 ?? yeucau.YCMaNguoidung ?? "NGUOIDUNG";
-                
-                if (!string.IsNullOrEmpty(yeucau.YCMaDuan))
-                {
-                    // ===== Trường hợp có Mã Dự Án: NNNNNN ST HiepNT =====
-                    // Lấy 6 chữ số từ mã dự án
-                    string maDuanFormatted = "000000";
-                    var maDuanDigits = new string(yeucau.YCMaDuan.Where(char.IsDigit).ToArray());
-                    if (maDuanDigits.Length > 6)
-                    {
-                        maDuanFormatted = maDuanDigits.Substring(maDuanDigits.Length - 6);
-                    }
-                    else
-                    {
-                        maDuanFormatted = maDuanDigits.PadLeft(6, '0');
-                    }
-                    
-                    // Tạo mã yêu cầu: NNNNNN ST HiepNT
-                    yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}";
-                    
-                    // Luôn tạo yêu cầu mới - nếu trùng mã thì thêm suffix để tạo mã mới
-                    int suffixNumber = 1;
-                    string originalMaYeucau = yeucau.MaYeucau;
-                    while (true)
-                    {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
-                        {
-                            break;
-                        }
-                        // Nếu trùng, thêm số suffix để tạo mã mới
-                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
-                        suffixNumber++;
-                    }
-                }
-                else
-                {
-                    // ===== Trường hợp KHÔNG có Mã Dự Án: YYMMDD ST HiepNT =====
-                    // Lấy ngày hiện tại dạng YYMMDD
-                    string datePart = DateTime.Now.ToString("yyMMdd");
-                    
-                    // Tạo mã yêu cầu: YYMMDD ST HiepNT
-                    yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
-                    
-                    // Luôn tạo yêu cầu mới - nếu trùng mã thì thêm suffix để tạo mã mới
-                    int suffixNumber = 1;
-                    string originalMaYeucau = yeucau.MaYeucau;
-                    while (true)
-                    {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
-                        {
-                            break;
-                        }
-                        // Nếu trùng, thêm số suffix để tạo mã mới
-                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
-                        suffixNumber++;
-                    }
-                }
-                // ================================================================
-
-                // Luôn tạo yêu cầu mới
-                _context.yeucau.Add(yeucau);
-                _context.SaveChanges();
-
-                // Gửi thông báo cho Trưởng BP kỹ thuật khi nhân viên tạo yêu cầu
-                // Lưu các giá trị vào biến local trước khi vào Task.Run để tránh closure issue
-                try
-                {
-                    var maYeucauForEmail = yeucau.MaYeucau;
-                    var nguoiYeuCauForEmail = yeucau.NguoiYeucau ?? "";
-                    var boPhanForEmail = yeucau.Bophan ?? "BP kỹ thuật";
-                    
-                    Debug.WriteLine($"[NV Kythuat] Chuẩn bị gửi email Trưởng BP");
-                    Debug.WriteLine($"MaYeucau={maYeucauForEmail}");
-                    Debug.WriteLine($"NguoiYeuCau={nguoiYeuCauForEmail}");
-                    Debug.WriteLine($"BoPhan={boPhanForEmail}");
-
-                    // Tạo scope mới để tránh lỗi DbContext thread-safe
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            Debug.WriteLine($"[NV Kythuat] Task.Run START - Gửi email Trưởng BP cho yêu cầu {maYeucauForEmail}");
-                            using (var scope = _serviceScopeFactory.CreateScope())
-                            {
-                                var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
-                                await emailService.SendNotificationToDepartmentHeadAsync(
-                                    maYeucauForEmail,
-                                    nguoiYeuCauForEmail,
-                                    boPhanForEmail
-                                );
-                                Debug.WriteLine($"[NV Kythuat] Task.Run END - Đã gọi xong SendNotificationToDepartmentHeadAsync cho {maYeucauForEmail}");
-                            }
-                        }
-                        catch (Exception exInner)
-                        {
-                            Debug.WriteLine($"[NV Kythuat][ERROR] Task.Run - Gửi email Trưởng BP thất bại: {exInner.Message}");
-                            Debug.WriteLine($"StackTrace: {exInner.StackTrace}");
-                        }
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[NV Kythuat][ERROR] Init - Gửi email Trưởng BP thất bại: {ex.Message}");
-                    Debug.WriteLine($"StackTrace: {ex.StackTrace}");
-                }
-
-                // Lưu thông tin file Excel vào database (không lưu file vào đĩa để tiết kiệm dung lượng)
-                try
-                {
-                    if (Request.Form.Files != null && Request.Form.Files.Count > 0)
-                    {
-                        var excelFile = Request.Form.Files.FirstOrDefault(f => 
-                            f.Name == "excel-upload" || 
-                            (!string.IsNullOrEmpty(f.FileName) && (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))));
-                        
-                        if (excelFile != null && excelFile.Length > 0)
-                        {
-                            var excelFileRecord = new ExcelFile
-                            {
-                                MaYeucau = yeucau.MaYeucau,
-                                MaDuan = yeucau.YCMaDuan,
-                                TenFile = excelFile.FileName,
-                                DuongDanFile = null, // Không lưu file vào đĩa
-                                NgayUpload = DateTime.Now,
-                                NguoiUpload = maNv2,
-                                KichThuocFile = excelFile.Length
-                            };
-
-                            _context.ExcelFiles.Add(excelFileRecord);
-                            _context.SaveChanges();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Log lỗi nhưng không dừng quá trình xử lý
-                    Console.WriteLine($"Lỗi khi lưu thông tin file Excel: {ex.Message}");
-                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                }
-
-                // Số dòng lấy theo TenSanpham (bắt buộc) để tránh lệch mảng
-                int rowCount = TenSanpham?.Count ?? 0;
-
-                for (int i = 0; i < rowCount; i++)
-                {
-                    var ten = (TenSanpham != null && i < TenSanpham.Count) ? TenSanpham[i] : null;
-                    if (string.IsNullOrEmpty(ten))
-                    {
-                        continue;
                     }
 
-                    var maValue = (MaSanpham != null && i < MaSanpham.Count) ? MaSanpham[i] : null;
-                    var hangValue = (HangSX != null && i < HangSX.Count) ? HangSX[i] : null;
-                    var nhaCcValue = (NhaCC != null && i < NhaCC.Count) ? NhaCC[i] : null;
-                    var donViValue = (DonVi != null && i < DonVi.Count) ? DonVi[i] : null;
-                    var slValue = (SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0;
-                    var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
-                    var slMoiValueNullable = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
-                    
-                    // Bỏ qua dòng nếu số lượng mới bằng 0 (không cần lưu và hiển thị)
-                    if (slMoiValueNullable == 0)
-                    {
-                        continue;
-                    }
-                    
-                    var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
+                    // Không fallback sang yeucau.NgayCanHang để tránh lệch dữ liệu
+                    return null;
+                }
 
-                    // Tạo bản ghi "VT mới" trong khotongs nếu chưa tồn tại (để đáp ứng foreign key constraint)
-                    var vtMoiKho = _context.khotongs.FirstOrDefault(p => p.Makho == "VT mới");
-                    if (vtMoiKho == null)
-                    {
-                        vtMoiKho = new khotongs
-                        {
-                            Makho = "VT mới",
-                            TenSanpham = "Vật tư mới",
-                            MaSanpham = "",
-                            HangSX = "",
-                            NhaCC = "",
-                            SL = 0,
-                            DonVi = "",
-                            NgayNhapkho = null,
-                            NgayBaohanh = null,
-                            ThoiGianBH = null,
-                            TrangThai = "VT mới"
-                        };
-                        _context.khotongs.Add(vtMoiKho);
-                        _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại
-                    }
+                if (yeucau.TenYeucau != "Yêu cầu nhập kho")
+                {
+                    yeucau.NgayYeucau = DateTime.Now;
 
-                    // Tính số lượng mới (ưu tiên SLMoi, sau đó SLCu, cuối cùng là SL)
-                    int slMoiValue = slMoiValueNullable ?? slCuValue ?? slValue;
-                    
-                    // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
-                    var existingVTYeucau = _context.vtyeucau
-                        .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
-                            && string.Equals(vt.MaSanpham, maValue, StringComparison.OrdinalIgnoreCase));
-                    
-                        if (existingVTYeucau != null)
-                    {
-                        // Cập nhật vật tư yêu cầu hiện có
-                        existingVTYeucau.TenSanpham = ten;
-                        existingVTYeucau.HangSX = hangValue;
-                        existingVTYeucau.NhaCC = nhaCcValue;
-                        existingVTYeucau.SLCu = slCuValue;
-                        existingVTYeucau.SLMoi = slMoiValueNullable;
-                        existingVTYeucau.SL = slMoiValue;
-                        existingVTYeucau.DonVi = donViValue;
-                        existingVTYeucau.NgayCanHang = GetNgayCanHangAt(i);
-                        existingVTYeucau.GhiChu = ghiChuValue;
-                        existingVTYeucau.YCMakho = "VT mới";
-                        existingVTYeucau.NgayNhapkho = null;
-                        existingVTYeucau.NgayBaohanh = null;
-                        existingVTYeucau.ThoiGianBH = null;
-                        
-                        // Xử lý cập nhật theo logic mới
-                        int slThieu;
-                        var updateResult = YeucauUpdateHelper.XuLyCapNhatYeuCau(
-                            _context, 
-                            yeucau, 
-                            maValue, 
-                            slMoiValue, 
-                            "VT mới", 
-                            out slThieu);
-                        
-                        if (updateResult.Success)
-                        {
-                            _context.vtyeucau.Update(existingVTYeucau);
-                        }
-                    }
-                    else
-                    {
-                        // Tạo mới vật tư yêu cầu
-                        var newVtyeucau = new vtyeucau();
-                        newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
-                        newVtyeucau.TenSanpham = ten;
-                        newVtyeucau.MaSanpham = maValue;
-                        newVtyeucau.HangSX = hangValue;
-                        newVtyeucau.NhaCC = nhaCcValue;
-                        newVtyeucau.SLCu = slCuValue;
-                        newVtyeucau.SLMoi = slMoiValueNullable;
-                        // Cột SL lấy giá trị từ SLMoi (nếu có), nếu không thì lấy từ SLCu
-                        newVtyeucau.SL = slMoiValue;
-                        newVtyeucau.DonVi = donViValue;
-                        newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
-                        newVtyeucau.GhiChu = ghiChuValue;
-                        // Set YCMakho = "VT mới" để đáp ứng foreign key constraint (nhưng không hiển thị trong view)
-                        newVtyeucau.YCMakho = "VT mới";
-                        newVtyeucau.NgayNhapkho = null;
-                        newVtyeucau.NgayBaohanh = null;
-                        newVtyeucau.ThoiGianBH = null;
-                        _context.vtyeucau.Add(newVtyeucau);
-                    }
+                    var chucVu2 = HttpContext.Session.GetString("Chucvu");
+                    var boPhan2 = HttpContext.Session.GetString("Bophan");
+                    var maNv2 = HttpContext.Session.GetString("MaNguoidung");
+
+                    yeucau.YCMaDuan = yeucau.YCMaDuan?.Trim();
+
+                    // NV kỹ thuật tạo yêu cầu thường -> luôn chờ Trưởng BP kỹ thuật duyệt
+                    yeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
+
+                    // ================== TẠO MÃ YÊU CẦU ĐÚNG CHUẨN ==================
+
+                    // Sinh mã yêu cầu dùng chung (tách ra service để khỏi phải sửa từng controller)
+                    yeucau.MaYeucau = _yeucauCodeService.GenerateMaYeucauCommon(
+                        yeucau.YCMaDuan,
+                        MaSanpham,
+                        Request.Form.Files,
+                        DateTime.Now);
+
+                    // ================================================================
+
+                    // Luôn tạo yêu cầu mới
+                    _context.yeucau.Add(yeucau);
                     _context.SaveChanges();
-                }
-                if (yeucau.TrangThai == "Đã duyệt")
-                {
-                    Xuliphieuyeucau(yeucau.MaYeucau, phieuxuatkho, vtphieuxuatkho, phieumuahang, vtphieumuahang, yeucau, vtyeucau);
-                }
-            }
-            else
-            {
-                int nextNumber = 1;
 
-                while (true)
-                {
-                    phieunhapkho.MaNhapkho = $"PNK{nextNumber}";
-
-                    var existingEntry = _context.phieunhapkho
-                                                .FirstOrDefault(y => y.MaNhapkho == phieunhapkho.MaNhapkho);
-                    if (existingEntry == null)
+                    // Gửi thông báo cho Trưởng BP kỹ thuật khi nhân viên tạo yêu cầu
+                    // Lưu các giá trị vào biến local trước khi vào Task.Run để tránh closure issue
+                    try
                     {
-                        break;
+                        var maYeucauForEmail = yeucau.MaYeucau;
+                        var nguoiYeuCauForEmail = yeucau.NguoiYeucau ?? "";
+                        var boPhanForEmail = yeucau.Bophan ?? "BP kỹ thuật";
+                        
+                        Debug.WriteLine($"[NV Kythuat] Chuẩn bị gửi email Trưởng BP");
+                        Debug.WriteLine($"MaYeucau={maYeucauForEmail}");
+                        Debug.WriteLine($"NguoiYeuCau={nguoiYeuCauForEmail}");
+                        Debug.WriteLine($"BoPhan={boPhanForEmail}");
+
+                        // Tạo scope mới để tránh lỗi DbContext thread-safe
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                Debug.WriteLine($"[NV Kythuat] Task.Run START - Gửi email Trưởng BP cho yêu cầu {maYeucauForEmail}");
+                                using (var scope = _serviceScopeFactory.CreateScope())
+                                {
+                                    var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                    await emailService.SendNotificationToDepartmentHeadAsync(
+                                        maYeucauForEmail,
+                                        nguoiYeuCauForEmail,
+                                        boPhanForEmail
+                                    );
+                                    Debug.WriteLine($"[NV Kythuat] Task.Run END - Đã gọi xong SendNotificationToDepartmentHeadAsync cho {maYeucauForEmail}");
+                                }
+                            }
+                            catch (Exception exInner)
+                            {
+                                Debug.WriteLine($"[NV Kythuat][ERROR] Task.Run - Gửi email Trưởng BP thất bại: {exInner.Message}");
+                                Debug.WriteLine($"StackTrace: {exInner.StackTrace}");
+                            }
+                        });
                     }
-                    nextNumber++;
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[NV Kythuat][ERROR] Init - Gửi email Trưởng BP thất bại: {ex.Message}");
+                        Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+                    }
+
+                    // Lưu thông tin file Excel vào database (không lưu file vào đĩa để tiết kiệm dung lượng)
+                    try
+                    {
+                        if (Request.Form.Files != null && Request.Form.Files.Count > 0)
+                        {
+                            var excelFile = Request.Form.Files.FirstOrDefault(f => 
+                                f.Name == "excel-upload" || 
+                                (!string.IsNullOrEmpty(f.FileName) && (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))));
+                            
+                            if (excelFile != null && excelFile.Length > 0)
+                            {
+                                var excelFileRecord = new ExcelFile
+                                {
+                                    MaYeucau = yeucau.MaYeucau,
+                                    MaDuan = yeucau.YCMaDuan,
+                                    TenFile = excelFile.FileName,
+                                    DuongDanFile = null, // Không lưu file vào đĩa
+                                    NgayUpload = DateTime.Now,
+                                    NguoiUpload = maNv2,
+                                    KichThuocFile = excelFile.Length
+                                };
+
+                                _context.ExcelFiles.Add(excelFileRecord);
+                                _context.SaveChanges();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log lỗi nhưng không dừng quá trình xử lý
+                        Console.WriteLine($"Lỗi khi lưu thông tin file Excel: {ex.Message}");
+                        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    }
+
+                    // Số dòng lấy theo TenSanpham (bắt buộc) để tránh lệch mảng
+                    int rowCount = TenSanpham?.Count ?? 0;
+
+                    for (int i = 0; i < rowCount; i++)
+                    {
+                        var ten = (TenSanpham != null && i < TenSanpham.Count) ? TenSanpham[i] : null;
+                        if (string.IsNullOrEmpty(ten))
+                        {
+                            continue;
+                        }
+
+                        var maValue = (MaSanpham != null && i < MaSanpham.Count) ? MaSanpham[i] : null;
+                        var hangValue = (HangSX != null && i < HangSX.Count) ? HangSX[i] : null;
+                        var nhaCcValue = (NhaCC != null && i < NhaCC.Count) ? NhaCC[i] : null;
+                        var donViValue = (DonVi != null && i < DonVi.Count) ? DonVi[i] : null;
+                        var slValue = (SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0;
+                        var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
+                        var slMoiValueNullable = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
+                        
+                        // Bỏ qua dòng nếu số lượng mới bằng 0 (không cần lưu và hiển thị)
+                        if (slMoiValueNullable == 0)
+                        {
+                            continue;
+                        }
+                        
+                        var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
+
+                        // Tạo bản ghi "VT mới" trong khotongs nếu chưa tồn tại (để đáp ứng foreign key constraint)
+                        var vtMoiKho = _context.khotongs.FirstOrDefault(p => p.Makho == "VT mới");
+                        if (vtMoiKho == null)
+                        {
+                            vtMoiKho = new khotongs
+                            {
+                                Makho = "VT mới",
+                                TenSanpham = "Vật tư mới",
+                                MaSanpham = "",
+                                HangSX = "",
+                                NhaCC = "",
+                                SL = 0,
+                                DonVi = "",
+                                NgayNhapkho = null,
+                                NgayBaohanh = null,
+                                ThoiGianBH = null,
+                                TrangThai = "VT mới"
+                            };
+                            _context.khotongs.Add(vtMoiKho);
+                            _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại
+                        }
+
+                        // Tính số lượng mới (ưu tiên SLMoi, sau đó SLCu, cuối cùng là SL)
+                        int slMoiValue = slMoiValueNullable ?? slCuValue ?? slValue;
+                        
+                        // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
+                        var existingVTYeucau = _context.vtyeucau
+                            .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
+                                && string.Equals(vt.MaSanpham, maValue, StringComparison.OrdinalIgnoreCase));
+                        
+                            if (existingVTYeucau != null)
+                        {
+                            // Cập nhật vật tư yêu cầu hiện có
+                            existingVTYeucau.TenSanpham = ten;
+                            existingVTYeucau.HangSX = hangValue;
+                            existingVTYeucau.NhaCC = nhaCcValue;
+                            existingVTYeucau.SLCu = slCuValue;
+                            existingVTYeucau.SLMoi = slMoiValueNullable;
+                            existingVTYeucau.SL = slMoiValue;
+                            existingVTYeucau.DonVi = donViValue;
+                            existingVTYeucau.NgayCanHang = GetNgayCanHangAt(i);
+                            existingVTYeucau.GhiChu = ghiChuValue;
+                            existingVTYeucau.YCMakho = "VT mới";
+                            existingVTYeucau.NgayNhapkho = null;
+                            existingVTYeucau.NgayBaohanh = null;
+                            existingVTYeucau.ThoiGianBH = null;
+                            
+                            // Xử lý cập nhật theo logic mới
+                            int slThieu;
+                            var updateResult = YeucauUpdateHelper.XuLyCapNhatYeuCau(
+                                _context, 
+                                yeucau, 
+                                maValue, 
+                                slMoiValue, 
+                                "VT mới", 
+                                out slThieu);
+                            
+                            if (updateResult.Success)
+                            {
+                                _context.vtyeucau.Update(existingVTYeucau);
+                            }
+                        }
+                        else
+                        {
+                            // Tạo mới vật tư yêu cầu
+                            var newVtyeucau = new vtyeucau();
+                            newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TenSanpham = ten;
+                            newVtyeucau.MaSanpham = maValue;
+                            newVtyeucau.HangSX = hangValue;
+                            newVtyeucau.NhaCC = nhaCcValue;
+                            newVtyeucau.SLCu = slCuValue;
+                            newVtyeucau.SLMoi = slMoiValueNullable;
+                            // Cột SL lấy giá trị từ SLMoi (nếu có), nếu không thì lấy từ SLCu
+                            newVtyeucau.SL = slMoiValue;
+                            newVtyeucau.DonVi = donViValue;
+                            newVtyeucau.NgayCanHang = GetNgayCanHangAt(i);
+                            newVtyeucau.GhiChu = ghiChuValue;
+                            // Set YCMakho = "VT mới" để đáp ứng foreign key constraint (nhưng không hiển thị trong view)
+                            newVtyeucau.YCMakho = "VT mới";
+                            newVtyeucau.NgayNhapkho = null;
+                            newVtyeucau.NgayBaohanh = null;
+                            newVtyeucau.ThoiGianBH = null;
+                            // Set trạng thái ban đầu: "Chờ Trưởng BP-BP kỹ thuật duyệt" để đồng bộ với trạng thái yêu cầu
+                            newVtyeucau.TrangThai = "Chờ Trưởng BP-BP kỹ thuật duyệt";
+                            _context.vtyeucau.Add(newVtyeucau);
+                        }
+                        _context.SaveChanges();
+                    }
+                    if (yeucau.TrangThai == "Đã duyệt")
+                    {
+                        Xuliphieuyeucau(yeucau.MaYeucau, phieuxuatkho, vtphieuxuatkho, phieumuahang, vtphieumuahang, yeucau, vtyeucau);
+                    }
                 }
+                else
+                {
+                    // NV kỹ thuật tạo Yêu cầu nhập kho:
+                    // - có dự án -> chờ quản lí dự án duyệt
+                    // - cá nhân  -> chờ giám đốc duyệt
+                    yeucau.YCMaDuan = yeucau.YCMaDuan?.Trim();
+                    if (!string.IsNullOrEmpty(yeucau.YCMaDuan))
+                    {
+                        yeucau.TrangThai = "Chờ quản lí dự án duyệt";
+                    }
+                    else
+                    {
+                        yeucau.TrangThai = "Chờ giám đốc duyệt";
+                    }
+
+                    int nextNumber = 1;
+
+                    while (true)
+                    {
+                        phieunhapkho.MaNhapkho = $"PNK{nextNumber}";
+
+                        var existingEntry = _context.phieunhapkho
+                                                    .FirstOrDefault(y => y.MaNhapkho == phieunhapkho.MaNhapkho);
+                        if (existingEntry == null)
+                        {
+                            break;
+                        }
+                        nextNumber++;
+                    }
+                }
+
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "NhanvienKythuat" });
+
             }
-
-            return RedirectToAction("Yeucau", "Yeucau", new { area = "NhanvienKythuat" });
-
-        }
         [HttpPost]
         public IActionResult XuLyYeucau(string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang, yeucau yeucau, vtyeucau vtyeucau)
         {

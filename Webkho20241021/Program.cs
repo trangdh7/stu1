@@ -37,6 +37,7 @@ builder.Services.AddMemoryCache();
 // Đăng ký EmailService và provider cấu hình email động
 builder.Services.AddScoped<IEmailSettingsProvider, EmailSettingsProvider>();
 builder.Services.AddScoped<Webkho_20241021.Services.EmailService>();
+builder.Services.AddScoped<IYeucauCodeService, YeucauCodeService>();
 
 // Cấu hình FormOptions để tăng giới hạn form values (hỗ trợ upload file Excel lớn)
 builder.Services.Configure<FormOptions>(options =>

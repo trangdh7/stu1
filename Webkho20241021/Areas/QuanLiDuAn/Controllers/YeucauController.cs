@@ -23,11 +23,13 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        public YeucauController(ApplicationDbContext context, EmailService emailService, IServiceScopeFactory serviceScopeFactory)
+        private readonly IYeucauCodeService _yeucauCodeService;
+        public YeucauController(ApplicationDbContext context, EmailService emailService, IServiceScopeFactory serviceScopeFactory, IYeucauCodeService yeucauCodeService)
         {
             _context = context;
             _emailService = emailService;
             _serviceScopeFactory = serviceScopeFactory;
+            _yeucauCodeService = yeucauCodeService;
         }
 
         private void SendRejectionEmailAsync(string maYeucau, string ghiChu = "")
@@ -2081,145 +2083,18 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     }
                 }
 
-                // ================== TẠO MÃ YÊU CẦU ĐÚNG CHUẨN ==================
-                
-                // Kiểm tra xem có file Excel được upload không
-                bool hasExcelFile = false;
-                
-                // Lấy mã sản phẩm (ST) từ tên file Excel hoặc từ form
-                string? stPart = null;
-                
-                // Ưu tiên đọc từ tên file Excel nếu có
-               if (Request.Form.Files != null && Request.Form.Files.Count > 0)
-                {
-                    var excelFile = Request.Form.Files.FirstOrDefault(f => 
-                        f.Name == "excel-upload" || 
-                        (!string.IsNullOrEmpty(f.FileName) && (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))));
-                    
-                    if (excelFile != null && !string.IsNullOrEmpty(excelFile.FileName))
-                    {
-                        hasExcelFile = true; // Đánh dấu có file Excel được upload
-                        try
-                        {
-                            // Lấy tên file không có extension
-                            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(excelFile.FileName);
-                            
-                            // Xử lý tên file có thể có dấu gạch dưới: thay thế bằng khoảng trắng để parse
-                            fileNameWithoutExt = fileNameWithoutExt.Replace('_', ' ');
-                            
-                            // Parse tên file: 
-                            // - "DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (mã vật tư đầu tiên)
-                            // - "251005 STUP10.5013 251203" → lấy "STUP10.5013" (bỏ qua số 6 chữ số)
-                            // - "251208 DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (bỏ qua số 6 chữ số)
-                            // Tách theo khoảng trắng
-                            var parts = fileNameWithoutExt.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                            
-                            // Tìm phần không phải số 6 chữ số (mã vật tư đầu tiên)
-                                foreach (var part in parts)
-                                {
-                                // Bỏ qua các phần là số 6 chữ số (mã dự án hoặc ngày)
-                                    if (part.Length == 6 && part.All(char.IsDigit))
-                                    {
-                                    continue;
-                                    }
-                                // Phần không phải số 6 chữ số là mã vật tư đầu tiên
-                                        stPart = part;
-                                        break;
-                                    }
-                                
-                            // Nếu sau khi parse không tìm thấy (có thể tên file chỉ có số hoặc format khác),
-                            // và chỉ có 1 phần duy nhất, lấy phần đó làm mã vật tư
-                            if (string.IsNullOrWhiteSpace(stPart) && parts.Length == 1)
-                                {
-                                    stPart = parts[0];
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // Nếu parse tên file lỗi, fallback về MaSanpham từ form
-                            Console.WriteLine($"Lỗi khi parse tên file Excel để lấy mã sản phẩm: {ex.Message}");
-                        }
-                    }
-                }
-                
-                // Nếu không đọc được từ tên file, lấy từ MaSanpham form
-                if (string.IsNullOrWhiteSpace(stPart))
-                {
-                    if (MaSanpham != null && MaSanpham.Count > 0)
-                    {
-                        stPart = MaSanpham.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m));
-                    }
-                }
-                
-                if (string.IsNullOrWhiteSpace(stPart))
-                {
-                    stPart = "VT";
-                }
-                stPart = stPart.Replace(" ", ""); // Bỏ dấu cách
-                
-                // Lấy tên viết tắt từ MaNguoidung (không dùng hàm parse)
-                string tenVietTat = maNv2 ?? yeucau.YCMaNguoidung ?? "NGUOIDUNG";
-                
-                if (!string.IsNullOrEmpty(yeucau.YCMaDuan))
-                {
-                    // ===== Trường hợp có Mã Dự Án: NNNNNN ST HiepNT =====
-                    // Lấy 6 chữ số từ mã dự án
-                    string maDuanFormatted = "000000";
-                    var maDuanDigits = new string(yeucau.YCMaDuan.Where(char.IsDigit).ToArray());
-                    if (maDuanDigits.Length > 6)
-                    {
-                        maDuanFormatted = maDuanDigits.Substring(maDuanDigits.Length - 6);
-                    }
-                    else
-                    {
-                        maDuanFormatted = maDuanDigits.PadLeft(6, '0');
-                    }
-                    
-                    // Tạo mã yêu cầu: NNNNNN ST HiepNT
-                    yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}";
-                    
-                    // Đảm bảo tính duy nhất cho mã yêu cầu (bao gồm cả tên người)
-                    // Nếu cùng người gửi cùng mã cơ bản, thêm suffix để phân biệt
-                    int suffixNumber = 1;
-                    string originalMaYeucau = yeucau.MaYeucau;
-                    while (true)
-                    {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
-                        {
-                            break;
-                        }
-                        // Nếu trùng, thêm số suffix
-                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
-                        suffixNumber++;
-                    }
-                }
-                else
-                {
-                    
-                    string datePart = DateTime.Now.ToString("yyMMdd");
-                    
-                    
-                    yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
-                    
-                    
-                    int suffixNumber = 1;
-                    string originalMaYeucau = yeucau.MaYeucau;
-                    while (true)
-                    {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
-                        {
-                            break;
-                        }
-                        // Nếu trùng, thêm số suffix
-                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
-                        suffixNumber++;
-                    }
-                }
-                // ================================================================
+                // Đánh dấu có file Excel hay không (phục vụ logic auto-approve/email phía dưới)
+                bool hasExcelFile = Request.Form.Files != null && Request.Form.Files.Any(f =>
+                    !string.IsNullOrEmpty(f.FileName) &&
+                    (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase)));
+
+                // ================== TẠO MÃ YÊU CẦU (DÙNG CHUNG 1 HÀM) ==================
+                yeucau.MaYeucau = _yeucauCodeService.GenerateMaYeucauCommon(
+                    yeucau.YCMaDuan,
+                    MaSanpham,
+                    Request.Form.Files,
+                    DateTime.Now);
+                // ======================================================================
 
                 // Nếu QLDA upload Excel, tự động set NguoiDuyet là tên QLDA
                 if (hasExcelFile && (laBoPhanDuAn || laChucVuQLDA || laQLDADuAn))

@@ -21,10 +21,12 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
-        public YeucauController(ApplicationDbContext context, EmailService emailService)
+        private readonly IYeucauCodeService _yeucauCodeService;
+        public YeucauController(ApplicationDbContext context, EmailService emailService, IYeucauCodeService yeucauCodeService)
         {
             _context = context;
             _emailService = emailService;
+            _yeucauCodeService = yeucauCodeService;
         }
         public IActionResult Yeucau(string search = "")
         {
@@ -1124,141 +1126,13 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                     }
                 }
 
-                // ================== TẠO MÃ YÊU CẦU ĐÚNG CHUẨN ==================
-                
-                // Lấy mã sản phẩm (ST) từ tên file Excel hoặc từ form
-                string? stPart = null;
-                
-                // Ưu tiên đọc từ tên file Excel nếu có
-                if (Request.Form.Files != null && Request.Form.Files.Count > 0)
-                {
-                    var excelFile = Request.Form.Files.FirstOrDefault(f => 
-                        f.Name == "excel-upload" || 
-                        (!string.IsNullOrEmpty(f.FileName) && (f.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) || f.FileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))));
-                    
-                    if (excelFile != null && !string.IsNullOrEmpty(excelFile.FileName))
-                    {
-                        try
-                        {
-                            // Lấy tên file không có extension
-                            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(excelFile.FileName);
-                            
-                            // Xử lý tên file có thể có dấu gạch dưới: thay thế bằng khoảng trắng để parse
-                            fileNameWithoutExt = fileNameWithoutExt.Replace('_', ' ');
-                            
-                            // Parse tên file: 
-                            // - "DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (mã vật tư đầu tiên)
-                            // - "251005 STUP10.5013 251203" → lấy "STUP10.5013" (bỏ qua số 6 chữ số)
-                            // - "251208 DS03-AAT-TASS-02" → lấy "DS03-AAT-TASS-02" (bỏ qua số 6 chữ số)
-                            // Tách theo khoảng trắng
-                            var parts = fileNameWithoutExt.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                            
-                            // Tìm phần không phải số 6 chữ số (mã vật tư đầu tiên)
-                                foreach (var part in parts)
-                                {
-                                // Bỏ qua các phần là số 6 chữ số (mã dự án hoặc ngày)
-                                    if (part.Length == 6 && part.All(char.IsDigit))
-                                    {
-                                    continue;
-                                    }
-                                // Phần không phải số 6 chữ số là mã vật tư đầu tiên
-                                        stPart = part;
-                                        break;
-                                    }
-                                
-                            // Nếu sau khi parse không tìm thấy (có thể tên file chỉ có số hoặc format khác),
-                            // và chỉ có 1 phần duy nhất, lấy phần đó làm mã vật tư
-                            if (string.IsNullOrWhiteSpace(stPart) && parts.Length == 1)
-                                {
-                                    stPart = parts[0];
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // Nếu parse tên file lỗi, fallback về MaSanpham từ form
-                            Console.WriteLine($"Lỗi khi parse tên file Excel để lấy mã sản phẩm: {ex.Message}");
-                        }
-                    }
-                }
-                
-                // Nếu không đọc được từ tên file, lấy từ MaSanpham form
-                if (string.IsNullOrWhiteSpace(stPart))
-                {
-                    if (MaSanpham != null && MaSanpham.Count > 0)
-                    {
-                        stPart = MaSanpham.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m));
-                    }
-                }
-                
-                if (string.IsNullOrWhiteSpace(stPart))
-                {
-                    stPart = "VT";
-                }
-                stPart = stPart.Replace(" ", ""); // Bỏ dấu cách
-                
-                // Lấy tên viết tắt từ MaNguoidung (không dùng hàm parse)
-                string tenVietTat = maNv2 ?? yeucau.YCMaNguoidung ?? "NGUOIDUNG";
-                
-                if (!string.IsNullOrEmpty(yeucau.YCMaDuan))
-                {
-                    // ===== Trường hợp có Mã Dự Án: NNNNNN ST HiepNT =====
-                    // Lấy 6 chữ số từ mã dự án
-                    string maDuanFormatted = "000000";
-                    var maDuanDigits = new string(yeucau.YCMaDuan.Where(char.IsDigit).ToArray());
-                    if (maDuanDigits.Length > 6)
-                    {
-                        maDuanFormatted = maDuanDigits.Substring(maDuanDigits.Length - 6);
-                    }
-                    else
-                    {
-                        maDuanFormatted = maDuanDigits.PadLeft(6, '0');
-                    }
-                    
-                    // Tạo mã yêu cầu: NNNNNN ST HiepNT
-                    yeucau.MaYeucau = $"{maDuanFormatted} {stPart} {tenVietTat}";
-                    
-                    // Luôn tạo yêu cầu mới - nếu trùng mã thì thêm suffix để tạo mã mới
-                    int suffixNumber = 1;
-                    string originalMaYeucau = yeucau.MaYeucau;
-                    while (true)
-                    {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
-                        {
-                            break;
-                        }
-                        // Nếu trùng, thêm số suffix để tạo mã mới
-                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
-                        suffixNumber++;
-                    }
-                }
-                else
-                {
-                    // ===== Trường hợp KHÔNG có Mã Dự Án: YYMMDD ST HiepNT =====
-                    // Lấy ngày hiện tại dạng YYMMDD
-                    string datePart = DateTime.Now.ToString("yyMMdd");
-                    
-                    // Tạo mã yêu cầu: YYMMDD ST HiepNT
-                    yeucau.MaYeucau = $"{datePart} {stPart} {tenVietTat}";
-                    
-                    // Luôn tạo yêu cầu mới - nếu trùng mã thì thêm suffix để tạo mã mới
-                    int suffixNumber = 1;
-                    string originalMaYeucau = yeucau.MaYeucau;
-                    while (true)
-                    {
-                        var exists = _context.yeucau
-                                             .FirstOrDefault(x => x.MaYeucau == yeucau.MaYeucau);
-                        if (exists == null)
-                        {
-                            break;
-                        }
-                        // Nếu trùng, thêm số suffix để tạo mã mới
-                        yeucau.MaYeucau = $"{originalMaYeucau}{suffixNumber}";
-                        suffixNumber++;
-                    }
-                }
-                // ================================================================
+                // ================== TẠO MÃ YÊU CẦU (DÙNG CHUNG 1 HÀM) ==================
+                yeucau.MaYeucau = _yeucauCodeService.GenerateMaYeucauCommon(
+                    yeucau.YCMaDuan,
+                    MaSanpham,
+                    Request.Form.Files,
+                    DateTime.Now);
+                // ======================================================================
 
                 // Luôn tạo yêu cầu mới
                 _context.yeucau.Add(yeucau);
