@@ -204,11 +204,21 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             .ToList();
             // Gán tên Người yêu cầu cho từng phiếu mua hàng
             var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
+            // Lấy Ngày cần từ bảng vtyeucau (vật tư chi tiết) - lấy ngày sớm nhất
+            var vtyeucauDict = _context.vtyeucau
+                .Where(v => v.NgayCanHang != null)
+                .GroupBy(v => v.VTMaYeucau)
+                .ToDictionary(g => g.Key, g => g.Min(v => v.NgayCanHang));
             foreach (var phieu in Phieumuahanglist)
             {
                 if (!string.IsNullOrEmpty(phieu.MaNguoidung) && nguoiDungDict.TryGetValue(phieu.MaNguoidung, out var ten))
                 {
                     phieu.TenNguoiyeucau = ten;
+                }
+                // Gán Ngày cần từ vtyeucau (vật tư chi tiết) - lấy ngày sớm nhất
+                if (!string.IsNullOrEmpty(phieu.MaYeucau) && vtyeucauDict.TryGetValue(phieu.MaYeucau, out var ngayCanHang))
+                {
+                    phieu.NgayCanHang = ngayCanHang;
                 }
             }
 

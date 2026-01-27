@@ -1006,7 +1006,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (newDate && !isValidFutureDate(newDate)) {
                 const today = new Date().toISOString().slice(0, 10);
                 event.target.value = today;
-                setFeedback("Ngày cần hàng phải là ngày tương lai. Đã tự động điều chỉnh thành ngày hôm nay.", true);
+                setFeedback("Ngày cần phải là ngày tương lai. Đã tự động điều chỉnh thành ngày hôm nay.", true);
                 setTimeout(() => {
                     setFeedback("", false);
                 }, 3000);
@@ -1025,7 +1025,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (ngayCanHangDefault && ngayCanHangDefault.value) {
                 if (!isValidFutureDate(ngayCanHangDefault.value)) {
                     event.preventDefault();
-                    setFeedback("Ngày cần hàng phải là ngày tương lai. Vui lòng chọn lại ngày hợp lệ.", true);
+                    setFeedback("Ngày cần phải là ngày tương lai. Vui lòng chọn lại ngày hợp lệ.", true);
                     ngayCanHangDefault.focus();
                     return false;
                 }

@@ -157,18 +157,26 @@
                     @errorMessage
                 </div>
             }
+            <style>
+                .tablethietbi thead tr td:nth-child(9),
+                .tablethietbi tbody tr td:nth-child(9) { max-width: 138px; width: 138px; }
+                .tablethietbi thead tr td:last-child,
+                .tablethietbi tbody tr td:last-child { min-width: 140px; width: 140px; padding: 8px; }
+                .tablethietbi .btn-xuatkho-item { white-space: nowrap; min-height: 40px; }
+            </style>
             <table class="tablethietbi">
                 <thead>
                     <tr>
-                        <td>STT</td>
-                        <td>Tên vật tư</td>
-                        <td>Mã vật tư</td>
+                        <td>TT</td>
+                        <td>Tên thiết bị/hàng hóa</td>
+                        <td>Mã VT</td>
                         <td>Mã kho</td>
-                        <td>Hãng sx</td>
-                        <td>Nhà cung cấp</td>
-                        <td>Số lượng</td>
-                        <td>Đơn vị</td>
+                        <td>Hãng SX</td>
+                        <td>NCC</td>
+                        <td>SL</td>
+                        <td>ĐV</td>
                         <td>Trạng thái</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -186,11 +194,16 @@
                             <td>@item.NhaCC</td>
                             <td>@item.SL</td>
                             <td>@item.DonVi</td>
+                            <td></td>
+                            <td></td>
                         </tr>
                         ST++;
                     }
                 </tbody>
             </table>
+        </div>
+        <div id="xuatkho-button-container" style="margin-top: 20px; text-align: right; padding-right: 20px; display: none;">
+            <div id="xuatkho-button-content"></div>
         </div>
     </nav>
     <script src="~/js/phieuxuatkho.js"></script>

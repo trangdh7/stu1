@@ -99,9 +99,19 @@ namespace Webkho_20241021.Services
                              || y.TrangThai == "Chờ Trưởng Phòng bộ phận BP kho duyệt");
 
                 // Đếm vật tư chờ xuất kho (trạng thái "Đã duyệt" nhưng chưa có phiếu xuất)
-                var vtChoXuat = _context.vtyeucau
-                    .Count(v => v.TrangThai == "Đã duyệt" 
-                             && !_context.vtphieuxuatkho.Any(vt => vt.MaYeucau == v.VTMaYeucau && vt.MaSanpham == v.MaSanpham));
+                    int vtChoXuat = 0;
+                try
+                {
+                    vtChoXuat = _context.vtyeucau
+                        .Count(v => v.TrangThai == "Đã duyệt" 
+                                 && !_context.vtphieuxuatkho.Any(vt => vt.MaYeucau == v.VTMaYeucau && vt.MaSanpham == v.MaSanpham));
+                }
+                catch
+                {
+                    // Nếu bảng vtphieuxuatkho không tồn tại, chỉ đếm các yêu cầu đã duyệt
+                    vtChoXuat = _context.vtyeucau
+                        .Count(v => v.TrangThai == "Đã duyệt");
+                }
 
                 return phieuXuatChoXuLy + yeucauChoDuyet + vtChoXuat;
             }

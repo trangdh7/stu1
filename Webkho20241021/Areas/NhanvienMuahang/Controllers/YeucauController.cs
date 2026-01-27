@@ -208,11 +208,21 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
             .ToList();
             // Gán tên Người yêu cầu cho từng phiếu mua hàng
             var nguoiDungDict = _context.nguoidungs.ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
+            // Lấy Ngày cần từ bảng vtyeucau (vật tư chi tiết) - lấy ngày sớm nhất
+            var vtyeucauDict = _context.vtyeucau
+                .Where(v => v.NgayCanHang != null)
+                .GroupBy(v => v.VTMaYeucau)
+                .ToDictionary(g => g.Key, g => g.Min(v => v.NgayCanHang));
             foreach (var phieu in Phieumuahanglist)
             {
                 if (!string.IsNullOrEmpty(phieu.MaNguoidung) && nguoiDungDict.TryGetValue(phieu.MaNguoidung, out var ten))
                 {
                     phieu.TenNguoiyeucau = ten;
+                }
+                // Gán Ngày cần từ vtyeucau (vật tư chi tiết) - lấy ngày sớm nhất
+                if (!string.IsNullOrEmpty(phieu.MaYeucau) && vtyeucauDict.TryGetValue(phieu.MaYeucau, out var ngayCanHang))
+                {
+                    phieu.NgayCanHang = ngayCanHang;
                 }
             }
 
@@ -422,6 +432,94 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
         {
             var maNv = HttpContext.Session.GetString("MaNguoidung");
             return Json(new { maNguoidung = maNv });
+        }
+
+        [HttpPost]
+        public IActionResult CapNhatNgayThanhToan(string MaMuahang, string MaSanpham, string? NgayThanhToan)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(MaMuahang) || string.IsNullOrWhiteSpace(MaSanpham))
+                {
+                    return Json(new { success = false, message = "Thiếu mã mua hàng hoặc mã vật tư." });
+                }
+
+                var vt = _context.vtphieumuahang
+                    .FirstOrDefault(v => v.MaMuahang == MaMuahang && v.MaSanpham == MaSanpham);
+
+                if (vt == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư trong phiếu mua hàng." });
+                }
+
+                // Lưu vào trường riêng cho BP Mua hàng (Nhân viên mua hàng cũng thuộc BP Mua hàng)
+                if (string.IsNullOrWhiteSpace(NgayThanhToan))
+                {
+                    vt.NgayThanhToanBPMuahang = null;
+                }
+                else
+                {
+                    if (DateTime.TryParse(NgayThanhToan, out var dt))
+                    {
+                        vt.NgayThanhToanBPMuahang = dt;
+                    }
+                    else
+                    {
+                        return Json(new { success = false, message = "Định dạng ngày thanh toán không hợp lệ." });
+                    }
+                }
+
+                _context.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult CapNhatNgayCoHang(string MaMuahang, string MaSanpham, string? NgayCoHang)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(MaMuahang) || string.IsNullOrWhiteSpace(MaSanpham))
+                {
+                    return Json(new { success = false, message = "Thiếu mã mua hàng hoặc mã vật tư." });
+                }
+
+                var vt = _context.vtphieumuahang
+                    .FirstOrDefault(v => v.MaMuahang == MaMuahang && v.MaSanpham == MaSanpham);
+
+                if (vt == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư trong phiếu mua hàng." });
+                }
+
+                // Lưu ngày có hàng
+                if (string.IsNullOrWhiteSpace(NgayCoHang))
+                {
+                    vt.NgayCoHang = null;
+                }
+                else
+                {
+                    if (DateTime.TryParse(NgayCoHang, out var dt))
+                    {
+                        vt.NgayCoHang = dt;
+                    }
+                    else
+                    {
+                        return Json(new { success = false, message = "Định dạng ngày có hàng không hợp lệ." });
+                    }
+                }
+
+                _context.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpGet]
@@ -1921,10 +2019,22 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                 }
                 else if (boPhan2 == "BP mua hàng")
                 {
-                    Phieumuahang.TrangThai = "Đã nhận hàng";
-                    // Lưu thời gian mua hàng khi bộ phận mua hàng nhận hàng
-                    Phieumuahang.NgayMuahang = DateTime.Now;
-                    Taophieunhapkhobyphieumuahang(MaMuahang, phieunhapkho, vtphieunhapkho, phieumuahang, vtphieumuahang);
+                    // Lưu trạng thái hiện tại trước khi thay đổi
+                    var trangThaiHienTai = Phieumuahang.TrangThai;
+                    
+                    // Nếu trạng thái hiện tại là "Chờ thanh toán" → duyệt thanh toán
+                    if (trangThaiHienTai == "Chờ thanh toán")
+                    {
+                        Phieumuahang.TrangThai = "Đã thanh toán";
+                    }
+                    else
+                    {
+                        // Các trường hợp khác → nhận hàng
+                        Phieumuahang.TrangThai = "Đã nhận hàng";
+                        // Lưu thời gian mua hàng khi bộ phận mua hàng nhận hàng
+                        Phieumuahang.NgayMuahang = DateTime.Now;
+                        Taophieunhapkhobyphieumuahang(MaMuahang, phieunhapkho, vtphieunhapkho, phieumuahang, vtphieumuahang);
+                    }
                 }
                 foreach (var VTPhieumuahang in VTPhieumuahanglist)
                 {
@@ -1938,7 +2048,19 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     }
                     else if (boPhan2 == "BP mua hàng")
                     {
-                        VTPhieumuahang.TrangThai = "Đã nhận hàng";
+                        // Lấy trạng thái phiếu sau khi đã cập nhật
+                        if (Phieumuahang.TrangThai == "Đã thanh toán")
+                        {
+                            // Cập nhật tất cả các mục có trạng thái "Chờ thanh toán" thành "Đã thanh toán"
+                            if (VTPhieumuahang.TrangThai == "Chờ thanh toán")
+                            {
+                                VTPhieumuahang.TrangThai = "Đã thanh toán";
+                            }
+                        }
+                        else
+                        {
+                            VTPhieumuahang.TrangThai = "Đã nhận hàng";
+                        }
                     }
                     _context.vtphieumuahang.Update(VTPhieumuahang);
                 }

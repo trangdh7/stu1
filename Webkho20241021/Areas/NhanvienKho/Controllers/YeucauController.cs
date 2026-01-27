@@ -227,6 +227,125 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
             return Json(PhieuxuatkhoList);
         }
 
+        [HttpPost]
+        public IActionResult CapNhatTrangThaiVT(string MaXuatkho, int Id, string TrangThai)
+        {
+            try
+            {
+                var allowed = new[] { "Đang chuẩn bị hàng", "Đã chuẩn bị hàng xong", "Thiếu hàng- đang mua hàng" };
+                if (string.IsNullOrEmpty(MaXuatkho) || Id <= 0 || string.IsNullOrEmpty(TrangThai) || !allowed.Contains(TrangThai))
+                {
+                    return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                }
+
+                var vt = _context.vtphieuxuatkho.FirstOrDefault(v => v.ID == Id && v.MaXuatkho == MaXuatkho);
+                if (vt == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư." });
+                }
+
+                vt.TrangThai = TrangThai;
+                _context.vtphieuxuatkho.Update(vt);
+                _context.SaveChanges();
+                return Json(new { success = true, message = "Đã cập nhật trạng thái." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult XuatKhoVatTuRieng(string MaXuatkho, int VatTuId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(MaXuatkho) || VatTuId <= 0)
+                {
+                    return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                }
+
+                var vtGoc = _context.vtphieuxuatkho.FirstOrDefault(v => v.ID == VatTuId && v.MaXuatkho == MaXuatkho);
+                if (vtGoc == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư." });
+                }
+
+                if (vtGoc.TrangThai == "Đã xuất kho")
+                {
+                    return Json(new { success = false, message = "Vật tư này đã được xuất kho." });
+                }
+
+                if (vtGoc.TrangThai != "Đã chuẩn bị hàng xong")
+                {
+                    return Json(new { success = false, message = "Vật tư phải ở trạng thái 'Đã chuẩn bị hàng xong' mới được xuất kho." });
+                }
+
+                var phieuGoc = _context.phieuxuatkho.FirstOrDefault(p => p.MaXuatkho == MaXuatkho);
+                if (phieuGoc == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy phiếu xuất kho gốc." });
+                }
+
+                string maXuatkhoMoi = null;
+                int stt = 1;
+                while (true)
+                {
+                    maXuatkhoMoi = $"PXK{stt}";
+                    var existing = _context.phieuxuatkho.FirstOrDefault(p => p.MaXuatkho == maXuatkhoMoi);
+                    if (existing == null)
+                    {
+                        break;
+                    }
+                    stt++;
+                }
+
+                var phieuMoi = new phieuxuatkho
+                {
+                    MaXuatkho = maXuatkhoMoi,
+                    MaYeucau = phieuGoc.MaYeucau,
+                    MaDuan = phieuGoc.MaDuan,
+                    MaNguoidung = phieuGoc.MaNguoidung,
+                    NgayXuatkho = DateTime.Now,
+                    NgayChuanBi = DateTime.Now,
+                    TrangThai = "Hoàn thành"
+                };
+                _context.phieuxuatkho.Add(phieuMoi);
+
+                var vtMoi = new vtphieuxuatkho
+                {
+                    MaXuatkho = maXuatkhoMoi,
+                    MaYeucau = vtGoc.MaYeucau,
+                    TenSanpham = vtGoc.TenSanpham,
+                    MaSanpham = vtGoc.MaSanpham,
+                    Makho = vtGoc.Makho,
+                    HangSX = vtGoc.HangSX,
+                    NhaCC = vtGoc.NhaCC,
+                    SL = vtGoc.SL,
+                    DonVi = vtGoc.DonVi,
+                    DonGia = vtGoc.DonGia,
+                    ThanhTien = vtGoc.ThanhTien,
+                    NgayNhapkho = vtGoc.NgayNhapkho,
+                    NgayBaohanh = vtGoc.NgayBaohanh,
+                    ThoiGianBH = vtGoc.ThoiGianBH,
+                    TrangThai = "Đã xuất kho",
+                    LoaiCapPhat = vtGoc.LoaiCapPhat
+                };
+                _context.vtphieuxuatkho.Add(vtMoi);
+
+                vtGoc.TrangThai = "Đã xuất kho";
+                _context.vtphieuxuatkho.Update(vtGoc);
+
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = "Đã tạo phiếu xuất kho mới thành công.", maXuatkhoMoi = maXuatkhoMoi });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi: " + ex.Message });
+            }
+        }
+
         [HttpGet]
         public IActionResult GetVTPhieunhapkho(string MaNhapkho)
         {

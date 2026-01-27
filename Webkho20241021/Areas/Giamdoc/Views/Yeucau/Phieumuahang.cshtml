@@ -57,6 +57,7 @@
                             <td>Mã dự án</td>
                             <td>Người yêu cầu</td>
                             <td>Ngày mua hàng</td>
+                            <td>Ngày cần hàng</td>
                             <td>Trạng thái</td>
                         </tr>
                     </thead>
@@ -79,6 +80,7 @@
                                 <td>@item.MaDuan</td>
                                 <td>@(string.IsNullOrEmpty(item.TenNguoiyeucau) ? item.MaNguoidung : item.TenNguoiyeucau)</td>
                                 <td>@(item.NgayMuahang?.ToString("dd/MM/yyyy") ?? "  ")</td>
+                                <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "  ")</td>
                                 <td>
                                     @item.TrangThai
                                 </td>
@@ -100,16 +102,19 @@
                 <table class="tablethietbi">
                     <thead>
                         <tr>
-                            <td>STT</td>
-                            <td>Tên vật tư</td>
-                            <td>Mã vật tư</td>
-                            <td>Mã kho</td>
-                            <td>Hãng sx</td>
-                            <td>Nhà cung cấp</td>
-                            <td>Số lượng</td>
-                            <td>Đơn vị</td>
+                            <td>TT</td>
+                            <td>Tên thiết bị/hàng hóa</td>
+                            <td>Mã VT</td>
+                            @* <td>Mã kho</td> *@
+                            <td>Hãng SX</td>
+                            <td>NCC</td>
+                            <td>SL</td>
+                            <td>ĐV</td>
                             <td>Đơn giá</td>
                             <td>Thành tiền</td>
+                            <td class="header-clickable" data-field="ngaythanhtoan" style="cursor: pointer; user-select: none;">Ngày Thanh Toán</td>
+                            <td class="header-clickable" data-field="ngaycohang" style="cursor: pointer; user-select: none;">Ngày có hàng</td>
+                            <td class="header-clickable" data-field="ghichu" style="cursor: pointer; user-select: none;">Ghi chú</td>
                             <td>Trạng thái</td>
                         </tr>
                     </thead>
@@ -137,6 +142,139 @@
                 }
             </div>
         </nav>
+        
+        <!-- Popup nhập Ngày Thanh Toán -->
+        <div id="popupNgayThanhToan" class="custom-popup-overlay" style="display: none;" onclick="if(event.target === this) closePopupNgayThanhToan();">
+            <div class="custom-popup-content" onclick="event.stopPropagation();">
+                <div class="custom-popup-header">
+                    <h3>Nhập Ngày Thanh Toán</h3>
+                </div>
+                <div class="custom-popup-body">
+                    <label for="inputNgayThanhToan">Nhập ngày thanh toán:</label>
+                    <input type="date" id="inputNgayThanhToan" style="width:100%; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:4px;" />
+                </div>
+                <div class="custom-popup-footer">
+                    <button type="button" class="btn-popup-confirm" onclick="applyNgayThanhToan()">Xong</button>
+                    <button type="button" class="btn-popup-cancel" onclick="closePopupNgayThanhToan()">Hủy</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Popup nhập Ngày có hàng -->
+        <div id="popupNgayCoHang" class="custom-popup-overlay" style="display: none;" onclick="if(event.target === this) closePopupNgayCoHang();">
+            <div class="custom-popup-content" onclick="event.stopPropagation();">
+                <div class="custom-popup-header">
+                    <h3>Nhập Ngày có hàng</h3>
+                </div>
+                <div class="custom-popup-body">
+                    <label for="inputNgayCoHang">Nhập ngày có hàng:</label>
+                    <input type="date" id="inputNgayCoHang" style="width:100%; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:4px;" />
+                </div>
+                <div class="custom-popup-footer">
+                    <button type="button" class="btn-popup-confirm" onclick="applyNgayCoHang()">Xong</button>
+                    <button type="button" class="btn-popup-cancel" onclick="closePopupNgayCoHang()">Hủy</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Popup nhập Ghi chú -->
+        <div id="popupGhiChu" class="custom-popup-overlay" style="display: none;" onclick="if(event.target === this) closePopupGhiChu();">
+            <div class="custom-popup-content" onclick="event.stopPropagation();">
+                <div class="custom-popup-header">
+                    <h3>Nhập Ghi chú</h3>
+                </div>
+                <div class="custom-popup-body">
+                    <label for="inputGhiChu">Nhập ghi chú:</label>
+                    <textarea id="inputGhiChu" style="width:100%; min-height:90px; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:4px;" placeholder="Nhập ghi chú..."></textarea>
+                </div>
+                <div class="custom-popup-footer">
+                    <button type="button" class="btn-popup-confirm" onclick="applyGhiChu()">Xong</button>
+                    <button type="button" class="btn-popup-cancel" onclick="closePopupGhiChu()">Hủy</button>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+        /* Popup xác nhận tùy chỉnh */
+        .custom-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .custom-popup-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            min-width: 400px;
+            max-width: 500px;
+            overflow: hidden;
+        }
+        .custom-popup-header {
+            background-color: #1976d2;
+            color: white;
+            padding: 15px 20px;
+        }
+        .custom-popup-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .custom-popup-body {
+            padding: 20px;
+            font-size: 15px;
+            color: #333;
+        }
+        .custom-popup-footer {
+            padding: 15px 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn-popup-confirm {
+            padding: 8px 20px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .btn-popup-confirm:hover {
+            background-color: #1565c0;
+        }
+        .btn-popup-cancel {
+            padding: 8px 20px;
+            background-color: #9e9e9e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .btn-popup-cancel:hover {
+            background-color: #757575;
+        }
+        .header-clickable {
+            background-color: #4a26ab !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+        .header-clickable:hover {
+            background-color: #ffe0b2 !important;
+            color: #bf360c !important;
+        }
+        </style>
+        
         <script src="~/js/phieumuahang.js"></script>
         <script>
             $(document).ready(function () {

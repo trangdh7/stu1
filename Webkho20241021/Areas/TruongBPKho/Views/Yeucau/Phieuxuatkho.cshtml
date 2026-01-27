@@ -6,6 +6,8 @@
 @using System.Text.Json
 @{
     var errorMessage = TempData["Error"] as string;
+    var infoMessage = TempData["Info"] as string;
+    var successMessage = TempData["Success"] as string;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -127,7 +129,7 @@
                                 {
                                     <span data-has-button="true" data-ma-xuatkho="@item.MaXuatkho" data-action="approve">@item.TrangThai</span>
                                 }
-                                else if (item.TrangThai == "Thiếu hàng - Đã tạo phiếu mua" && BophanSession == "BP kho")
+                                else if ((item.TrangThai == "Thiếu hàng - Chờ tạo phiếu mua" || item.TrangThai == "Thiếu hàng - Đã tạo phiếu mua") && BophanSession == "BP kho")
                                 {
                                     <span data-has-button-muahang="true" data-ma-xuatkho="@item.MaXuatkho" data-action="taophieumuahang" style="color: #dc3545; font-weight: bold;">@item.TrangThai</span>
                                 }
@@ -155,22 +157,43 @@
         <div class="Tableyeucau-thietbi-box">
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <div class="alert alert-danger" style="margin-bottom:10px;">
-                    @errorMessage
+                <div class="alert alert-danger" style="margin-bottom:10px; padding: 15px; border-radius: 5px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+                    <strong>Lỗi:</strong> @errorMessage
                 </div>
             }
+            @if (!string.IsNullOrEmpty(infoMessage))
+            {
+                <div class="alert alert-info" style="margin-bottom:10px; padding: 15px; border-radius: 5px; background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;">
+                    <strong>Thông báo:</strong> @infoMessage
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success" style="margin-bottom:10px; padding: 15px; border-radius: 5px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
+                    <strong>Thành công:</strong> @successMessage
+                </div>
+            }
+            <style>
+                /* Cột Trạng thái thu nhỏ, cột Thao tác rộng hơn để nút Xuất Kho đủ to */
+                .tablethietbi thead tr td:nth-child(9),
+                .tablethietbi tbody tr td:nth-child(9) { max-width: 138px; width: 138px; }
+                .tablethietbi thead tr td:last-child,
+                .tablethietbi tbody tr td:last-child { min-width: 200px; width: 200px; padding: 8px; }
+                .tablethietbi .btn-xuatkho-item { white-space: nowrap; min-height: 40px; width: 100%; max-width: 100%; box-sizing: border-box; justify-content: center; }
+            </style>
             <table class="tablethietbi">
                 <thead>
                     <tr>
-                        <td>STT</td>
-                        <td>Tên vật tư</td>
-                        <td>Mã vật tư</td>
+                        <td>TT</td>
+                        <td>Tên thiết bị/hàng hóa</td>
+                        <td>Mã VT</td>
                         <td>Mã kho</td>
-                        <td>Hãng sx</td>
-                        <td>Nhà cung cấp</td>
-                        <td>Số lượng</td>
-                        <td>Đơn vị</td>
+                        <td>Hãng SX</td>
+                        <td>NCC</td>
+                        <td>SL</td>
+                        <td>ĐV</td>
                         <td>Trạng thái</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -201,6 +224,9 @@
     <script src="~/js/phieuxuatkho.js"></script>
     <script>
         $(document).ready(function () {
+            // Đảm bảo popup luôn ẩn khi load trang
+            $('#popupTaoPhieuMuaHang').removeClass('show').hide();
+            
             if (typeof getThongbaoData === 'function') {
                 getThongbaoData();
             }
@@ -212,6 +238,77 @@
             console.error('Xuất kho (Trưởng BP Kho) lỗi:', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(errorMessage)));
         </script>
     }
+
+    <!-- Popup Tạo Phiếu Mua Hàng -->
+    <div id="popupTaoPhieuMuaHang" class="popup-overlay" style="display: none;">
+        <div class="popup-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="popup-header" style="background-color: #dc3545; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
+                <h3 style="margin: 0;">Tạo Phiếu Mua Hàng</h3>
+            </div>
+            <div class="popup-body" style="padding: 20px;">
+                <p style="margin-bottom: 15px; color: #dc3545; font-weight: bold;">Phiếu xuất kho thiếu hàng. Vui lòng xem chi tiết các vật tư thiếu bên dưới:</p>
+                <table class="table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #343a40;">
+                            <th style="padding: 10px; border: 1px solid #dee2e6; text-align: left; color: white; font-weight: bold;">STT</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6; text-align: left; color: white; font-weight: bold;">Tên vật tư</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6; text-align: left; color: white; font-weight: bold;">Mã vật tư</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6; text-align: right; color: white; font-weight: bold;">Số lượng thiếu</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6; text-align: left; color: white; font-weight: bold;">Đơn vị</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6; text-align: right; color: white; font-weight: bold;">Tồn kho</th>
+                        </tr>
+                    </thead>
+                    <tbody id="thieuHangTableBody">
+                        <!-- Dữ liệu sẽ được điền bằng JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="popup-footer" style="padding: 15px; background-color: #f8f9fa; border-radius: 0 0 5px 5px; text-align: right;">
+                <form id="formTaoPhieuMuaHang" method="post" style="display: inline-block;">
+                    <input type="hidden" id="hiddenMaXuatkho" name="MaXuatkho" />
+                    <button type="submit" class="btn btn-primary" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; font-weight: bold;">
+                        <i class="bx bx-cart-add"></i> Tạo Phiếu Mua Hàng
+                    </button>
+                </form>
+                <button type="button" id="btnHuyPopup" class="btn btn-secondary" style="padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    <i class="bx bx-x"></i> Hủy
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .popup-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            z-index: 99999 !important;
+            display: none !important; /* Mặc định ẩn */
+            justify-content: center !important;
+            align-items: center !important;
+        }
+        .popup-overlay.show {
+            display: flex !important; /* Chỉ hiển thị khi có class 'show' */
+        }
+        .popup-content {
+            background-color: white !important;
+            border-radius: 5px !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+            position: relative !important;
+            z-index: 100000 !important;
+        }
+        .popup-header {
+            margin: 0 !important;
+        }
+        .popup-body {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+    </style>
+
 </body>
 </html>
 

@@ -1106,6 +1106,8 @@ namespace Webkho_20241021.Services
                     "<th style='text-align:left;padding:10px;'>Đơn vị</th>" +
                     "<th style='text-align:right;padding:10px;'>Đơn giá</th>" +
                     "<th style='text-align:right;padding:10px;'>Thành tiền</th>" +
+                    "<th style='text-align:left;padding:10px;'>Ngày thanh toán</th>" +
+                    "<th style='text-align:left;padding:10px;'>Ghi chú</th>" +
                     "</tr>" +
                     "</thead>" +
                     "<tbody>";
@@ -1116,6 +1118,47 @@ namespace Webkho_20241021.Services
                 {
                     var thanhTien = vt.ThanhTien ?? (vt.DonGia ?? 0) * (vt.SL ?? 0);
                     tongTien += thanhTien;
+                    
+                    // Format ngày thanh toán - hiển thị cả BP Mua hàng và Giám đốc
+                    var ngayThanhToanText = "";
+                    if (vt.NgayThanhToanBPMuahang.HasValue || vt.NgayThanhToanGiamdoc.HasValue)
+                    {
+                        var parts = new List<string>();
+                        if (vt.NgayThanhToanBPMuahang.HasValue)
+                        {
+                            parts.Add($"BP Mua hàng: {vt.NgayThanhToanBPMuahang.Value:dd/MM/yyyy}");
+                        }
+                        if (vt.NgayThanhToanGiamdoc.HasValue)
+                        {
+                            parts.Add($"Giám đốc: {vt.NgayThanhToanGiamdoc.Value:dd/MM/yyyy}");
+                        }
+                        ngayThanhToanText = string.Join("<br>", parts);
+                    }
+                    else
+                    {
+                        ngayThanhToanText = "-";
+                    }
+                    
+                    // Format ghi chú - hiển thị cả BP Mua hàng và Giám đốc
+                    var ghiChuText = "";
+                    if (!string.IsNullOrWhiteSpace(vt.GhiChuBPMuahang) || !string.IsNullOrWhiteSpace(vt.GhiChuGiamdoc))
+                    {
+                        var parts = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(vt.GhiChuBPMuahang))
+                        {
+                            parts.Add($"<strong>BP Mua hàng:</strong> {vt.GhiChuBPMuahang}");
+                        }
+                        if (!string.IsNullOrWhiteSpace(vt.GhiChuGiamdoc))
+                        {
+                            parts.Add($"<strong>Giám đốc:</strong> {vt.GhiChuGiamdoc}");
+                        }
+                        ghiChuText = string.Join("<br>", parts);
+                    }
+                    else
+                    {
+                        ghiChuText = "-";
+                    }
+                    
                     tableRows += "<tr>" +
                         $"<td style='padding:8px;'>{stt}</td>" +
                         $"<td style='padding:8px;'>{vt.MaSanpham ?? ""}</td>" +
@@ -1124,6 +1167,8 @@ namespace Webkho_20241021.Services
                         $"<td style='padding:8px;'>{vt.DonVi ?? ""}</td>" +
                         $"<td style='padding:8px;text-align:right;'>{vt.DonGia ?? 0:N0}</td>" +
                         $"<td style='padding:8px;text-align:right;'>{thanhTien:N0}</td>" +
+                        $"<td style='padding:8px;'>{ngayThanhToanText}</td>" +
+                        $"<td style='padding:8px;'>{ghiChuText}</td>" +
                         "</tr>";
                     stt++;
                 }
@@ -1131,6 +1176,7 @@ namespace Webkho_20241021.Services
                 tableRows += "<tr style='background-color:#e8f5e9;font-weight:bold;'>" +
                     $"<td colspan='6' style='padding:8px;text-align:right;'>Tổng cộng:</td>" +
                     $"<td style='padding:8px;text-align:right;'>{tongTien:N0}</td>" +
+                    $"<td colspan='2' style='padding:8px;'></td>" +
                     "</tr>";
                 tableRows += "</tbody></table>";
             }
@@ -1217,6 +1263,8 @@ namespace Webkho_20241021.Services
                     "<th style='text-align:left;padding:10px;'>Đơn vị</th>" +
                     "<th style='text-align:right;padding:10px;'>Đơn giá</th>" +
                     "<th style='text-align:right;padding:10px;'>Thành tiền</th>" +
+                    "<th style='text-align:left;padding:10px;'>Ngày thanh toán</th>" +
+                    "<th style='text-align:left;padding:10px;'>Ghi chú</th>" +
                     "</tr>" +
                     "</thead>" +
                     "<tbody>";
@@ -1227,6 +1275,47 @@ namespace Webkho_20241021.Services
                 {
                     var thanhTien = vt.ThanhTien ?? (vt.DonGia ?? 0) * (vt.SL ?? 0);
                     tongTien += thanhTien;
+                    
+                    // Format ngày thanh toán - hiển thị cả BP Mua hàng và Giám đốc
+                    var ngayThanhToanText = "";
+                    if (vt.NgayThanhToanBPMuahang.HasValue || vt.NgayThanhToanGiamdoc.HasValue)
+                    {
+                        var parts = new List<string>();
+                        if (vt.NgayThanhToanBPMuahang.HasValue)
+                        {
+                            parts.Add($"BP Mua hàng: {vt.NgayThanhToanBPMuahang.Value:dd/MM/yyyy}");
+                        }
+                        if (vt.NgayThanhToanGiamdoc.HasValue)
+                        {
+                            parts.Add($"Giám đốc: {vt.NgayThanhToanGiamdoc.Value:dd/MM/yyyy}");
+                        }
+                        ngayThanhToanText = string.Join("<br>", parts);
+                    }
+                    else
+                    {
+                        ngayThanhToanText = "-";
+                    }
+                    
+                    // Format ghi chú - hiển thị cả BP Mua hàng và Giám đốc
+                    var ghiChuText = "";
+                    if (!string.IsNullOrWhiteSpace(vt.GhiChuBPMuahang) || !string.IsNullOrWhiteSpace(vt.GhiChuGiamdoc))
+                    {
+                        var parts = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(vt.GhiChuBPMuahang))
+                        {
+                            parts.Add($"<strong>BP Mua hàng:</strong> {vt.GhiChuBPMuahang}");
+                        }
+                        if (!string.IsNullOrWhiteSpace(vt.GhiChuGiamdoc))
+                        {
+                            parts.Add($"<strong>Giám đốc:</strong> {vt.GhiChuGiamdoc}");
+                        }
+                        ghiChuText = string.Join("<br>", parts);
+                    }
+                    else
+                    {
+                        ghiChuText = "-";
+                    }
+                    
                     tableRows += "<tr>" +
                         $"<td style='padding:8px;'>{stt}</td>" +
                         $"<td style='padding:8px;'>{vt.MaSanpham ?? ""}</td>" +
@@ -1235,6 +1324,8 @@ namespace Webkho_20241021.Services
                         $"<td style='padding:8px;'>{vt.DonVi ?? ""}</td>" +
                         $"<td style='padding:8px;text-align:right;'>{vt.DonGia ?? 0:N0}</td>" +
                         $"<td style='padding:8px;text-align:right;'>{thanhTien:N0}</td>" +
+                        $"<td style='padding:8px;'>{ngayThanhToanText}</td>" +
+                        $"<td style='padding:8px;'>{ghiChuText}</td>" +
                         "</tr>";
                     stt++;
                 }
@@ -1242,6 +1333,7 @@ namespace Webkho_20241021.Services
                 tableRows += "<tr style='background-color:#e8f5e9;font-weight:bold;'>" +
                     $"<td colspan='6' style='padding:8px;text-align:right;'>Tổng cộng:</td>" +
                     $"<td style='padding:8px;text-align:right;'>{tongTien:N0}</td>" +
+                    $"<td colspan='2' style='padding:8px;'></td>" +
                     "</tr>";
                 tableRows += "</tbody></table>";
             }
@@ -1325,6 +1417,8 @@ namespace Webkho_20241021.Services
                     "<th style='text-align:left;padding:10px;'>Đơn vị</th>" +
                     "<th style='text-align:right;padding:10px;'>Đơn giá</th>" +
                     "<th style='text-align:right;padding:10px;'>Thành tiền</th>" +
+                    "<th style='text-align:left;padding:10px;'>Ngày thanh toán</th>" +
+                    "<th style='text-align:left;padding:10px;'>Ghi chú</th>" +
                     "</tr>" +
                     "</thead>" +
                     "<tbody>";
@@ -1335,6 +1429,47 @@ namespace Webkho_20241021.Services
                 {
                     var thanhTien = vt.ThanhTien ?? (vt.DonGia ?? 0) * (vt.SL ?? 0);
                     tongTien += thanhTien;
+                    
+                    // Format ngày thanh toán - hiển thị cả BP Mua hàng và Giám đốc
+                    var ngayThanhToanText = "";
+                    if (vt.NgayThanhToanBPMuahang.HasValue || vt.NgayThanhToanGiamdoc.HasValue)
+                    {
+                        var parts = new List<string>();
+                        if (vt.NgayThanhToanBPMuahang.HasValue)
+                        {
+                            parts.Add($"BP Mua hàng: {vt.NgayThanhToanBPMuahang.Value:dd/MM/yyyy}");
+                        }
+                        if (vt.NgayThanhToanGiamdoc.HasValue)
+                        {
+                            parts.Add($"Giám đốc: {vt.NgayThanhToanGiamdoc.Value:dd/MM/yyyy}");
+                        }
+                        ngayThanhToanText = string.Join("<br>", parts);
+                    }
+                    else
+                    {
+                        ngayThanhToanText = "-";
+                    }
+                    
+                    // Format ghi chú - hiển thị cả BP Mua hàng và Giám đốc
+                    var ghiChuText = "";
+                    if (!string.IsNullOrWhiteSpace(vt.GhiChuBPMuahang) || !string.IsNullOrWhiteSpace(vt.GhiChuGiamdoc))
+                    {
+                        var parts = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(vt.GhiChuBPMuahang))
+                        {
+                            parts.Add($"<strong>BP Mua hàng:</strong> {vt.GhiChuBPMuahang}");
+                        }
+                        if (!string.IsNullOrWhiteSpace(vt.GhiChuGiamdoc))
+                        {
+                            parts.Add($"<strong>Giám đốc:</strong> {vt.GhiChuGiamdoc}");
+                        }
+                        ghiChuText = string.Join("<br>", parts);
+                    }
+                    else
+                    {
+                        ghiChuText = "-";
+                    }
+                    
                     tableRows += "<tr>" +
                         $"<td style='padding:8px;'>{stt}</td>" +
                         $"<td style='padding:8px;'>{vt.MaSanpham ?? ""}</td>" +
@@ -1343,6 +1478,8 @@ namespace Webkho_20241021.Services
                         $"<td style='padding:8px;'>{vt.DonVi ?? ""}</td>" +
                         $"<td style='padding:8px;text-align:right;'>{vt.DonGia ?? 0:N0}</td>" +
                         $"<td style='padding:8px;text-align:right;'>{thanhTien:N0}</td>" +
+                        $"<td style='padding:8px;'>{ngayThanhToanText}</td>" +
+                        $"<td style='padding:8px;'>{ghiChuText}</td>" +
                         "</tr>";
                     stt++;
                 }
@@ -1350,6 +1487,7 @@ namespace Webkho_20241021.Services
                 tableRows += "<tr style='background-color:#e8f5e9;font-weight:bold;'>" +
                     $"<td colspan='6' style='padding:8px;text-align:right;'>Tổng cộng:</td>" +
                     $"<td style='padding:8px;text-align:right;'>{tongTien:N0}</td>" +
+                    $"<td colspan='2' style='padding:8px;'></td>" +
                     "</tr>";
                 tableRows += "</tbody></table>";
             }
@@ -1400,6 +1538,56 @@ namespace Webkho_20241021.Services
             }
         }
 
+        public async Task SendNotificationToAccountingOnRequestApprovalAsync(string maYeucau)
+        {
+            var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == maYeucau);
+            if (yeucau == null) return;
+
+            // Lấy danh sách trưởng kế toán và nhân viên kế toán
+            var nhanVienKeToan = _context.nguoidungs
+                .Where(n => n.Bophan == "BP kế toán")
+                .ToList();
+
+            var yeucauUrl = $"{_baseUrl}/TruongBPKetoan/Yeucau/Yeucau?search={Uri.EscapeDataString(maYeucau)}";
+
+            foreach (var nv in nhanVienKeToan)
+            {
+                var toEmail = GetEffectiveEmail(nv.MaNguoidung, nv.TenNguoidung, nv.Email);
+                if (string.IsNullOrWhiteSpace(toEmail))
+                {
+                    Debug.WriteLine($"⚠️ Không tìm được email cho nhân viên kế toán MaNguoidung = {nv.MaNguoidung} khi giám đốc duyệt yêu cầu. Bỏ qua gửi mail.");
+                    continue;
+                }
+
+                var subject = $"Yêu cầu vật tư đã được Giám đốc duyệt - {maYeucau}";
+                var contentHtml = $@"
+<p>Kính gửi <strong>{nv.TenNguoidung}</strong>,</p>
+<p>Yêu cầu vật tư đã được Giám đốc duyệt và có thể cần thanh toán:</p>
+<ul>
+  <li><strong>Mã yêu cầu:</strong> {maYeucau}</li>
+  <li><strong>Người yêu cầu:</strong> {yeucau.NguoiYeucau ?? ""}</li>
+  <li><strong>Bộ phận:</strong> {yeucau.Bophan ?? ""}</li>
+  <li><strong>Thời gian:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</li>
+</ul>
+<p style='margin:20px 0;'>
+  <a href='{yeucauUrl}'
+     style='display:inline-block;padding:10px 18px;
+            background:#27ae60;color:#fff;
+            text-decoration:none;font-weight:bold;'>
+     Xem chi tiết yêu cầu
+  </a>
+</p>
+<p>Nếu nút trên không hoạt động, bạn có thể dán link sau vào trình duyệt:</p>
+<p style='font-size:12px;word-break:break-all;'>
+  {yeucauUrl}
+</p>";
+
+                var body = BuildEmailTemplate("Thông báo yêu cầu đã được duyệt", contentHtml);
+
+                await SendEmailAsync(toEmail, subject, body);
+            }
+        }
+
         public async Task SendNotificationToRequesterOnApprovalAsync(string maMuahang)
         {
             var phieumuahang = _context.phieumuahang.FirstOrDefault(p => p.MaMuahang == maMuahang);
@@ -1437,6 +1625,8 @@ namespace Webkho_20241021.Services
                     "<th style='text-align:left;padding:10px;'>Đơn vị</th>" +
                     "<th style='text-align:right;padding:10px;'>Đơn giá</th>" +
                     "<th style='text-align:right;padding:10px;'>Thành tiền</th>" +
+                    "<th style='text-align:left;padding:10px;'>Ngày thanh toán</th>" +
+                    "<th style='text-align:left;padding:10px;'>Ghi chú</th>" +
                     "</tr>" +
                     "</thead>" +
                     "<tbody>";
@@ -1447,6 +1637,47 @@ namespace Webkho_20241021.Services
                 {
                     var thanhTien = vt.ThanhTien ?? (vt.DonGia ?? 0) * (vt.SL ?? 0);
                     tongTien += thanhTien;
+                    
+                    // Format ngày thanh toán - hiển thị cả BP Mua hàng và Giám đốc
+                    var ngayThanhToanText = "";
+                    if (vt.NgayThanhToanBPMuahang.HasValue || vt.NgayThanhToanGiamdoc.HasValue)
+                    {
+                        var parts = new List<string>();
+                        if (vt.NgayThanhToanBPMuahang.HasValue)
+                        {
+                            parts.Add($"BP Mua hàng: {vt.NgayThanhToanBPMuahang.Value:dd/MM/yyyy}");
+                        }
+                        if (vt.NgayThanhToanGiamdoc.HasValue)
+                        {
+                            parts.Add($"Giám đốc: {vt.NgayThanhToanGiamdoc.Value:dd/MM/yyyy}");
+                        }
+                        ngayThanhToanText = string.Join("<br>", parts);
+                    }
+                    else
+                    {
+                        ngayThanhToanText = "-";
+                    }
+                    
+                    // Format ghi chú - hiển thị cả BP Mua hàng và Giám đốc
+                    var ghiChuText = "";
+                    if (!string.IsNullOrWhiteSpace(vt.GhiChuBPMuahang) || !string.IsNullOrWhiteSpace(vt.GhiChuGiamdoc))
+                    {
+                        var parts = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(vt.GhiChuBPMuahang))
+                        {
+                            parts.Add($"<strong>BP Mua hàng:</strong> {vt.GhiChuBPMuahang}");
+                        }
+                        if (!string.IsNullOrWhiteSpace(vt.GhiChuGiamdoc))
+                        {
+                            parts.Add($"<strong>Giám đốc:</strong> {vt.GhiChuGiamdoc}");
+                        }
+                        ghiChuText = string.Join("<br>", parts);
+                    }
+                    else
+                    {
+                        ghiChuText = "-";
+                    }
+                    
                     tableRows += "<tr>" +
                         $"<td style='padding:8px;'>{stt}</td>" +
                         $"<td style='padding:8px;'>{vt.MaSanpham ?? ""}</td>" +
@@ -1455,6 +1686,8 @@ namespace Webkho_20241021.Services
                         $"<td style='padding:8px;'>{vt.DonVi ?? ""}</td>" +
                         $"<td style='padding:8px;text-align:right;'>{vt.DonGia ?? 0:N0}</td>" +
                         $"<td style='padding:8px;text-align:right;'>{thanhTien:N0}</td>" +
+                        $"<td style='padding:8px;'>{ngayThanhToanText}</td>" +
+                        $"<td style='padding:8px;'>{ghiChuText}</td>" +
                         "</tr>";
                     stt++;
                 }
@@ -1462,6 +1695,7 @@ namespace Webkho_20241021.Services
                 tableRows += "<tr style='background-color:#e8f5e9;font-weight:bold;'>" +
                     $"<td colspan='6' style='padding:8px;text-align:right;'>Tổng cộng:</td>" +
                     $"<td style='padding:8px;text-align:right;'>{tongTien:N0}</td>" +
+                    $"<td colspan='2' style='padding:8px;'></td>" +
                     "</tr>";
                 tableRows += "</tbody></table>";
             }
@@ -1637,6 +1871,47 @@ namespace Webkho_20241021.Services
 <p>Vui lòng kiểm tra lại yêu cầu hoặc liên hệ Giám đốc để biết thêm chi tiết.</p>";
 
             var body = BuildEmailTemplate("Thông báo yêu cầu bị từ chối", contentHtml);
+
+            await SendEmailAsync(toEmail, subject, body);
+        }
+
+        public async Task SendNotificationToRequesterOnVatTuStatusChangeAsync(string maYeucau, string maXuatkho, string tenVatTu, string trangThaiMoi)
+        {
+            var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == maYeucau);
+            if (yeucau == null || string.IsNullOrEmpty(yeucau.YCMaNguoidung))
+            {
+                Debug.WriteLine($"⚠️ Không tìm thấy yêu cầu hoặc người yêu cầu cho MaYeucau = {maYeucau}. Bỏ qua gửi mail.");
+                return;
+            }
+
+            var nguoiDung = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == yeucau.YCMaNguoidung);
+            if (nguoiDung == null)
+            {
+                Debug.WriteLine($"⚠️ Không tìm thấy người dùng với MaNguoidung = {yeucau.YCMaNguoidung}. Bỏ qua gửi mail.");
+                return;
+            }
+
+            var toEmail = GetEffectiveEmail(nguoiDung.MaNguoidung, nguoiDung.TenNguoidung, nguoiDung.Email);
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                Debug.WriteLine($"⚠️ Không tìm được email cho người yêu cầu MaNguoidung = {nguoiDung.MaNguoidung}. Bỏ qua gửi mail.");
+                return;
+            }
+
+            var subject = $"Cập nhật trạng thái vật tư - {maYeucau}";
+            var contentHtml = $@"
+<p>Kính gửi <strong>{nguoiDung.TenNguoidung}</strong>,</p>
+<p>Trạng thái vật tư trong phiếu xuất kho đã được cập nhật:</p>
+<ul>
+  <li><strong>Mã yêu cầu:</strong> {maYeucau}</li>
+  <li><strong>Mã phiếu xuất kho:</strong> {maXuatkho}</li>
+  <li><strong>Vật tư:</strong> {tenVatTu}</li>
+  <li><strong>Trạng thái mới:</strong> <span style='color: #27ae60;'>{trangThaiMoi}</span></li>
+  <li><strong>Thời gian:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</li>
+</ul>
+<p>Vui lòng đăng nhập hệ thống để xem chi tiết.</p>";
+
+            var body = BuildEmailTemplate("Thông báo cập nhật trạng thái vật tư", contentHtml);
 
             await SendEmailAsync(toEmail, subject, body);
         }

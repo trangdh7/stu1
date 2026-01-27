@@ -57,6 +57,7 @@
                             <td>Mã dự án</td>
                             <td>Người yêu cầu</td>
                             <td>Ngày mua hàng</td>
+                            <td>Ngày cần</td>
                             <td>Trạng thái</td>
                         </tr>
                     </thead>
@@ -79,9 +80,10 @@
                                 <td>@item.MaDuan</td>
                                 <td>@(string.IsNullOrEmpty(item.TenNguoiyeucau) ? item.MaNguoidung : item.TenNguoiyeucau)</td>
                                 <td>@item.NgayMuahang?.ToString("dd/MM/yyyy")</td>
+                                <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "  ")</td>
                                 <td>
                                     @if ((item.TrangThai == "Đã báo giá" && ChucvuSession == "Giám đốc") ||
-                                          (item.TrangThai == "Chờ thanh toán" && BophanSession == "BP kế toán"))
+                                          (item.TrangThai == "Chờ thanh toán" && (BophanSession == "BP kế toán" || BophanSession == "BP mua hàng")))
                                     {
                                         @using (Html.BeginForm("XuLyPhieumuahang", "Yeucau", new { area = "NhanvienMuahang" }, FormMethod.Post))
                                         {
@@ -117,18 +119,21 @@
                 <table class="tablethietbi">
                     <thead>
                         <tr>
-                            <td>STT</td>
-                            <td>Tên vật tư</td>
-                            <td>Mã vật tư</td>
-                            <td>Mã kho</td>
-                            <td>Hãng sx</td>
-                            <td>Nhà cung cấp</td>
-                            <td>Số lượng</td>
-                            <td>Đơn vị</td>
+                            <td>TT</td>
+                            <td>Tên thiết bị/hàng hóa</td>
+                            <td>Mã VT</td>
+                            @* <td>Mã kho</td> *@
+                            <td>Hãng SX</td>
+                            <td>NCC</td>
+                            <td>SL</td>
+                            <td>ĐV</td>
                             <td>Đơn giá</td>
                             <td>Thành tiền</td>
+                            <td>Ngày Thanh Toán</td>
+                            <td>Ngày có hàng</td>
+                            <td>Ghi chú</td>
                             <td>Trạng thái</td>
-                        </tr>
+                        </tr>   
                     </thead>
                     <tbody>                      
                     </tbody>

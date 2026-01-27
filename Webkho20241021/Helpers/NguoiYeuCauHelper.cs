@@ -44,6 +44,11 @@ namespace Webkho_20241021.Helpers
         {
             var nguoiDungDict = context.nguoidungs
                 .ToDictionary(n => n.MaNguoidung, n => n.TenNguoidung);
+            // Lấy Ngày cần từ bảng vtyeucau (vật tư chi tiết) - lấy ngày sớm nhất
+            var vtyeucauDict = context.vtyeucau
+                .Where(v => v.NgayCanHang != null)
+                .GroupBy(v => v.VTMaYeucau)
+                .ToDictionary(g => g.Key, g => g.Min(v => v.NgayCanHang));
 
             foreach (var phieu in phieuList)
             {
@@ -51,6 +56,11 @@ namespace Webkho_20241021.Helpers
                     nguoiDungDict.TryGetValue(phieu.MaNguoidung, out var ten))
                 {
                     phieu.TenNguoiyeucau = ten;
+                }
+                // Gán Ngày cần từ vtyeucau (vật tư chi tiết) - lấy ngày sớm nhất
+                if (!string.IsNullOrEmpty(phieu.MaYeucau) && vtyeucauDict.TryGetValue(phieu.MaYeucau, out var ngayCanHang))
+                {
+                    phieu.NgayCanHang = ngayCanHang;
                 }
             }
         }

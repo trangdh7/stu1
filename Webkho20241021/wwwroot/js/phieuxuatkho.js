@@ -1,18 +1,18 @@
 $(document).ready(function () {
-    const firstRow = $('.table tbody tr').first(); 
+    const firstRow = $('.table tbody tr').first();
     if (firstRow.length > 0) {
         const Maxuatkho = firstRow.find('td').eq(1).find('a').text().trim() || firstRow.find('td').eq(1).text().trim();
         if (Maxuatkho) {
-            showVTxuatkho(Maxuatkho); 
+            showVTxuatkho(Maxuatkho);
         }
     }
     if (typeof getThongbaoData === 'function') {
         getThongbaoData();
     }
     setActiveMenu();
-    
+
     // Xử lý click vào hàng
-    $(document).on('click', '.clickable-row', function() {
+    $(document).on('click', '.clickable-row', function () {
         const MaXuatkho = $(this).data('maxuatkho');
         if (MaXuatkho) {
             showVTxuatkho(MaXuatkho);
@@ -52,15 +52,15 @@ function showVTxuatkho(Maxuatkho) {
     const area = pathSegments.length > 1 ? pathSegments[1] : ''; // Giả sử area là segment đầu tiên sau dấu '/'
 
     // Tìm hàng tương ứng và lấy thông tin trạng thái
-    let $selectedRow = $('.clickable-row').filter(function() {
+    let $selectedRow = $('.clickable-row').filter(function () {
         return $(this).data('maxuatkho') === Maxuatkho;
     });
-    
+
     // Lấy trạng thái từ cột trạng thái trong bảng
     const $trangThaiCell = $selectedRow.find('td').eq(6); // Cột thứ 7 (index 6) là cột Trạng thái
     let trangThaiText = '';
     let hasButton = false;
-    
+
     // Kiểm tra xem có nút không
     if ($trangThaiCell.find('button').length > 0) {
         hasButton = true;
@@ -74,7 +74,7 @@ function showVTxuatkho(Maxuatkho) {
     } else {
         trangThaiText = $trangThaiCell.text().trim();
     }
-    
+
     // Hiển thị nút xuất kho dưới bảng chi tiết
     displayXuatKhoButton(Maxuatkho, $selectedRow, area);
 
@@ -90,7 +90,7 @@ function showVTxuatkho(Maxuatkho) {
         success: function (syncResult) {
             console.log("Đồng bộ trạng thái:", syncResult);
             // Đợi một chút để đảm bảo database đã cập nhật
-            setTimeout(function() {
+            setTimeout(function () {
                 loadVTData(Maxuatkho, url, area);
             }, 100);
         },
@@ -106,24 +106,24 @@ function showVTxuatkho(Maxuatkho) {
 function displayXuatKhoButton(MaXuatkho, $row, area) {
     const $buttonContainer = $('#xuatkho-button-container');
     const $buttonContent = $('#xuatkho-button-content');
-    
+
     // Lấy thông tin từ data attributes
     const trangThai = $row.data('trangthai') || '';
     const bophan = $row.data('bophan') || '';
-    
+
     // Lấy cột trạng thái để kiểm tra có nút không
     const $trangThaiCell = $row.find('td').eq(6); // Cột Trạng thái
     const $spanWithButton = $trangThaiCell.find('span[data-has-button="true"]');
     const $spanWithButtonMuahang = $trangThaiCell.find('span[data-has-button-muahang="true"]');
     const $statusSpan = $trangThaiCell.find('span.status-waiting');
-    
+
     let html = '';
-    
+
     // Kiểm tra xem có cần hiển thị nút tạo phiếu mua hàng không
     if ($spanWithButtonMuahang.length > 0 && bophan == "BP kho") {
         const maXuatKho = $spanWithButtonMuahang.data('ma-xuatkho') || MaXuatkho;
         const action = $spanWithButtonMuahang.data('action') || 'taophieumuahang';
-        
+
         // Tạo form với nút có text "Tạo Phiếu Mua Hàng"
         html = `
             <form action="/${area}/Yeucau/TaoPhieuMuaHangChoNhanVienMuahang" method="post" style="display: inline-block;">
@@ -138,7 +138,7 @@ function displayXuatKhoButton(MaXuatkho, $row, area) {
     else if ($spanWithButton.length > 0 && bophan == "BP kho") {
         const maXuatKho = $spanWithButton.data('ma-xuatkho') || MaXuatkho;
         const action = $spanWithButton.data('action') || 'approve';
-        
+
         // Tạo form với nút có text "Xuất Kho"
         html = `
             <form action="/${area}/Yeucau/Xuliphieuxuatkho" method="post" style="display: inline-block;">
@@ -156,9 +156,13 @@ function displayXuatKhoButton(MaXuatkho, $row, area) {
         const trangThaiText = $trangThaiCell.text().trim();
         html = `<span style="color: #666; font-size: 16px;">${trangThaiText}</span>`;
     }
-    
+
     $buttonContent.html(html);
     $buttonContainer.show();
+}
+
+function isAreaKho(area) {
+    return area === 'TruongBPKho' || area === 'NhanvienKho';
 }
 
 // Hàm load dữ liệu vật tư
@@ -171,12 +175,12 @@ function loadVTData(Maxuatkho, url, area) {
             console.log(response); // Kiểm tra dữ liệu nhận được
 
             $('.tablethietbi tbody').empty();
-            
+
             // Xử lý response mới (có items) hoặc cũ (mảng trực tiếp)
             let data = response.items || response;
             let tenNguoiYeuCau = response.tenNguoiYeuCau || '';
             let maYeucau = response.maYeucau || '';
-            
+
             // Hiển thị header text cho tất cả areas
             // Ưu tiên hiển thị theo mã yêu cầu giống màn Yeucau: "Yêu cầu vật tư [MaYeucau] của [Người]"
             if (maYeucau && tenNguoiYeuCau) {
@@ -196,22 +200,46 @@ function loadVTData(Maxuatkho, url, area) {
                 $('#phieuxuatkho-header').hide();
             }
 
+            const TRANGTHAI_OPTIONS = ['Đang chuẩn bị hàng', 'Đã chuẩn bị hàng xong', 'Thiếu hàng- đang mua hàng'];
+            const TRANGTHAI_DEFAULT = 'Đang chuẩn bị hàng';
+            const isKho = isAreaKho(area);
+
+            $('.tablethietbi').data('current-maxuatkho', Maxuatkho);
+
             if (data && data.length > 0) {
                 let STT = 1;
                 data.forEach(function (item) {
-                    // Xác định màu sắc theo trạng thái
-                    let bgColor = '#4caf50'; // Mặc định xanh lá
-                    if (item.trangThai === 'Đang chuẩn bị hàng') {
-                        bgColor = '#2196f3'; // Xanh dương
-                    } else if (item.trangThai === 'Đã xác nhận nhận hàng') {
-                        bgColor = '#4caf50'; // Xanh lá
-                    } else if (item.trangThai === 'Đã xuất kho') {
-                        bgColor = '#4caf50'; // Xanh lá
-                    } else if (item.trangThai === 'Hoàn thành') {
-                        bgColor = '#4caf50'; // Xanh lá
+                    let tt = (item.trangThai && TRANGTHAI_OPTIONS.indexOf(item.trangThai) >= 0)
+                        ? item.trangThai : TRANGTHAI_DEFAULT;
+                    let bgColor = '#4caf50';
+                    if (tt === 'Đang chuẩn bị hàng') bgColor = '#2196f3';
+                    else if (tt === 'Đã chuẩn bị hàng xong') bgColor = '#4caf50';
+                    else if (tt === 'Thiếu hàng- đang mua hàng') bgColor = '#ff9800';
+                    else if (item.trangThai === 'Đã xác nhận nhận hàng' || item.trangThai === 'Đã xuất kho' || item.trangThai === 'Hoàn thành') bgColor = '#4caf50';
+
+                    let trangThaiHtml, thaotacHtml;
+                    if (isKho) {
+                        let vtId = item.id != null ? item.id : (item.ID != null ? item.ID : '');
+                        let isDaXuatKho = item.trangThai === 'Đã xuất kho';
+                        if (isDaXuatKho) {
+                            trangThaiHtml = `<span class="vt-trangthai-badge" style="background-color:#4caf50; color:black; padding:2px 6px; border-radius:3px; font-size:11px;">Đã xuất kho</span>`;
+                            thaotacHtml = '';
+                        } else {
+                            let opts = TRANGTHAI_OPTIONS.map(function (o) {
+                                return `<option value="${o}" ${o === tt ? 'selected' : ''}>${o}</option>`;
+                            }).join('');
+                            trangThaiHtml = `<select class="trangthai-vt-select" data-vt-id="${vtId}" style="width:100%; max-width:200px; padding:4px 6px;">${opts}</select>`;
+                            thaotacHtml = `<button type="button" class="btn-xuatkho-item" data-vt-id="${vtId}" data-maxuatkho="${Maxuatkho}" style="display:none; padding:6px 12px; background:#28a745; color:#fff; border:none; border-radius:4px; cursor:pointer; white-space:nowrap;"><i class="bx bxs-check-circle"></i> Xuất kho</button>`;
+                        }
+                    } else {
+                        let disp = item.trangThai || tt || '-';
+                        trangThaiHtml = `<span style="background-color:${bgColor}; color:black; padding:2px 6px; border-radius:3px; font-size:11px;">${disp}</span>`;
+                        thaotacHtml = '';
                     }
 
-                    let row = `<tr>
+                    let dataAttrs = isKho && !(item.trangThai === 'Đã xuất kho') ? ` data-vt-id="${item.id != null ? item.id : (item.ID != null ? item.ID : '')}" data-maxuatkho="${Maxuatkho}"` : '';
+                    let thaotacTd = isKho ? `<td class="td-thaotac">${thaotacHtml}</td>` : '';
+                    let row = `<tr${dataAttrs}>
                         <td>${STT++}</td>
                         <td>${item.tenSanpham || 'Không xác định'}</td>
                         <td>${item.maSanpham || 'Không xác định'}</td>
@@ -220,16 +248,19 @@ function loadVTData(Maxuatkho, url, area) {
                         <td>${item.nhaCC || 'Không xác định'}</td>
                         <td>${item.sl}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
-                        <td><span style="background-color:${bgColor}; color:black; padding:2px 6px; border-radius:3px; font-size:11px;">${item.trangThai || '-'}</span></td>
+                        <td>${trangThaiHtml}</td>
+                        ${thaotacTd}
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
                 });
+                if (isKho) {
+                    bindTrangThaiVTSelect(Maxuatkho, area);
+                    bindXuatKhoItemButtons(area);
+                }
             } else {
-                // Hiển thị thông báo nếu không có dữ liệu
+                let colCount = isKho ? 10 : 9;
                 $('.tablethietbi tbody').append(
-                    `<tr>
-                        <td colspan="9" style="text-align:center;">Không có dữ liệu vật tư.</td>
-                    </tr>`
+                    `<tr><td colspan="${colCount}" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                 );
             }
 
@@ -243,16 +274,116 @@ function loadVTData(Maxuatkho, url, area) {
                 }
             });
             applyXuatKhoRowHighlight($rowToHighlight);
-            
-            // Cập nhật nút xuất kho khi load lại dữ liệu
-            if ($rowToHighlight.length > 0) {
+
+            if (isKho) {
+                updateXuatKhoItemButtons(Maxuatkho, area);
+            } else if ($rowToHighlight.length > 0) {
                 displayXuatKhoButton(Maxuatkho, $rowToHighlight, area);
             }
         },
         error: function (xhr, status, error) {
-            console.error("Lỗi:", error); 
-            alert("Không thể lấy dữ liệu vật tư. Lỗi: " + error); 
+            console.error("Lỗi:", error);
+            alert("Không thể lấy dữ liệu vật tư. Lỗi: " + error);
         }
+    });
+}
+
+function capNhatTrangThaiVT(area, id, trangThai, done) {
+    const url = `/${area}/Yeucau/CapNhatTrangThaiVT`;
+    $.ajax({
+        url: url,
+        method: 'POST',
+        data: { MaXuatkho: $('.tablethietbi').data('current-maxuatkho'), Id: id, TrangThai: trangThai },
+        success: function (r) { if (typeof done === 'function') done(r); },
+        error: function () { if (typeof done === 'function') done({ success: false }); }
+    });
+}
+
+function updateXuatKhoItemButtons(Maxuatkho, area) {
+    const $mainContainer = $('#xuatkho-button-container');
+    const rows = $('.tablethietbi tbody tr[data-vt-id]');
+    const total = rows.length;
+    let ready = 0;
+    rows.each(function () {
+        const $select = $(this).find('.trangthai-vt-select');
+        if ($select.length > 0) {
+            const v = $select.val();
+            if (v === 'Đã chuẩn bị hàng xong') ready++;
+        }
+    });
+    const allReady = (total > 0 && ready === total);
+    rows.each(function () {
+        const $btn = $(this).find('.btn-xuatkho-item');
+        const $select = $(this).find('.trangthai-vt-select');
+        if ($select.length > 0) {
+            const v = $select.val();
+            if (v === 'Đã chuẩn bị hàng xong' && !allReady) {
+                $btn.show();
+            } else {
+                $btn.hide();
+            }
+        } else {
+            $btn.hide();
+        }
+    });
+    if (allReady && total > 0) {
+        const $row = $('.table tbody tr[data-maxuatkho="' + Maxuatkho + '"]');
+        if ($row.length > 0) {
+            displayXuatKhoButton(Maxuatkho, $row, area);
+        }
+    } else {
+        $mainContainer.hide();
+        $('#xuatkho-button-content').empty();
+    }
+}
+
+function bindTrangThaiVTSelect(Maxuatkho, area) {
+    $('.tablethietbi').off('change', '.trangthai-vt-select').on('change', '.trangthai-vt-select', function () {
+        const $row = $(this).closest('tr');
+        const id = $row.data('vt-id');
+        const tt = $(this).val();
+        capNhatTrangThaiVT(area, id, tt, function () {
+            updateXuatKhoItemButtons(Maxuatkho, area);
+        });
+    });
+}
+
+function bindXuatKhoItemButtons(area) {
+    $('.tablethietbi').off('click', '.btn-xuatkho-item').on('click', '.btn-xuatkho-item', function () {
+        const $btn = $(this);
+        const vtId = $btn.data('vt-id');
+        const maXuatkho = $btn.data('maxuatkho');
+        if (!vtId || !maXuatkho) {
+            alert('Thông tin không hợp lệ!');
+            return;
+        }
+        if (!confirm('Bạn có chắc muốn xuất kho vật tư này? Sẽ tạo phiếu xuất kho mới chỉ cho vật tư này.')) {
+            return;
+        }
+        $btn.prop('disabled', true).text('Đang xử lý...');
+        $.ajax({
+            url: `/${area}/Yeucau/XuatKhoVatTuRieng`,
+            method: 'POST',
+            data: { MaXuatkho: maXuatkho, VatTuId: vtId },
+            success: function (r) {
+                if (r.success) {
+                    const $row = $btn.closest('tr');
+                    const $tdTrangThai = $row.find('td').eq(8);
+                    $tdTrangThai.html('<span class="vt-trangthai-badge" style="background-color:#4caf50; color:black; padding:2px 6px; border-radius:3px; font-size:11px;">Đã xuất kho</span>');
+                    $btn.closest('td').html('');
+                    $row.removeAttr('data-vt-id');
+                    alert(`Đã tạo phiếu xuất kho mới: ${r.maXuatkhoMoi || 'Thành công'}`);
+                    updateXuatKhoItemButtons(maXuatkho, area);
+                } else {
+                    alert(r.message || 'Có lỗi xảy ra!');
+                    $btn.prop('disabled', false).html('<i class="bx bxs-check-circle"></i> Xuất kho');
+                }
+            },
+            error: function () {
+                alert('Có lỗi xảy ra khi xuất kho!');
+                $btn.prop('disabled', false).html('<i class="bx bxs-check-circle"></i> Xuất kho');
+            }
+        });
     });
 }
 

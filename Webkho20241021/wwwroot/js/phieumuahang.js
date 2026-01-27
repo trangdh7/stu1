@@ -373,12 +373,17 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                 $('.table tbody tr').each(function() {
                     const link = $(this).find('td').eq(1).find('a');
                     if (link.text().trim() === Mamuahang) {
-                        // Lấy từ cột trạng thái (cột thứ 7, index 6)
-                        const trangThaiCell = $(this).find('td').eq(6);
+                        // Lấy từ cột trạng thái (cột thứ 8, index 7)
+                        const trangThaiCell = $(this).find('td').eq(7);
                         trangThaiFromTable = trangThaiCell.text().trim();
                         return false;
                     }
                 });
+                
+                // Nếu không tìm thấy từ bảng, dùng trạng thái từ tham số
+                if (!trangThaiFromTable && trangThaiPhieu) {
+                    trangThaiFromTable = trangThaiPhieu;
+                }
                 
                 // Cho BP kế toán: hiển thị khi trạng thái = "Chờ thanh toán"
                 if (trangThaiFromTable === 'Chờ thanh toán') {
@@ -396,15 +401,20 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                 $('.table tbody tr').each(function() {
                     const link = $(this).find('td').eq(1).find('a');
                     if (link.text().trim() === Mamuahang) {
-                        // Lấy từ cột trạng thái (cột thứ 7, index 6)
-                        const trangThaiCell = $(this).find('td').eq(6);
+                        // Lấy từ cột trạng thái (cột thứ 8, index 7)
+                        const trangThaiCell = $(this).find('td').eq(7);
                         trangThaiFromTable = trangThaiCell.text().trim();
                         return false;
                     }
                 });
                 
-                // Cho Trưởng BP mua hàng: hiển thị khi trạng thái = "Đã thanh toán"
-                if (trangThaiFromTable === 'Đã thanh toán') {
+                // Nếu không tìm thấy từ bảng, dùng trạng thái từ tham số
+                if (!trangThaiFromTable && trangThaiPhieu) {
+                    trangThaiFromTable = trangThaiPhieu;
+                }
+                
+                // Cho Trưởng BP mua hàng: hiển thị khi trạng thái = "Chờ thanh toán" (duyệt thanh toán) hoặc "Đã thanh toán" (nhận hàng)
+                if (trangThaiFromTable === 'Chờ thanh toán' || trangThaiFromTable === 'Đã thanh toán') {
                     $('#approvePhieumuahang').show();
                     $('#rejectPhieumuahang').show();
                     $('#action-buttons').show();
@@ -434,6 +444,17 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                 const isPurchaseArea = (area === 'TruongBPMuahang' || area === 'NhanvienMuahang');
                 const canInputPriceForPhieu = isPurchaseArea && 
                     (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
+                const isGiamdoc = area === 'Giamdoc';
+                // BP Mua hàng chỉ có thể chỉnh sửa khi chưa gửi báo giá (trạng thái = "Đang chờ báo giá" hoặc "Đã từ chối")
+                // Giám đốc chỉ có thể chỉnh sửa khi trạng thái = "Đã báo giá" (chưa duyệt), sau khi duyệt (trạng thái = "Chờ thanh toán" trở đi) thì không cho sửa
+                const canEditNgayThanhToanForBPMuahang = isPurchaseArea && 
+                    (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
+                // Giám đốc chỉ được chỉnh sửa khi trạng thái = "Đã báo giá", các trạng thái sau khi duyệt (Chờ thanh toán, Đã thanh toán, Đã nhận hàng) thì không cho sửa
+                const trangThaiKhongChoPhepSuaGiamdoc = ['Chờ thanh toán', 'Đã thanh toán', 'Đã nhận hàng'];
+                const canEditNgayThanhToanForGiamdoc = isGiamdoc && 
+                    trangThaiPhieu === 'Đã báo giá' && 
+                    !trangThaiKhongChoPhepSuaGiamdoc.includes(trangThaiPhieu);
+                const canEditNgayThanhToan = canEditNgayThanhToanForGiamdoc || canEditNgayThanhToanForBPMuahang;
 
                 let STT = 1;
                 data.forEach(function (item) {
@@ -468,14 +489,160 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         }
                     }
 
+                    // Chuẩn bị ô Ngày thanh toán - hiển thị cả hai giá trị
+                    const formatDate = (dateRaw) => {
+                        if (!dateRaw) return '';
+                        const d = new Date(dateRaw);
+                        if (isNaN(d)) return '';
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        const yyyy = d.getFullYear();
+                        return `${yyyy}-${mm}-${dd}`;
+                    };
+                    
+                    const formatDateDisplay = (dateRaw) => {
+                        if (!dateRaw) return '';
+                        const d = new Date(dateRaw);
+                        if (isNaN(d)) return '';
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        const yyyy = d.getFullYear();
+                        return `${dd}/${mm}/${yyyy}`;
+                    };
+
+                    const ngayThanhToanBPMuahangRaw = item.ngayThanhToanBPMuahang || item.NgayThanhToanBPMuahang;
+                    const ngayThanhToanGiamdocRaw = item.ngayThanhToanGiamdoc || item.NgayThanhToanGiamdoc;
+                    
+                    let ngayThanhToanCell = '';
+                    if (canEditNgayThanhToan) {
+                        // Hiển thị input cho người dùng hiện tại và hiển thị giá trị của bên kia
+                        if (isGiamdoc) {
+                            // Giám đốc: hiển thị input của mình và giá trị BP Mua hàng
+                            const ngayThanhToanGiamdocValue = formatDate(ngayThanhToanGiamdocRaw);
+                            const ngayThanhToanBPMuahangDisplay = formatDateDisplay(ngayThanhToanBPMuahangRaw);
+                            ngayThanhToanCell = `
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <input type="date"
+                                           class="NgayThanhToanInput"
+                                           data-mamuahang="${Mamuahang}"
+                                           data-masanpham="${item.maSanpham || ''}"
+                                           value="${ngayThanhToanGiamdocValue}"
+                                           style="width: 100%;" />
+                                    ${ngayThanhToanBPMuahangDisplay ? `<small style="color: #c00; font-size: 11px; font-weight: bold;">BP Mua hàng: Ngày ${ngayThanhToanBPMuahangDisplay} cần thanh toán</small>` : ''}
+                                </div>`;
+                        } else if (isPurchaseArea) {
+                            // BP Mua hàng: hiển thị input của mình và giá trị Giám đốc
+                            const ngayThanhToanBPMuahangValue = formatDate(ngayThanhToanBPMuahangRaw);
+                            const ngayThanhToanGiamdocDisplay = formatDateDisplay(ngayThanhToanGiamdocRaw);
+                            ngayThanhToanCell = `
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <input type="date"
+                                           class="NgayThanhToanInput"
+                                           data-mamuahang="${Mamuahang}"
+                                           data-masanpham="${item.maSanpham || ''}"
+                                           value="${ngayThanhToanBPMuahangValue}"
+                                           style="width: 100%;" />
+                                    ${ngayThanhToanGiamdocDisplay ? `<small style="color: #1565c0; font-size: 11px; font-weight: bold;">Giám đốc: Ngày ${ngayThanhToanGiamdocDisplay} cần thanh toán</small>` : ''}
+                                </div>`;
+                        }
+                    } else {
+                        // Chỉ hiển thị (read-only)
+                        const ngayThanhToanBPMuahangDisplay = formatDateDisplay(ngayThanhToanBPMuahangRaw);
+                        const ngayThanhToanGiamdocDisplay = formatDateDisplay(ngayThanhToanGiamdocRaw);
+                        let displayText = [];
+                        if (ngayThanhToanBPMuahangDisplay) displayText.push(`<strong style="color: #c00;">BP Mua hàng: Ngày ${ngayThanhToanBPMuahangDisplay} cần thanh toán</strong>`);
+                        if (ngayThanhToanGiamdocDisplay) displayText.push(`<strong style="color: #1565c0;">Giám đốc: Ngày ${ngayThanhToanGiamdocDisplay} cần thanh toán</strong>`);
+                        ngayThanhToanCell = displayText.length > 0 ? displayText.join('<br>') : '-';
+                    }
+
+                    // Chuẩn bị ô Ghi chú - hiển thị cả hai giá trị
+                    // BP Mua hàng chỉ có thể chỉnh sửa khi chưa gửi báo giá
+                    // Giám đốc chỉ có thể chỉnh sửa khi trạng thái = "Đã báo giá" (chưa duyệt), sau khi duyệt (trạng thái = "Chờ thanh toán" trở đi) thì không cho sửa
+                    const canEditGhiChuForBPMuahang = isPurchaseArea && 
+                        (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
+                    // Giám đốc chỉ được chỉnh sửa khi trạng thái = "Đã báo giá", các trạng thái sau khi duyệt (Chờ thanh toán, Đã thanh toán, Đã nhận hàng) thì không cho sửa
+                    const trangThaiKhongChoPhepSuaGiamdocGhiChu = ['Chờ thanh toán', 'Đã thanh toán', 'Đã nhận hàng'];
+                    const canEditGhiChuForGiamdoc = isGiamdoc && 
+                        trangThaiPhieu === 'Đã báo giá' && 
+                        !trangThaiKhongChoPhepSuaGiamdocGhiChu.includes(trangThaiPhieu);
+                    const canEditGhiChu = canEditGhiChuForGiamdoc || canEditGhiChuForBPMuahang;
+                    const ghiChuBPMuahangValue = item.ghiChuBPMuahang || item.GhiChuBPMuahang || '';
+                    const ghiChuGiamdocValue = item.ghiChuGiamdoc || item.GhiChuGiamdoc || '';
+                    // Kiểm tra nếu ghi chú BP Mua hàng chứa "Ngày 29/1 thanh toán ạ" thì dùng màu đỏ
+                    const containsPaymentNote = ghiChuBPMuahangValue && ghiChuBPMuahangValue.includes('Ngày 29/1 thanh toán ạ');
+                    const ghiChuBPMuahangColor = containsPaymentNote ? '#c00' : '#666';
+                    let ghiChuCell = '';
+                    if (canEditGhiChu) {
+                        // Hiển thị input cho người dùng hiện tại và hiển thị ghi chú của bên kia
+                        if (isGiamdoc) {
+                            // Giám đốc: hiển thị input của mình và ghi chú BP Mua hàng
+                            ghiChuCell = `
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <input type="text"
+                                           class="GhiChuInput"
+                                           data-mamuahang="${Mamuahang}"
+                                           data-masanpham="${item.maSanpham || ''}"
+                                           value="${ghiChuGiamdocValue}"
+                                           placeholder="Nhập ghi chú" 
+                                           style="width: 100%;" />
+                                    ${ghiChuBPMuahangValue ? `<small style="color: ${ghiChuBPMuahangColor}; font-size: 11px;">BP Mua hàng: ${ghiChuBPMuahangValue}</small>` : ''}
+                                </div>`;
+                        } else if (isPurchaseArea) {
+                            // BP Mua hàng: hiển thị input của mình và ghi chú Giám đốc
+                            ghiChuCell = `
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <input type="text"
+                                           class="GhiChuInput"
+                                           data-mamuahang="${Mamuahang}"
+                                           data-masanpham="${item.maSanpham || ''}"
+                                           value="${ghiChuBPMuahangValue}"
+                                           placeholder="Nhập ghi chú" 
+                                           style="width: 100%;" />
+                                    ${ghiChuGiamdocValue ? `<small style="color: #1565c0; font-size: 11px; font-weight: bold;">Giám đốc: ${ghiChuGiamdocValue}</small>` : ''}
+                                </div>`;
+                        }
+                    } else {
+                        // Chỉ hiển thị (read-only)
+                        let displayText = [];
+                        if (ghiChuBPMuahangValue) {
+                            const containsPaymentNote = ghiChuBPMuahangValue.includes('Ngày 29/1 thanh toán ạ');
+                            const ghiChuBPMuahangColor = containsPaymentNote ? '#c00' : '';
+                            const styleAttr = ghiChuBPMuahangColor ? ` style="color: ${ghiChuBPMuahangColor};"` : '';
+                            displayText.push(`<span${styleAttr}>BP Mua hàng: ${ghiChuBPMuahangValue}</span>`);
+                        }
+                        if (ghiChuGiamdocValue) displayText.push(`<strong style="color: #1565c0;">Giám đốc: ${ghiChuGiamdocValue}</strong>`);
+                        ghiChuCell = displayText.length > 0 ? displayText.join('<br>') : '-';
+                    }
+
+                    // Chuẩn bị ô Ngày có hàng - chỉ BP Mua hàng được chọn, các bộ phận khác chỉ xem
+                    // BP Mua hàng chỉ có thể chỉnh sửa khi chưa gửi báo giá
+                    const canEditNgayCoHang = isPurchaseArea && 
+                        (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
+                    const ngayCoHangRaw = item.ngayCoHang || item.NgayCoHang;
+                    let ngayCoHangCell = '';
+                    if (canEditNgayCoHang) {
+                        // BP Mua hàng: hiển thị input để chọn ngày
+                        const ngayCoHangValue = formatDate(ngayCoHangRaw);
+                        ngayCoHangCell = `
+                            <input type="date"
+                                   class="NgayCoHangInput"
+                                   data-mamuahang="${Mamuahang}"
+                                   data-masanpham="${item.maSanpham || ''}"
+                                   value="${ngayCoHangValue}"
+                                   style="width: 100%;" />`;
+                    } else {
+                        // Các bộ phận khác: chỉ hiển thị (read-only)
+                        const ngayCoHangDisplay = formatDateDisplay(ngayCoHangRaw);
+                        ngayCoHangCell = ngayCoHangDisplay || '-';
+                    }
+
                     let row = `
                     <tr>
                         <td>${STT++}</td>
                         <td>${item.tenSanpham || 'Không xác định'}</td>
                         <td>${item.maSanpham || 'Không xác định'}</td>
-                        <td>${item.makho || 'Không xác định'}</td>
                         <td>${item.hangSX || 'Không xác định'}</td>
-                        <td>${item.nhaCC || 'Không xác định'}</td>
+                        <td>${item.nhaCC || '-'}</td>
                         <td>${item.sl}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
                         <td>${donGiaCell}</td>
@@ -484,6 +651,9 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                             ? `<span class="ThanhTien">${item.thanhTien.toLocaleString('vi-VN')}</span>`
                             : `<span class="ThanhTien">0</span>`}
                         </td>
+                        <td>${ngayThanhToanCell}</td>
+                        <td>${ngayCoHangCell}</td>
+                        <td>${ghiChuCell}</td>
                         <td>${item.trangThai}</td>
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
@@ -492,8 +662,8 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                 // Thêm hàng tổng tiền
                 $('.tablethietbi tbody').append(`
                     <tr class="tong-tien-row">
-                        <td colspan="8" style="text-align:center; font-weight:bold;">Tổng tiền:</td>
-                        <td class="tong-tien" colspan="3" style="font-weight:bold;">0</td>
+                        <td colspan="9" style="text-align:center; font-weight:bold;">Tổng tiền:</td>
+                        <td class="tong-tien" colspan="4" style="font-weight:bold;">0</td>
                     </tr>
                 `);
                 updateTongTien();
@@ -501,7 +671,7 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
             } else {
                 $('.tablethietbi tbody').append(`
                     <tr>
-                        <td colspan="11" style="text-align:center;">Không có dữ liệu vật tư.</td>
+                        <td colspan="13" style="text-align:center;">Không có dữ liệu vật tư.</td>
                     </tr>
                 `);
                 $('#action-buttons').hide();
@@ -585,6 +755,108 @@ function attachEventHandlers() {
 
         $row.find('.ThanhTien').text(thanhTien.toLocaleString('vi-VN'));    
         updateTongTien();
+    });
+
+    // Cập nhật ngày thanh toán khi chọn ngày
+    $('.tablethietbi tbody').on('change', '.NgayThanhToanInput', function () {
+        const $input = $(this);
+        const maMuahang = $input.data('mamuahang');
+        const maSanpham = $input.data('masanpham');
+        const ngayThanhToan = $input.val(); // yyyy-MM-dd hoặc rỗng
+
+        if (!maMuahang || !maSanpham) {
+            return;
+        }
+
+        const pathSegments = window.location.pathname.split('/');
+        const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        const url = `/${area}/Yeucau/CapNhatNgayThanhToan`;
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: {
+                MaMuahang: maMuahang,
+                MaSanpham: maSanpham,
+                NgayThanhToan: ngayThanhToan
+            },
+            success: function (res) {
+                if (!res || !res.success) {
+                    alert(res && res.message ? res.message : 'Cập nhật ngày thanh toán thất bại.');
+                }
+            },
+            error: function () {
+                alert('Không thể cập nhật ngày thanh toán.');
+            }
+        });
+    });
+
+    // Cập nhật ghi chú khi người dùng chỉnh sửa
+    $('.tablethietbi tbody').on('blur', '.GhiChuInput', function () {
+        const $input = $(this);
+        const maMuahang = $input.data('mamuahang');
+        const maSanpham = $input.data('masanpham');
+        const ghiChu = $input.val() || '';
+
+        if (!maMuahang || !maSanpham) {
+            return;
+        }
+
+        const pathSegments = window.location.pathname.split('/');
+        const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        const url = `/${area}/Yeucau/CapNhatGhiChuPhieumuahang`;
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: {
+                MaMuahang: maMuahang,
+                MaSanpham: maSanpham,
+                GhiChu: ghiChu
+            },
+            success: function (res) {
+                if (!res || !res.success) {
+                    alert(res && res.message ? res.message : 'Cập nhật ghi chú thất bại.');
+                }
+            },
+            error: function () {
+                alert('Không thể cập nhật ghi chú.');
+            }
+        });
+    });
+
+    // Cập nhật ngày có hàng khi BP Mua hàng chọn ngày
+    $('.tablethietbi tbody').on('change', '.NgayCoHangInput', function () {
+        const $input = $(this);
+        const maMuahang = $input.data('mamuahang');
+        const maSanpham = $input.data('masanpham');
+        const ngayCoHang = $input.val(); // yyyy-MM-dd hoặc rỗng
+
+        if (!maMuahang || !maSanpham) {
+            return;
+        }
+
+        const pathSegments = window.location.pathname.split('/');
+        const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        const url = `/${area}/Yeucau/CapNhatNgayCoHang`;
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: {
+                MaMuahang: maMuahang,
+                MaSanpham: maSanpham,
+                NgayCoHang: ngayCoHang
+            },
+            success: function (res) {
+                if (!res || !res.success) {
+                    alert(res && res.message ? res.message : 'Cập nhật ngày có hàng thất bại.');
+                }
+            },
+            error: function () {
+                alert('Không thể cập nhật ngày có hàng.');
+            }
+        });
     });
 }
 
@@ -748,6 +1020,196 @@ $(document).on('click', '#approvePhieumuahang', function() {
         form.submit();
     }
 });
+
+// Xử lý click vào header "Ngày Thanh Toán", "Ngày có hàng" hoặc "Ghi chú" để hiện popup điền hàng loạt
+$(document).on('click', '.header-clickable', function() {
+    const field = $(this).data('field');
+    const pathSegments = window.location.pathname.split('/');
+    const area = pathSegments.length > 1 ? pathSegments[1] : '';
+    
+    // Chỉ cho phép ở Giamdoc và TruongBPMuahang
+    if (area !== 'Giamdoc' && area !== 'TruongBPMuahang') {
+        return;
+    }
+    
+    // Kiểm tra trạng thái phiếu để xác định có cho phép chỉnh sửa không
+    let trangThaiPhieu = '';
+    if (selectedMamuahang) {
+        $('.table tbody tr').each(function() {
+            const link = $(this).find('td').eq(1).find('a');
+            if (link.text().trim() === selectedMamuahang) {
+                trangThaiPhieu = link.data('trangthai') || '';
+                if (!trangThaiPhieu) {
+                    // Lấy từ cột trạng thái (cột cuối cùng)
+                    const trangThaiCell = $(this).find('td').last();
+                    trangThaiPhieu = trangThaiCell.text().trim();
+                }
+                return false; // break loop
+            }
+        });
+    }
+    
+    // Nếu là Giám đốc, chỉ cho phép khi trạng thái = "Đã báo giá"
+    if (area === 'Giamdoc' && (field === 'ngaythanhtoan' || field === 'ghichu')) {
+        // Chỉ cho phép chỉnh sửa khi trạng thái = "Đã báo giá"
+        if (trangThaiPhieu !== 'Đã báo giá') {
+            alert('Không thể chỉnh sửa khi phiếu đã được duyệt. Chỉ có thể chỉnh sửa khi trạng thái là "Đã báo giá".');
+            return;
+        }
+    }
+    
+    if (field === 'ngaythanhtoan') {
+        $('#popupNgayThanhToan').fadeIn(200);
+        $('#inputNgayThanhToan').focus();
+    } else if (field === 'ngaycohang') {
+        $('#popupNgayCoHang').fadeIn(200);
+        $('#inputNgayCoHang').focus();
+    } else if (field === 'ghichu') {
+        $('#popupGhiChu').fadeIn(200);
+        $('#inputGhiChu').focus();
+    }
+});
+
+// Đóng popup Ngày Thanh Toán
+function closePopupNgayThanhToan() {
+    $('#popupNgayThanhToan').fadeOut(200);
+    $('#inputNgayThanhToan').val('');
+}
+
+// Đóng popup Ngày có hàng
+function closePopupNgayCoHang() {
+    $('#popupNgayCoHang').fadeOut(200);
+    $('#inputNgayCoHang').val('');
+}
+
+// Đóng popup Ghi chú
+function closePopupGhiChu() {
+    $('#popupGhiChu').fadeOut(200);
+    $('#inputGhiChu').val('');
+}
+
+// Áp dụng Ngày Thanh Toán cho tất cả các hàng
+function applyNgayThanhToan() {
+    const ngayThanhToan = $('#inputNgayThanhToan').val();
+    
+    if (!ngayThanhToan) {
+        alert('Vui lòng nhập ngày thanh toán.');
+        return;
+    }
+    
+    // Điền ngày thanh toán cho tất cả các hàng có input ngày thanh toán
+    let count = 0;
+    $('.tablethietbi tbody tr').each(function() {
+        if ($(this).hasClass('tong-tien-row')) {
+            return;
+        }
+        
+        const $input = $(this).find('.NgayThanhToanInput');
+        if ($input.length > 0) {
+            $input.val(ngayThanhToan);
+            // Trigger change event để lưu vào database
+            $input.trigger('change');
+            count++;
+        }
+    });
+    
+    if (count > 0) {
+        alert(`Đã điền ngày thanh toán cho ${count} vật tư.`);
+        closePopupNgayThanhToan();
+    } else {
+        alert('Không tìm thấy vật tư nào để điền ngày thanh toán.');
+    }
+}
+
+// Áp dụng Ngày có hàng cho tất cả các hàng
+function applyNgayCoHang() {
+    const ngayCoHang = $('#inputNgayCoHang').val();
+    
+    if (!ngayCoHang) {
+        alert('Vui lòng nhập ngày có hàng.');
+        return;
+    }
+    
+    // Điền ngày có hàng cho tất cả các hàng có input ngày có hàng
+    let count = 0;
+    $('.tablethietbi tbody tr').each(function() {
+        if ($(this).hasClass('tong-tien-row')) {
+            return;
+        }
+        
+        const $input = $(this).find('.NgayCoHangInput');
+        if ($input.length > 0) {
+            $input.val(ngayCoHang);
+            // Trigger change event để lưu vào database
+            $input.trigger('change');
+            count++;
+        }
+    });
+    
+    if (count > 0) {
+        alert(`Đã điền ngày có hàng cho ${count} vật tư.`);
+        closePopupNgayCoHang();
+    } else {
+        alert('Không tìm thấy vật tư nào để điền ngày có hàng.');
+    }
+}
+
+// Áp dụng Ghi chú cho tất cả các hàng
+function applyGhiChu() {
+    const ghiChu = $('#inputGhiChu').val();
+    
+    // Cho phép ghi chú rỗng
+    // Điền ghi chú cho tất cả các hàng có input ghi chú
+    let count = 0;
+    const pathSegments = window.location.pathname.split('/');
+    const area = pathSegments.length > 1 ? pathSegments[1] : '';
+    
+    $('.tablethietbi tbody tr').each(function() {
+        if ($(this).hasClass('tong-tien-row')) {
+            return;
+        }
+        
+        const $input = $(this).find('.GhiChuInput');
+        if ($input.length > 0) {
+            const maMuahang = $input.data('mamuahang');
+            const maSanpham = $input.data('masanpham');
+            
+            // Cập nhật giá trị input
+            $input.val(ghiChu);
+            
+            // Lưu vào database
+            if (maMuahang && maSanpham) {
+                const url = `/${area}/Yeucau/CapNhatGhiChuPhieumuahang`;
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    data: {
+                        MaMuahang: maMuahang,
+                        MaSanpham: maSanpham,
+                        GhiChu: ghiChu
+                    },
+                    success: function (res) {
+                        if (!res || !res.success) {
+                            console.error('Cập nhật ghi chú thất bại:', res && res.message ? res.message : 'Unknown error');
+                        }
+                    },
+                    error: function () {
+                        console.error('Không thể cập nhật ghi chú.');
+                    }
+                });
+            }
+            
+            count++;
+        }
+    });
+    
+    if (count > 0) {
+        alert(`Đã điền ghi chú cho ${count} vật tư.`);
+        closePopupGhiChu();
+    } else {
+        alert('Không tìm thấy vật tư nào để điền ghi chú.');
+    }
+}
 
 // Xử lý nút từ chối phiếu mua hàng
 $(document).on('click', '#rejectPhieumuahang', function() {

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Webkho_20241021.Models
@@ -20,11 +20,16 @@ namespace Webkho_20241021.Models
         public decimal? DonGia { get; set; }
         [Column(TypeName = "decimal(20,6)")]
         public decimal? ThanhTien { get; set; }
-
+        public DateTime? NgayThanhToan { get; set; }
+        public DateTime? NgayThanhToanBPMuahang { get; set; }
+        public DateTime? NgayThanhToanGiamdoc { get; set; }
         public DateTime? NgayNhapkho { get; set; }
+        public DateTime? NgayCoHang { get; set; }
         public DateTime? NgayBaohanh { get; set; }
         public DateTime? ThoiGianBH { get; set; }
         public string? TrangThai { get; set; }
         public string? GhiChu { get; set; }
+        public string? GhiChuBPMuahang { get; set; }
+        public string? GhiChuGiamdoc { get; set; }
     }
 }
