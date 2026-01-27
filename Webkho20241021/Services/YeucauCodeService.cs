@@ -60,7 +60,7 @@ namespace Webkho_20241021.Services
             {
                 string maDuanPart = FormatLast6Digits(ycMaDuan);
                 string datePart = datePartFromFile ?? now.ToString("yyMMdd");
-                return $"{maDuanPart} {stPart} {datePart}";
+                return $"{maDuanPart} YC {stPart} {datePart}";
             }
 
             // Không dự án: YYMMDD YCCN ST
