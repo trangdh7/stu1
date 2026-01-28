@@ -7,4 +7,7 @@ public interface IYeucauCodeService
         List<string>? maSanpham,
         IFormFileCollection? files,
         DateTime now);
+
+   
+    string GenerateMaYeucauNhapKho(string? maDuan, string maNguoiDung, DateTime now);
 }

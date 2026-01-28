@@ -207,7 +207,7 @@
                             <td>@item.HangSX</td>
                             <td>@item.NhaCC</td>
                             <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
-                            <td style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
+                            <td style="text-align: center;">@((item.SLMoi ?? item.SL)?.ToString() ?? "-")</td>
                             <td hidden  style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>

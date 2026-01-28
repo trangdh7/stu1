@@ -654,11 +654,20 @@ namespace Webkho_20241021.Services
 
             if (!vtYeuCauList.Any())
             {
-                if (!string.IsNullOrEmpty(maYeucau) && maYeucau.StartsWith("NHAPKHO_", StringComparison.OrdinalIgnoreCase))
+                // Với "Yêu cầu nhập kho", vật tư nằm ở vtphieunhapkho (không nằm ở vtyeucau).
+                // Trước đây nhận diện bằng prefix "NHAPKHO_", nhưng mã mới có thể là dạng "...NK_..." (vd: 251202NK_260128).
+                bool isNhapKhoRequest =
+                    (!string.IsNullOrEmpty(maYeucau) && maYeucau.StartsWith("NHAPKHO_", StringComparison.OrdinalIgnoreCase)) ||
+                    (yeuCau.TenYeucau == "Yêu cầu nhập kho") ||
+                    context.phieunhapkho.Any(p => p.MaYeucau == maYeucau);
+
+                if (isNhapKhoRequest)
                 {
                     var vtNhapKhoList = context.vtphieunhapkho
                         .Where(v => v.MaYeucau == maYeucau)
                         .ToList();
+
+                    System.Diagnostics.Debug.WriteLine($"[YeucauUpdateHelper/DongBoTrangThaiYeuCau] maYeucau={maYeucau}, isNhapKhoRequest={isNhapKhoRequest}, vtNhapKhoList.Count={vtNhapKhoList.Count}");
 
                     if (vtNhapKhoList.Any())
                     {

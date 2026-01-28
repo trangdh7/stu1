@@ -43,7 +43,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Services
                 if (string.IsNullOrWhiteSpace(yeucau.TenYeucau))
                 {
                     // Nếu là yêu cầu nhập kho đặc biệt (NHAPKHO_), set mặc định
-                    if (!string.IsNullOrEmpty(yeucau.MaYeucau) && yeucau.MaYeucau.StartsWith("NHAPKHO_"))
+                    if (!string.IsNullOrEmpty(yeucau.MaYeucau) && (yeucau.MaYeucau.StartsWith("NHAPKHO_") || yeucau.MaYeucau.StartsWith("NK")))
                     {
                         yeucau.TenYeucau = "Yêu cầu nhập kho";
                     }
@@ -61,9 +61,29 @@ namespace Webkho_20241021.Areas.TruongBPKho.Services
             // Cập nhật trạng thái yêu cầu
             CapNhatTrangThaiYeucau(yeucauList);
 
-            // Lọc bằng service dùng chung
+            // Lọc dữ liệu hợp lệ:
+            // - Yêu cầu vật tư: có dòng chi tiết trong vtyeucau
+            // - Yêu cầu nhập kho: chi tiết nằm ở vtphieunhapkho (thông qua phieunhapkho)
+            // Trước đây dùng DataFilterService.FilterYeucau(yeucauList, vtyeucauList) => làm "mất" các yêu cầu nhập kho.
             var VTyeucaulist = _context.vtyeucau.ToList();
-            var validYeucauList = DataFilterService.FilterYeucau(yeucauList, VTyeucaulist);
+
+            var yeucauCodesWithVtYeuCau = VTyeucaulist
+                .Select(vt => vt.VTMaYeucau)
+                .Where(code => !string.IsNullOrWhiteSpace(code))
+                .ToHashSet();
+
+            var yeucauCodesWithVtNhapKho = (from vtnk in _context.vtphieunhapkho
+                                           join pnk in _context.phieunhapkho on vtnk.MaNhapkho equals pnk.MaNhapkho
+                                           select pnk.MaYeucau)
+                .Where(code => !string.IsNullOrWhiteSpace(code))
+                .Distinct()
+                .ToHashSet();
+
+            var validYeucauList = yeucauList
+                .Where(y => !string.IsNullOrWhiteSpace(y.MaYeucau)
+                            && (yeucauCodesWithVtYeuCau.Contains(y.MaYeucau)
+                                || yeucauCodesWithVtNhapKho.Contains(y.MaYeucau)))
+                .ToList();
 
             var result = validYeucauList
                 .OrderByDescending(y => y.TrangThai == userRole)

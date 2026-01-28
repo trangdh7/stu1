@@ -517,6 +517,244 @@ namespace Webkho_20241021.Services
             }
         }
 
+        // =========================
+        // PHIẾU NHẬP KHO - EMAIL FLOW
+        // =========================
+        public async Task SendNotificationOnNhapKhoCreatedAsync(string maNhapkho)
+        {
+            var phieunhapkho = _context.phieunhapkho.FirstOrDefault(p => p.MaNhapkho == maNhapkho);
+            if (phieunhapkho == null) return;
+
+            // Xác định người tạo/ người yêu cầu (ưu tiên từ yeucau nếu có)
+            nguoidungs? nguoiTao = null;
+            yeucau? yeucau = null;
+
+            if (!string.IsNullOrWhiteSpace(phieunhapkho.MaYeucau))
+            {
+                yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == phieunhapkho.MaYeucau);
+                if (yeucau != null && !string.IsNullOrWhiteSpace(yeucau.YCMaNguoidung))
+                {
+                    nguoiTao = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == yeucau.YCMaNguoidung);
+                }
+            }
+
+            if (nguoiTao == null && !string.IsNullOrWhiteSpace(phieunhapkho.MaNguoidung))
+            {
+                nguoiTao = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == phieunhapkho.MaNguoidung);
+            }
+
+            // DUYỆT ĐƠN GIẢN:
+            // - Có dự án -> gửi QLDA duyệt (không phân biệt NV hay Trưởng BP)
+            // - Không có dự án -> gửi Giám đốc duyệt
+            if (!string.IsNullOrWhiteSpace(phieunhapkho.MaDuan))
+            {
+                await SendNotificationToProjectManagerOnNhapKhoNeedApprovalAsync(maNhapkho);
+            }
+            else
+            {
+                await SendNotificationToDirectorOnNhapKhoNeedApprovalAsync(maNhapkho);
+            }
+        }
+
+        public async Task SendNotificationToDepartmentHeadOnNhapKhoNeedApprovalAsync(string maNhapkho, string boPhan, string nguoiTao)
+        {
+            var truongPhong = _context.nguoidungs.FirstOrDefault(n => n.Bophan == boPhan && n.Chucvu == "Trưởng BP");
+            if (truongPhong == null) return;
+
+            var toEmail = GetEffectiveEmail(truongPhong.MaNguoidung, truongPhong.TenNguoidung, truongPhong.Email);
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                Debug.WriteLine($"⚠️ Không tìm được email cho Trưởng BP bộ phận {boPhan} (MaNguoidung = {truongPhong.MaNguoidung}). Bỏ qua gửi mail.");
+                return;
+            }
+
+            string areaSegment = boPhan switch
+            {
+                "BP kỹ thuật" => "TruongBPKythuat",
+                "BP kho" => "TruongBPKho",
+                "BP mua hàng" => "TruongBPMuahang",
+                "BP kế toán" => "TruongBPKetoan",
+                _ => "TruongBPKythuat"
+            };
+
+            var url = $"{_baseUrl}/{areaSegment}/Yeucau/Phieunhapkho?search={Uri.EscapeDataString(maNhapkho)}";
+
+            var subject = $"Phiếu nhập kho mới cần theo dõi/duyệt - {maNhapkho}";
+            var contentHtml = $@"
+<p>Kính gửi <strong>{truongPhong.TenNguoidung}</strong>,</p>
+<p>Bộ phận <strong>{boPhan}</strong> vừa tạo một phiếu nhập kho:</p>
+<ul>
+  <li><strong>Mã phiếu nhập kho:</strong> {maNhapkho}</li>
+  <li><strong>Người tạo:</strong> {nguoiTao}</li>
+  <li><strong>Thời gian:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</li>
+</ul>
+<p style='margin:20px 0;'>
+  <a href='{url}'
+     style='display:inline-block;padding:10px 18px;
+            background:#27ae60;color:#fff;
+            text-decoration:none;font-weight:bold;'>
+     Mở phiếu nhập kho trong hệ thống
+  </a>
+</p>
+<p>Nếu nút trên không hoạt động, bạn có thể dán link sau vào trình duyệt:</p>
+<p style='font-size:12px;word-break:break-all;'>
+  {url}
+</p>";
+
+            var body = BuildEmailTemplate("Thông báo phiếu nhập kho mới", contentHtml);
+            await SendEmailAsync(toEmail, subject, body);
+        }
+
+        public async Task SendNotificationToProjectManagerOnNhapKhoNeedApprovalAsync(string maNhapkho)
+        {
+            var phieunhapkho = _context.phieunhapkho.FirstOrDefault(p => p.MaNhapkho == maNhapkho);
+            if (phieunhapkho == null || string.IsNullOrWhiteSpace(phieunhapkho.MaDuan)) return;
+
+            var duan = _context.duans.FirstOrDefault(d => d.MaDuan == phieunhapkho.MaDuan);
+            if (duan == null || string.IsNullOrWhiteSpace(duan.MaNguoiQLDA)) return;
+
+            var qlda = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == duan.MaNguoiQLDA);
+            if (qlda == null) return;
+
+            var toEmail = GetEffectiveEmail(qlda.MaNguoidung, qlda.TenNguoidung, qlda.Email);
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                Debug.WriteLine($" Không tìm được email cho QLDA MaNguoidung = {qlda.MaNguoidung}. Bỏ qua gửi mail.");
+                return;
+            }
+
+            var url = $"{_baseUrl}/QuanLiDuAn/Yeucau/Phieunhapkho?search={Uri.EscapeDataString(maNhapkho)}";
+            var subject = $"Phiếu nhập kho cần QLDA duyệt - {maNhapkho}";
+            var contentHtml = $@"
+<p>Kính gửi <strong>{qlda.TenNguoidung}</strong>,</p>
+<p>Bạn có một phiếu nhập kho thuộc dự án <strong>{duan.TenDuan}</strong> cần duyệt:</p>
+<ul>
+  <li><strong>Mã phiếu nhập kho:</strong> {maNhapkho}</li>
+  <li><strong>Dự án:</strong> {duan.TenDuan} ({duan.MaDuan})</li>
+  <li><strong>Thời gian:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</li>
+</ul>
+<p style='margin:20px 0;'>
+  <a href='{url}'
+     style='display:inline-block;padding:10px 18px;
+            background:#27ae60;color:#fff;
+            text-decoration:none;font-weight:bold;'>
+     Mở phiếu nhập kho trong hệ thống
+  </a>
+</p>
+<p>Nếu nút trên không hoạt động, bạn có thể dán link sau vào trình duyệt:</p>
+<p style='font-size:12px;word-break:break-all;'>
+  {url}
+</p>";
+
+            var body = BuildEmailTemplate("Thông báo phiếu nhập kho cần duyệt", contentHtml);
+            await SendEmailAsync(toEmail, subject, body);
+        }
+
+        public async Task SendNotificationToDirectorOnNhapKhoNeedApprovalAsync(string maNhapkho)
+        {
+            var giamDoc = _context.nguoidungs.Where(n => n.Chucvu == "Giám đốc").ToList();
+            if (!giamDoc.Any()) return;
+
+            var url = $"{_baseUrl}/Giamdoc/Yeucau/Phieunhapkho?search={Uri.EscapeDataString(maNhapkho)}";
+
+            foreach (var gd in giamDoc)
+            {
+                var toEmail = GetEffectiveEmail(gd.MaNguoidung, gd.TenNguoidung, gd.Email);
+                if (string.IsNullOrWhiteSpace(toEmail))
+                {
+                    Debug.WriteLine($"⚠️ Không tìm được email cho Giám đốc MaNguoidung = {gd.MaNguoidung}. Bỏ qua gửi mail.");
+                    continue;
+                }
+
+                var subject = $"Phiếu nhập kho cần Giám đốc duyệt - {maNhapkho}";
+                var contentHtml = $@"
+<p>Kính gửi <strong>{gd.TenNguoidung}</strong>,</p>
+<p>Bạn có một phiếu nhập kho cần phê duyệt:</p>
+<ul>
+  <li><strong>Mã phiếu nhập kho:</strong> {maNhapkho}</li>
+  <li><strong>Thời gian:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</li>
+</ul>
+<p style='margin:20px 0;'>
+  <a href='{url}'
+     style='display:inline-block;padding:10px 18px;
+            background:#27ae60;color:#fff;
+            text-decoration:none;font-weight:bold;'>
+     Xem và phê duyệt phiếu nhập kho
+  </a>
+</p>
+<p>Nếu nút trên không hoạt động, bạn có thể dán link sau vào trình duyệt:</p>
+<p style='font-size:12px;word-break:break-all;'>
+  {url}
+</p>";
+
+                var body = BuildEmailTemplate("Thông báo phiếu nhập kho cần duyệt", contentHtml);
+                await SendEmailAsync(toEmail, subject, body);
+            }
+        }
+
+        public async Task SendNotificationToRequesterOnNhapKhoStatusAsync(string maNhapkho, string trangThai, string? ghiChu = null)
+        {
+            var phieunhapkho = _context.phieunhapkho.FirstOrDefault(p => p.MaNhapkho == maNhapkho);
+            if (phieunhapkho == null) return;
+
+            // Lấy người tạo/yêu cầu
+            string? maNguoiYeuCau = null;
+            if (!string.IsNullOrWhiteSpace(phieunhapkho.MaYeucau))
+            {
+                var yc = _context.yeucau.FirstOrDefault(y => y.MaYeucau == phieunhapkho.MaYeucau);
+                if (yc != null && !string.IsNullOrWhiteSpace(yc.YCMaNguoidung))
+                {
+                    maNguoiYeuCau = yc.YCMaNguoidung;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(maNguoiYeuCau) && !string.IsNullOrWhiteSpace(phieunhapkho.MaNguoidung))
+            {
+                maNguoiYeuCau = phieunhapkho.MaNguoidung;
+            }
+
+            if (string.IsNullOrWhiteSpace(maNguoiYeuCau)) return;
+
+            var nguoiDung = _context.nguoidungs.FirstOrDefault(n => n.MaNguoidung == maNguoiYeuCau);
+            if (nguoiDung == null) return;
+
+            var toEmail = GetEffectiveEmail(nguoiDung.MaNguoidung, nguoiDung.TenNguoidung, nguoiDung.Email);
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                Debug.WriteLine($"⚠️ Không tìm được email cho người yêu cầu MaNguoidung = {nguoiDung.MaNguoidung} khi cập nhật trạng thái nhập kho. Bỏ qua gửi mail.");
+                return;
+            }
+
+            var url = $"{_baseUrl}/NhanvienKho/Yeucau/Phieunhapkho?search={Uri.EscapeDataString(maNhapkho)}";
+            var subject = $"Cập nhật phiếu nhập kho - {maNhapkho}";
+            var ghiChuHtml = string.IsNullOrWhiteSpace(ghiChu) ? "" : $"<p><strong>Ghi chú:</strong> {System.Net.WebUtility.HtmlEncode(ghiChu)}</p>";
+
+            var contentHtml = $@"
+<p>Kính gửi <strong>{nguoiDung.TenNguoidung}</strong>,</p>
+<p>Phiếu nhập kho của bạn đã được cập nhật:</p>
+<ul>
+  <li><strong>Mã phiếu nhập kho:</strong> {maNhapkho}</li>
+  <li><strong>Trạng thái:</strong> <span style='color:#27ae60;'><strong>{trangThai}</strong></span></li>
+  <li><strong>Thời gian:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</li>
+</ul>
+{ghiChuHtml}
+<p style='margin:20px 0;'>
+  <a href='{url}'
+     style='display:inline-block;padding:10px 18px;
+            background:#27ae60;color:#fff;
+            text-decoration:none;font-weight:bold;'>
+     Xem phiếu nhập kho
+  </a>
+</p>
+<p>Nếu nút trên không hoạt động, bạn có thể dán link sau vào trình duyệt:</p>
+<p style='font-size:12px;word-break:break-all;'>
+  {url}
+</p>";
+
+            var body = BuildEmailTemplate("Thông báo cập nhật phiếu nhập kho", contentHtml);
+            await SendEmailAsync(toEmail, subject, body);
+        }
+
         public async Task SendNotificationToEmployeeAsync(string maYeucau, string nguoiYeuCau, string trangThai)
         {
             var nguoiDung = _context.nguoidungs

@@ -49,6 +49,28 @@ namespace Webkho_20241021.Services
             return EnsureUnique(baseCode, SuffixStyle.DashTwoDigits);
         }
 
+        public string GenerateMaYeucauNhapKho(string? maDuan, string maNguoiDung, DateTime now)
+        {
+            string datePart = now.ToString("yyMMdd");
+            string duanPart = CleanStringForCode(maDuan);
+            string userPart = CleanStringForCode(maNguoiDung);
+
+            string baseCode = !string.IsNullOrWhiteSpace(maDuan)
+                ? $"NK_DUAN_{duanPart}_{datePart}"
+                : $"NK_CN_{userPart}_{datePart}";
+
+            return EnsureUnique(baseCode, SuffixStyle.DashTwoDigits);
+        }
+
+        private static string CleanStringForCode(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return "";
+
+            string cleaned = new string(input.Where(char.IsLetterOrDigit).ToArray());
+            if (cleaned.Length > 20) cleaned = cleaned.Substring(0, 20);
+            return cleaned;
+        }
+
         private static string BuildBaseCommon(
             bool hasDuan,
             string? ycMaDuan,
