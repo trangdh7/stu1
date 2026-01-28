@@ -65,7 +65,10 @@ namespace Webkho_20241021.Areas.TruongBPKho.Services
             // - Yêu cầu vật tư: có dòng chi tiết trong vtyeucau
             // - Yêu cầu nhập kho: chi tiết nằm ở vtphieunhapkho (thông qua phieunhapkho)
             // Trước đây dùng DataFilterService.FilterYeucau(yeucauList, vtyeucauList) => làm "mất" các yêu cầu nhập kho.
-            var VTyeucaulist = _context.vtyeucau.ToList();
+            // Chỉ hiển thị các vật tư có SLMoi > 0
+            var VTyeucaulist = _context.vtyeucau
+                .Where(v => v.SLMoi.HasValue && v.SLMoi.Value > 0)
+                .ToList();
 
             var yeucauCodesWithVtYeuCau = VTyeucaulist
                 .Select(vt => vt.VTMaYeucau)

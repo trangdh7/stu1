@@ -231,7 +231,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     .ToList();
             }
 
-            var VTyeucaulist = _context.vtyeucau.ToList(); // Giữ cả dòng SLMoi = 0 để phản ánh trạng thái thực
+            // Chỉ hiển thị các dòng vật tư có số lượng mới > 0
+            var VTyeucaulist = _context.vtyeucau
+                .Where(v => v.SLMoi.HasValue && v.SLMoi.Value > 0)
+                .ToList();
             var Duans = _context.duans.ToList();
 
             var model = new Yeucauviewmodel
@@ -2211,8 +2214,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                     var slMoiValue = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
                     
-                    // Bỏ qua dòng nếu số lượng mới bằng 0 (không cần lưu và hiển thị)
-                    if (slMoiValue == 0)
+                    // Bỏ qua dòng nếu số lượng mới không nhập (null) hoặc <= 0 (không cần lưu và hiển thị)
+                    if (!slMoiValue.HasValue || slMoiValue.Value <= 0)
                     {
                         continue;
                     }

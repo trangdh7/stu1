@@ -4461,6 +4461,10 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     vtPhieunhapkhoDb.TrangThai = "Đã nhập kho";
                     _context.vtphieunhapkho.Update(vtPhieunhapkhoDb);
                 }
+
+                // Đồng bộ luôn vào danh sách đang xử lý để logic phía sau
+                // (DongBoTrangThaiVatTuYeuCau) nhìn thấy đúng trạng thái "Đã nhập kho"
+                vtPhieunhapkho.TrangThai = "Đã nhập kho";
             }
 
 

@@ -574,13 +574,19 @@ namespace Webkho_20241021.Services
             if (hasChoXuatKho)
                 return "Chờ xuất kho";
             
-            // Kiểm tra "Đã xuất kho": tất cả đã xuất hoặc hoàn thành, không có chờ xuất/mua hàng
-            if (hasDaXuatKho && 
-                vtList.All(v => 
-                    (!string.IsNullOrEmpty(v.TrangThai) && 
-                     (v.TrangThai.Contains("Đã xuất kho", StringComparison.OrdinalIgnoreCase) || 
-                      v.TrangThai == "Hoàn thành" || 
-                      v.TrangThai.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase)))))
+            // Kiểm tra "Đã xuất kho":
+            // - Có ít nhất 1 dòng "Đã xuất kho" / "Hoàn thành"
+            // - Các dòng còn lại KHÔNG ở trạng thái mua hàng / chờ xuất / chờ duyệt quan trọng
+            // - Cho phép tồn tại dòng "Chờ nhập kho" (đang mua thêm cho tương lai) mà không làm tụt trạng thái tổng
+            if (hasDaXuatKho &&
+                vtList.All(v =>
+                    !string.IsNullOrEmpty(v.TrangThai) &&
+                    (
+                        v.TrangThai.Contains("Đã xuất kho", StringComparison.OrdinalIgnoreCase) ||
+                        v.TrangThai.Equals("Hoàn thành", StringComparison.OrdinalIgnoreCase) ||
+                        v.TrangThai.Contains("Đã từ chối", StringComparison.OrdinalIgnoreCase) ||
+                        v.TrangThai.Contains("Chờ nhập kho", StringComparison.OrdinalIgnoreCase)
+                    )))
             {
                 return TrangThaiVatTu.DaXuatKho;
             }
@@ -680,6 +686,23 @@ namespace Webkho_20241021.Services
 
             // Đồng bộ trạng thái yeucau dựa trên vtyeucau
             yeuCau.TrangThai = TinhTrangThaiYeuCau(vtYeuCauList);
+
+            // ⭐ Bổ sung: nếu trạng thái vẫn "Chưa xác định" nhưng đã có phiếu nhập kho "Chờ nhập kho"
+            // cho một phần vật tư của yêu cầu này thì ưu tiên hiển thị "Chờ nhập kho"
+            if (string.Equals(yeuCau.TrangThai, "Chưa xác định", StringComparison.OrdinalIgnoreCase))
+            {
+                var vtNhapKhoDangCho = context.vtphieunhapkho
+                    .Where(v => v.MaYeucau == maYeucau && !string.IsNullOrEmpty(v.TrangThai))
+                    .ToList();
+
+                if (vtNhapKhoDangCho.Any() &&
+                    vtNhapKhoDangCho.Any(v =>
+                        TinhTrangThaiNhapKhoTuChiTiet(new List<vtphieunhapkho> { v }) == TrangThaiVatTu.ChoNhapKho))
+                {
+                    yeuCau.TrangThai = TrangThaiVatTu.ChoNhapKho; // "Chờ nhập kho"
+                }
+            }
+
             context.yeucau.Update(yeuCau);
         }
 

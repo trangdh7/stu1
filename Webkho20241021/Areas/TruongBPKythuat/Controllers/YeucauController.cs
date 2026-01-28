@@ -132,7 +132,10 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     .ToList();
             }
 
-            var VTyeucaulist = _context.vtyeucau.ToList(); // Giữ tất cả vật tư, kể cả SLMoi = 0 để không mất trạng thái nhập/xuất
+            // Chỉ hiển thị các vật tư có SLMoi > 0
+            var VTyeucaulist = _context.vtyeucau
+                .Where(v => v.SLMoi.HasValue && v.SLMoi.Value > 0)
+                .ToList();
             var Duans = _context.duans.ToList();
 
             var model = new Yeucauviewmodel
@@ -1521,8 +1524,8 @@ namespace Webkho_20241021.Areas.TruongBPKythuat.Controllers
                     var slCu = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                     var slMoi = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
                     
-                    // Bỏ qua dòng nếu số lượng mới bằng 0 (không cần lưu và hiển thị)
-                    if (slMoi == 0)
+                    // Bỏ qua dòng nếu số lượng mới không nhập (null) hoặc <= 0 (không cần lưu và hiển thị)
+                    if (!slMoi.HasValue || slMoi.Value <= 0)
                     {
                         continue;
                     }

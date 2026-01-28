@@ -60,8 +60,10 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             var userRole = HttpContext.Session.GetString("Chucvu");
 
             var Yeucaulist = _context.yeucau.ToList();
-            // Lấy toàn bộ vật tư yêu cầu; lọc trạng thái sẽ do helper xử lý (bao gồm cả trường hợp SLMoi = 0 nhưng đã nhập/xuất)
-            var VTyeucaulist = _context.vtyeucau.ToList();
+            // Chỉ lấy các vật tư yêu cầu có SLMoi > 0 để hiển thị
+            var VTyeucaulist = _context.vtyeucau
+                .Where(v => v.SLMoi.HasValue && v.SLMoi.Value > 0)
+                .ToList();
             var PhieuMuaHangList = _context.phieumuahang.ToList();
 
             foreach (var yeucau in Yeucaulist)
@@ -3310,9 +3312,9 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     var maSanPhamItem = i < MaSanpham.Count ? MaSanpham[i] : null;
                     var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                     var slMoiValue = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
-
-                    // Bỏ qua dòng nếu số lượng mới bằng 0 (không cần lưu và hiển thị)
-                    if (slMoiValue == 0)
+                    
+                    // Bỏ qua dòng nếu số lượng mới không nhập (null) hoặc <= 0 (không cần lưu và hiển thị)
+                    if (!slMoiValue.HasValue || slMoiValue.Value <= 0)
                     {
                         continue;
                     }

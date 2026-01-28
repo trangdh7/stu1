@@ -79,7 +79,10 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
                 }
             }
 
-            var VTyeucaulist = _context.vtyeucau.ToList();
+            // Chỉ hiển thị các vật tư có SLMoi > 0
+            var VTyeucaulist = _context.vtyeucau
+                .Where(v => v.SLMoi.HasValue && v.SLMoi.Value > 0)
+                .ToList();
             var Duans = _context.duans.ToList();
 
             // Lọc bằng service dùng chung

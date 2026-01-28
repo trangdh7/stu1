@@ -78,16 +78,10 @@ namespace Webkho_20241021.Services
             string? datePartFromFile,
             DateTime now)
         {
-            if (hasDuan)
-            {
-                string maDuanPart = FormatLast6Digits(ycMaDuan);
-                string datePart = datePartFromFile ?? now.ToString("yyMMdd");
-                return $"{maDuanPart}YC {stPart} {datePart}";
-            }
-
-            // Không dự án: YYMMDD YCCN ST
-            string dateNoProject = datePartFromFile ?? now.ToString("yyMMdd");
-            return $"{dateNoProject}YCCN {stPart}";
+            // Bỏ mã dự án và bỏ luôn "YC" / "YCCN"
+            // Định dạng mới: ST YYMMDD
+            string datePart = datePartFromFile ?? now.ToString("yyMMdd");
+            return $"{stPart} {datePart}";
         }
 
         private enum SuffixStyle
