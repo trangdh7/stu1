@@ -418,10 +418,58 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     tenNguoiYeuCau = nguoidung.TenNguoidung ?? "";
                 }
             }
+
+            // Lấy tồn kho hiện tại theo mã sản phẩm từ bảng khotongs
+            var maSanphamList = PhieuxuatkhoList
+                .Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham))
+                .Select(v => v.MaSanpham!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var tonKhoByCode = _context.khotongs
+                .Where(k => k.MaSanpham != null && maSanphamList.Contains(k.MaSanpham))
+                .GroupBy(k => k.MaSanpham!)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Sum(x => x.SL ?? 0),
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+            var items = PhieuxuatkhoList.Select(v =>
+            {
+                int tonKho = 0;
+                if (!string.IsNullOrWhiteSpace(v.MaSanpham) &&
+                    tonKhoByCode.TryGetValue(v.MaSanpham, out var ton))
+                {
+                    tonKho = ton;
+                }
+
+                return new
+                {
+                    v.ID,
+                    v.MaXuatkho,
+                    v.MaYeucau,
+                    v.TenSanpham,
+                    v.MaSanpham,
+                    v.Makho,
+                    v.HangSX,
+                    v.NhaCC,
+                    v.SL,
+                    v.DonVi,
+                    v.DonGia,
+                    v.ThanhTien,
+                    v.NgayNhapkho,
+                    v.NgayBaohanh,
+                    v.ThoiGianBH,
+                    v.TrangThai,
+                    v.LoaiCapPhat,
+                    TonKho = tonKho
+                };
+            }).ToList();
             
             return Json(new
             {
-                items = PhieuxuatkhoList,
+                items = items,
                 maXuatkho = MaXuatkho,
                 tenNguoiYeuCau = tenNguoiYeuCau
             });
@@ -1354,23 +1402,23 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     {
                         var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                         var slMoiValue = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
-                        
+
                         // Bỏ qua dòng nếu số lượng mới không nhập (null) hoặc <= 0 (không cần lưu và hiển thị)
                         if (!slMoiValue.HasValue || slMoiValue.Value <= 0)
                         {
                             continue;
                         }
-                        
+
                         var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
-                        
+
                         // Tính số lượng mới (ưu tiên SLMoi, sau đó SLCu, cuối cùng là SL)
                         int slMoi = slMoiValue ?? slCuValue ?? ((SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0);
-                        
+
                         // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
                         var existingVTYeucau = _context.vtyeucau
-                            .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
+                            .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau
                                 && string.Equals(vt.MaSanpham, MaSanpham[i], StringComparison.OrdinalIgnoreCase));
-                        
+
                         if (existingVTYeucau != null)
                         {
                             // Cập nhật vật tư yêu cầu hiện có

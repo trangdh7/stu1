@@ -42,11 +42,12 @@ function getThongbaoDatalayout() {
             console.log("Dữ liệu thông báo của layout là:", data);
 
             // Tính tổng thông báo
+            // Ghi chú: Riêng Giám đốc không hiển thị thông báo "xuất kho"
             const tongthongbao =
                 (data.thongbaoyeucaucount || 0) +
                 (data.thongbaomuahangcount || 0) +
                 (data.thongbaonhapkhocount || 0) +
-                (data.thongbaoxuatkhocount || 0);
+                ((area === 'Giamdoc') ? 0 : (data.thongbaoxuatkhocount || 0));
 
             if (tongthongbao > 0) {
                 $('.Yeucau .badge').addClass('show');

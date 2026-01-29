@@ -59,3 +59,21 @@
     font-weight: 500;
 }
 
+/* Phiếu xuất kho: thu nhỏ ĐV để Trạng thái hiển thị rõ hơn */
+.tablethietbi td.td-donvi,
+.tablethietbi th.td-donvi {
+    width: 60px;
+    max-width: 60px;
+    white-space: nowrap;
+}
+
+.tablethietbi td.td-trangthai,
+.tablethietbi th.td-trangthai {
+    min-width: 220px;
+    width: 220px;
+}
+
+.tablethietbi .trangthai-vt-select {
+    min-width: 200px;
+}
+

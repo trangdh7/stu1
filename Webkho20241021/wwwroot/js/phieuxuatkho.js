@@ -18,6 +18,55 @@ $(document).ready(function () {
             showVTxuatkho(MaXuatkho);
         }
     });
+
+    // Khi submit xuất kho: đính kèm SL thực xuất (dạng JSON) vào form và xử lý AJAX
+    $(document).on('submit', 'form[action*="/Yeucau/Xuliphieuxuatkho"]', function (e) {
+        const pathSegments = window.location.pathname.split('/');
+        const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        if (!isAreaKho(area)) return;
+
+        e.preventDefault(); // Ngăn submit form thông thường
+
+        const $form = $(this);
+        const payload = buildSlThucXuatPayload();
+        const validationError = validateSlThucXuatInputs();
+        if (validationError) {
+            alert(validationError);
+            return false;
+        }
+
+        const formData = new FormData($form[0]);
+        formData.append('slThucXuatJson', payload);
+        
+        const maXuatkho = $form.find('input[name="MaXuatkho"]').val();
+        const action = $form.find('button[name="action"]').val() || 'approve';
+
+        // Disable button để tránh double submit
+        const $submitBtn = $form.find('button[type="submit"]');
+        const originalHtml = $submitBtn.html();
+        $submitBtn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Đang xử lý...');
+
+        $.ajax({
+            url: $form.attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                // Server trả về Redirect + TempData (không tự áp vào UI khi dùng AJAX),
+                // nên cần reload để danh sách phiếu (trạng thái/ngày) cập nhật ngay và hiện thông báo.
+                setTimeout(function () {
+                    location.reload();
+                }, 150);
+            },
+            error: function(xhr, status, error) {
+                alert('Có lỗi xảy ra khi xuất kho: ' + (xhr.responseJSON?.message || error));
+                $submitBtn.prop('disabled', false).html(originalHtml);
+            }
+        });
+
+        return false;
+    });
 });
 
 const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
@@ -165,6 +214,70 @@ function isAreaKho(area) {
     return area === 'TruongBPKho' || area === 'NhanvienKho';
 }
 
+function buildSlThucXuatPayload() {
+    const items = [];
+    $('.tablethietbi tbody tr[data-vt-id]').each(function () {
+        const id = $(this).data('vt-id');
+        const $input = $(this).find('.sl-thucxuat-input');
+        if (!id || $input.length === 0) return;
+        const v = parseInt($input.val(), 10);
+        items.push({ id: id, slThucXuat: isNaN(v) ? 0 : v });
+    });
+    return JSON.stringify(items);
+}
+
+function bindSlThucXuatInputs() {
+    // Chỉ cho nhập số nguyên dương và tự động ép về [1, max]
+    $('.tablethietbi')
+        .off('input', '.sl-thucxuat-input')
+        .on('input', '.sl-thucxuat-input', function () {
+            const $input = $(this);
+            // Loại bỏ ký tự không phải số (ngăn -, +, e, . v.v.)
+            let raw = $input.val().toString().replace(/[^0-9]/g, '');
+            if (raw === '') {
+                $input.val('');
+                return;
+            }
+            let value = parseInt(raw, 10);
+            if (isNaN(value) || value <= 0) {
+                value = 1;
+            }
+            const max = parseInt($input.attr('max'), 10);
+            if (!isNaN(max) && value > max) {
+                value = max;
+            }
+            $input.val(value);
+        })
+        .off('blur', '.sl-thucxuat-input')
+        .on('blur', '.sl-thucxuat-input', function () {
+            const $input = $(this);
+            let v = parseInt($input.val(), 10);
+            const max = parseInt($input.attr('max'), 10);
+            if (isNaN(v) || v <= 0) v = 1;
+            if (!isNaN(max) && v > max) v = max;
+            $input.val(v);
+        });
+}
+
+function validateSlThucXuatInputs() {
+    let message = '';
+    $('.tablethietbi tbody tr[data-vt-id]').each(function () {
+        const $input = $(this).find('.sl-thucxuat-input');
+        if ($input.length === 0) return;
+        const max = parseInt($input.attr('max'), 10);
+        const v = parseInt($input.val(), 10);
+        if (isNaN(v) || v <= 0) {
+            message = 'SL thực xuất phải là số > 0.';
+            return false;
+        }
+        if (!isNaN(max) && v > max) {
+            message = `SL thực xuất không được lớn hơn số Còn lại (${max}).`;
+            return false;
+        }
+    });
+    return message;
+}
+
 // Hàm load dữ liệu vật tư
 function loadVTData(Maxuatkho, url, area) {
     $.ajax({
@@ -209,18 +322,32 @@ function loadVTData(Maxuatkho, url, area) {
             if (data && data.length > 0) {
                 let STT = 1;
                 data.forEach(function (item) {
+                    const slVal = (item.sl != null ? item.sl : (item.SL != null ? item.SL : 0));
+                    const slYeuCauVal = (item.slYeuCau != null ? item.slYeuCau : (item.SLYeuCau != null ? item.SLYeuCau : slVal));
+                    const slConLaiVal = (item.slConLai != null ? item.slConLai : (item.SLConLai != null ? item.SLConLai : slVal));
+                    const tonKhoVal = (item.tonKho != null ? item.tonKho : (item.TonKho != null ? item.TonKho : 0));
+
+                    // Cột SL = SL gốc của phiếu (server trả về ở slYeuCauVal)
+                    // (phiếu con vẫn lưu SL = số thực xuất, nhưng UI phải hiển thị SL gốc để làm căn cứ)
+                    const slHienThi = slYeuCauVal;
+
+                    // Đã xuất = SL yêu cầu ban đầu - SL còn lại cần xuất (từ yêu cầu ban đầu)
+                    let slDaXuatVal = Math.max(0, slYeuCauVal - slConLaiVal);
+
+                    // Cần xuất = số lượng còn lại cần xuất (theo SL gốc - đã xuất)
+                    const slCanXuat = slConLaiVal;
                     let tt = (item.trangThai && TRANGTHAI_OPTIONS.indexOf(item.trangThai) >= 0)
                         ? item.trangThai : TRANGTHAI_DEFAULT;
                     let bgColor = '#4caf50';
                     if (tt === 'Đang chuẩn bị hàng') bgColor = '#2196f3';
                     else if (tt === 'Đã chuẩn bị hàng xong') bgColor = '#4caf50';
                     else if (tt === 'Thiếu hàng- đang mua hàng') bgColor = '#ff9800';
-                    else if (item.trangThai === 'Đã xác nhận nhận hàng' || item.trangThai === 'Đã xuất kho' || item.trangThai === 'Hoàn thành') bgColor = '#4caf50';
+                    else if (item.trangThai === 'Đã xuất kho' || item.trangThai === 'Hoàn thành') bgColor = '#4caf50';
 
                     let trangThaiHtml, thaotacHtml;
                     if (isKho) {
                         let vtId = item.id != null ? item.id : (item.ID != null ? item.ID : '');
-                        let isDaXuatKho = item.trangThai === 'Đã xuất kho';
+                        let isDaXuatKho = item.trangThai === 'Đã xuất kho' || item.trangThai === 'Hoàn thành';
                         if (isDaXuatKho) {
                             trangThaiHtml = `<span class="vt-trangthai-badge" style="background-color:#4caf50; color:black; padding:2px 6px; border-radius:3px; font-size:11px;">Đã xuất kho</span>`;
                             thaotacHtml = '';
@@ -237,7 +364,25 @@ function loadVTData(Maxuatkho, url, area) {
                         thaotacHtml = '';
                     }
 
-                    let dataAttrs = isKho && !(item.trangThai === 'Đã xuất kho') ? ` data-vt-id="${item.id != null ? item.id : (item.ID != null ? item.ID : '')}" data-maxuatkho="${Maxuatkho}"` : '';
+                    let slThucXuatHtml = '';
+                    if (isKho) {
+                        let vtId = item.id != null ? item.id : (item.ID != null ? item.ID : '');
+                        let isDaXuatKho = item.trangThai === 'Đã xuất kho' || item.trangThai === 'Hoàn thành';
+                        if (isDaXuatKho) {
+                            slThucXuatHtml = `${slCanXuat}`; // Đã xuất hết (Hoàn thành) thì cần xuất = 0
+                        } else {
+                            // Giới hạn tối đa theo số "Cần xuất" còn lại,
+                            // và không được vượt quá SL gốc của phiếu (slYeuCauVal)
+                            const safeMax = Math.min(slCanXuat, slYeuCauVal);
+                            const defaultVal = (safeMax > 0) ? safeMax : ((slVal > 0) ? slVal : 1);
+                            slThucXuatHtml = `<input type="number" class="sl-thucxuat-input" data-vt-id="${vtId}" value="${defaultVal}" min="1" max="${safeMax}" style="width: 80px; padding: 4px 6px;" />`;
+                        }
+                    } else {
+                        // Các bộ phận khác chỉ xem: hiển thị số lượng cần xuất cho phiếu hiện tại
+                        slThucXuatHtml = `${slCanXuat}`;
+                    }
+
+                    let dataAttrs = isKho && !(item.trangThai === 'Đã xuất kho' || item.trangThai === 'Hoàn thành') ? ` data-vt-id="${item.id != null ? item.id : (item.ID != null ? item.ID : '')}" data-maxuatkho="${Maxuatkho}"` : '';
                     let thaotacTd = isKho ? `<td class="td-thaotac">${thaotacHtml}</td>` : '';
                     let row = `<tr${dataAttrs}>
                         <td>${STT++}</td>
@@ -246,9 +391,12 @@ function loadVTData(Maxuatkho, url, area) {
                         <td>${item.makho || 'Không xác định'}</td>
                         <td>${item.hangSX || 'Không xác định'}</td>
                         <td>${item.nhaCC || 'Không xác định'}</td>
-                        <td>${item.sl}</td>
-                        <td>${item.donVi || 'Không xác định'}</td>
-                        <td>${trangThaiHtml}</td>
+                        <td>${slHienThi}</td>
+                        <td>${slDaXuatVal}</td>
+                        <td>${slThucXuatHtml}</td>
+                        <td>${tonKhoVal}</td>
+                        <td class="td-donvi">${item.donVi || 'Không xác định'}</td>
+                        <td class="td-trangthai">${trangThaiHtml}</td>
                         ${thaotacTd}
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
@@ -256,9 +404,10 @@ function loadVTData(Maxuatkho, url, area) {
                 if (isKho) {
                     bindTrangThaiVTSelect(Maxuatkho, area);
                     bindXuatKhoItemButtons(area);
+                    bindSlThucXuatInputs();
                 }
             } else {
-                let colCount = isKho ? 10 : 9;
+                let colCount = isKho ? 13 : 12;
                 $('.tablethietbi tbody').append(
                     `<tr><td colspan="${colCount}" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                 );
@@ -353,9 +502,23 @@ function bindXuatKhoItemButtons(area) {
         const $btn = $(this);
         const vtId = $btn.data('vt-id');
         const maXuatkho = $btn.data('maxuatkho');
+        const $row = $btn.closest('tr');
+        const $input = $row.find('.sl-thucxuat-input');
+        const soLuongThucXuat = $input.length ? parseInt($input.val(), 10) : null;
+        const max = $input.length ? parseInt($input.attr('max'), 10) : null;
         if (!vtId || !maXuatkho) {
             alert('Thông tin không hợp lệ!');
             return;
+        }
+        if ($input.length) {
+            if (isNaN(soLuongThucXuat) || soLuongThucXuat <= 0) {
+                alert('SL thực xuất phải là số > 0.');
+                return;
+            }
+        if (!isNaN(max) && soLuongThucXuat > max) {
+            alert(`SL thực xuất không được lớn hơn số Còn lại (${max}).`);
+                return;
+            }
         }
         if (!confirm('Bạn có chắc muốn xuất kho vật tư này? Sẽ tạo phiếu xuất kho mới chỉ cho vật tư này.')) {
             return;
@@ -364,16 +527,25 @@ function bindXuatKhoItemButtons(area) {
         $.ajax({
             url: `/${area}/Yeucau/XuatKhoVatTuRieng`,
             method: 'POST',
-            data: { MaXuatkho: maXuatkho, VatTuId: vtId },
+            data: { MaXuatkho: maXuatkho, VatTuId: vtId, SoLuongThucXuat: soLuongThucXuat },
             success: function (r) {
                 if (r.success) {
-                    const $row = $btn.closest('tr');
-                    const $tdTrangThai = $row.find('td').eq(8);
-                    $tdTrangThai.html('<span class="vt-trangthai-badge" style="background-color:#4caf50; color:black; padding:2px 6px; border-radius:3px; font-size:11px;">Đã xuất kho</span>');
-                    $btn.closest('td').html('');
-                    $row.removeAttr('data-vt-id');
-                    alert(`Đã tạo phiếu xuất kho mới: ${r.maXuatkhoMoi || 'Thành công'}`);
-                    updateXuatKhoItemButtons(maXuatkho, area);
+                    const maMoi = r.maXuatkhoMoi || '';
+                    alert(`Đã tạo phiếu xuất kho mới: ${maMoi || 'Thành công'}`);
+                    // Reload lại chi tiết phiếu hiện tại để cập nhật SL còn lại (không cần F5)
+                    if (typeof showVTxuatkho === 'function') {
+                        // Reload lại chi tiết phiếu hiện tại
+                        showVTxuatkho(maXuatkho);
+                        // Nếu có phiếu mới, có thể reload lại danh sách phiếu ở trên
+                        setTimeout(function() {
+                            location.reload();
+                        }, 500);
+                    } else {
+                        updateXuatKhoItemButtons(maXuatkho, area);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 500);
+                    }
                 } else {
                     alert(r.message || 'Có lỗi xảy ra!');
                     $btn.prop('disabled', false).html('<i class="bx bxs-check-circle"></i> Xuất kho');

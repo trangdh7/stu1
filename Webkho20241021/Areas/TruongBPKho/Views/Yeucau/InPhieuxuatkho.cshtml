@@ -3,10 +3,12 @@
     Layout = null;
 }
 @using Webkho_20241021.Models
+@using Webkho_20241021.Services
 @{
     var phieuxuatkho = ViewBag.Phieuxuatkho as phieuxuatkho;
     var vtphieuxuatkho = ViewBag.VTPhieuxuatkho as List<vtphieuxuatkho>;
     var yeucau = ViewBag.Yeucau as yeucau;
+    var slYeuCauByBaseCode = ViewBag.SLYeuCauByBaseCode as Dictionary<string, int> ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 }
 
 <!DOCTYPE html>
@@ -119,12 +121,14 @@
                             }
 
                             tongTien += thanhTien;
+                            var baseCode = YeucauUpdateHelper.GetBaseProductCode(item.MaSanpham ?? "") ?? "";
+                            var slYeuCau = slYeuCauByBaseCode.TryGetValue(baseCode, out var req) ? req : (item.SL ?? 0);
                             <tr>
                                 <td class="text-center">@stt</td>
                                 <td>@(item.TenSanpham ?? "")</td>
                                 <td class="text-center">@(item.MaSanpham ?? "")</td>
                                 <td class="text-center">@(item.DonVi ?? "")</td>
-                                <td class="text-center col-theoctu">@((item.SL ?? 0).ToString("N0"))</td>
+                                <td class="text-center col-theoctu">@slYeuCau.ToString("N0")</td>
                                 <td class="text-center col-thucnhap">@((item.SL ?? 0).ToString("N0"))</td>
                                 <td class="text-right">@((donGia).ToString("N0"))</td>
                                 <td class="text-right">@((thanhTien).ToString("N0"))</td>

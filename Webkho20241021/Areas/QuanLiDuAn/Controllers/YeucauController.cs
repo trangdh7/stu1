@@ -386,9 +386,46 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
         [HttpGet]
         public IActionResult GetVTYeucau(string MaYeucau)
         {
-            // Kiểm tra nếu là yêu cầu nhập kho:
-            // - Trước đây dựa vào prefix "NHAPKHO_" nhưng thực tế mã có thể là dạng "...NK_..." (vd: 251202NK_260128)
-            // - An toàn hơn: nếu tồn tại phiếu nhập kho theo MaYeucau hoặc TenYeucau = "Yêu cầu nhập kho"
+            if (string.IsNullOrWhiteSpace(MaYeucau))
+            {
+                return Json(new List<object>());
+            }
+
+            // Nếu yêu cầu có dòng chi tiết trong vtyeucau thì ưu tiên hiển thị
+            // danh sách đó (yêu cầu vật tư gốc), kể cả khi đã có phiếu nhập kho.
+            bool hasVatTuYeuCau = _context.vtyeucau
+                .Any(v => v.VTMaYeucau == MaYeucau);
+
+            if (hasVatTuYeuCau)
+            {
+                var vatTuList = _context.vtyeucau
+                    .Where(v => v.VTMaYeucau == MaYeucau)
+                    .Select(v => new
+                    {
+                        id = v.ID,
+                        vtMaYeucau = v.VTMaYeucau,
+                        tenSanpham = v.TenSanpham,
+                        maSanpham = v.MaSanpham,
+                        hangSX = v.HangSX,
+                        nhaCC = v.NhaCC,
+                        slCu = v.SLCu,
+                        slMoi = v.SLMoi,
+                        sl = v.SL,
+                        donVi = v.DonVi,
+                        ngayCanHang = v.NgayCanHang,
+                        ngayNhapkho = v.NgayNhapkho,
+                        ngayBaohanh = v.NgayBaohanh,
+                        thoiGianBH = v.ThoiGianBH,
+                        ngayDuyet = v.NgayDuyet,
+                        trangThai = v.TrangThai,
+                        ghiChu = v.GhiChu
+                    })
+                    .ToList();
+                return Json(vatTuList);
+            }
+
+            // Chỉ khi KHÔNG có vtyeucau, mới coi là yêu cầu nhập kho đặc biệt
+            // và lấy dữ liệu từ vtphieunhapkho/phieunhapkho.
             bool isNhapKhoRequest =
                 (!string.IsNullOrEmpty(MaYeucau) && MaYeucau.StartsWith("NHAPKHO_", StringComparison.OrdinalIgnoreCase)) ||
                 _context.phieunhapkho.Any(p => p.MaYeucau == MaYeucau) ||
@@ -396,60 +433,33 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
             if (isNhapKhoRequest)
             {
-                // Lấy dữ liệu từ vtphieunhapkho thông qua phieunhapkho
                 var vatTuList = (from vtnk in _context.vtphieunhapkho
-                                join pnk in _context.phieunhapkho on vtnk.MaNhapkho equals pnk.MaNhapkho
-                                where pnk.MaYeucau == MaYeucau
-                                select new
-                                {
-                                    id = vtnk.ID,
-                                    vtMaYeucau = MaYeucau,
-                                    tenSanpham = vtnk.TenSanpham,
-                                    maSanpham = vtnk.MaSanpham,
-                                    hangSX = vtnk.HangSX,
-                                    nhaCC = vtnk.NhaCC,
-                                    slCu = (int?)null,
-                                    slMoi = vtnk.SL,
-                                    sl = vtnk.SL,
-                                    donVi = vtnk.DonVi,
-                                    ngayCanHang = (DateTime?)null,
-                                    ngayNhapkho = vtnk.NgayNhapkho,
-                                    ngayBaohanh = vtnk.NgayBaohanh,
-                                    thoiGianBH = vtnk.ThoiGianBH,
-                                    ngayDuyet = (DateTime?)null,
-                                    trangThai = vtnk.TrangThai,
-                                    ghiChu = (string?)null
-                                }).ToList();
+                                 join pnk in _context.phieunhapkho on vtnk.MaNhapkho equals pnk.MaNhapkho
+                                 where pnk.MaYeucau == MaYeucau
+                                 select new
+                                 {
+                                     id = vtnk.ID,
+                                     vtMaYeucau = MaYeucau,
+                                     tenSanpham = vtnk.TenSanpham,
+                                     maSanpham = vtnk.MaSanpham,
+                                     hangSX = vtnk.HangSX,
+                                     nhaCC = vtnk.NhaCC,
+                                     slCu = (int?)null,
+                                     slMoi = vtnk.SL,
+                                     sl = vtnk.SL,
+                                     donVi = vtnk.DonVi,
+                                     ngayCanHang = (DateTime?)null,
+                                     ngayNhapkho = vtnk.NgayNhapkho,
+                                     ngayBaohanh = vtnk.NgayBaohanh,
+                                     thoiGianBH = vtnk.ThoiGianBH,
+                                     ngayDuyet = (DateTime?)null,
+                                     trangThai = vtnk.TrangThai,
+                                     ghiChu = (string?)null
+                                 }).ToList();
                 return Json(vatTuList);
             }
-            else
-            {
-                // Lấy dữ liệu từ vtyeucau và chuẩn hóa field name camelCase để JS đọc thống nhất, lọc bỏ các dòng có SLMoi = 0
-                var vatTuList = _context.vtyeucau
-                                    .Where(v => v.VTMaYeucau == MaYeucau)
-                                     .Select(v => new
-                                     {
-                                         id = v.ID,
-                                         vtMaYeucau = v.VTMaYeucau,
-                                         tenSanpham = v.TenSanpham,
-                                         maSanpham = v.MaSanpham,
-                                         hangSX = v.HangSX,
-                                         nhaCC = v.NhaCC,
-                                         slCu = v.SLCu,
-                                         slMoi = v.SLMoi,
-                                         sl = v.SL,
-                                         donVi = v.DonVi,
-                                         ngayCanHang = v.NgayCanHang,
-                                         ngayNhapkho = v.NgayNhapkho,
-                                         ngayBaohanh = v.NgayBaohanh,
-                                         thoiGianBH = v.ThoiGianBH,
-                                         ngayDuyet = v.NgayDuyet,
-                                         trangThai = v.TrangThai,
-                                         ghiChu = v.GhiChu
-                                     })
-                                     .ToList();
-                return Json(vatTuList);
-            }
+
+            return Json(new List<object>());
         }
 
         [HttpGet]
@@ -1722,7 +1732,56 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
         {
             var PhieuxuatkhoList = _context.vtphieuxuatkho
                                  .Where(v => v.MaXuatkho == MaXuatkho).ToList();
-            return Json(PhieuxuatkhoList);
+
+            // Lấy tồn kho hiện tại theo mã sản phẩm từ bảng khotongs
+            var maSanphamList = PhieuxuatkhoList
+                .Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham))
+                .Select(v => v.MaSanpham!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var tonKhoByCode = _context.khotongs
+                .Where(k => k.MaSanpham != null && maSanphamList.Contains(k.MaSanpham))
+                .GroupBy(k => k.MaSanpham!)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Sum(x => x.SL ?? 0),
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+            var items = PhieuxuatkhoList.Select(v =>
+            {
+                int tonKho = 0;
+                if (!string.IsNullOrWhiteSpace(v.MaSanpham) &&
+                    tonKhoByCode.TryGetValue(v.MaSanpham, out var ton))
+                {
+                    tonKho = ton;
+                }
+
+                return new
+                {
+                    v.ID,
+                    v.MaXuatkho,
+                    v.MaYeucau,
+                    v.TenSanpham,
+                    v.MaSanpham,
+                    v.Makho,
+                    v.HangSX,
+                    v.NhaCC,
+                    v.SL,
+                    v.DonVi,
+                    v.DonGia,
+                    v.ThanhTien,
+                    v.NgayNhapkho,
+                    v.NgayBaohanh,
+                    v.ThoiGianBH,
+                    v.TrangThai,
+                    v.LoaiCapPhat,
+                    TonKho = tonKho
+                };
+            }).ToList();
+
+            return Json(items);
         }
 
         
@@ -2198,6 +2257,16 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     YCMaKho?.Count ?? 0
                 }.Max();
 
+                // Tải trước toàn bộ vật tư thuộc mã yêu cầu này để tránh truy vấn lặp lại
+                // và giảm nguy cơ lỗi "A second operation was started on this context instance..."
+                var existingVatTuDict = _context.vtyeucau
+                    .Where(vt => vt.VTMaYeucau == yeucau.MaYeucau)
+                    .ToDictionary(
+                        vt => vt.MaSanpham ?? string.Empty,
+                        StringComparer.OrdinalIgnoreCase);
+
+                bool hasVatTuChanges = false;
+
                 for (int i = 0; i < rowCount; i++)
                 {
                     var ten = (TenSanpham != null && i < TenSanpham.Count) ? TenSanpham[i] : null;
@@ -2205,7 +2274,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     {
                         continue;
                     }
-
+                    
                     var maKhoValue = (YCMaKho != null && i < YCMaKho.Count) ? YCMaKho[i] : null;
                     var maValue = (MaSanpham != null && i < MaSanpham.Count) ? MaSanpham[i] : null;
                     var hangValue = (HangSX != null && i < HangSX.Count) ? HangSX[i] : null;
@@ -2213,7 +2282,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     var donViValue = (DonVi != null && i < DonVi.Count) ? DonVi[i] : null;
                     var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                     var slMoiValue = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
-                    
+
                     // Bỏ qua dòng nếu số lượng mới không nhập (null) hoặc <= 0 (không cần lưu và hiển thị)
                     if (!slMoiValue.HasValue || slMoiValue.Value <= 0)
                     {
@@ -2221,6 +2290,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     }
                     
                     var ghiChuValue = (GhiChu != null && i < GhiChu.Count) ? GhiChu[i] : null;
+
+                    // Tìm vật tư yêu cầu hiện có theo MaYeucau + MaSanpham
+                    var maKey = maValue ?? string.Empty;
+                    existingVatTuDict.TryGetValue(maKey, out var existingVTYeucau);
                     // Cột SL lấy giá trị từ SLMoi (nếu có), nếu không thì lấy từ SLCu, cuối cùng mới lấy từ SL
                     var slValue = slMoiValue ?? slCuValue ?? ((SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0);
 
@@ -2233,11 +2306,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     
                     if (khoMatch != null)
                     {
-                        // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
-                        var existingVTYeucau = _context.vtyeucau
-                            .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
-                                && string.Equals(vt.MaSanpham, maValue, StringComparison.OrdinalIgnoreCase));
-                        
+                        // existingVTYeucau đã được tính ở đầu vòng lặp (theo MaYeucau + maValue)
                         if (existingVTYeucau != null)
                         {
                             // Cập nhật vật tư yêu cầu hiện có
@@ -2278,6 +2347,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                 }
                                 
                                 _context.vtyeucau.Update(existingVTYeucau);
+                                hasVatTuChanges = true;
                             }
                         }
                         else
@@ -2311,6 +2381,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             }
                             
                             _context.vtyeucau.Add(newVtyeucau);
+                            existingVatTuDict[maKey] = newVtyeucau;
+                            hasVatTuChanges = true;
                         }
                     }
                     else
@@ -2334,14 +2406,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                 TrangThai = "VT mới"
                             };
                             _context.khotongs.Add(vtMoiKho);
-                            _context.SaveChanges(); // Lưu ngay để đảm bảo Makho tồn tại
+                            hasVatTuChanges = true;
                         }
 
-                        // Kiểm tra xem vật tư này đã tồn tại trong yêu cầu chưa
-                        var existingVTYeucau = _context.vtyeucau
-                            .FirstOrDefault(vt => vt.VTMaYeucau == yeucau.MaYeucau 
-                                && string.Equals(vt.MaSanpham, maValue, StringComparison.OrdinalIgnoreCase));
-                        
+                        // existingVTYeucau đã được tính ở đầu vòng lặp (theo MaYeucau + maValue)
                         if (existingVTYeucau != null)
                         {
                             // Cập nhật vật tư yêu cầu hiện có
@@ -2375,7 +2443,8 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                 {
                                     existingVTYeucau.TrangThai = yeucau.TrangThai;
                                 }
-                                _context.vtyeucau.Update(existingVTYeucau);
+                            _context.vtyeucau.Update(existingVTYeucau);
+                            hasVatTuChanges = true;
                             }
                         }
                         else
@@ -2409,8 +2478,14 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             }
                             
                             _context.vtyeucau.Add(newVtyeucau);
+                            existingVatTuDict[maKey] = newVtyeucau;
+                            hasVatTuChanges = true;
                         }
                     }
+                }
+
+                if (hasVatTuChanges)
+                {
                     _context.SaveChanges();
                 }
                 

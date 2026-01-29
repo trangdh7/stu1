@@ -174,9 +174,9 @@
                 </div>
             }
             <style>
-                /* Cột Trạng thái thu nhỏ, cột Thao tác rộng hơn để nút Xuất Kho đủ to */
-                .tablethietbi thead tr td:nth-child(9),
-                .tablethietbi tbody tr td:nth-child(9) { max-width: 138px; width: 138px; }
+                /* (Dùng CSS theo class ở `wwwroot/css/yeucau.css` để áp dụng cho mọi area) */
+
+                /* Cột Thao tác đủ rộng để nút Xuất Kho hiển thị đẹp */
                 .tablethietbi thead tr td:last-child,
                 .tablethietbi tbody tr td:last-child { min-width: 200px; width: 200px; padding: 8px; }
                 .tablethietbi .btn-xuatkho-item { white-space: nowrap; min-height: 40px; width: 100%; max-width: 100%; box-sizing: border-box; justify-content: center; }
@@ -191,6 +191,9 @@
                         <td>Hãng SX</td>
                         <td>NCC</td>
                         <td>SL</td>
+                        <td>Đã xuất</td>
+                        <td>Cần xuất</td>
+                        <td>SL tồn kho</td>
                         <td>ĐV</td>
                         <td>Trạng thái</td>
                         <td>Thao tác</td>

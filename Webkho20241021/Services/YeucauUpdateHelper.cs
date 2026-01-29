@@ -118,10 +118,22 @@ namespace Webkho_20241021.Services
             if (context == null || string.IsNullOrWhiteSpace(maYeucau) || string.IsNullOrWhiteSpace(maSanpham))
                 return 0;
 
+            // Xác định mã dự án (nếu có) của yêu cầu hiện tại
+            var ycHienTai = context.yeucau.FirstOrDefault(y => y.MaYeucau == maYeucau);
+            string? maDuan = ycHienTai?.YCMaDuan?.Trim();
+
             // Lấy tất cả mã yêu cầu có cùng mã cơ bản
             string baseCode = GetBaseRequestCode(maYeucau);
-            var allRelatedMaYeucau = context.yeucau
-                .Where(y => !string.IsNullOrWhiteSpace(y.MaYeucau))
+
+            // Nếu có mã dự án → chỉ gom các yêu cầu cùng dự án + cùng base code
+            // Nếu không có mã dự án → giữ nguyên behavior cũ (gom theo base code toàn hệ thống)
+            var ycQuery = context.yeucau.Where(y => !string.IsNullOrWhiteSpace(y.MaYeucau));
+            if (!string.IsNullOrWhiteSpace(maDuan))
+            {
+                ycQuery = ycQuery.Where(y => y.YCMaDuan == maDuan);
+            }
+
+            var allRelatedMaYeucau = ycQuery
                 .ToList()
                 .Where(y => string.Equals(GetBaseRequestCode(y.MaYeucau), baseCode, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -295,14 +307,24 @@ namespace Webkho_20241021.Services
             if (context == null || string.IsNullOrWhiteSpace(maYeucau) || string.IsNullOrWhiteSpace(maSanpham))
                 return 0;
 
+            // Xác định mã dự án (nếu có) của yêu cầu hiện tại
+            var ycHienTai = context.yeucau.FirstOrDefault(y => y.MaYeucau == maYeucau);
+            string? maDuan = ycHienTai?.YCMaDuan?.Trim();
+
             // Lấy mã yêu cầu cơ bản
             string baseCode = GetBaseRequestCode(maYeucau);
             if (string.IsNullOrWhiteSpace(baseCode))
                 return 0;
 
             // Lấy tất cả mã yêu cầu có cùng mã cơ bản
-            var allRelatedMaYeucau = context.yeucau
-                .Where(y => !string.IsNullOrWhiteSpace(y.MaYeucau))
+            // Nếu có mã dự án → chỉ lấy trong cùng dự án
+            var ycQuery = context.yeucau.Where(y => !string.IsNullOrWhiteSpace(y.MaYeucau));
+            if (!string.IsNullOrWhiteSpace(maDuan))
+            {
+                ycQuery = ycQuery.Where(y => y.YCMaDuan == maDuan);
+            }
+
+            var allRelatedMaYeucau = ycQuery
                 .ToList()
                 .Where(y => string.Equals(GetBaseRequestCode(y.MaYeucau), baseCode, StringComparison.OrdinalIgnoreCase))
                 .Select(y => y.MaYeucau)
@@ -342,6 +364,10 @@ namespace Webkho_20241021.Services
             if (context == null || string.IsNullOrWhiteSpace(maYeucau) || string.IsNullOrWhiteSpace(maSanpham))
                 return 0;
 
+            // Xác định mã dự án (nếu có) của yêu cầu hiện tại
+            var ycHienTai = context.yeucau.FirstOrDefault(y => y.MaYeucau == maYeucau);
+            string? maDuan = ycHienTai?.YCMaDuan?.Trim();
+
             // 1. Tính tổng nhu cầu cuối cùng theo mã yêu cầu cơ bản
             int tongNhuCau = TinhTongNhuCauTheoMaYeuCauCoBan(context, maYeucau, maSanpham);
             if (tongNhuCau <= 0)
@@ -350,10 +376,18 @@ namespace Webkho_20241021.Services
             // 2. Tính tổng đã xuất kho (tất cả phiếu xuất của các yêu cầu có cùng mã cơ bản)
             int tongDaXuat = TinhSoLuongDaCap(context, maYeucau, maSanpham);
 
-            // 3. Tính tổng đã nhập kho (tất cả phiếu nhập của các yêu cầu có cùng mã cơ bản)
+            // 3. Tính tổng đã nhập kho (tất cả phiếu nhập của các yêu cầu có cùng mã cơ bản
+            //    và — nếu có — cùng mã dự án)
             string baseCode = GetBaseRequestCode(maYeucau);
-            var allRelatedMaYeucau = context.yeucau
-                .Where(y => !string.IsNullOrWhiteSpace(y.MaYeucau))
+            var ycQuery = context.yeucau
+                .Where(y => !string.IsNullOrWhiteSpace(y.MaYeucau));
+
+            if (!string.IsNullOrWhiteSpace(maDuan))
+            {
+                ycQuery = ycQuery.Where(y => y.YCMaDuan == maDuan);
+            }
+
+            var allRelatedMaYeucau = ycQuery
                 .ToList()
                 .Where(y => string.Equals(GetBaseRequestCode(y.MaYeucau), baseCode, StringComparison.OrdinalIgnoreCase))
                 .Select(y => y.MaYeucau)
