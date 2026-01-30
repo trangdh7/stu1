@@ -95,8 +95,9 @@ $('#submitPhieumuahang').click(function () {
         if (cells.length >= 2 && priceInput.length > 0) {
             const inputValue = priceInput.val();
             // Xử lý giá trị có thể chứa dấu chấm hoặc dấu phẩy
-            let cleanValue = inputValue ? inputValue.replace(/[^\d.]/g, '') : '';
-            const DonGia = cleanValue ? parseFloat(cleanValue) || 0 : 0;
+            // Với định dạng VNĐ, chỉ giữ lại chữ số (bỏ dấu . ngăn cách hàng nghìn)
+            let cleanValue = inputValue ? inputValue.replace(/[^\d]/g, '') : '';
+            const DonGia = cleanValue ? parseInt(cleanValue, 10) || 0 : 0;
             const SL = parseFloat(priceInput.data('sl')) || 0;
             
             // Lấy MaSanpham từ cột thứ 3 (index 2) trong bảng
@@ -497,6 +498,7 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         const mm = String(d.getMonth() + 1).padStart(2, '0');
                         const dd = String(d.getDate()).padStart(2, '0');
                         const yyyy = d.getFullYear();
+                        // Trả về chuỗi phục vụ gửi server (yyyy-MM-dd)
                         return `${yyyy}-${mm}-${dd}`;
                     };
                     
@@ -518,29 +520,31 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         // Hiển thị input cho người dùng hiện tại và hiển thị giá trị của bên kia
                         if (isGiamdoc) {
                             // Giám đốc: hiển thị input của mình và giá trị BP Mua hàng
-                            const ngayThanhToanGiamdocValue = formatDate(ngayThanhToanGiamdocRaw);
+                            const ngayThanhToanGiamdocValue = formatDateDisplay(ngayThanhToanGiamdocRaw);
                             const ngayThanhToanBPMuahangDisplay = formatDateDisplay(ngayThanhToanBPMuahangRaw);
                             ngayThanhToanCell = `
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <input type="date"
+                                    <input type="text"
                                            class="NgayThanhToanInput"
                                            data-mamuahang="${Mamuahang}"
                                            data-masanpham="${item.maSanpham || ''}"
                                            value="${ngayThanhToanGiamdocValue}"
+                                           placeholder="dd/MM/yyyy"
                                            style="width: 100%;" />
                                     ${ngayThanhToanBPMuahangDisplay ? `<small style="color: #c00; font-size: 11px; font-weight: bold;">BP Mua hàng: Ngày ${ngayThanhToanBPMuahangDisplay} cần thanh toán</small>` : ''}
                                 </div>`;
                         } else if (isPurchaseArea) {
                             // BP Mua hàng: hiển thị input của mình và giá trị Giám đốc
-                            const ngayThanhToanBPMuahangValue = formatDate(ngayThanhToanBPMuahangRaw);
+                            const ngayThanhToanBPMuahangValue = formatDateDisplay(ngayThanhToanBPMuahangRaw);
                             const ngayThanhToanGiamdocDisplay = formatDateDisplay(ngayThanhToanGiamdocRaw);
                             ngayThanhToanCell = `
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <input type="date"
+                                    <input type="text"
                                            class="NgayThanhToanInput"
                                            data-mamuahang="${Mamuahang}"
                                            data-masanpham="${item.maSanpham || ''}"
                                            value="${ngayThanhToanBPMuahangValue}"
+                                           placeholder="dd/MM/yyyy"
                                            style="width: 100%;" />
                                     ${ngayThanhToanGiamdocDisplay ? `<small style="color: #1565c0; font-size: 11px; font-weight: bold;">Giám đốc: Ngày ${ngayThanhToanGiamdocDisplay} cần thanh toán</small>` : ''}
                                 </div>`;
@@ -622,13 +626,14 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                     let ngayCoHangCell = '';
                     if (canEditNgayCoHang) {
                         // BP Mua hàng: hiển thị input để chọn ngày
-                        const ngayCoHangValue = formatDate(ngayCoHangRaw);
+                        const ngayCoHangValue = formatDateDisplay(ngayCoHangRaw);
                         ngayCoHangCell = `
-                            <input type="date"
+                            <input type="text"
                                    class="NgayCoHangInput"
                                    data-mamuahang="${Mamuahang}"
                                    data-masanpham="${item.maSanpham || ''}"
                                    value="${ngayCoHangValue}"
+                                   placeholder="dd/MM/yyyy"
                                    style="width: 100%;" />`;
                     } else {
                         // Các bộ phận khác: chỉ hiển thị (read-only)
@@ -696,73 +701,74 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
 function attachEventHandlers() {
     // Xử lý validation khi nhập giá - chỉ cho phép số dương
     $('.tablethietbi tbody').on('keypress', '.DonGia input', function (e) {
-        // Cho phép các phím điều khiển: backspace (8), tab (9), enter (13), delete (46), escape (27)
-        // Cho phép dấu chấm (46 hoặc 110 hoặc 190) và số (48-57)
+        // Chỉ cho phép phím điều khiển và số (0-9) – không cho nhập dấu chấm/phẩy
         const keyCode = e.which || e.keyCode;
-        const char = String.fromCharCode(keyCode);
-        
-        // Cho phép phím điều khiển
-        if (keyCode === 8 || keyCode === 9 || keyCode === 13 || keyCode === 27 || keyCode === 46) {
+
+        // Cho phép phím điều khiển: backspace, tab, enter, delete, escape, mũi tên
+        if (
+            keyCode === 8 || keyCode === 9 || keyCode === 13 || keyCode === 27 ||
+            keyCode === 46 || (keyCode >= 35 && keyCode <= 40)
+        ) {
             return true;
         }
-        
+
         // Cho phép số (0-9)
         if (keyCode >= 48 && keyCode <= 57) {
             return true;
         }
-        
-        // Cho phép dấu chấm (.) nhưng chỉ một lần
-        if ((keyCode === 46 || keyCode === 110 || keyCode === 190) && $(this).val().indexOf('.') === -1) {
-            return true;
-        }
-        
+
         // Chặn tất cả các ký tự khác
         e.preventDefault();
         return false;
     });
 
-    // Xử lý khi paste hoặc nhập - loại bỏ ký tự không hợp lệ
-    $('.tablethietbi tbody').on('input paste', '.DonGia input', function (e) {
-        let value = $(this).val();
-        // Loại bỏ tất cả ký tự không phải số và dấu chấm
-        value = value.replace(/[^0-9.]/g, '');
-        // Loại bỏ nhiều dấu chấm, chỉ giữ lại một
-        const parts = value.split('.');
-        if (parts.length > 2) {
-            value = parts[0] + '.' + parts.slice(1).join('');
-        }
-        // Đảm bảo không có số âm
-        if (value.startsWith('-')) {
-            value = value.replace('-', '');
-        }
-        $(this).val(value);
-    });
+    // Xử lý khi paste hoặc nhập - loại bỏ ký tự không hợp lệ và format theo VNĐ
+    $('.tablethietbi tbody').on('input paste', '.DonGia input', function () {
+        const $input = $(this);
+        let raw = $input.val() || '';
 
-    // Xử lý tính toán khi nhập giá
-    $('.tablethietbi tbody').on('input', '.DonGia input', function () {
-        const $row = $(this).closest('tr');
-        const sl = parseFloat($(this).data('sl')) || 0;
-        let inputValue = $(this).val().replace(/[^\d.]/g, '');
-        const donGia = parseFloat(inputValue) || 0;
-        
-        // Đảm bảo giá không âm
-        if (donGia < 0 || isNaN(donGia)) {
-            $(this).val('0');
+        // Chỉ giữ lại chữ số
+        raw = raw.replace(/[^0-9]/g, '');
+
+        if (!raw) {
+            $input.val('');
+            const $rowEmpty = $input.closest('tr');
+            $rowEmpty.find('.ThanhTien').text('0');
+            updateTongTien();
             return;
         }
-        
-        const thanhTien = sl * donGia;
 
-        $row.find('.ThanhTien').text(thanhTien.toLocaleString('vi-VN'));    
+        const donGiaInt = parseInt(raw, 10) || 0;
+
+        // Hiển thị với dấu . ngăn cách hàng nghìn (định dạng vi-VN)
+        $input.val(donGiaInt.toLocaleString('vi-VN'));
+
+        const $row = $input.closest('tr');
+        const sl = parseFloat($input.data('sl')) || 0;
+        const thanhTien = sl * donGiaInt;
+
+        $row.find('.ThanhTien').text(thanhTien.toLocaleString('vi-VN'));
         updateTongTien();
     });
 
-    // Cập nhật ngày thanh toán khi chọn ngày
+    // Helper: chuyển từ dd/MM/yyyy -> yyyy-MM-dd để gửi server
+    function convertDisplayDateToServer(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('/');
+        if (parts.length !== 3) return '';
+        const [dd, mm, yyyy] = parts;
+        if (dd.length !== 2 || mm.length !== 2 || yyyy.length !== 4) return '';
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+
+    // Cập nhật ngày thanh toán khi chọn / nhập ngày (định dạng hiển thị dd/MM/yyyy)
     $('.tablethietbi tbody').on('change', '.NgayThanhToanInput', function () {
         const $input = $(this);
         const maMuahang = $input.data('mamuahang');
         const maSanpham = $input.data('masanpham');
-        const ngayThanhToan = $input.val(); // yyyy-MM-dd hoặc rỗng
+        const ngayThanhToanDisplay = ($input.val() || '').trim(); // dd/MM/yyyy hoặc rỗng
+        const ngayThanhToan = convertDisplayDateToServer(ngayThanhToanDisplay);
 
         if (!maMuahang || !maSanpham) {
             return;
@@ -825,12 +831,13 @@ function attachEventHandlers() {
         });
     });
 
-    // Cập nhật ngày có hàng khi BP Mua hàng chọn ngày
+    // Cập nhật ngày có hàng khi BP Mua hàng chọn / nhập ngày (định dạng hiển thị dd/MM/yyyy)
     $('.tablethietbi tbody').on('change', '.NgayCoHangInput', function () {
         const $input = $(this);
         const maMuahang = $input.data('mamuahang');
         const maSanpham = $input.data('masanpham');
-        const ngayCoHang = $input.val(); // yyyy-MM-dd hoặc rỗng
+        const ngayCoHangDisplay = ($input.val() || '').trim(); // dd/MM/yyyy hoặc rỗng
+        const ngayCoHang = convertDisplayDateToServer(ngayCoHangDisplay);
 
         if (!maMuahang || !maSanpham) {
             return;
@@ -858,6 +865,47 @@ function attachEventHandlers() {
             }
         });
     });
+
+    // Khởi tạo Flatpickr cho các input ngày (định dạng dd/MM/yyyy)
+    // Kiểm tra xem flatpickr đã được load chưa
+    if (typeof flatpickr !== 'undefined') {
+        // Khởi tạo lại cho các input mới được render
+        $('.NgayThanhToanInput').each(function() {
+            const $input = $(this);
+            // Nếu đã có flatpickr instance thì destroy trước
+            if ($input[0]._flatpickr) {
+                $input[0]._flatpickr.destroy();
+            }
+            flatpickr($input[0], {
+                dateFormat: "d/m/Y",
+                locale: "vn",
+                allowInput: true,
+                clickOpens: true,
+                onChange: function(selectedDates, dateStr, instance) {
+                    // Trigger change event để lưu vào database
+                    $input.trigger('change');
+                }
+            });
+        });
+
+        $('.NgayCoHangInput').each(function() {
+            const $input = $(this);
+            // Nếu đã có flatpickr instance thì destroy trước
+            if ($input[0]._flatpickr) {
+                $input[0]._flatpickr.destroy();
+            }
+            flatpickr($input[0], {
+                dateFormat: "d/m/Y",
+                locale: "vn",
+                allowInput: true,
+                clickOpens: true,
+                onChange: function(selectedDates, dateStr, instance) {
+                    // Trigger change event để lưu vào database
+                    $input.trigger('change');
+                }
+            });
+        });
+    }
 }
 
 // Cập nhật tổng tiền
@@ -1088,12 +1136,19 @@ function closePopupGhiChu() {
     $('#inputGhiChu').val('');
 }
 
-// Áp dụng Ngày Thanh Toán cho tất cả các hàng
+// Áp dụng Ngày Thanh Toán cho tất cả các hàng (popup nhập dd/MM/yyyy)
 function applyNgayThanhToan() {
-    const ngayThanhToan = $('#inputNgayThanhToan').val();
+    const ngayThanhToanDisplay = ($('#inputNgayThanhToan').val() || '').trim(); // dd/MM/yyyy
     
-    if (!ngayThanhToan) {
+    if (!ngayThanhToanDisplay) {
         alert('Vui lòng nhập ngày thanh toán.');
+        return;
+    }
+    
+    // Validate nhanh theo format dd/MM/yyyy
+    const serverDate = convertDisplayDateToServer(ngayThanhToanDisplay);
+    if (!serverDate) {
+        alert('Định dạng ngày thanh toán không hợp lệ. Vui lòng nhập theo dạng dd/MM/yyyy.');
         return;
     }
     
@@ -1106,7 +1161,8 @@ function applyNgayThanhToan() {
         
         const $input = $(this).find('.NgayThanhToanInput');
         if ($input.length > 0) {
-            $input.val(ngayThanhToan);
+            // Gán theo định dạng dd/MM/yyyy cho ô chi tiết
+            $input.val(ngayThanhToanDisplay);
             // Trigger change event để lưu vào database
             $input.trigger('change');
             count++;
@@ -1121,12 +1177,19 @@ function applyNgayThanhToan() {
     }
 }
 
-// Áp dụng Ngày có hàng cho tất cả các hàng
+// Áp dụng Ngày có hàng cho tất cả các hàng (popup nhập dd/MM/yyyy)
 function applyNgayCoHang() {
-    const ngayCoHang = $('#inputNgayCoHang').val();
+    const ngayCoHangDisplay = ($('#inputNgayCoHang').val() || '').trim(); // dd/MM/yyyy
     
-    if (!ngayCoHang) {
+    if (!ngayCoHangDisplay) {
         alert('Vui lòng nhập ngày có hàng.');
+        return;
+    }
+    
+    // Validate nhanh theo format dd/MM/yyyy
+    const serverDate = convertDisplayDateToServer(ngayCoHangDisplay);
+    if (!serverDate) {
+        alert('Định dạng ngày có hàng không hợp lệ. Vui lòng nhập theo dạng dd/MM/yyyy.');
         return;
     }
     
@@ -1139,7 +1202,8 @@ function applyNgayCoHang() {
         
         const $input = $(this).find('.NgayCoHangInput');
         if ($input.length > 0) {
-            $input.val(ngayCoHang);
+            // Gán theo định dạng dd/MM/yyyy cho ô chi tiết
+            $input.val(ngayCoHangDisplay);
             // Trigger change event để lưu vào database
             $input.trigger('change');
             count++;

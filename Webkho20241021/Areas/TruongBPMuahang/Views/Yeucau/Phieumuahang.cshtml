@@ -11,6 +11,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>yeucau</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Flatpickr CSS và JS cho date picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
 </head>
 
     <body>
@@ -29,14 +33,14 @@
                         <span class="notification"></span>
                     </span>
                 </li>
-                <li class="menu-xuatkho">
-                    <a href="/TruongBPMuahang/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
+                <li class="menu-nhapkho">
+                    <a href="/TruongBPMuahang/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
                 </li>
-                <li class="menu-nhapkho">
-                    <a href="/TruongBPMuahang/Yeucau/Phieunhapkho">Phiếu nhập kho</a>
+                <li class="menu-xuatkho">
+                    <a href="/TruongBPMuahang/Yeucau/Phieuxuatkho">Phiếu xuất kho</a>
                     <span class="badge">
                         <span class="notification"></span>
                     </span>
@@ -104,7 +108,7 @@
         <nav class="bodyyeucau-thietbi">
             <!-- This part is for the "Thietbi" section, using the MaMuahang from the current context -->
             <input type="hidden" id="selectedMamuahang" name="MaMuahang" value="@Model.Phieumuahang.FirstOrDefault()?.MaMuahang" />
-            <div id="phieumuahang-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+            <div id="phieumuahang-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none; font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;">
                 <strong id="phieumuahang-header-text"></strong>
             </div>
             <div class="Tableyeucau-thietbi-box">
@@ -149,8 +153,12 @@
                     <h3>Nhập Ngày Thanh Toán</h3>
                 </div>
                 <div class="custom-popup-body">
-                    <label for="inputNgayThanhToan">Nhập ngày thanh toán:</label>
-                    <input type="date" id="inputNgayThanhToan" style="width:100%; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:4px;" />
+                    <label for="inputNgayThanhToan">Nhập ngày thanh toán (dd/MM/yyyy):</label>
+                    <!-- Dùng input text + flatpickr để chủ động định dạng dd/MM/yyyy -->
+                    <input type="text"
+                           id="inputNgayThanhToan"
+                           placeholder="dd/MM/yyyy"
+                           style="width:100%; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:4px;" />
                 </div>
                 <div class="custom-popup-footer">
                     <button type="button" class="btn-popup-confirm" onclick="applyNgayThanhToan()">Xong</button>
@@ -166,8 +174,12 @@
                     <h3>Nhập Ngày có hàng</h3>
                 </div>
                 <div class="custom-popup-body">
-                    <label for="inputNgayCoHang">Nhập ngày có hàng:</label>
-                    <input type="date" id="inputNgayCoHang" style="width:100%; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:4px;" />
+                    <label for="inputNgayCoHang">Nhập ngày có hàng (dd/MM/yyyy):</label>
+                    <!-- Dùng input text + flatpickr để chủ động định dạng dd/MM/yyyy -->
+                    <input type="text"
+                           id="inputNgayCoHang"
+                           placeholder="dd/MM/yyyy"
+                           style="width:100%; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:4px;" />
                 </div>
                 <div class="custom-popup-footer">
                     <button type="button" class="btn-popup-confirm" onclick="applyNgayCoHang()">Xong</button>
@@ -274,11 +286,29 @@
         }
         </style>
         
-        <script src="~/js/phieumuahang.js"></script>
+        <!-- Thêm query string để tránh cache, đảm bảo luôn lấy file js mới -->
+        <script src="~/js/phieumuahang.js?v=20260130"></script>
         <script>
             $(document).ready(function () {
                 if (typeof getThongbaoData === 'function') {
-                getThongbaoData();
+                    getThongbaoData();
+                }
+                
+                // Khởi tạo Flatpickr cho popup input ngày thanh toán / ngày có hàng
+                if (typeof flatpickr !== 'undefined') {
+                    flatpickr("#inputNgayThanhToan", {
+                        dateFormat: "d/m/Y",   // hiển thị dd/MM/yyyy
+                        locale: flatpickr.l10ns.vn || "vn",
+                        allowInput: true,
+                        clickOpens: true
+                    });
+                    
+                    flatpickr("#inputNgayCoHang", {
+                        dateFormat: "d/m/Y",   // hiển thị dd/MM/yyyy
+                        locale: flatpickr.l10ns.vn || "vn",
+                        allowInput: true,
+                        clickOpens: true
+                    });
                 }
             });
         </script>
