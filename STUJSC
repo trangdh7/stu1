@@ -1,0 +1,23 @@
+Hệ thống Quản Lý Kho là ứng dụng dùng để quản lý toàn bộ hoạt động kho trong công ty, bao gồm yêu cầu vật tư, nhập – xuất hàng, theo dõi tồn kho và báo cáo số liệu.
+Mục tiêu của hệ thống là giúp tự động hóa quy trình quản lý kho, giảm thao tác thủ công và hạn chế sai sót trong quá trình làm việc. Người dùng có thể dễ dàng tạo và duyệt yêu cầu vật tư, kiểm tra tình trạng hàng hóa, quản lý tồn kho và theo dõi quá trình nhập – xuất theo thời gian thực.
+Hệ thống được phát triển trên nền tảng ASP.NET Core, sử dụng cơ sở dữ liệu MySQL, với mô hình kiến trúc MVC. Giao diện được thiết kế thân thiện, dễ sử dụng, đồng thời hỗ trợ phân quyền người dùng theo vai trò để đảm bảo tính bảo mật và quản lý hiệu quả.
+Phạm Vi và Khả Năng
+Truy cập công khai: Tra cứu vật tư, Quản lý hồ sơ cá nhân, Theo dõi quá trình duyệt hệ thống.
+Không gian làm việc theo vai trò:
+
+Nhân viên kỹ thuật: Tạo và theo dõi yêu cầu vật tư, xác nhận nhận hàng, quản lý kho cá nhân và dự án.
+
+
+Trưởng bộ phận kỹ thuật: Duyệt yêu cầu vật tư, quản lý dự án và vật tư dự án, xem báo cáo tồn kho.
+
+
+Trưởng bộ phận kho: Quản lý phiếu nhập/xuất kho, xử lý tồn kho tổng và kho người dùng.
+
+
+Trưởng bộ phận mua hàng: Quản lý quy trình mua hàng, báo giá, xác nhận nhận hàng và tạo phiếu nhập kho.
+
+
+Trưởng bộ phận kế toán: Duyệt thanh toán phiếu mua hàng và theo dõi tài chính liên quan đến kho.
+
+
+Giám đốc: Duyệt tất cả yêu cầu quan trọng, xem báo cáo tổng hợp, và quản lý người dùng.
