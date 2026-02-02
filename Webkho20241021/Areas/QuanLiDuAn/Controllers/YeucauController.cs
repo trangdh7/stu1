@@ -236,6 +236,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 .Where(v => v.SLMoi.HasValue && v.SLMoi.Value > 0)
                 .ToList();
             var Duans = _context.duans.ToList();
+            var maSanphamList = VTyeucaulist.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+            var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
 
             var model = new Yeucauviewmodel
             {
@@ -245,6 +250,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             };
 
             ViewBag.Search = search;
+            ViewBag.TonKhoByMaSanpham = tonKhoByMaSanpham;
             return View(model);
         }
 
@@ -398,9 +404,20 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
             if (hasVatTuYeuCau)
             {
-                var vatTuList = _context.vtyeucau
-                    .Where(v => v.VTMaYeucau == MaYeucau)
-                    .Select(v => new
+                var rawList = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                var maSanphamList = rawList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+                var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                    .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+                var vatTuList = rawList.Select(v =>
+                {
+                    var slMoi = v.SLMoi ?? v.SL ?? 0;
+                    var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
+                    var slThieu = tonKho - slMoi;
+                    var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
+                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    return new
                     {
                         id = v.ID,
                         vtMaYeucau = v.VTMaYeucau,
@@ -418,9 +435,12 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         thoiGianBH = v.ThoiGianBH,
                         ngayDuyet = v.NgayDuyet,
                         trangThai = v.TrangThai,
-                        ghiChu = v.GhiChu
-                    })
-                    .ToList();
+                        ghiChu = v.GhiChu,
+                        tonKho = tonKho,
+                        slThieu = slThieu,
+                        slDaXuat = slDaXuat
+                    };
+                }).ToList();
                 return Json(vatTuList);
             }
 
@@ -456,7 +476,17 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                      trangThai = vtnk.TrangThai,
                                      ghiChu = (string?)null
                                  }).ToList();
-                return Json(vatTuList);
+                var maSanphamList2 = vatTuList.Where(v => !string.IsNullOrWhiteSpace(v.maSanpham)).Select(v => v.maSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                var maSanphamSet2 = new HashSet<string>(maSanphamList2, StringComparer.OrdinalIgnoreCase);
+                var tonKhoByMaSanpham2 = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                    .Where(k => maSanphamSet2.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+                var result2 = vatTuList.Select(v =>
+                {
+                    var tonKho = !string.IsNullOrWhiteSpace(v.maSanpham) && tonKhoByMaSanpham2.TryGetValue(v.maSanpham, out var tk) ? tk : 0;
+                    return new { v.id, v.vtMaYeucau, v.tenSanpham, v.maSanpham, v.hangSX, v.nhaCC, v.slCu, v.slMoi, v.sl, v.donVi, v.ngayCanHang, v.ngayNhapkho, v.ngayBaohanh, v.thoiGianBH, v.ngayDuyet, v.trangThai, v.ghiChu, tonKho = tonKho, slThieu = tonKho - (v.slMoi ?? v.sl ?? 0), slDaXuat = (int?)null };
+                }).ToList();
+                return Json(result2);
             }
 
             return Json(new List<object>());
@@ -2204,7 +2234,16 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 {
                     try
                     {
-                        _ = _emailService.SendNotificationToDirectorAsync(yeucau.MaYeucau);
+                        // Gửi email trong scope mới để tránh lỗi DbContext: "A second operation was started on this context instance..."
+                        var maYeucauForEmail = yeucau.MaYeucau;
+                        _ = Task.Run(async () =>
+                        {
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
+                                await emailService.SendNotificationToDirectorAsync(maYeucauForEmail);
+                            }
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -2259,11 +2298,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
 
                 // Tải trước toàn bộ vật tư thuộc mã yêu cầu này để tránh truy vấn lặp lại
                 // và giảm nguy cơ lỗi "A second operation was started on this context instance..."
-                var existingVatTuDict = _context.vtyeucau
+                var vtyeucauList = _context.vtyeucau
                     .Where(vt => vt.VTMaYeucau == yeucau.MaYeucau)
-                    .ToDictionary(
-                        vt => vt.MaSanpham ?? string.Empty,
-                        StringComparer.OrdinalIgnoreCase);
+                    .ToList();
+                var existingVatTuDict = vtyeucauList
+                    .ToDictionary(vt => vt.MaSanpham ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
                 bool hasVatTuChanges = false;
 
@@ -2388,7 +2427,9 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                     else
                     {
                         // Tạo bản ghi "VT mới" trong khotongs nếu chưa tồn tại
-                        var vtMoiKho = _context.khotongs.FirstOrDefault(p => p.Makho == "VT mới");
+                        // Kiểm tra Local trước để tránh Add trùng khi đã Add trong cùng request (chưa SaveChanges)
+                        var vtMoiKho = _context.khotongs.Local.FirstOrDefault(p => p.Makho == "VT mới")
+                            ?? _context.khotongs.FirstOrDefault(p => p.Makho == "VT mới");
                         if (vtMoiKho == null)
                         {
                             vtMoiKho = new khotongs

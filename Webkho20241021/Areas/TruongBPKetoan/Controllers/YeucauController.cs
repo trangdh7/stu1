@@ -135,6 +135,12 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 .ToList();
             var Duans = _context.duans.ToList();
 
+            var maSanphamList = VTyeucaulist.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+            var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+
             var model = new Yeucauviewmodel
             {
                 Yeucau = SortedYeucaulist,
@@ -143,6 +149,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
             };
 
             ViewBag.Search = search;
+            ViewBag.TonKhoByMaSanpham = tonKhoByMaSanpham;
             return View(model);
         }
 
@@ -352,9 +359,21 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
 
                 if (hasVatTuYeuCau)
                 {
-                    vatTuList = _context.vtyeucau
-                        .Where(v => v.VTMaYeucau == MaYeucau)
-                        .ToList();
+                    var rawList = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                    var maSanphamList = rawList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+                    var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                        .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                        .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+                    vatTuList = rawList.Select(v =>
+                    {
+                        var slMoi = v.SLMoi ?? v.SL ?? 0;
+                        var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
+                        var slThieu = tonKho - slMoi;
+                        var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
+                        var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                        return new { v.ID, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
+                    }).ToList();
                 }
                 else
                 {
@@ -367,7 +386,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
 
                     if (isNhapKhoRequest)
                     {
-                        vatTuList = (from vtnk in _context.vtphieunhapkho
+                        var rawNk = (from vtnk in _context.vtphieunhapkho
                                      join pnk in _context.phieunhapkho on vtnk.MaNhapkho equals pnk.MaNhapkho
                                      where pnk.MaYeucau == MaYeucau
                                      select new
@@ -390,12 +409,35 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                                          TrangThai = vtnk.TrangThai,
                                          GhiChu = (string?)null
                                      }).ToList();
+                        var maSpList = rawNk.Where(x => !string.IsNullOrWhiteSpace(x.MaSanpham)).Select(x => x.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                        var maSpSet = new HashSet<string>(maSpList, StringComparer.OrdinalIgnoreCase);
+                        var tkByMa = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                            .Where(k => maSpSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                            .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+                        vatTuList = rawNk.Select(x =>
+                        {
+                            var v = x;
+                            var tonKho = !string.IsNullOrWhiteSpace(x.MaSanpham) && tkByMa.TryGetValue(x.MaSanpham, out var t) ? t : 0;
+                            return new { x.ID, VTMaYeucau = MaYeucau, x.TenSanpham, x.MaSanpham, YCMakho = (string?)null, x.HangSX, x.NhaCC, SLCu = (int?)null, x.SLMoi, x.SL, x.DonVi, NgayCanHang = (DateTime?)null, x.NgayNhapkho, x.NgayBaohanh, x.ThoiGianBH, NgayDuyet = (DateTime?)null, x.TrangThai, GhiChu = (string?)null, TonKho = tonKho, SlThieu = tonKho - (x.SLMoi ?? 0), SlDaXuat = (int?)null };
+                        }).ToList<object>();
                     }
                     else
                     {
-                        vatTuList = _context.vtyeucau
-                            .Where(v => v.VTMaYeucau == MaYeucau)
-                            .ToList();
+                        var rawList = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                        var maSanphamList = rawList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                        var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+                        var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                            .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                            .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+                        vatTuList = rawList.Select(v =>
+                        {
+                            var slMoi = v.SLMoi ?? v.SL ?? 0;
+                            var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
+                            var slThieu = tonKho - slMoi;
+                            var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
+                            var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                            return new { v.ID, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
+                        }).ToList<object>();
                     }
                 }
             }

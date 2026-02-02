@@ -165,6 +165,11 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             }
 
             var Duans = _context.duans.ToList();
+            var maSanphamList = VTyeucaulist.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+            var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
 
             var model = new Yeucauviewmodel
             {
@@ -174,6 +179,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             };
 
             ViewBag.Search = search;
+            ViewBag.TonKhoByMaSanpham = tonKhoByMaSanpham;
             return View(model);
         }
 
@@ -669,30 +675,46 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     .ToList();
                 System.Diagnostics.Debug.WriteLine($"[Giamdoc/GetVTYeucau] vtyeucau rows={vatTuList.Count}");
 
-                var processedVatTuList = vatTuList.Select(v => new
+                var maSanphamList = vatTuList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+                var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                    .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+                var processedVatTuList = vatTuList.Select(v =>
                 {
-                    v.ID,
-                    v.VTMaYeucau,
-                    v.TenSanpham,
-                    v.MaSanpham,
-                    v.YCMakho,
-                    v.HangSX,
-                    v.NhaCC,
-                    v.SL,
-                    v.SLCu,
-                    v.SLMoi,
-                    v.DonVi,
-                    v.NgayCanHang,
-                    v.NgayNhapkho,
-                    v.NgayBaohanh,
-                    v.ThoiGianBH,
-                    NgayDuyet = (v.TrangThai == "Đã duyệt" ||
-                                 v.TrangThai == "Đang mua hàng" ||
-                                 v.TrangThai == "Chờ xuất kho" ||
-                                 v.TrangThai == "Đã xuất kho" ||
-                                 v.TrangThai == "Đã nhận hàng") ? v.NgayDuyet : null,
-                    v.TrangThai,
-                    v.GhiChu
+                    var slMoi = v.SLMoi ?? v.SL ?? 0;
+                    var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
+                    var slThieu = tonKho - slMoi;
+                    var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
+                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    return new
+                    {
+                        v.ID,
+                        v.VTMaYeucau,
+                        v.TenSanpham,
+                        v.MaSanpham,
+                        v.YCMakho,
+                        v.HangSX,
+                        v.NhaCC,
+                        v.SL,
+                        v.SLCu,
+                        v.SLMoi,
+                        v.DonVi,
+                        v.NgayCanHang,
+                        v.NgayNhapkho,
+                        v.NgayBaohanh,
+                        v.ThoiGianBH,
+                        NgayDuyet = (v.TrangThai == "Đã duyệt" ||
+                                     v.TrangThai == "Đang mua hàng" ||
+                                     v.TrangThai == "Chờ xuất kho" ||
+                                     v.TrangThai == "Đã xuất kho" ||
+                                     v.TrangThai == "Đã nhận hàng") ? v.NgayDuyet : null,
+                        v.TrangThai,
+                        v.GhiChu,
+                        TonKho = tonKho,
+                        SlThieu = slThieu,
+                        SlDaXuat = slDaXuat
+                    };
                 }).ToList();
 
                 return Json(processedVatTuList);
@@ -734,7 +756,17 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                      GhiChu = (string?)null
                                  }).ToList();
                 System.Diagnostics.Debug.WriteLine($"[Giamdoc/GetVTYeucau] vtphieunhapkho rows={vatTuList.Count}");
-                return Json(vatTuList);
+                var maSanphamList2 = vatTuList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                var maSanphamSet2 = new HashSet<string>(maSanphamList2, StringComparer.OrdinalIgnoreCase);
+                var tonKhoByMaSanpham2 = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                    .Where(k => maSanphamSet2.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+                var result2 = vatTuList.Select(v =>
+                {
+                    var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham2.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
+                    return new { v.ID, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = tonKho - (v.SLMoi ?? v.SL ?? 0), SlDaXuat = (int?)null };
+                }).ToList();
+                return Json(result2);
             }
 
             return Json(new List<object>());

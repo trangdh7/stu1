@@ -180,26 +180,40 @@
             <table class="tablethietbi">
                 <thead>
                     <tr>
-                        <td>STT</td>
-                        <td>Tên thiết bị/hàng hóa</td>
-                        <td>Mã VT</td>
-                        <td>Hãng SX</td>
-                        <td>NCC</td>
-                        <td>SL Cũ</td>
-                        <td>SL Mới</td>
-                        <td hidden>SL</td>
-                        <td>ĐV</td>
-                        <td>Ngày cần</td>
-                        <td>Trạng thái</td>
-                        <td>Ghi chú</td>
+                        <th rowspan="2">STT</th>
+                        <th rowspan="2">Tên thiết bị / hàng hóa</th>
+                        <th rowspan="2">Mã VT</th>
+                        <th rowspan="2">Hãng SX</th>
+                        <th rowspan="2">NCC</th>
+                        <th colspan="5" style="text-align: center;">SL</th>
+                        <th hidden rowspan="2">SL</th>
+                        <th rowspan="2">ĐV</th>
+                        <th rowspan="2">Ngày cần</th>
+                        <th rowspan="2">Trạng thái</th>
+                        <th rowspan="2">Ghi chú</th>
+                        <th rowspan="2">Ngày duyệt</th>
+                    </tr>
+                    <tr>
+                        <th>Cũ</th>
+                        <th>Mới</th>
+                        <th>Thiếu</th>
+                        <th>Đã xuất</th>
+                        <th>Tồn kho</th>
                     </tr>
                 </thead>
                 <tbody>
                     @{
                         int STT2 = 1;
+                        var tonKhoByMaSanpham = ViewBag.TonKhoByMaSanpham as Dictionary<string, int>;
+                        if (tonKhoByMaSanpham == null) { tonKhoByMaSanpham = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase); }
                     }
                     @foreach (var item in Model.VTyeucau)
                     {
+                        var slMoi = item.SLMoi ?? item.SL ?? 0;
+                        var tonKho = !string.IsNullOrWhiteSpace(item.MaSanpham) && tonKhoByMaSanpham.TryGetValue(item.MaSanpham, out var tk) ? tk : 0;
+                        var slThieu = tonKho - slMoi;
+                        var isDaXuatKho = (item.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
+                        var slDaXuat = isDaXuatKho ? (item.SL ?? item.SLMoi) : (int?)null;
                         <tr>
                             <td>@STT2</td>
                             <td>@item.TenSanpham</td>
@@ -208,13 +222,17 @@
                             <td>@item.NhaCC</td>
                             <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
                             <td style="text-align: center;">@((item.SLMoi ?? item.SL)?.ToString() ?? "-")</td>
-                            <td hidden  style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
+                            <td style="text-align: center;">@slThieu</td>
+                            <td style="text-align: center;">@(slDaXuat.HasValue ? slDaXuat.Value.ToString() : "-")</td>
+                            <td style="text-align: center;">@tonKho</td>
+                            <td hidden style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
                             <td>@(item.TrangThai ?? "")</td>
                             <td style="color: @(item.TrangThai?.Contains("Đã từ chối") == true ? "#f44336" : "inherit");">
                                 @(item.GhiChu ?? "-")
                             </td>
+                            <td>@(item.NgayDuyet?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
                         </tr>
                         STT2++;
                     }

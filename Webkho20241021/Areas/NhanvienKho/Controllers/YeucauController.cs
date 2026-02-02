@@ -80,7 +80,14 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
             }
             
             var model = _yeucauService.GetDanhSachYeucau(userRole, search);
+            var VTyeucaulist = model.VTyeucau ?? new List<vtyeucau>();
+            var maSanphamList = VTyeucaulist.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+            var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
             ViewBag.Search = search;
+            ViewBag.TonKhoByMaSanpham = tonKhoByMaSanpham;
             return View(model);
         }
 
@@ -203,7 +210,26 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                 var vatTuList = _context.vtyeucau
                     .Where(v => v.VTMaYeucau == MaYeucau)
                     .ToList();
-                return Json(vatTuList);
+                var maSanphamList = vatTuList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+                var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                    .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+                var result = vatTuList.Select(v =>
+                {
+                    var slMoi = v.SLMoi ?? v.SL ?? 0;
+                    var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
+                    var slThieu = tonKho - slMoi;
+                    var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
+                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    return new
+                    {
+                        v.ID, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL,
+                        v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu,
+                        TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat
+                    };
+                }).ToList();
+                return Json(result);
             }
 
             // Chỉ khi KHÔNG có vtyeucau, mới coi là yêu cầu nhập kho đặc biệt
@@ -239,7 +265,22 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                                      TrangThai = vtnk.TrangThai,
                                      GhiChu = (string?)null
                                  }).ToList();
-                return Json(vatTuList);
+                var maSanphamList2 = vatTuList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                var maSanphamSet2 = new HashSet<string>(maSanphamList2, StringComparer.OrdinalIgnoreCase);
+                var tonKhoByMaSanpham2 = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                    .Where(k => maSanphamSet2.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+                var result2 = vatTuList.Select(v =>
+                {
+                    var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham2.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
+                    return new
+                    {
+                        v.ID, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL,
+                        v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu,
+                        TonKho = tonKho, SlThieu = tonKho - (v.SLMoi ?? v.SL ?? 0), SlDaXuat = (int?)null
+                    };
+                }).ToList();
+                return Json(result2);
             }
 
             // Không có chi tiết ở cả 2 nơi

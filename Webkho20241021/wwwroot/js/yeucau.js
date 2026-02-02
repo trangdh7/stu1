@@ -86,11 +86,14 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
 
             if (data && data.length > 0) {
                 let STT = 1;
+                const hasTonKhoColumn = $('.tablethietbi thead td, .tablethietbi thead th').filter(function() { return $(this).text().trim() === 'Tồn kho'; }).length > 0;
+                const formatNumberOrDash = (value) => (value === null || value === undefined || value === '' ? '-' : value);
+                const formatDate = (val) => (val ? new Date(val).toLocaleDateString('vi-VN') : '-');
+                const formatDateTime = (val) => (val ? new Date(val).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-');
+
                 data.forEach(function (item) {
-                    // Xác định màu cho ghi chú (đỏ nếu bị từ chối)
                     var isRejected = (item.trangThai && (item.trangThai.toLowerCase().indexOf('từ chối') !== -1)) || (item.TrangThai && (item.TrangThai.toLowerCase().indexOf('từ chối') !== -1));
                     var ghiChuColor = isRejected ? '#f44336' : 'inherit';
-                    // Hỗ trợ cả camelCase và PascalCase
                     const tenSanpham = item.tenSanpham || item.TenSanpham || '';
                     const maSanpham = item.maSanpham || item.MaSanpham || '';
                     const hangSX = item.hangSX || item.HangSX || '';
@@ -99,38 +102,57 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                     const slMoi = item.slMoi ?? item.SLMoi;
                     const slTong = item.sl ?? item.SL ?? slMoi;
                     const donVi = item.donVi || item.DonVi || '';
-                    const ngayCan = item.ngayCanHang || item.NgayCanHang
-                        ? new Date(item.ngayCanHang || item.NgayCanHang).toLocaleDateString('vi-VN')
-                        : '-';
+                    const ngayCan = item.ngayCanHang || item.NgayCanHang ? formatDate(item.ngayCanHang || item.NgayCanHang) : '-';
                     const trangThai = item.trangThai || item.TrangThai || '';
                     const ghiChu = item.ghiChu || item.GhiChu || '-';
+                    const tonKho = item.tonKho ?? item.TonKho ?? 0;
+                    const slThieu = item.slThieu ?? item.SlThieu ?? (tonKho - (slMoi ?? 0));
+                    const slDaXuat = item.slDaXuat ?? item.SlDaXuat;
+                    const ngayDuyet = item.ngayDuyet || item.NgayDuyet ? formatDateTime(item.ngayDuyet || item.NgayDuyet) : '-';
 
-                    const formatNumberOrDash = (value) => {
-                        return value === null || value === undefined || value === '' ? '-' : value;
-                    };
-
-                    // Tạo một dòng mới khớp tiêu đề bảng
-                    let row = `<tr class="${isRejected ? 'rejected-row' : ''}">
-                        <td>${STT++}</td>
-                        <td>${tenSanpham}</td>
-                        <td>${maSanpham}</td>
-                        <td>${hangSX}</td>
-                        <td>${nhaCC}</td>
-                        <td style="text-align: center;">${formatNumberOrDash(slCu)}</td>
-                        <td style="text-align: center;">${formatNumberOrDash(slMoi)}</td>
-                        <td style="display: none; text-align: center;">${formatNumberOrDash(slTong)}</td>
-                        <td>${donVi || '-'}</td>
-                        <td>${ngayCan}</td>
-                        <td>${trangThai}</td>
-                        <td style="color: ${ghiChuColor};">${ghiChu}</td>
-                    </tr>`;
+                    let row;
+                    if (hasTonKhoColumn) {
+                        row = `<tr class="${isRejected ? 'rejected-row' : ''}">
+                            <td>${STT++}</td>
+                            <td>${tenSanpham}</td>
+                            <td>${maSanpham}</td>
+                            <td>${hangSX}</td>
+                            <td>${nhaCC}</td>
+                            <td style="text-align: center;">${formatNumberOrDash(slCu)}</td>
+                            <td style="text-align: center;">${formatNumberOrDash(slMoi)}</td>
+                            <td style="text-align: center;">${formatNumberOrDash(slThieu)}</td>
+                            <td style="text-align: center;">${slDaXuat != null ? slDaXuat : '-'}</td>
+                            <td style="text-align: center;">${formatNumberOrDash(tonKho)}</td>
+                            <td hidden style="text-align: center;">${formatNumberOrDash(slTong)}</td>
+                            <td>${donVi || '-'}</td>
+                            <td>${ngayCan}</td>
+                            <td>${trangThai}</td>
+                            <td style="color: ${ghiChuColor};">${ghiChu}</td>
+                            <td>${ngayDuyet}</td>
+                        </tr>`;
+                    } else {
+                        row = `<tr class="${isRejected ? 'rejected-row' : ''}">
+                            <td>${STT++}</td>
+                            <td>${tenSanpham}</td>
+                            <td>${maSanpham}</td>
+                            <td>${hangSX}</td>
+                            <td>${nhaCC}</td>
+                            <td style="text-align: center;">${formatNumberOrDash(slCu)}</td>
+                            <td style="text-align: center;">${formatNumberOrDash(slMoi)}</td>
+                            <td hidden style="text-align: center;">${formatNumberOrDash(slTong)}</td>
+                            <td>${donVi || '-'}</td>
+                            <td>${ngayCan}</td>
+                            <td>${trangThai}</td>
+                            <td style="color: ${ghiChuColor};">${ghiChu}</td>
+                        </tr>`;
+                    }
                     $('.tablethietbi tbody').append(row);
                 });
             } else {
-                // Hiển thị thông báo nếu không có dữ liệu
+                const colSpan = $('.tablethietbi thead td, .tablethietbi thead th').filter(function() { return $(this).text().trim() === 'Tồn kho'; }).length > 0 ? 16 : 12;
                 $('.tablethietbi tbody').append(
                     `<tr>
-                        <td colspan="10" style="text-align:center;">Không có dữ liệu vật tư.</td>
+                        <td colspan="${colSpan}" style="text-align:center;">Không có dữ liệu vật tư.</td>
                     </tr>`
                 );
             }

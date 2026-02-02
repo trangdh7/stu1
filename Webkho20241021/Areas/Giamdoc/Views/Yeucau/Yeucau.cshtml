@@ -211,25 +211,33 @@
             <table class="tablethietbi">
                 <thead>
                     <tr>
-                        <td><input type="checkbox" id="selectAllVT" /></td>
-                        <td>TT</td>
-                        <td>Tên thiết bị/hàng hóa</td>
-                        <td>Mã VT</td>
-                        <td>Hãng SX</td>
-                        <td>NCC</td>
-                        <td>SL Cũ</td>
-                        <td>SL Mới</td>
-                        <td hidden>SL</td>
-                        <td>ĐV</td>
-                        <td>Ngày cần</td>
-                        <td class="trangthai-column-header" style="display: none;">Trạng thái</td>
-                        <td>Ghi chú</td>
-                        <td>Ngày duyệt</td>
+                        <th rowspan="2"><input type="checkbox" id="selectAllVT" /></th>
+                        <th rowspan="2">TT</th>
+                        <th rowspan="2">Tên thiết bị / hàng hóa</th>
+                        <th rowspan="2">Mã VT</th>
+                        <th rowspan="2">Hãng SX</th>
+                        <th rowspan="2">NCC</th>
+                        <th colspan="5" style="text-align: center;">SL</th>
+                        <th hidden rowspan="2">SL</th>
+                        <th rowspan="2">ĐV</th>
+                        <th rowspan="2">Ngày cần</th>
+                        <th class="trangthai-column-header" style="display: none;" rowspan="2">Trạng thái</th>
+                        <th rowspan="2">Ghi chú</th>
+                        <th rowspan="2">Ngày duyệt</th>
+                    </tr>
+                    <tr>
+                        <th>Cũ</th>
+                        <th>Mới</th>
+                        <th>Thiếu</th>
+                        <th>Đã xuất</th>
+                        <th>Tồn kho</th>
                     </tr>
                 </thead>
                 <tbody id="vtYeucauBody">
                     @{
                         int STT2 = 1;
+                        var tonKhoByMaSanpham = ViewBag.TonKhoByMaSanpham as Dictionary<string, int>;
+                        if (tonKhoByMaSanpham == null) { tonKhoByMaSanpham = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase); }
                         var vtItems = Model.VTyeucau
                             .OrderByDescending(item => isAwaitingDirectorStatusFunc(item.TrangThai))
                             .ThenBy(item => item.MaSanpham)
@@ -262,6 +270,11 @@
                         // Chỉ hiển thị nút duyệt khi trạng thái là "Chờ giám đốc duyệt"    
                         var canActOnItem = canApprove && isAwaitingDirector && !isApproved && !isRejected;
                         var rowClass = isRejected ? "rejected-row" : "";
+                        var slMoi = item.SLMoi ?? item.SL ?? 0;
+                        var tonKho = !string.IsNullOrWhiteSpace(item.MaSanpham) && tonKhoByMaSanpham.TryGetValue(item.MaSanpham, out var tk) ? tk : 0;
+                        var slThieu = tonKho - slMoi;
+                        var isDaXuatKho = (item.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
+                        var slDaXuat = isDaXuatKho ? (item.SL ?? item.SLMoi) : (int?)null;
                         <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau" class="@rowClass">
                             <td>@if (canSelectForBulk) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
                             <td>@STT2</td>
@@ -271,6 +284,9 @@
                             <td>@item.NhaCC</td>
                             <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
                             <td style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
+                            <td style="text-align: center;">@slThieu</td>
+                            <td style="text-align: center;">@(slDaXuat.HasValue ? slDaXuat.Value.ToString() : "-")</td>
+                            <td style="text-align: center;">@tonKho</td>
                             <td hidden style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
@@ -520,6 +536,9 @@
                             // Chuẩn hoá dữ liệu số lượng từ mọi kiểu đặt tên có thể (camelCase / PascalCase)
                             var slCuVal = item.slCu ?? item.SLCu ?? item.sLCu ?? item.SlCu;
                             var slMoiVal = item.slMoi ?? item.SLMoi ?? item.sLMoi ?? item.SlMoi;
+                            var tonKho = item.tonKho ?? item.TonKho ?? 0;
+                            var slThieu = item.slThieu ?? item.SlThieu ?? (tonKho - (slMoiVal ?? 0));
+                            var slDaXuat = item.slDaXuat ?? item.SlDaXuat;
                             var slGocVal = item.sl ?? item.SL ?? item.sL ?? item.Sl;
 
                             // Nếu là phiếu nhập kho mà chỉ có SL gốc thì dùng cho cả cột mới để đảm bảo luôn thấy số
@@ -553,6 +572,9 @@
                                 <td>${nhaCC || '-'}</td>
                                 <td style="text-align: center;">${slCuVal ?? '-'}</td>
                                 <td style="text-align: center;">${slMoiVal ?? '-'}</td>
+                                <td style="text-align: center;">${slThieu ?? '-'}</td>
+                                <td style="text-align: center;">${slDaXuat != null ? slDaXuat : '-'}</td>
+                                <td style="text-align: center;">${tonKho ?? '-'}</td>
                                 <td hidden style="text-align: center;">${slVal ?? '-'}</td>
                                 <td>${donViVal}</td>
                                 <td>${ngayCanHangDisplay}</td>`;
@@ -610,7 +632,7 @@
                         updateActionButtons();
                     } else {
                         $('#vtYeucauBody').append(
-                            `<tr><td colspan="12" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                            `<tr><td colspan="15" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                         );
                         // Cập nhật nút hành động khi không có dữ liệu
                         updateActionButtons();

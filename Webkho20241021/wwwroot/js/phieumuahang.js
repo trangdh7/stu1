@@ -761,7 +761,6 @@ function attachEventHandlers() {
         return `${yyyy}-${mm}-${dd}`;
     }
 
-
     // Cập nhật ngày thanh toán khi chọn / nhập ngày (định dạng hiển thị dd/MM/yyyy)
     $('.tablethietbi tbody').on('change', '.NgayThanhToanInput', function () {
         const $input = $(this);
@@ -1118,6 +1117,34 @@ $(document).on('click', '.header-clickable', function() {
     }
 });
 
+// Helper global: chuẩn hóa ngày từ popup (yyyy-MM-dd hoặc dd/MM/yyyy) -> dd/MM/yyyy để điền vào bảng và gửi server
+function normalizePopupDateToDisplay(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    const trimmed = dateStr.trim();
+    if (!trimmed) return '';
+    var isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+        return isoMatch[3] + '/' + isoMatch[2] + '/' + isoMatch[1];
+    }
+    var displayMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (displayMatch) {
+        var d = displayMatch[1].length === 1 ? '0' + displayMatch[1] : displayMatch[1];
+        var m = displayMatch[2].length === 1 ? '0' + displayMatch[2] : displayMatch[2];
+        return d + '/' + m + '/' + displayMatch[3];
+    }
+    return '';
+}
+
+// Helper global: dd/MM/yyyy -> yyyy-MM-dd (dùng trong apply* khi đã có chuỗi dd/MM/yyyy)
+function convertDisplayDateToServerGlobal(dateStr) {
+    if (!dateStr) return '';
+    var parts = dateStr.split('/');
+    if (parts.length !== 3) return '';
+    var dd = parts[0], mm = parts[1], yyyy = parts[2];
+    if (dd.length !== 2 || mm.length !== 2 || yyyy.length !== 4) return '';
+    return yyyy + '-' + mm + '-' + dd;
+}
+
 // Đóng popup Ngày Thanh Toán
 function closePopupNgayThanhToan() {
     $('#popupNgayThanhToan').fadeOut(200);
@@ -1136,82 +1163,72 @@ function closePopupGhiChu() {
     $('#inputGhiChu').val('');
 }
 
-// Áp dụng Ngày Thanh Toán cho tất cả các hàng (popup nhập dd/MM/yyyy)
+// Áp dụng Ngày Thanh Toán cho tất cả các hàng (popup: chấp nhận dd/MM/yyyy hoặc yyyy-MM-dd từ input type="date")
 function applyNgayThanhToan() {
-    const ngayThanhToanDisplay = ($('#inputNgayThanhToan').val() || '').trim(); // dd/MM/yyyy
-    
-    if (!ngayThanhToanDisplay) {
+    var raw = ($('#inputNgayThanhToan').val() || '').trim();
+    if (!raw) {
         alert('Vui lòng nhập ngày thanh toán.');
         return;
     }
-    
-    // Validate nhanh theo format dd/MM/yyyy
-    const serverDate = convertDisplayDateToServer(ngayThanhToanDisplay);
+    var ngayThanhToanDisplay = normalizePopupDateToDisplay(raw);
+    if (!ngayThanhToanDisplay) {
+        alert('Định dạng ngày thanh toán không hợp lệ. Vui lòng nhập theo dạng dd/MM/yyyy hoặc chọn ngày từ ô chọn.');
+        return;
+    }
+    var serverDate = convertDisplayDateToServerGlobal(ngayThanhToanDisplay);
     if (!serverDate) {
         alert('Định dạng ngày thanh toán không hợp lệ. Vui lòng nhập theo dạng dd/MM/yyyy.');
         return;
     }
-    
-    // Điền ngày thanh toán cho tất cả các hàng có input ngày thanh toán
-    let count = 0;
-    $('.tablethietbi tbody tr').each(function() {
-        if ($(this).hasClass('tong-tien-row')) {
-            return;
-        }
-        
-        const $input = $(this).find('.NgayThanhToanInput');
+
+    var count = 0;
+    $('.tablethietbi tbody tr').each(function () {
+        if ($(this).hasClass('tong-tien-row')) return;
+        var $input = $(this).find('.NgayThanhToanInput');
         if ($input.length > 0) {
-            // Gán theo định dạng dd/MM/yyyy cho ô chi tiết
             $input.val(ngayThanhToanDisplay);
-            // Trigger change event để lưu vào database
             $input.trigger('change');
             count++;
         }
     });
-    
     if (count > 0) {
-        alert(`Đã điền ngày thanh toán cho ${count} vật tư.`);
+        alert('Đã điền ngày thanh toán cho ' + count + ' vật tư.');
         closePopupNgayThanhToan();
     } else {
         alert('Không tìm thấy vật tư nào để điền ngày thanh toán.');
     }
 }
 
-// Áp dụng Ngày có hàng cho tất cả các hàng (popup nhập dd/MM/yyyy)
+// Áp dụng Ngày có hàng cho tất cả các hàng (popup: chấp nhận dd/MM/yyyy hoặc yyyy-MM-dd từ input type="date")
 function applyNgayCoHang() {
-    const ngayCoHangDisplay = ($('#inputNgayCoHang').val() || '').trim(); // dd/MM/yyyy
-    
-    if (!ngayCoHangDisplay) {
+    var raw = ($('#inputNgayCoHang').val() || '').trim();
+    if (!raw) {
         alert('Vui lòng nhập ngày có hàng.');
         return;
     }
-    
-    // Validate nhanh theo format dd/MM/yyyy
-    const serverDate = convertDisplayDateToServer(ngayCoHangDisplay);
+    var ngayCoHangDisplay = normalizePopupDateToDisplay(raw);
+    if (!ngayCoHangDisplay) {
+        alert('Định dạng ngày có hàng không hợp lệ. Vui lòng nhập theo dạng dd/MM/yyyy hoặc chọn ngày từ ô chọn.');
+        return;
+    }
+    var serverDate = convertDisplayDateToServerGlobal(ngayCoHangDisplay);
     if (!serverDate) {
         alert('Định dạng ngày có hàng không hợp lệ. Vui lòng nhập theo dạng dd/MM/yyyy.');
         return;
     }
-    
-    // Điền ngày có hàng cho tất cả các hàng có input ngày có hàng
-    let count = 0;
-    $('.tablethietbi tbody tr').each(function() {
-        if ($(this).hasClass('tong-tien-row')) {
-            return;
-        }
-        
-        const $input = $(this).find('.NgayCoHangInput');
+
+    var count = 0;
+    $('.tablethietbi tbody tr').each(function () {
+        if ($(this).hasClass('tong-tien-row')) return;
+        var $input = $(this).find('.NgayCoHangInput');
         if ($input.length > 0) {
-            // Gán theo định dạng dd/MM/yyyy cho ô chi tiết
             $input.val(ngayCoHangDisplay);
-            // Trigger change event để lưu vào database
             $input.trigger('change');
             count++;
         }
     });
-    
     if (count > 0) {
-        alert(`Đã điền ngày có hàng cho ${count} vật tư.`);
+        alert('Đã điền ngày có hàng cho ' + count + ' vật tư.');
         closePopupNgayCoHang();
     } else {
         alert('Không tìm thấy vật tư nào để điền ngày có hàng.');
