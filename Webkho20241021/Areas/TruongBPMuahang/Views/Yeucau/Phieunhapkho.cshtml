@@ -173,10 +173,16 @@
             </ul>
         </div>
     </nav>
-    <nav class="bodyyeucau-thietbi">
-        <div id="phieunhapkho-header" style="margin-top: 10px; margin-right: 10px; margin-bottom: 15px; font-size: 18px; font-weight: bold; display: none;">
+    <nav class="bodyyeucau-thietbi" id="bodyYeucauThietbi">
+        <div id="phieunhapkho-header" class="yeucau-info-bar" style="margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;">
+            <span class="yeucau-info"></span>
+            <div class="yeucau-table-actions">
+                <button type="button" class="btn-table-icon btn-minimize-table" title="Thu nhỏ" aria-label="Thu nhỏ"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="7" width="12" height="2" rx="0.5"/></svg></button>
+                <button type="button" class="btn-table-icon btn-maximize-table" title="Phóng to" aria-label="Phóng to"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="0.5"/></svg></button>
+                <button type="button" class="btn-table-icon btn-restore-table" title="Thu nhỏ lại" aria-label="Thu nhỏ lại" style="display: none;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="8" height="8" rx="0.5"/><rect x="6" y="2" width="8" height="8" rx="0.5" stroke-dasharray="1,1"/></svg></button>
+            </div>
         </div>
-        <div class="Tableyeucau-thietbi-box">
+        <div class="Tableyeucau-thietbi-box" id="TableyeucauThietbiBox">
             <table class="tablethietbi">
                 <thead>
                     <tr>
@@ -214,6 +220,7 @@
         </div>
     </nav>
     <script src="~/js/phieunhapkho.js"></script>
+    <script src="~/js/yeucau-table-actions.js"></script>
     <script>
         $(document).ready(function () {
             if (typeof getThongbaoData === 'function') {

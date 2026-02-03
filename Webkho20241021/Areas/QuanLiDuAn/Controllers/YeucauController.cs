@@ -414,11 +414,12 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 {
                     var slMoi = v.SLMoi ?? v.SL ?? 0;
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    var slThieu = tonKho - slMoi;
+                    var slThieu = Math.Max(0, slMoi - tonKho);
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                     var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
                     return new
                     {
+                        tt = v.TT,
                         id = v.ID,
                         vtMaYeucau = v.VTMaYeucau,
                         tenSanpham = v.TenSanpham,
@@ -458,6 +459,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                                  where pnk.MaYeucau == MaYeucau
                                  select new
                                  {
+                                     tt = (string?)null,
                                      id = vtnk.ID,
                                      vtMaYeucau = MaYeucau,
                                      tenSanpham = vtnk.TenSanpham,
@@ -2076,6 +2078,19 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 return yeucau?.NgayCanHang;
             }
 
+            string? GetTTAt(int index)
+            {
+                if (Request.Form.TryGetValue("TT", out var ttValues))
+                {
+                    if (index >= 0 && index < ttValues.Count)
+                    {
+                        var raw = ttValues[index];
+                        return string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+                    }
+                }
+                return null;
+            }
+
             if (yeucau.TenYeucau != "Yêu cầu nhập kho")
             {
                 yeucau.NgayYeucau = DateTime.Now;
@@ -2350,6 +2365,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         {
                             // Cập nhật vật tư yêu cầu hiện có
                             existingVTYeucau.TenSanpham = ten;
+                            existingVTYeucau.TT = GetTTAt(i);
                             existingVTYeucau.HangSX = hangValue;
                             existingVTYeucau.NhaCC = nhaCcValue;
                             existingVTYeucau.SLCu = slCuValue;
@@ -2394,6 +2410,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             // Tạo mới vật tư yêu cầu
                             var newVtyeucau = new vtyeucau();
                             newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TT = GetTTAt(i);
                             newVtyeucau.TenSanpham = ten;
                             newVtyeucau.MaSanpham = maValue;
                             newVtyeucau.HangSX = hangValue;
@@ -2455,6 +2472,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         {
                             // Cập nhật vật tư yêu cầu hiện có
                             existingVTYeucau.TenSanpham = ten;
+                            existingVTYeucau.TT = GetTTAt(i);
                             existingVTYeucau.HangSX = hangValue;
                             existingVTYeucau.NhaCC = nhaCcValue;
                             existingVTYeucau.SLCu = slCuValue;
@@ -2493,6 +2511,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                             // Tạo mới vật tư yêu cầu
                             var newVtyeucau = new vtyeucau();
                             newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TT = GetTTAt(i);
                             newVtyeucau.TenSanpham = ten;
                             newVtyeucau.MaSanpham = maValue;
                             newVtyeucau.HangSX = hangValue;

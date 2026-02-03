@@ -369,12 +369,13 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 {
                     var slMoi = v.SLMoi ?? v.SL ?? 0;
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    var slThieu = tonKho - slMoi;
+                    var slThieu = Math.Max(0, slMoi - tonKho);
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                     var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
                     return new
                     {
                         v.ID,
+                        v.TT,
                         v.VTMaYeucau,
                         v.TenSanpham,
                         v.MaSanpham,
@@ -462,7 +463,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         v.TrangThai,
                         v.GhiChu,
                         TonKho = tonKho,
-                        SlThieu = tonKho - (v.SLMoi ?? v.SL ?? 0),
+                        SlThieu = Math.Max(0, (v.SLMoi ?? v.SL ?? 0) - tonKho),
                         SlDaXuat = (int?)null
                     };
                 }).ToList();
@@ -764,7 +765,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                                             List<string> TenSanpham, List<string> MaSanpham,
                                             List<string> HangSX, List<string> NhaCC, List<int?> SL,
                                             List<int?> SLCu, List<int?> SLMoi,
-                                            List<string> DonVi, List<string> GhiChu, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
+                                            List<string> DonVi, List<string> GhiChu, List<string> TT, string MaYeucau, string action, phieuxuatkho phieuxuatkho, vtphieuxuatkho vtphieuxuatkho, phieumuahang phieumuahang, vtphieumuahang vtphieumuahang)
             {
                 // Kiểm tra null để tránh lỗi khi upload file Excel lớn
                 if (yeucau == null)
@@ -788,6 +789,28 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                     }
 
                     // Không fallback sang yeucau.NgayCanHang để tránh lệch dữ liệu
+                    return null;
+                }
+
+                string? GetTTAt(int index)
+                {
+                    // Ưu tiên đọc trực tiếp từ form để tránh trường hợp binding List<string> TT bị lệch
+                    if (Request.Form.TryGetValue("TT", out var ttValues))
+                    {
+                        if (index >= 0 && index < ttValues.Count)
+                        {
+                            var raw = ttValues[index];
+                            return string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+                        }
+                    }
+
+                    // Fallback: dùng List<string> TT đã bind (nếu có)
+                    if (TT != null && index >= 0 && index < TT.Count)
+                    {
+                        var raw = TT[index];
+                        return string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+                    }
+
                     return null;
                 }
 
@@ -914,6 +937,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         var slValue = (SL != null && i < SL.Count) ? (SL[i] ?? 0) : 0;
                         var slCuValue = (SLCu != null && i < SLCu.Count) ? SLCu[i] : null;
                         var slMoiValueNullable = (SLMoi != null && i < SLMoi.Count) ? SLMoi[i] : null;
+                        var ttValue = GetTTAt(i);
 
                         // Bỏ qua dòng nếu số lượng mới không nhập (null) hoặc <= 0 (không cần lưu và hiển thị)
                         if (!slMoiValueNullable.HasValue || slMoiValueNullable.Value <= 0)
@@ -957,6 +981,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         {
                             // Cập nhật vật tư yêu cầu hiện có
                             existingVTYeucau.TenSanpham = ten;
+                            existingVTYeucau.TT = ttValue;
                             existingVTYeucau.HangSX = hangValue;
                             existingVTYeucau.NhaCC = nhaCcValue;
                             existingVTYeucau.SLCu = slCuValue;
@@ -990,6 +1015,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                             // Tạo mới vật tư yêu cầu
                             var newVtyeucau = new vtyeucau();
                             newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TT = ttValue;
                             newVtyeucau.TenSanpham = ten;
                             newVtyeucau.MaSanpham = maValue;
                             newVtyeucau.HangSX = hangValue;

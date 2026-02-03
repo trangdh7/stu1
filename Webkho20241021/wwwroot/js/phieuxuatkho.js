@@ -294,7 +294,8 @@ function loadVTData(Maxuatkho, url, area) {
             let tenNguoiYeuCau = response.tenNguoiYeuCau || '';
             let maYeucau = response.maYeucau || '';
 
-            // Hiển thị header text cho tất cả areas
+            // Hiển thị header text và bảng chi tiết cho tất cả areas (kể cả khi đã ấn nút thu nhỏ trước đó)
+            $('.bodyyeucau-thietbi').show();
             // Ưu tiên hiển thị theo mã yêu cầu giống màn Yeucau: "Yêu cầu vật tư [MaYeucau] của [Người]"
             if (maYeucau && tenNguoiYeuCau) {
                 $('#phieuxuatkho-header-text').text(`Yêu cầu vật tư ${maYeucau} của ${tenNguoiYeuCau}`);

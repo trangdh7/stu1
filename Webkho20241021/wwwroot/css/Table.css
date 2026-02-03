@@ -73,12 +73,91 @@ button {
 
 .Tableyeucau-thietbi-box {
     width: 100%;
-    max-height: 40vh;
+    max-height: 65vh;
+    overflow-x: auto;
     overflow-y: auto;
     border: 1px solid black;
     box-sizing: border-box;
     margin: 0;
 }
+
+/* Chỉ bảng Yêu cầu (Yeucau): vừa khung, không scroll ngang */
+.Tableyeucau-thietbi-box:has(.tablethietbi-yeucau) {
+    overflow-x: hidden;
+}
+
+/* ============================
+   .tablethietbi: mặc định cho Phiếu mua hàng, xuất kho, nhập kho (layout auto)
+   .tablethietbi-yeucau: chỉ bảng Yêu cầu vật tư (layout cố định %)
+   ============================ */
+.tablethietbi {
+    width: 100%;
+}
+
+/* Layout 5 cột trước SL (Nhanvien* Yeucau): thêm class .tablethietbi-5col trên table */
+.tablethietbi.tablethietbi-5col {
+    --w-pre1: 52px;
+    --w-pre2: 220px;
+    --w-pre3: 110px;
+    --w-pre4: 90px;
+    --w-pre5: 80px;
+    --w-pre6: 0px;
+}
+
+/* ========== Chỉ bảng Yêu cầu vật tư (.tablethietbi-yeucau) ========== */
+.tablethietbi-yeucau {
+    table-layout: fixed;
+    max-width: 100%;
+    --w-pre1: 2%;
+    --w-pre2: 2.5%;
+    --w-pre3: 20%;
+    --w-pre4: 12%;
+    --w-pre5: 6%;
+    --w-pre6: 5%;
+    --w-sl1: 3%;
+    --w-sl2: 3%;
+    --w-sl3: 3%;
+    --w-sl4: 3.5%;
+    --w-sl5: 3.5%;
+    --w-sl-total: calc(var(--w-sl1) + var(--w-sl2) + var(--w-sl3) + var(--w-sl4) + var(--w-sl5));
+}
+
+.tablethietbi-yeucau.tablethietbi-5col {
+    --w-pre1: 52px;
+    --w-pre2: 220px;
+    --w-pre3: 110px;
+    --w-pre4: 90px;
+    --w-pre5: 80px;
+    --w-pre6: 0px;
+}
+
+.tablethietbi-yeucau .col-pre-sl-1 { width: var(--w-pre1); padding-left: 6px; padding-right: 6px; }
+.tablethietbi-yeucau .col-pre-sl-2 { width: var(--w-pre2); padding-left: 6px; padding-right: 6px; }
+.tablethietbi-yeucau .col-pre-sl-3 { width: var(--w-pre3); word-wrap: break-word; }
+.tablethietbi-yeucau .col-pre-sl-4 { width: var(--w-pre4); word-wrap: break-word; }
+.tablethietbi-yeucau .col-pre-sl-5 { width: var(--w-pre5); }
+.tablethietbi-yeucau .col-pre-sl-6 { width: var(--w-pre6); }
+
+.tablethietbi-yeucau .col-ghichu,
+.tablethietbi-yeucau .ghichu-column { width: 12%; word-wrap: break-word; }
+
+.tablethietbi-yeucau .col-donvi { width: 2.5%; min-width: 40px; }
+.tablethietbi-yeucau .col-ngaycan { width: 6%; }
+.tablethietbi-yeucau .col-trangthai,
+.tablethietbi-yeucau .trangthai-column { width: 10%; min-width: 100px; }
+.tablethietbi-yeucau .col-ngayduyet { width: 10%; }
+
+.tablethietbi-yeucau thead .col-sl { background: #4a26ab; color: white; }
+.tablethietbi-yeucau tbody tr:nth-of-type(even) .col-sl { background: #EEEEEE; }
+.tablethietbi-yeucau tbody tr:nth-of-type(odd) .col-sl { background: #f4f4f4; }
+.tablethietbi-yeucau tbody tr.highlight .col-sl { background: #2d9f3c !important; color: #ffffff; }
+
+.tablethietbi-yeucau .col-sl-1 { width: var(--w-sl1); padding-left: 6px; padding-right: 6px; }
+.tablethietbi-yeucau .col-sl-2 { width: var(--w-sl2); padding-left: 6px; padding-right: 6px; }
+.tablethietbi-yeucau .col-sl-3 { width: var(--w-sl3); padding-left: 6px; padding-right: 6px; font-size: calc(0.8em - 2px); }
+.tablethietbi-yeucau .col-sl-4 { width: var(--w-sl4); padding-left: 6px; padding-right: 6px; }
+.tablethietbi-yeucau .col-sl-5 { width: var(--w-sl5); padding-left: 6px; padding-right: 6px; }
+.tablethietbi-yeucau thead .col-sl-header { width: var(--w-sl-total); background: #4a26ab; color: white; }
  
 .table {
   width: 100%;
@@ -156,12 +235,18 @@ button {
 }
 
 .table tbody tr.highlight .btn-icon .bx-printer,
-.table tbody tr.highlight .btn-icon i.bx-printer {
+.table tbody tr.highlight .btn-icon i.bx-printer,
+.table tbody tr.highlight .btn-icon .bx-download,
+.table tbody tr.highlight .btn-icon i.bx-download {
   color: #000000 !important;
   border-color: #000000 !important;
 }
 .btn-icon:hover .bx-printer,
-.btn-icon:focus .bx-printer {
+.btn-icon:focus .bx-printer,
+.btn-icon:active .bx-printer,
+.btn-icon:hover .bx-download,
+.btn-icon:focus .bx-download,
+.btn-icon:active .bx-download {
   color: #000000 !important;
 }
 
@@ -196,18 +281,34 @@ button {
   color: white;
   text-align: left;
   font-weight: bold;
-  position: sticky;
-  top: 0;
+  /* Sticky header 2 dòng sẽ được áp trên th để tránh đè nhau */
 }
 
 .tablethietbi thead th {
   border: 1px solid #000000;
 }
 
+/* Sticky header 2 dòng (không bị mất khi scroll dọc) */
+.tablethietbi thead tr:first-child th {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  background-color: #4a26ab;
+}
+.tablethietbi thead tr:nth-child(2) th {
+  position: sticky;
+  top: var(--tablethietbi-header-row1-height, 36px);
+  z-index: 24;
+  background-color: #4a26ab;
+}
+
 .tablethietbi th,
 .tablethietbi td {
   padding: 5px 12px;
   border: 1px solid #000000;
+  /* Ép đường kẻ dọc giữa các cột (tránh mất khi sticky/scroll) */
+  border-left: 1px solid #000000;
+  border-right: 1px solid #000000;
 }
 
 .tablethietbi tbody tr {
@@ -234,6 +335,12 @@ button {
   color: black !important;
 }
 
+/* Style for download icon in Phieumuahang */
+.btn-icon .bx-download,
+.btn-icon i.bx-download {
+  color: black !important;
+}
+
 /* Keep status span text color black in highlighted rows */
 .tablethietbi tbody tr.highlight td span {
   color: black !important;
@@ -243,4 +350,77 @@ button {
 .table tbody tr.highlight td span.status-waiting,
 .table tbody tr.highlight .status-waiting {
   color: #ffffff !important;
+}
+
+/* ========== Phóng to / Thu nhỏ bảng chi tiết (dùng chung toàn bộ trang Yeucau) ========== */
+.yeucau-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.yeucau-info-bar .yeucau-info {
+  flex: 1;
+  min-width: 0;
+}
+.yeucau-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.btn-table-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-table-icon:hover {
+  background: #e8e8e8;
+  border-color: #999;
+}
+.btn-table-icon svg {
+  flex-shrink: 0;
+}
+.bodyyeucau-thietbi.table-maximized {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: #fff;
+  overflow: auto;
+  padding: 16px;
+  box-shadow: 0 0 0 2px #1976d2;
+}
+.bodyyeucau-thietbi.table-maximized .Tableyeucau-thietbi-box {
+  max-height: calc(100vh - 140px);
+}
+.bodyyeucau-thietbi.table-maximized .tablethietbi {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+/* Chỉ vẽ border-right và border-bottom cho từng ô để đường kẻ giữa các cột chỉ còn 1px (tránh đậm do hai viền ô cạnh nhau) */
+.bodyyeucau-thietbi.table-maximized .tablethietbi th,
+.bodyyeucau-thietbi.table-maximized .tablethietbi td {
+  border: none !important;
+  border-right: 1px solid #000000 !important;
+  border-bottom: 1px solid #000000 !important;
+}
+/* Viền trái cho cột đầu tiên */
+.bodyyeucau-thietbi.table-maximized .tablethietbi th:first-child,
+.bodyyeucau-thietbi.table-maximized .tablethietbi td:first-child {
+  border-left: 1px solid #000000 !important;
+}
+/* Viền trên cho hàng header đầu tiên */
+.bodyyeucau-thietbi.table-maximized .tablethietbi thead tr:first-child th {
+  border-top: 1px solid #000000 !important;
 }

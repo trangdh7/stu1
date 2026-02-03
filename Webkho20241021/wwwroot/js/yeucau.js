@@ -24,10 +24,55 @@ $(document).ready(function () {
     }, 1000);
     
     setActiveMenu();
+
+    // Sticky header 2 dòng cho bảng vật tư
+    syncTableThietbiStickyHeader();
+    $(window).on('resize', function () {
+        syncTableThietbiStickyHeader();
+    });
+
+    // Nút thu nhỏ / phóng to bảng chi tiết (dùng chung toàn bộ trang Yeucau)
+    $(document).on('click', '.btn-minimize-table', function () {
+        var $nav = $(this).closest('.bodyyeucau-thietbi');
+        $nav.removeClass('table-maximized');
+        $nav.find('.btn-maximize-table').show();
+        $nav.find('.btn-restore-table').hide();
+        $nav.hide();
+    });
+    $(document).on('click', '.btn-maximize-table', function () {
+        var $nav = $(this).closest('.bodyyeucau-thietbi');
+        $nav.addClass('table-maximized');
+        $nav.find('.btn-maximize-table').hide();
+        $nav.find('.btn-restore-table').show();
+        if (typeof syncTableThietbiStickyHeader === 'function') syncTableThietbiStickyHeader();
+    });
+    $(document).on('click', '.btn-restore-table', function () {
+        var $nav = $(this).closest('.bodyyeucau-thietbi');
+        $nav.removeClass('table-maximized');
+        $nav.find('.btn-restore-table').hide();
+        $nav.find('.btn-maximize-table').show();
+        if (typeof syncTableThietbiStickyHeader === 'function') syncTableThietbiStickyHeader();
+    });
 });
 
 const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
 const ROW_HIGHLIGHT_TEXT_COLOR = "#ffffff";
+
+// Sticky header (2 dòng) cho bảng vật tư: đo chiều cao dòng 1 để dòng 2 bám đúng vị trí
+function syncTableThietbiStickyHeader() {
+    try {
+        const table = document.querySelector('.tablethietbi');
+        if (!table) return;
+        const firstRow = table.querySelector('thead tr:first-child');
+        if (!firstRow) return;
+        const h = firstRow.getBoundingClientRect().height || 0;
+        if (h > 0) {
+            table.style.setProperty('--tablethietbi-header-row1-height', `${h}px`);
+        }
+    } catch (e) {
+        // no-op
+    }
+}
 
 function applyTableRowHighlight($row) {
     const $rows = $('.table tbody tr');
@@ -59,6 +104,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
     // Đảm bảo bảng chi tiết sản phẩm được hiển thị
     $('.bodyyeucau-thietbi').show();
     $('.tablethietbi').show();
+    syncTableThietbiStickyHeader();
 
     $.ajax({
         url: url, 
@@ -96,6 +142,9 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                     var ghiChuColor = isRejected ? '#f44336' : 'inherit';
                     const tenSanpham = item.tenSanpham || item.TenSanpham || '';
                     const maSanpham = item.maSanpham || item.MaSanpham || '';
+                    const ttExcel = (item.tt ?? item.TT ?? '').toString().trim();
+                    const sttFallback = (STT++).toString();
+                    const ttDisplay = ttExcel || sttFallback;
                     const hangSX = item.hangSX || item.HangSX || '';
                     const nhaCC = item.nhaCC || item.NhaCC || '';
                     const slCu = item.slCu ?? item.SLCu;
@@ -106,14 +155,17 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                     const trangThai = item.trangThai || item.TrangThai || '';
                     const ghiChu = item.ghiChu || item.GhiChu || '-';
                     const tonKho = item.tonKho ?? item.TonKho ?? 0;
-                    const slThieu = item.slThieu ?? item.SlThieu ?? (tonKho - (slMoi ?? 0));
+                    const rawSlThieu = item.slThieu ?? item.SlThieu;
+                    const slThieu = rawSlThieu != null
+                        ? Math.max(0, rawSlThieu)
+                        : Math.max(0, (slMoi ?? 0) - tonKho);
                     const slDaXuat = item.slDaXuat ?? item.SlDaXuat;
                     const ngayDuyet = item.ngayDuyet || item.NgayDuyet ? formatDateTime(item.ngayDuyet || item.NgayDuyet) : '-';
 
                     let row;
                     if (hasTonKhoColumn) {
                         row = `<tr class="${isRejected ? 'rejected-row' : ''}">
-                            <td>${STT++}</td>
+                            <td>${ttDisplay}</td>
                             <td>${tenSanpham}</td>
                             <td>${maSanpham}</td>
                             <td>${hangSX}</td>
@@ -132,7 +184,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                         </tr>`;
                     } else {
                         row = `<tr class="${isRejected ? 'rejected-row' : ''}">
-                            <td>${STT++}</td>
+                            <td>${ttDisplay}</td>
                             <td>${tenSanpham}</td>
                             <td>${maSanpham}</td>
                             <td>${hangSX}</td>
@@ -148,6 +200,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                     }
                     $('.tablethietbi tbody').append(row);
                 });
+                syncTableThietbiStickyHeader();
             } else {
                 const colSpan = $('.tablethietbi thead td, .tablethietbi thead th').filter(function() { return $(this).text().trim() === 'Tồn kho'; }).length > 0 ? 16 : 12;
                 $('.tablethietbi tbody').append(

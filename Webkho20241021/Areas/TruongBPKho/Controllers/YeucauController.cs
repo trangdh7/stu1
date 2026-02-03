@@ -181,10 +181,10 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 {
                     var slMoi = v.SLMoi ?? v.SL ?? 0;
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    var slThieu = tonKho - slMoi;
+                    var slThieu = Math.Max(0, slMoi - tonKho);
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                     var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                    return new { v.ID, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
+                    return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
                 }).ToList();
                 return Json(result);
             }
@@ -230,7 +230,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 var result2 = vatTuList.Select(v =>
                 {
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham2.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    return new { v.ID, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = tonKho - (v.SLMoi ?? v.SL ?? 0), SlDaXuat = (int?)null };
+                    return new { v.ID, TT = (string?)null, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = Math.Max(0, (v.SLMoi ?? v.SL ?? 0) - tonKho), SlDaXuat = (int?)null };
                 }).ToList();
                 return Json(result2);
             }
@@ -1266,6 +1266,19 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 return yeucau?.NgayCanHang;
             }
 
+            string? GetTTAt(int index)
+            {
+                if (Request.Form.TryGetValue("TT", out var ttValues))
+                {
+                    if (index >= 0 && index < ttValues.Count)
+                    {
+                        var raw = ttValues[index];
+                        return string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+                    }
+                }
+                return null;
+            }
+
             if (yeucau.TenYeucau != "Yêu cầu nhập kho")
             {
                 yeucau.NgayYeucau = DateTime.Now;
@@ -1424,6 +1437,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     {
                         var newVtyeucau = new vtyeucau();
                         newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                        newVtyeucau.TT = GetTTAt(i);
                         newVtyeucau.TenSanpham = TenSanpham[i];
                         newVtyeucau.MaSanpham = MaSanpham[i];
                         newVtyeucau.HangSX = HangSX[i];
@@ -1450,6 +1464,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     {
                         var newVtyeucau = new vtyeucau();
                         newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                        newVtyeucau.TT = GetTTAt(i);
                         newVtyeucau.TenSanpham = TenSanpham[i];
                         newVtyeucau.MaSanpham = MaSanpham[i];
                         newVtyeucau.HangSX = HangSX[i];

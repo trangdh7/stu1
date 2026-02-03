@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const HEADER_LOOKAHEAD = 3;
 
     const headerAliases = {
+        tt: ["tt", "stt", "sothutu", "so", "no"],
         ten: [
             "ten",
             "tenthietbi",
@@ -386,6 +387,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function appendRowHiddenInputs(rowData) {
+        appendHiddenInput("TT", rowData.TT || "");
         appendHiddenInput("TenSanpham", rowData.TenSanpham);
         appendHiddenInput("MaSanpham", rowData.MaSanpham);
         appendHiddenInput("HangSX", rowData.HangSX);
@@ -419,7 +421,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const tr = document.createElement("tr");
             const finalQuantity = row.SLToSave ?? resolveFinalQuantity(row);
             tr.innerHTML = `
-                <td>${i + 1}</td>
+                <td>${escapeHtml(row.TT || (i + 1).toString())}</td>
                 <td>${escapeHtml(row.TenSanpham)}</td>
                 <td>${escapeHtml(row.MaSanpham)}</td>
                 <td>${escapeHtml(row.HangSX)}</td>
@@ -600,7 +602,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 };
                 const dateValue = getValue("ngay");
                 const parsedDate = dateValue ? parseDateValue(dateValue) : "";
+                const ttValue = (getValue("tt") || "").toString().trim();
                 let rowData = {
+                    TT: ttValue || (rowIndex + 1).toString(),
                     TenSanpham: (getValue("ten") || "").toString().trim(),
                     MaSanpham: (getValue("ma") || "").toString().trim(),
                     HangSX: (getValue("hang") || "").toString().trim(),
@@ -761,7 +765,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Xử lý batch hiện tại
             const batchRows = batch
-                .map((row) => {
+                .map((row, batchIndex) => {
+                    const rowIndex = startIndex + batchIndex;
                     const getValue = (key) => {
                         if (headerIndex[key] === undefined) return "";
                         const cellValue = row[headerIndex[key]];
@@ -773,7 +778,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     };
                     const dateValue = getValue("ngay");
                     const parsedDate = dateValue ? parseDateValue(dateValue) : "";
+                    const ttValue = (getValue("tt") || "").toString().trim();
                     let rowData = {
+                        TT: ttValue || (rowIndex + 1).toString(),
                         TenSanpham: (getValue("ten") || "").toString().trim(),
                         MaSanpham: (getValue("ma") || "").toString().trim(),
                         HangSX: (getValue("hang") || "").toString().trim(),
@@ -948,7 +955,14 @@ document.addEventListener("DOMContentLoaded", function () {
                             blankrows: false
                         });
                         // Xử lý sheet theo batch để tránh block UI
-                        processSheetAsync(sheetRows);
+                        processSheetAsync(sheetRows).catch((error) => {
+                            console.error("Lỗi khi xử lý tệp Excel:", error);
+                            setFeedback(
+                                `Không thể xử lý tệp Excel. ${error && error.message ? error.message : "Vui lòng kiểm tra lại."}`,
+                                true
+                            );
+                            clearTable();
+                        });
                     } catch (error) {
                         console.error("Lỗi khi đọc tệp Excel:", error);
                         setFeedback(

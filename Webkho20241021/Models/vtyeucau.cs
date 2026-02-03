@@ -6,6 +6,8 @@ namespace Webkho_20241021.Models
     {
         [Key]
         public int ID { get; set; }
+        // Số thứ tự theo file Excel (ví dụ: 1, 1.1, 1.2...)
+        public string? TT { get; set; }
         public string? VTMaYeucau { get; set; }
         public string? TenSanpham { get; set; }
         public string? MaSanpham { get; set; }

@@ -369,10 +369,10 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                     {
                         var slMoi = v.SLMoi ?? v.SL ?? 0;
                         var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                        var slThieu = tonKho - slMoi;
+                        var slThieu = Math.Max(0, slMoi - tonKho);
                         var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                         var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                        return new { v.ID, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
+                        return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
                     }).ToList();
                 }
                 else
@@ -418,7 +418,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         {
                             var v = x;
                             var tonKho = !string.IsNullOrWhiteSpace(x.MaSanpham) && tkByMa.TryGetValue(x.MaSanpham, out var t) ? t : 0;
-                            return new { x.ID, VTMaYeucau = MaYeucau, x.TenSanpham, x.MaSanpham, YCMakho = (string?)null, x.HangSX, x.NhaCC, SLCu = (int?)null, x.SLMoi, x.SL, x.DonVi, NgayCanHang = (DateTime?)null, x.NgayNhapkho, x.NgayBaohanh, x.ThoiGianBH, NgayDuyet = (DateTime?)null, x.TrangThai, GhiChu = (string?)null, TonKho = tonKho, SlThieu = tonKho - (x.SLMoi ?? 0), SlDaXuat = (int?)null };
+                            return new { x.ID, TT = (string?)null, VTMaYeucau = MaYeucau, x.TenSanpham, x.MaSanpham, YCMakho = (string?)null, x.HangSX, x.NhaCC, SLCu = (int?)null, x.SLMoi, x.SL, x.DonVi, NgayCanHang = (DateTime?)null, x.NgayNhapkho, x.NgayBaohanh, x.ThoiGianBH, NgayDuyet = (DateTime?)null, x.TrangThai, GhiChu = (string?)null, TonKho = tonKho, SlThieu = Math.Max(0, (x.SLMoi ?? 0) - tonKho), SlDaXuat = (int?)null };
                         }).ToList<object>();
                     }
                     else
@@ -433,10 +433,10 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         {
                             var slMoi = v.SLMoi ?? v.SL ?? 0;
                             var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                            var slThieu = tonKho - slMoi;
+                            var slThieu = Math.Max(0, slMoi - tonKho);
                             var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                             var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                            return new { v.ID, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
+                            return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
                         }).ToList<object>();
                     }
                 }
@@ -1187,6 +1187,19 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 yeucau = new yeucau();
             }
 
+            string? GetTTAt(int index)
+            {
+                if (Request.Form.TryGetValue("TT", out var ttValues))
+                {
+                    if (index >= 0 && index < ttValues.Count)
+                    {
+                        var raw = ttValues[index];
+                        return string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+                    }
+                }
+                return null;
+            }
+
             if (yeucau.TenYeucau != "Yêu cầu nhập kho")
             {
                 yeucau.NgayYeucau = DateTime.Now;
@@ -1441,6 +1454,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         {
                             // Cập nhật vật tư yêu cầu hiện có
                             existingVTYeucau.TenSanpham = TenSanpham[i];
+                            existingVTYeucau.TT = GetTTAt(i);
                             existingVTYeucau.HangSX = HangSX[i];
                             existingVTYeucau.NhaCC = NhaCC[i];
                             existingVTYeucau.SLCu = slCuValue;
@@ -1482,6 +1496,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                             // Tạo mới vật tư yêu cầu
                             var newVtyeucau = new vtyeucau();
                             newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TT = GetTTAt(i);
                             newVtyeucau.TenSanpham = TenSanpham[i];
                             newVtyeucau.MaSanpham = MaSanpham[i];
                             newVtyeucau.HangSX = HangSX[i];
@@ -1554,6 +1569,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         {
                             // Cập nhật vật tư yêu cầu hiện có
                             existingVTYeucau.TenSanpham = TenSanpham[i];
+                            existingVTYeucau.TT = GetTTAt(i);
                             existingVTYeucau.HangSX = HangSX[i];
                             existingVTYeucau.NhaCC = NhaCC[i];
                             existingVTYeucau.SLCu = slCuValue;
@@ -1591,6 +1607,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                             // Tạo mới vật tư yêu cầu
                             var newVtyeucau = new vtyeucau();
                             newVtyeucau.VTMaYeucau = yeucau.MaYeucau;
+                            newVtyeucau.TT = GetTTAt(i);
                             newVtyeucau.TenSanpham = TenSanpham[i];
                             newVtyeucau.MaSanpham = MaSanpham[i];
                             newVtyeucau.HangSX = HangSX[i];

@@ -150,34 +150,39 @@
             </ul>
         </div>
     </nav>
-    <nav class="bodyyeucau-thietbi">
-        <div class="yeucau-info" id="yeucauInfo" style="margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;">
-            <strong id="yeucauInfoText"></strong>
+    <nav class="bodyyeucau-thietbi" id="bodyYeucauThietbi">
+        <div class="yeucau-info-bar" style="margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;" id="yeucauInfoBar">
+            <span class="yeucau-info" id="yeucauInfo"><strong id="yeucauInfoText"></strong></span>
+            <div class="yeucau-table-actions">
+                <button type="button" class="btn-table-icon btn-minimize-table" title="Thu nhỏ" aria-label="Thu nhỏ"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="7" width="12" height="2" rx="0.5"/></svg></button>
+                <button type="button" class="btn-table-icon btn-maximize-table" title="Phóng to" aria-label="Phóng to"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="0.5"/></svg></button>
+                <button type="button" class="btn-table-icon btn-restore-table" title="Thu nhỏ lại" aria-label="Thu nhỏ lại" style="display: none;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="8" height="8" rx="0.5"/><rect x="6" y="2" width="8" height="8" rx="0.5" stroke-dasharray="1,1"/></svg></button>
+            </div>
         </div>
-        <div class="Tableyeucau-thietbi-box">
-            <table class="tablethietbi">
+        <div class="Tableyeucau-thietbi-box" id="TableyeucauThietbiBox">
+            <table class="tablethietbi tablethietbi-yeucau">
                 <thead>
                     <tr>
-                        <th rowspan="2"><input type="checkbox" id="selectAllVT" /></th>
-                        <th rowspan="2">TT</th>
-                        <th rowspan="2">Tên thiết bị / hàng hóa</th>
-                        <th rowspan="2">Mã VT</th>
-                        <th rowspan="2">Hãng SX</th>
-                        <th rowspan="2">NCC</th>
-                        <th colspan="5" style="text-align: center;">SL</th>
+                        <th rowspan="2" class="col-pre-sl-1"><input type="checkbox" id="selectAllVT" /></th>
+                        <th rowspan="2" class="col-pre-sl-2">TT</th>
+                        <th rowspan="2" class="col-pre-sl-3">Tên thiết bị / hàng hóa</th>
+                        <th rowspan="2" class="col-pre-sl-4">Mã VT</th>
+                        <th rowspan="2" class="col-pre-sl-5">Hãng SX</th>
+                        <th rowspan="2" class="col-pre-sl-6">NCC</th>
+                        <th colspan="5" class="col-sl-header" style="text-align: center;">SL</th>
                         <th hidden rowspan="2">SL</th>
-                        <th rowspan="2">ĐV</th>
-                        <th rowspan="2">Ngày cần</th>
-                        <th class="trangthai-column-header" style="display: none;" rowspan="2">Trạng thái</th>
-                        <th rowspan="2">Ghi chú</th>
-                        <th rowspan="2">Ngày duyệt</th>
+                        <th rowspan="2" class="col-donvi">ĐV</th>
+                        <th rowspan="2" class="col-ngaycan">Ngày cần</th>
+                        <th class="trangthai-column-header col-trangthai" style="display: none;" rowspan="2">Trạng thái</th>
+                        <th rowspan="2" class="col-ghichu">Ghi chú</th>
+                        <th rowspan="2" class="col-ngayduyet">Ngày duyệt</th>
                     </tr>
                     <tr>
-                        <th>Cũ</th>
-                        <th>Mới</th>
-                        <th>Thiếu</th>
-                        <th>Đã xuất</th>
-                        <th>Tồn kho</th>
+                        <th class="col-sl col-sl-1">Cũ</th>
+                        <th class="col-sl col-sl-2">Mới</th>
+                        <th class="col-sl col-sl-3">Thiếu</th>
+                        <th class="col-sl col-sl-4">Đã xuất</th>
+                        <th class="col-sl col-sl-5">Tồn kho</th>
                     </tr>
                 </thead>
                 <tbody id="vtYeucauBody">
@@ -235,21 +240,21 @@
                         var canActOnItem = canApprove && isAwaitingTruongBP && !isApproved && !isRejected;
                         var slMoi = item.SLMoi ?? item.SL ?? 0;
                         var tonKho = !string.IsNullOrWhiteSpace(item.MaSanpham) && tonKhoByMaSanpham.TryGetValue(item.MaSanpham, out var tk) ? tk : 0;
-                        var slThieu = tonKho - slMoi;
+                        var slThieu = Math.Max(0, slMoi - tonKho);
                         var isDaXuatKho = (item.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                         var slDaXuat = isDaXuatKho ? (item.SL ?? item.SLMoi) : (int?)null;
                         <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau" class="clickable-vt-row" style="cursor: pointer;" onclick="showVTYeucau('@maYeucau', '@(yeucauItem?.NguoiYeucau ?? "")', '@maYeucau')">
                             <td onclick="event.stopPropagation();">@if (canSelectForBulk) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
-                            <td>@STT2</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.TT) ? STT2.ToString() : item.TT)</td>
                             <td>@item.TenSanpham</td>
                             <td>@item.MaSanpham</td>
                             <td>@item.HangSX</td>
                             <td>@item.NhaCC</td>
-                            <td style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
-                            <td style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
-                            <td style="text-align: center;">@slThieu</td>
-                            <td style="text-align: center;">@(slDaXuat.HasValue ? slDaXuat.Value.ToString() : "-")</td>
-                            <td style="text-align: center;">@tonKho</td>
+                            <td class="col-sl col-sl-1" style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
+                            <td class="col-sl col-sl-2" style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
+                            <td class="col-sl col-sl-3" style="text-align: center;">@slThieu</td>
+                            <td class="col-sl col-sl-4" style="text-align: center;">@(slDaXuat.HasValue ? slDaXuat.Value.ToString() : "-")</td>
+                            <td class="col-sl col-sl-5" style="text-align: center;">@tonKho</td>
                             <td hidden  style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
@@ -425,6 +430,22 @@
             }
         }
 
+        // Sticky header (2 dòng) cho bảng vật tư: đo chiều cao dòng 1 để dòng 2 bám đúng vị trí
+        function syncTableThietbiStickyHeader() {
+            try {
+                const table = document.querySelector('.tablethietbi');
+                if (!table) return;
+                const firstRow = table.querySelector('thead tr:first-child');
+                if (!firstRow) return;
+                const h = firstRow.getBoundingClientRect().height || 0;
+                if (h > 0) {
+                    table.style.setProperty('--tablethietbi-header-row1-height', `${h}px`);
+                }
+            } catch (e) {
+                // no-op
+            }
+        }
+
         $(document).ready(function () {
             if (typeof getThongbaoData === 'function') {
                 getThongbaoData();
@@ -433,6 +454,8 @@
             setTimeout(function() {
                 updateActionButtons();
             }, 100);
+            syncTableThietbiStickyHeader();
+            $(window).on('resize', function () { syncTableThietbiStickyHeader(); });
         });
 
         // Xử lý khi checkbox thay đổi
@@ -466,10 +489,10 @@
 
             // Hiển thị thông tin yêu cầu
             if (currentNguoiYeucau) {
-                $('#yeucauInfo').show();
+                $('#yeucauInfoBar').show();
                 $('#yeucauInfoText').text('Yêu cầu vật tư ' + MaYeucau + ' của ' + currentNguoiYeucau);
             } else {
-                $('#yeucauInfo').hide();
+                $('#yeucauInfoBar').hide();
             }
 
             $.ajax({
@@ -551,21 +574,24 @@
                             var donViVal = item.donVi ?? item.DonVi ?? '-';
                             var ngayCanHangVal = item.ngayCanHang ?? item.NgayCanHang;
                             var ngayCanHangDisplay = formatDateOnly(ngayCanHangVal);
+                            var ttExcel = (item.tt ?? item.TT ?? '').toString().trim();
+                            var sttFallback = (STT++).toString();
+                            var displayTT = ttExcel || sttFallback;
                             
                             // Tích checkbox mặc định cho các vật tư đang chờ duyệt
                             var checkboxChecked = canActOnItem ? ' checked' : '';
                             var row = `<tr data-mavattu="${maVatTu}" data-mayeucau="${MaYeucau}" class="clickable-vt-row" style="cursor: pointer;" onclick="showVTYeucau('${MaYeucauEscaped}', '${currentNguoiYeucau || ''}', '${MaYeucauEscaped}')">
                                 <td onclick="event.stopPropagation();">${canSelectForBulk ? '<input type="checkbox" class="vt-checkbox" value="' + maVatTuEscaped + '" data-mayeucau="' + MaYeucauEscaped + '" data-mavattu="' + maVatTuEscaped + '"' + checkboxChecked + ' />' : ''}</td>
-                                <td>${STT++}</td>
+                                <td>${displayTT}</td>
                                 <td>${item.tenSanpham || item.TenSanpham || ''}</td>
                                 <td>${maVatTu}</td>
                                 <td>${hangSX || '-'}</td>
                                 <td>${nhaCC || '-'}</td>
-                                <td style="text-align: center;">${slCuVal ?? '-'}</td>
-                                <td style="text-align: center;">${slMoiVal ?? '-'}</td>
-                                <td style="text-align: center;">${slThieu ?? '-'}</td>
-                                <td style="text-align: center;">${slDaXuat != null ? slDaXuat : '-'}</td>
-                                <td style="text-align: center;">${tonKho ?? '-'}</td>
+                                <td class="col-sl col-sl-1" style="text-align: center;">${slCuVal ?? '-'}</td>
+                                <td class="col-sl col-sl-2" style="text-align: center;">${slMoiVal ?? '-'}</td>
+                                <td class="col-sl col-sl-3" style="text-align: center;">${slThieu ?? '-'}</td>
+                                <td class="col-sl col-sl-4" style="text-align: center;">${slDaXuat != null ? slDaXuat : '-'}</td>
+                                <td class="col-sl col-sl-5" style="text-align: center;">${tonKho ?? '-'}</td>
                                 <td style="display: none; text-align: center;">${slVal ?? '-'}</td>
                                 <td>${donViVal}</td>
                                 <td>${ngayCanHangDisplay}</td>`;
@@ -798,6 +824,22 @@
         }
     </script>
     <style>
+        /* Sticky header cho bảng vật tư (tránh cột SL bị ẩn/đè khi kéo xuống) */
+        /* Chỉ cố định đúng nhóm cột SL (tránh ảnh hưởng các cột khác) */
+        .tablethietbi thead th.col-sl-header,
+        .tablethietbi thead th.col-sl {
+            position: sticky;
+            background: inherit; /* giữ màu header đang có */
+        }
+        .tablethietbi thead tr:first-child th.col-sl-header {
+            top: 0;
+            z-index: 220;
+        }
+        .tablethietbi thead tr:nth-child(2) th.col-sl {
+            top: var(--tablethietbi-header-row1-height, 36px);
+            z-index: 215;
+        }
+
         .duyet-column {
             text-align: center;
             white-space: nowrap;

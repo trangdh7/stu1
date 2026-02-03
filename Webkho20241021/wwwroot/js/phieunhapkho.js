@@ -92,7 +92,8 @@ function showVTnhapkho(Manhapkho) {
 
             console.log("Số lượng vật tư:", data ? (Array.isArray(data) ? data.length : 0) : 0);
 
-            // Hiển thị header text cho tất cả areas
+            // Hiển thị header text và bảng chi tiết cho tất cả areas (kể cả khi đã ấn nút thu nhỏ trước đó)
+            $('.bodyyeucau-thietbi').show();
             if (Manhapkho && tenNguoiYeuCau) {
                 $('#phieunhapkho-header-text').text(`Yêu cầu nhập kho ${Manhapkho} của ${tenNguoiYeuCau}`);
                 $('#phieunhapkho-header').show();

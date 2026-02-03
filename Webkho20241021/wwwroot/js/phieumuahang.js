@@ -265,7 +265,8 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
             let data = response.items || response;
             let tenNguoiYeuCau = response.tenNguoiYeuCau || '';
             
-            // Hiển thị header text cho tất cả areas
+            // Hiển thị header text và bảng chi tiết cho tất cả areas (kể cả khi đã ấn nút thu nhỏ trước đó)
+            $('.bodyyeucau-thietbi').show();
             if (Mamuahang && tenNguoiYeuCau) {
                 $('#phieumuahang-header-text').text(`Yêu cầu mua hàng ${Mamuahang} của ${tenNguoiYeuCau}`);
                 $('#phieumuahang-header').show();
