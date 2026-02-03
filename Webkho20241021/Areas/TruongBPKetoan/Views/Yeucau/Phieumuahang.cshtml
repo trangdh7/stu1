@@ -84,6 +84,12 @@
                                     @item.TrangThai
                                 </td>
                                 <td>
+                                    <a href="@Url.Action("ExportPhieumuahangExcel", "Yeucau", new { area = "TruongBPKetoan", MaMuahang = item.MaMuahang })" 
+                                       class="btn-icon" 
+                                       title="Tải Excel"
+                                       onclick="event.stopPropagation();">
+                                        <i class="bx bx-download"></i>
+                                    </a>
                                     <a href="@Url.Action("InPhieumuahang", "Yeucau", new { area = "TruongBPKetoan", MaMuahang = item.MaMuahang })" 
                                        target="_blank" 
                                        class="btn-icon" 

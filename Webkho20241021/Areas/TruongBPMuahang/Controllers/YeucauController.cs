@@ -3193,7 +3193,10 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
             var boPhan = HttpContext.Session.GetString("Bophan");
             var maNv = HttpContext.Session.GetString("MaNguoidung");
 
-            if (!Ma.Contains("PMH"))
+            // Không dựa vào tiền tố "PMH" nữa vì mã phiếu đã được chuẩn hoá theo service
+            // (vd: <maDuAn/MaNV>MH yyMMdd[-01])
+            bool isPhieuMuaHang = _context.phieumuahang.Any(p => p.MaMuahang == Ma);
+            if (!isPhieuMuaHang)
             {
                 var Phieu = _context.yeucau.FirstOrDefault(p => p.MaYeucau == Ma);
                 if (Phieu != null)
@@ -3625,6 +3628,9 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                 }
 
+                // Định dạng tiền VND cho cột Đơn giá (8) và Thành tiền (9)
+                var vndFormat = "#,##0 \"đ\"";
+
                 int row = headerRow + 1;
                 int stt = 1;
                 foreach (var vt in vtphieumuahang)
@@ -3637,7 +3643,9 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     worksheet.Cells[row, 6].Value = vt.SL ?? 0;
                     worksheet.Cells[row, 7].Value = vt.DonVi ?? "";
                     worksheet.Cells[row, 8].Value = vt.DonGia ?? 0;
+                    worksheet.Cells[row, 8].Style.Numberformat.Format = vndFormat;
                     worksheet.Cells[row, 9].Value = vt.ThanhTien ?? 0;
+                    worksheet.Cells[row, 9].Style.Numberformat.Format = vndFormat;
                     worksheet.Cells[row, 10].Value = vt.NgayThanhToan?.ToString("dd/MM/yyyy") ?? "";
                     worksheet.Cells[row, 11].Value = vt.NgayCoHang?.ToString("dd/MM/yyyy") ?? "";
                     worksheet.Cells[row, 12].Value = vt.GhiChu ?? "";

@@ -1853,8 +1853,9 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 .ToList();
 
             // 5️⃣ Sinh mã phiếu
-            string Maxuatkho = TaoMaTuDong("PXK", _context.phieuxuatkho.Select(x => x.MaXuatkho));
-            string Mamuahang = TaoMaTuDong("PMH", _context.phieumuahang.Select(x => x.MaMuahang));
+            // Dùng service sinh mã phiếu thống nhất (dự án/cá nhân)
+            string Maxuatkho = _phieuCodeService.GenerateMaXuatKho(thongTinYeuCau.YCMaDuan, thongTinYeuCau.MaYeucau);
+            string Mamuahang = _phieuCodeService.GenerateMaMuaHang(thongTinYeuCau.YCMaDuan, thongTinYeuCau.MaYeucau);
 
             bool canXuat = false;
             bool canMua = false;
@@ -5491,7 +5492,9 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             var boPhan = HttpContext.Session.GetString("Bophan");
             var maNv = HttpContext.Session.GetString("MaNguoidung");
 
-            if (!Ma.Contains("PMH"))
+            // Không dựa vào tiền tố "PMH" nữa vì mã phiếu đã được chuẩn hoá theo service
+            bool isPhieuMuaHang = _context.phieumuahang.Any(p => p.MaMuahang == Ma);
+            if (!isPhieuMuaHang)
             {
                 var Phieu = _context.yeucau.FirstOrDefault(p => p.MaYeucau == Ma);
                 if (Phieu != null)

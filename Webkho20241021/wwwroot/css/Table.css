@@ -154,7 +154,7 @@ button {
 
 .tablethietbi-yeucau .col-sl-1 { width: var(--w-sl1); padding-left: 6px; padding-right: 6px; }
 .tablethietbi-yeucau .col-sl-2 { width: var(--w-sl2); padding-left: 6px; padding-right: 6px; }
-.tablethietbi-yeucau .col-sl-3 { width: var(--w-sl3); padding-left: 6px; padding-right: 6px; font-size: calc(0.8em - 2px); }
+.tablethietbi-yeucau .col-sl-3 { width: var(--w-sl3); padding-left: 2px; padding-right: 4px; }
 .tablethietbi-yeucau .col-sl-4 { width: var(--w-sl4); padding-left: 6px; padding-right: 6px; }
 .tablethietbi-yeucau .col-sl-5 { width: var(--w-sl5); padding-left: 6px; padding-right: 6px; }
 .tablethietbi-yeucau thead .col-sl-header { width: var(--w-sl-total); background: #4a26ab; color: white; }

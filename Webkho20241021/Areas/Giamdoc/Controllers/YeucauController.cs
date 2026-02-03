@@ -6907,7 +6907,9 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             var boPhan = HttpContext.Session.GetString("Bophan");
             var maNv = HttpContext.Session.GetString("MaNguoidung");
 
-            if (!Ma.Contains("PMH"))
+            // Không dựa vào tiền tố "PMH" nữa vì mã phiếu đã được chuẩn hoá theo service
+            bool isPhieuMuaHang = _context.phieumuahang.Any(p => p.MaMuahang == Ma);
+            if (!isPhieuMuaHang)
             {
                 var Phieu = _context.yeucau.FirstOrDefault(p => p.MaYeucau == Ma);
                 if (Phieu != null)
