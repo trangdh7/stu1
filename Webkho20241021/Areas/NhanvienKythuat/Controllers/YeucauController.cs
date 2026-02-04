@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Webkho_20241021.Models;
 using Webkho_20241021.Areas.NhanvienKythuat.Data;
 using Webkho_20241021.Services;
+using OfficeOpenXml;
 using Webkho_20241021.Services;
 using System;
 using System.IO;
@@ -471,6 +472,172 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
             }
 
             return Json(new List<object>());
+        }
+
+        
+        /// Xuất Excel danh sách vật tư của yêu cầu (tải xuống khi click yêu cầu)
+
+        [HttpGet]
+        public IActionResult ExportYeucauVatTuExcel(string MaYeucau)
+        {
+            if (string.IsNullOrWhiteSpace(MaYeucau))
+            {
+                return NotFound();
+            }
+
+            var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+            bool hasVatTuYeuCau = _context.vtyeucau.Any(v => v.VTMaYeucau == MaYeucau);
+
+            List<dynamic> exportRows = new List<dynamic>();
+
+            if (hasVatTuYeuCau)
+            {
+                var vatTuList = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                var maSanphamList = vatTuList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+                var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                    .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+
+                foreach (var v in vatTuList)
+                {
+                    var slMoi = v.SLMoi ?? v.SL ?? 0;
+                    var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
+                    var slThieu = Math.Max(0, slMoi - tonKho);
+                    var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
+                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
+                }
+            }
+            else
+            {
+                bool isNhapKhoRequest = (!string.IsNullOrEmpty(MaYeucau) && MaYeucau.StartsWith("NHAPKHO_", StringComparison.OrdinalIgnoreCase)) ||
+                    _context.phieunhapkho.Any(p => p.MaYeucau == MaYeucau) ||
+                    _context.yeucau.Any(y => y.MaYeucau == MaYeucau && y.TenYeucau == "Yêu cầu nhập kho");
+
+                if (isNhapKhoRequest)
+                {
+                    var vatTuList = (from vtnk in _context.vtphieunhapkho
+                                     join pnk in _context.phieunhapkho on vtnk.MaNhapkho equals pnk.MaNhapkho
+                                     where pnk.MaYeucau == MaYeucau
+                                     select new { vtnk.TenSanpham, vtnk.MaSanpham, vtnk.HangSX, vtnk.NhaCC, vtnk.SL, vtnk.DonVi, vtnk.TrangThai }).ToList();
+                    var maSanphamList = vatTuList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
+                    var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
+                        .Where(k => maSanphamSet.Contains(k.MaSanpham!)).GroupBy(k => k.MaSanpham!, StringComparer.OrdinalIgnoreCase)
+                        .ToDictionary(g => g.Key, g => g.Sum(x => x.SL ?? 0), StringComparer.OrdinalIgnoreCase);
+
+                    int stt = 1;
+                    foreach (var v in vatTuList)
+                    {
+                        var slMoi = v.SL ?? 0;
+                        var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
+                        var slThieu = Math.Max(0, slMoi - tonKho);
+                        exportRows.Add(new { TT = (object)stt++, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, SLCu = (int?)null, SLMoi = v.SL, SlThieu = slThieu, SlDaXuat = (int?)null, TonKho = tonKho, v.DonVi, NgayCanHang = (DateTime?)null, v.TrangThai, GhiChu = (string?)null, NgayDuyet = (DateTime?)null });
+                    }
+                }
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Danh sách vật tư");
+
+                worksheet.Cells[1, 1, 1, 15].Merge = true;
+                worksheet.Cells[1, 1].Value = $"YÊU CẦU VẬT TƯ {MaYeucau}" + (yeucau != null && !string.IsNullOrEmpty(yeucau.NguoiYeucau) ? $" - {yeucau.NguoiYeucau}" : "");
+                worksheet.Cells[1, 1].Style.Font.Bold = true;
+                worksheet.Cells[1, 1].Style.Font.Size = 14;
+                worksheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet.Cells[1, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                worksheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(68, 114, 196));
+                worksheet.Cells[1, 1].Style.Font.Color.SetColor(System.Drawing.Color.White);
+                worksheet.Row(1).Height = 25;
+
+                int headerRow1 = 2;
+                int headerRow2 = 3;
+                // Hàng 1: TT, Tên, Mã VT, Hãng SX, NCC (gộp 2 hàng) | SL (gộp 5 cột) | ĐV, Ngày cần, Trạng thái, Ghi chú, Ngày duyệt (gộp 2 hàng)
+                worksheet.Cells[headerRow1, 1].Value = "TT";
+                worksheet.Cells[headerRow1, 2].Value = "Tên thiết bị / hàng hóa";
+                worksheet.Cells[headerRow1, 3].Value = "Mã VT";
+                worksheet.Cells[headerRow1, 4].Value = "Hãng SX";
+                worksheet.Cells[headerRow1, 5].Value = "NCC";
+                worksheet.Cells[headerRow1, 6, headerRow1, 10].Merge = true;
+                worksheet.Cells[headerRow1, 6].Value = "SL";
+                worksheet.Cells[headerRow1, 11].Value = "ĐV";
+                worksheet.Cells[headerRow1, 12].Value = "Ngày cần";
+                worksheet.Cells[headerRow1, 13].Value = "Trạng thái";
+                worksheet.Cells[headerRow1, 14].Value = "Ghi chú";
+                worksheet.Cells[headerRow1, 15].Value = "Ngày duyệt";
+
+                // Hàng 2: (trống 1-5) | Cũ, Mới, Thiếu, Đã xuất, Tồn kho | (trống 11-15)
+                worksheet.Cells[headerRow2, 6].Value = "Cũ";
+                worksheet.Cells[headerRow2, 7].Value = "Mới";
+                worksheet.Cells[headerRow2, 8].Value = "Thiếu";
+                worksheet.Cells[headerRow2, 9].Value = "Đã xuất";
+                worksheet.Cells[headerRow2, 10].Value = "Tồn kho";
+
+                // Gộp dọc cho cột 1-5 và 11-15 (span 2 hàng)
+                worksheet.Cells[headerRow1, 1, headerRow2, 1].Merge = true;
+                worksheet.Cells[headerRow1, 2, headerRow2, 2].Merge = true;
+                worksheet.Cells[headerRow1, 3, headerRow2, 3].Merge = true;
+                worksheet.Cells[headerRow1, 4, headerRow2, 4].Merge = true;
+                worksheet.Cells[headerRow1, 5, headerRow2, 5].Merge = true;
+                worksheet.Cells[headerRow1, 11, headerRow2, 11].Merge = true;
+                worksheet.Cells[headerRow1, 12, headerRow2, 12].Merge = true;
+                worksheet.Cells[headerRow1, 13, headerRow2, 13].Merge = true;
+                worksheet.Cells[headerRow1, 14, headerRow2, 14].Merge = true;
+                worksheet.Cells[headerRow1, 15, headerRow2, 15].Merge = true;
+
+                for (int r = headerRow1; r <= headerRow2; r++)
+                {
+                    using (var range = worksheet.Cells[r, 1, r, 15])
+                    {
+                        range.Style.Font.Bold = true;
+                        range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                        range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(173, 216, 230));
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                        range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    }
+                }
+
+                int row = headerRow2 + 1;
+                int stt = 1;
+                foreach (var r in exportRows)
+                {
+                    worksheet.Cells[row, 1].Value = r.TT != null ? r.TT : stt++;
+                    worksheet.Cells[row, 2].Value = r.TenSanpham ?? "";
+                    worksheet.Cells[row, 3].Value = r.MaSanpham ?? "";
+                    worksheet.Cells[row, 4].Value = r.HangSX ?? "";
+                    worksheet.Cells[row, 5].Value = r.NhaCC ?? "";
+                    worksheet.Cells[row, 6].Value = r.SLCu ?? 0;
+                    worksheet.Cells[row, 7].Value = r.SLMoi ?? 0;
+                    worksheet.Cells[row, 8].Value = r.SlThieu ?? 0;
+                    worksheet.Cells[row, 9].Value = r.SlDaXuat != null ? r.SlDaXuat : "-";
+                    worksheet.Cells[row, 10].Value = r.TonKho ?? 0;
+                    worksheet.Cells[row, 11].Value = r.DonVi ?? "";
+                    worksheet.Cells[row, 12].Value = r.NgayCanHang != null ? ((DateTime)r.NgayCanHang).ToString("dd/MM/yyyy") : "";
+                    worksheet.Cells[row, 13].Value = r.TrangThai ?? "";
+                    worksheet.Cells[row, 14].Value = r.GhiChu ?? "";
+                    worksheet.Cells[row, 15].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
+
+                    using (var range = worksheet.Cells[row, 1, row, 15])
+                    {
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    }
+                    row++;
+                }
+
+                worksheet.Cells.AutoFitColumns();
+                var excelBytes = package.GetAsByteArray();
+                var fileName = $"Yeu_cau_vat_tu_{MaYeucau?.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
         }
 
         [HttpGet]

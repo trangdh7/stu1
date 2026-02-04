@@ -128,6 +128,12 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                 $('#yeucauInfo').hide();
             }
 
+            // Cập nhật link tải xuống danh sách vật tư (nếu có)
+            var $downloadLink = $('#btnDownloadYeucauVatTu');
+            if ($downloadLink.length && MaYeucau) {
+                $downloadLink.attr('href', '/' + area + '/Yeucau/ExportYeucauVatTuExcel?MaYeucau=' + encodeURIComponent(MaYeucau));
+            }
+
             $('.tablethietbi tbody').empty();
 
             if (data && data.length > 0) {

@@ -154,6 +154,9 @@
         <div class="yeucau-info-bar" style="margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;" id="yeucauInfoBar">
             <span class="yeucau-info" id="yeucauInfo"><strong id="yeucauInfoText"></strong></span>
             <div class="yeucau-table-actions">
+                <a href="#" id="btnDownloadYeucauVatTu" class="btn-table-icon" title="Tải danh sách vật tư" aria-label="Tải xuống" style="text-decoration: none;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </a>
                 <button type="button" class="btn-table-icon btn-minimize-table" title="Thu nhỏ" aria-label="Thu nhỏ"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="7" width="12" height="2" rx="0.5"/></svg></button>
                 <button type="button" class="btn-table-icon btn-maximize-table" title="Phóng to" aria-label="Phóng to"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="0.5"/></svg></button>
                 <button type="button" class="btn-table-icon btn-restore-table" title="Thu nhỏ lại" aria-label="Thu nhỏ lại" style="display: none;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="8" height="8" rx="0.5"/><rect x="6" y="2" width="8" height="8" rx="0.5" stroke-dasharray="1,1"/></svg></button>
@@ -493,6 +496,10 @@
                 $('#yeucauInfoText').text('Yêu cầu vật tư ' + MaYeucau + ' của ' + currentNguoiYeucau);
             } else {
                 $('#yeucauInfoBar').hide();
+            }
+            var $downloadLink = $('#btnDownloadYeucauVatTu');
+            if ($downloadLink.length && MaYeucau) {
+                $downloadLink.attr('href', '/' + area + '/Yeucau/ExportYeucauVatTuExcel?MaYeucau=' + encodeURIComponent(MaYeucau));
             }
 
             $.ajax({
