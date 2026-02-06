@@ -166,13 +166,19 @@ namespace Webkho_20241021.Services
                 int startIndex = -1;
                 int endIndex = parts.Length;
 
-                // Tìm cụm 6 số cuối (thường là ngày)
+                // Tìm cụm 6 số cuối (thường là ngày). Nếu user thêm -01 trong file (vd: 260128-01) thì bỏ hậu tố, lấy 260128
                 for (int i = parts.Length - 1; i >= 0; i--)
                 {
                     var part = parts[i];
                     if (part.Length == 6 && part.All(char.IsDigit))
                     {
                         datePartFromFile = part;
+                        endIndex = i;
+                        break;
+                    }
+                    if (part.Length == 9 && part[6] == '-' && part.Substring(0, 6).All(char.IsDigit) && part.Substring(7, 2).All(char.IsDigit))
+                    {
+                        datePartFromFile = part.Substring(0, 6);
                         endIndex = i;
                         break;
                     }

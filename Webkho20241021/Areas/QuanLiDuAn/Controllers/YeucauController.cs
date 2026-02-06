@@ -486,7 +486,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 var result2 = vatTuList.Select(v =>
                 {
                     var tonKho = !string.IsNullOrWhiteSpace(v.maSanpham) && tonKhoByMaSanpham2.TryGetValue(v.maSanpham, out var tk) ? tk : 0;
-                    return new { v.id, v.vtMaYeucau, v.tenSanpham, v.maSanpham, v.hangSX, v.nhaCC, v.slCu, v.slMoi, v.sl, v.donVi, v.ngayCanHang, v.ngayNhapkho, v.ngayBaohanh, v.thoiGianBH, v.ngayDuyet, v.trangThai, v.ghiChu, tonKho = tonKho, slThieu = tonKho - (v.slMoi ?? v.sl ?? 0), slDaXuat = (int?)null };
+                    return new { v.id, v.vtMaYeucau, v.tenSanpham, v.maSanpham, v.hangSX, v.nhaCC, v.slCu, v.slMoi, v.sl, v.donVi, v.ngayCanHang, v.ngayNhapkho, v.ngayBaohanh, v.thoiGianBH, v.ngayDuyet, v.trangThai, v.ghiChu, tonKho = tonKho, slThieu = Math.Max(0, (v.slMoi ?? v.sl ?? 0) - tonKho), slDaXuat = (int?)null };
                 }).ToList();
                 return Json(result2);
             }

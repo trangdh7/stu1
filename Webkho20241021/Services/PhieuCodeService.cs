@@ -72,7 +72,27 @@ namespace Webkho_20241021.Services
             return EnsureUniqueCode(baseCode, loaiPhieu);
         }
 
-       
+        /// <summary>
+        /// Bỏ hậu tố -01, -02... ở cuối mã (chỉ khi đúng pattern -NN ở cuối chuỗi)
+        /// để mã từ file do user thêm -01 vẫn được coi là cùng base với mã không hậu tố.
+        /// </summary>
+        private static string? StripTrailingSuffix(string? code)
+        {
+            if (string.IsNullOrWhiteSpace(code) || code.Length < 4)
+                return code;
+            if (code[code.Length - 3] == '-' && char.IsDigit(code[code.Length - 2]) && char.IsDigit(code[code.Length - 1]))
+                return code.Substring(0, code.Length - 3).TrimEnd();
+            return code;
+        }
+
+        /// <summary>
+        /// Chuẩn hóa mã phiếu/yêu cầu: bỏ hậu tố -01, -02... do người dùng thêm trong file.
+        /// </summary>
+        public string? NormalizePhieuCode(string? code)
+        {
+            return StripTrailingSuffix(code);
+        }
+
         private string GetMaNguoiYeuCau(string? maYeucau)
         {
             if (string.IsNullOrWhiteSpace(maYeucau))
@@ -80,8 +100,12 @@ namespace Webkho_20241021.Services
                 return "CN"; // Cá nhân mặc định
             }
 
+            // Coi mã có hậu tố -01 do user thêm trong file là cùng base với mã không hậu tố
+            string? baseMa = StripTrailingSuffix(maYeucau);
             var yeucau = _context.yeucau
-                .FirstOrDefault(y => y.MaYeucau == maYeucau);
+                .FirstOrDefault(y => y.MaYeucau == baseMa);
+            if (yeucau == null)
+                yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == maYeucau);
 
             // Lấy mã nhân viên từ YCMaNguoidung (ví dụ: PhuongMN)
             if (yeucau != null && !string.IsNullOrWhiteSpace(yeucau.YCMaNguoidung))

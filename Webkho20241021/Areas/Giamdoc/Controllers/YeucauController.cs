@@ -2105,8 +2105,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     }
                 }
 
-                // Kiểm tra xem có phải là yêu cầu nhập kho không
-                // - Trước đây chỉ dựa vào prefix NHAPKHO_; giờ bổ sung kiểm tra theo dữ liệu thực tế
+                
                 bool isNhapKhoRequest =
                     (!string.IsNullOrEmpty(MaYeucau) &&
                         (MaYeucau.StartsWith("NHAPKHO_DUAN_", StringComparison.OrdinalIgnoreCase) ||

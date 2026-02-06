@@ -17,5 +17,11 @@ namespace Webkho_20241021.Services
         string GenerateMaXuatKho(string? maDuan, string? maYeucau);
 
         string GenerateMaMuaHang(string? maDuan, string? maYeucau);
+
+        /// <summary>
+        /// Chuẩn hóa mã phiếu/yêu cầu: bỏ hậu tố -01, -02... do người dùng thêm trong file
+        /// để hệ thống vẫn nhận biết cùng một yêu cầu (ví dụ: 260128-01 → 260128).
+        /// </summary>
+        string? NormalizePhieuCode(string? code);
     }
 }

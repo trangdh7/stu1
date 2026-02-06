@@ -524,7 +524,7 @@
                             // SL: ưu tiên SL gốc, nếu không có thì fallback SLMoi rồi SLCu
                             var slVal = item.sl ?? item.SL ?? slMoiVal ?? slCuVal;
                             var tonKho = item.tonKho ?? item.TonKho ?? 0;
-                            var slThieu = item.slThieu ?? item.SlThieu ?? (tonKho - (slMoiVal ?? 0));
+                            var slThieu = item.slThieu ?? item.SlThieu ?? Math.max(0, (slMoiVal ?? 0) - tonKho);
                             var slDaXuat = item.slDaXuat ?? item.SlDaXuat;
                             var donViVal = item.donVi ?? item.DonVi ?? '-';
                             var ngayCanHangVal = item.ngayCanHang ?? item.NgayCanHang;

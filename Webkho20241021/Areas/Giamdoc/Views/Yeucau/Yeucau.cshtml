@@ -579,7 +579,7 @@
                             var slCuVal = item.slCu ?? item.SLCu ?? item.sLCu ?? item.SlCu;
                             var slMoiVal = item.slMoi ?? item.SLMoi ?? item.sLMoi ?? item.SlMoi;
                             var tonKho = item.tonKho ?? item.TonKho ?? 0;
-                            var slThieu = item.slThieu ?? item.SlThieu ?? (tonKho - (slMoiVal ?? 0));
+                            var slThieu = item.slThieu ?? item.SlThieu ?? Math.max(0, (slMoiVal ?? 0) - tonKho);
                             var slDaXuat = item.slDaXuat ?? item.SlDaXuat;
                             var slGocVal = item.sl ?? item.SL ?? item.sL ?? item.Sl;
 
