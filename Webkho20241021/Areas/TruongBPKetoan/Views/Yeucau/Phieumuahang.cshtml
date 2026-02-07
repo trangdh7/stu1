@@ -68,7 +68,7 @@
                         }
                         @foreach (var item in Model.Phieumuahang)
                         {
-                            <tr onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" style="cursor: pointer;">
+                            <tr class="clickable-row" data-mamuahang="@item.MaMuahang" data-trangthai="@item.TrangThai" onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" style="cursor: pointer;">
                                 <td>@STT</td>
                                 <td>
                                     <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
@@ -110,7 +110,7 @@
             <!-- This part is for the "Thietbi" section, using the MaMuahang from the current context -->
             <input type="hidden" id="selectedMamuahang" name="MaMuahang" value="@Model.Phieumuahang.FirstOrDefault()?.MaMuahang" />
             <div class="phieumuahang-info" id="phieumuahang-header" style="margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;">
-                <strong></strong>
+                <strong id="phieumuahang-header-text"></strong>
             </div>
             <div class="Tableyeucau-thietbi-box">
                 <table class="tablethietbi">

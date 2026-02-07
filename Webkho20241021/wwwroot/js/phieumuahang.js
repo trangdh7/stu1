@@ -11,7 +11,7 @@ $(document).ready(function () {
     if (firstRow.length > 0) {
         const Mamuahang = firstRow.data('mamuahang');
         const link = firstRow.find('td').eq(2).find('a');
-        const trangThai = link.data('trangthai') || '';
+        const trangThai = firstRow.data('trangthai') || (link.length ? link.data('trangthai') : '') || '';
         if (Mamuahang) {
             showVTmuahang(Mamuahang, trangThai);
         }
@@ -23,9 +23,10 @@ $(document).ready(function () {
     
     // Xử lý click vào hàng
     $(document).on('click', '.clickable-row', function() {
-        const MaMuahang = $(this).data('mamuahang');
-        const link = $(this).find('td').eq(2).find('a');
-        const trangThai = link.data('trangthai') || '';
+        const $row = $(this);
+        const MaMuahang = $row.data('mamuahang');
+        const link = $row.find('td').eq(2).find('a');
+        const trangThai = $row.data('trangthai') || (link.length ? link.data('trangthai') : '') || '';
         if (MaMuahang) {
             showVTmuahang(MaMuahang, trangThai);
         }
