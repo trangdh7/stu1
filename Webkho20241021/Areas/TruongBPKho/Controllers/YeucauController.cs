@@ -116,6 +116,40 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult XoaYeucau(string MaYeucau)
+        {
+            if (string.IsNullOrWhiteSpace(MaYeucau))
+            {
+                TempData["ErrorMessage"] = "Mã yêu cầu không hợp lệ.";
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPKho" });
+            }
+            var chucVu = HttpContext.Session.GetString("Chucvu");
+            var boPhan = HttpContext.Session.GetString("Bophan");
+            var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+            if (yeucau == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy yêu cầu.";
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPKho" });
+            }
+            if (!YeucauDeleteHelper.CoTheXoaYeucauTruongBP(yeucau, chucVu ?? "", boPhan ?? ""))
+            {
+                TempData["ErrorMessage"] = "Bạn chỉ được xóa yêu cầu khi chưa đến bước QLDA/Giám đốc duyệt.";
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPKho" });
+            }
+            try
+            {
+                YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
+                TempData["SuccessMessage"] = "Đã xóa yêu cầu thành công.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Lỗi khi xóa: " + ex.Message;
+            }
+            return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPKho" });
+        }
+
         public IActionResult Phieuxuatkho(string search = "")
         {
             var model = _phieuService.GetDanhSachPhieuxuatkho(search);
@@ -181,9 +215,11 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 {
                     var slMoi = v.SLMoi ?? v.SL ?? 0;
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    var slThieu = Math.Max(0, slMoi - tonKho);
+                    // Thiếu = Yêu cầu - Đã xuất (khi đã xuất đủ thì thiếu = 0, không dùng tồn kho vì sau khi xuất tồn kho = 0)
+                    var slDaXuatThucTe = !string.IsNullOrWhiteSpace(v.MaSanpham) ? YeucauUpdateHelper.TinhSoLuongDaCap(_context, MaYeucau, v.MaSanpham) : 0;
+                    var slThieu = TinhSoLuongConThieu(MaYeucau, v.MaSanpham ?? "");
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
-                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    var slDaXuat = slDaXuatThucTe > 0 ? (int?)slDaXuatThucTe : (isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null);
                     return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
                 }).ToList();
                 return Json(result);
@@ -257,9 +293,11 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 {
                     var slMoi = v.SLMoi ?? v.SL ?? 0;
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    var slThieu = Math.Max(0, slMoi - tonKho);
+                    // Thiếu = Yêu cầu - Đã xuất (khi đã xuất đủ thì thiếu = 0)
+                    var slDaXuatThucTe = !string.IsNullOrWhiteSpace(v.MaSanpham) ? YeucauUpdateHelper.TinhSoLuongDaCap(_context, MaYeucau, v.MaSanpham) : 0;
+                    var slThieu = TinhSoLuongConThieu(MaYeucau, v.MaSanpham ?? "");
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
-                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    var slDaXuat = slDaXuatThucTe > 0 ? (int?)slDaXuatThucTe : (isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null);
                     exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
                 }
             }
@@ -2151,6 +2189,7 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 var vatTuThieu = new List<vtphieuxuatkho>();
 
                 var vatTuNhom = VTphieuxuatkho
+                    .Where(vt => vt.TrangThai != "Đã xuất kho" && vt.TrangThai != "Hoàn thành")
                     .GroupBy(vt => vt.MaSanpham ?? "")
                     .ToList();
 
@@ -3152,7 +3191,13 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                 }
 
                 // Không cập nhật vtGoc.SL (SL gốc phải giữ nguyên để làm căn cứ).
-                // Đã xuất / Còn lại sẽ được tính theo tổng các dòng đã xuất kho.
+                // Cập nhật vtGoc.TrangThai = "Đã xuất kho" khi đã xuất đủ (conLai - SoLuongThucXuat <= 0)
+                // để tránh khi "xuất hết" báo thiếu hàng sai cho vật tư đã xuất.
+                if (SoLuongThucXuat >= conLai)
+                {
+                    vtGoc.TrangThai = "Đã xuất kho";
+                    _context.vtphieuxuatkho.Update(vtGoc);
+                }
 
                 _context.SaveChanges();
 
@@ -3556,14 +3601,16 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
                     return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "TruongBPKho" });
                 }
 
-                // Lấy tất cả vật tư trong phiếu xuất kho
+                // Lấy vật tư trong phiếu xuất kho (bỏ qua đã xuất để tránh báo thiếu sai)
                 var VTphieuxuatkhoList = _context.vtphieuxuatkho
-                    .Where(vt => vt.MaXuatkho == MaXuatkho)
+                    .Where(vt => vt.MaXuatkho == MaXuatkho
+                        && vt.TrangThai != "Đã xuất kho"
+                        && vt.TrangThai != "Hoàn thành")
                     .ToList();
 
                 if (!VTphieuxuatkhoList.Any())
                 {
-                    TempData["Error"] = "Phiếu xuất kho không có vật tư nào!";
+                    TempData["Error"] = "Phiếu xuất kho không có vật tư nào thiếu để tạo phiếu mua hàng.";
                     return RedirectToAction("Phieuxuatkho", "Yeucau", new { area = "TruongBPKho" });
                 }
 
@@ -5402,7 +5449,9 @@ namespace Webkho_20241021.Areas.TruongBPKho.Controllers
             foreach (var phieuXuatKho in phieuXuatCapNhatList)
             {
                 var vtPhieuxuatkhoList = _context.vtphieuxuatkho
-                    .Where(vt => vt.MaXuatkho == phieuXuatKho.MaXuatkho)
+                    .Where(vt => vt.MaXuatkho == phieuXuatKho.MaXuatkho
+                        && vt.TrangThai != "Đã xuất kho"
+                        && vt.TrangThai != "Hoàn thành")
                     .ToList();
 
                 bool duHang = true;

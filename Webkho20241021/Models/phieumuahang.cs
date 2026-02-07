@@ -21,5 +21,9 @@ namespace Webkho_20241021.Models
         // Không map vào DB, dùng để hiển thị Ngày cần từ vtyeucau (vật tư chi tiết)
         [NotMapped]
         public DateTime? NgayCanHang { get; set; }
+
+        // Không map vào DB, dùng để hiển thị Ngày yêu cầu từ yeucau
+        [NotMapped]
+        public DateTime? NgayYeucau { get; set; }
     }
 }

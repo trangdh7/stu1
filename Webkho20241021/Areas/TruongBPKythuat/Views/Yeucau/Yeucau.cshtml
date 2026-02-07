@@ -1,6 +1,5 @@
 @model Webkho_20241021.Areas.TruongBPKythuat.Data.Yeucauviewmodel
-
-
+@using Webkho_20241021.Helpers
 @{
     ViewData["Title"] = "Yeucau";
     Layout = "~/Areas/TruongBPKythuat/Views/Layout/Layout.cshtml";
@@ -15,6 +14,14 @@
     <link rel="stylesheet" href="~/css/yeucau.css" />
 </head>
 <body>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" style="margin: 10px 15px; padding: 10px 15px; background: #d4edda; color: #155724; border-radius: 4px;">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" style="margin: 10px 15px; padding: 10px 15px; background: #f8d7da; color: #721c24; border-radius: 4px;">@TempData["ErrorMessage"]</div>
+    }
 <!-- <div style="margin: 10px 10px; padding: 10px; background-color:rgb(225, 233, 71); border-left: 4px solid #2196f3; border-radius: 4px;">
             <strong style="color:rgb(1, 1, 1);">📌 Lưu ý:</strong> 
             <span style="color: #333;">Ấn vào <strong style="color:rgb(0, 0, 0);">Mã yêu cầu</strong> trong bảng để xem chi tiết vật tư.</span>
@@ -97,11 +104,14 @@
                         <td>Trạng thái</td>
                         <td>Ngày duyệt</td>
                         <td>Tên người duyệt</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
                 <tbody>
                     @{
                         int STT = 1;
+                        var chucVuSession = Context.Session.GetString("Chucvu");
+                        var boPhanSession = Context.Session.GetString("Bophan");
                     }
                     @foreach (var item in Model.Yeucau)
                     {
@@ -144,6 +154,21 @@
                                 @if (!string.IsNullOrWhiteSpace(item.NguoiDuyet))
                                 {
                                     <span>@item.NguoiDuyet</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #999;">-</span>
+                                }
+                            </td>
+                            <td onclick="event.stopPropagation();">
+                                @if (YeucauDeleteHelper.CoTheXoaYeucauTruongBP(item, chucVuSession ?? "", boPhanSession ?? ""))
+                                {
+                                    @using (Html.BeginForm("XoaYeucau", "Yeucau", new { area = "TruongBPKythuat" }, FormMethod.Post, true, new { @class = "form-xoa-yeucau", onsubmit = "return confirm('Bạn có chắc muốn xóa yêu cầu này?');" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="MaYeucau" value="@item.MaYeucau" />
+                                        <button type="submit" class="btn-icon delete-btn" title="Xóa yêu cầu"><i class="bx bxs-trash"></i></button>
+                                    }
                                 }
                                 else
                                 {

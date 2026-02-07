@@ -47,7 +47,9 @@
             </div>
             <div class="sosanh-filter-bar">
                 <label>Tìm kiếm:</label>
-                <input type="text" id="sosanhSearch" placeholder="Tên thiết bị, Mã VT, Hãng SX, Nhà CC..." />
+                <input type="text" id="sosanhSearch" placeholder="Tên thiết bị, Hãng SX, Nhà CC..." />
+                <label for="filterMavt" style="font-weight: 500;">Mã VT:</label>
+                <input type="text" id="filterMavt" placeholder="Lọc theo Mã VT..." style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 180px;" />
                 <label>Hãng SX:</label>
                 <select id="sosanhFilterHangSX">
                     <option value="">Tất cả</option>
@@ -121,25 +123,26 @@
         $(function () {
             function applyFilter() {
                 var search = ($('#sosanhSearch').val() || '').trim().toLowerCase();
+                var mavt = ($('#filterMavt').val() || '').trim().toLowerCase();
                 var hangSX = ($('#sosanhFilterHangSX').val() || '').trim();
                 var nhaCC = ($('#sosanhFilterNhaCC').val() || '').trim();
                 var idx = 0;
                 $('.table-sosanh tbody tr.sosanh-data-row').each(function () {
                     var $tr = $(this);
                     var matchSearch = !search || ($tr.data('tensp') && $tr.data('tensp').indexOf(search) >= 0) ||
-                        ($tr.data('mavt') && $tr.data('mavt').indexOf(search) >= 0) ||
                         ($tr.data('hangsx') && $tr.data('hangsx').toLowerCase().indexOf(search) >= 0) ||
                         ($tr.data('nhacc') && $tr.data('nhacc').toLowerCase().indexOf(search) >= 0);
+                    var matchMavt = !mavt || ($tr.data('mavt') && $tr.data('mavt').indexOf(mavt) >= 0);
                     var rowHangSX = (($tr.data('hangsx') || '') + '').split(',').map(function (s) { return s.trim(); });
                     var rowNhaCC = (($tr.data('nhacc') || '') + '').split(',').map(function (s) { return s.trim(); });
                     var matchHangSX = !hangSX || rowHangSX.indexOf(hangSX) >= 0;
                     var matchNhaCC = !nhaCC || rowNhaCC.indexOf(nhaCC) >= 0;
-                    var show = matchSearch && matchHangSX && matchNhaCC;
+                    var show = matchSearch && matchMavt && matchHangSX && matchNhaCC;
                     $tr.toggleClass('sosanh-row-hidden', !show);
                     if (show) { idx++; $tr.find('.sosanh-tt').text(idx); }
                 });
             }
-            $('#sosanhSearch').on('input', applyFilter);
+            $('#sosanhSearch, #filterMavt').on('input', applyFilter);
             $('#sosanhFilterHangSX, #sosanhFilterNhaCC').on('change', applyFilter);
         });
     </script>

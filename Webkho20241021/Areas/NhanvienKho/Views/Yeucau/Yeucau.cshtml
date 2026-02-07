@@ -1,6 +1,5 @@
 @model Webkho_20241021.Areas.NhanvienKho.Data.Yeucauviewmodel
-
-
+@using Webkho_20241021.Helpers
 @{
     ViewData["Title"] = "Yeucau";
     Layout = "~/Areas/NhanvienKho/Views/Layout/Layout.cshtml";
@@ -14,7 +13,14 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" style="margin: 10px 15px; padding: 10px 15px; background: #d4edda; color: #155724; border-radius: 4px;">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" style="margin: 10px 15px; padding: 10px 15px; background: #f8d7da; color: #721c24; border-radius: 4px;">@TempData["ErrorMessage"]</div>
+    }
     <nav class="bodyyeucau">
         <div class="menu-kho">
             <ul class="timkiem">
@@ -66,6 +72,7 @@
                         <td>Trạng thái</td>
                         <td>Ngày duyệt</td>
                         <td>Tên người duyệt</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -155,6 +162,21 @@
                                 @if (!string.IsNullOrWhiteSpace(item.NguoiDuyet))
                                 {
                                     <span>@item.NguoiDuyet</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #999;">-</span>
+                                }
+                            </td>
+                            <td onclick="event.stopPropagation();">
+                                @if (YeucauDeleteHelper.CoTheXoaYeucauNhanVien(item, maNguoidungSession))
+                                {
+                                    @using (Html.BeginForm("XoaYeucau", "Yeucau", new { area = "NhanvienKho" }, FormMethod.Post, true, new { @class = "form-xoa-yeucau", onsubmit = "return confirm('Bạn có chắc muốn xóa yêu cầu này?');" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="MaYeucau" value="@item.MaYeucau" />
+                                        <button type="submit" class="btn-icon delete-btn" title="Xóa yêu cầu"><i class="bx bxs-trash"></i></button>
+                                    }
                                 }
                                 else
                                 {

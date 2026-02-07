@@ -1,0 +1,49 @@
+@model Webkho_20241021.Models.NhaCungCap
+@{
+    ViewData["Title"] = "Thêm nhà cung cấp";
+    Layout = "~/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <style>
+        .form-container { max-width: 500px; margin: 20px auto; padding: 24px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 8px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+        .form-group textarea { min-height: 80px; }
+        .text-danger { color: #c62828; font-size: 0.9rem; margin-top: 4px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-save { padding: 10px 20px; background: #0c6215; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-save:hover { background: #0a5012; }
+        .btn-back { padding: 10px 20px; background: #666; color: white; border: none; border-radius: 6px; text-decoration: none; display: inline-block; }
+        .btn-back:hover { background: #555; color: white; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2 style="margin-bottom: 20px; color: #1e3a5f;">Thêm nhà cung cấp</h2>
+
+        @using (Html.BeginForm("Create", "NhaCungCap", new { area = "TruongBPMuahang" }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label for="TenNhaCC">Tên nhà cung cấp <span style="color:red;">*</span></label>
+                @Html.TextBoxFor(m => m.TenNhaCC, new { @class = "form-control", placeholder = "Nhập tên nhà cung cấp", required = "required" })
+                @Html.ValidationMessageFor(m => m.TenNhaCC, "", new { @class = "text-danger" })
+            </div>
+            <div class="form-group">
+                <label for="GhiChu">Ghi chú</label>
+                @Html.TextAreaFor(m => m.GhiChu, new { @class = "form-control", placeholder = "Nhập ghi chú (nếu có)" })
+            </div>
+            <div class="btn-group">
+                <button type="submit" class="btn-save">Lưu</button>
+                <a href="/TruongBPMuahang/NhaCungCap/Index" class="btn-back">Quay lại</a>
+            </div>
+        }
+    </div>
+</body>
+</html>

@@ -20,6 +20,11 @@ $(document).ready(function () {
         getThongbaoData();
     }
     setActiveMenu();
+
+    // Filter Mã VT cho bảng chi tiết
+    $(document).on('input', '#filterMavt', function () {
+        applyFilterMavt();
+    });
     
     // Xử lý click vào hàng
     $(document).on('click', '.clickable-row', function() {
@@ -46,6 +51,32 @@ function escapeHtml(input) {
             case '"': return '&quot;';
             case "'": return '&#39;';
             default: return ch;
+        }
+    });
+}
+
+function fetchNhaCCGoiY(q, $dropdown, $input) {
+    $('.ncc-dropdown').hide();
+    const url = '/TruongBPMuahang/NhaCungCap/GetNhaCCGoiY?q=' + encodeURIComponent(q || '');
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function (data) {
+            if (Array.isArray(data) && data.length > 0) {
+                let html = '';
+                data.forEach(function (item) {
+                    const val = (item || '').toString();
+                    if (val) {
+                        html += '<div class="ncc-suggestion-item" data-value="' + escapeHtml(val) + '" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;" onmouseover="this.style.backgroundColor=\'#f0f7ff\'" onmouseout="this.style.backgroundColor=\'\'">' + escapeHtml(val) + '</div>';
+                    }
+                });
+                $dropdown.html(html).show();
+            } else {
+                $dropdown.html('<div style="padding: 12px; color: #666;">Không có gợi ý</div>').show();
+            }
+        },
+        error: function () {
+            $dropdown.html('<div style="padding: 12px; color: #c00;">Lỗi tải gợi ý</div>').show();
         }
     });
 }
@@ -314,6 +345,16 @@ function setDraft(maMuahang, maSanpham, patch) {
     phieuMuaHangDraft[key] = Object.assign({}, phieuMuaHangDraft[key] || {}, patch || {});
 }
 
+// Lọc bảng chi tiết VT theo Mã VT
+function applyFilterMavt() {
+    var v = ($('#filterMavt').val() || '').trim().toLowerCase();
+    $('.tablethietbi tbody tr.vt-data-row').each(function () {
+        var mavt = ($(this).data('mavt') || '').toString();
+        $(this).toggle(!v || mavt.indexOf(v) >= 0);
+    });
+    updateTongTien();
+}
+
 // Hiển thị vật tư theo mã mua hàng
 function showVTmuahang(Mamuahang, trangThaiPhieu) {
     selectedMamuahang = Mamuahang;
@@ -564,13 +605,19 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                     const canEditNhaCCForItem = isPurchaseArea &&
                         (canInputPriceForPhieu || itemTrangThai === 'Đang chờ báo giá');
                     const nhaCCCell = canEditNhaCCForItem
-                        ? `<input type="text"
+                        ? `<div class="ncc-input-wrapper" style="position: relative; display: flex; align-items: center;">
+                            <input type="text"
                                    class="NhaCCInput"
                                    data-mamuahang="${escapeHtml(Mamuahang)}"
                                    data-masanpham="${escapeHtml(maSanpham)}"
                                    value="${escapeHtml(nhaCCValue)}"
                                    placeholder="Nhập NCC"
-                                   style="width: 100%;" />`
+                                   style="flex: 1; padding-right: 28px;" />
+                            <button type="button" class="ncc-goi-y-btn" title="Gợi ý nhà cung cấp" style="position: absolute; right: 4px; background: none; border: none; cursor: pointer; padding: 4px; color: #666;">
+                                <i class='bx bx-list-check' style="font-size: 18px;"></i>
+                            </button>
+                            <div class="ncc-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;"></div>
+                           </div>`
                         : (nhaCCValue ? escapeHtml(nhaCCValue) : '-');
                     
                     let donGiaCell = '';
@@ -761,7 +808,7 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                     }
 
                     let row = `
-                    <tr>
+                    <tr class="vt-data-row" data-mavt="${escapeHtml((maSanpham || '').toLowerCase())}">
                         <td>${STT++}</td>
                         <td>${item.tenSanpham || 'Không xác định'}</td>
                         <td>${item.maSanpham || 'Không xác định'}</td>
@@ -790,6 +837,7 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         <td class="tong-tien" colspan="4" style="font-weight:bold;">0</td>
                     </tr>
                 `);
+                applyFilterMavt();
                 updateTongTien();
                 attachEventHandlers();
             } else {
@@ -967,6 +1015,49 @@ function attachEventHandlers() {
     $('.tablethietbi tbody').on('focus', '.NhaCCInput', function () {
         const $input = $(this);
         $input.data('prev', ($input.val() || '').toString());
+    });
+
+    // Gợi ý NCC - hiện danh sách khi gõ hoặc click icon
+    let nccGoiYTimeout = null;
+    $('.tablethietbi tbody').on('input keyup', '.NhaCCInput', function () {
+        const $input = $(this);
+        const $wrapper = $input.closest('.ncc-input-wrapper');
+        const $dropdown = $wrapper.find('.ncc-dropdown');
+        const q = ($input.val() || '').trim();
+
+        clearTimeout(nccGoiYTimeout);
+        nccGoiYTimeout = setTimeout(function () {
+            fetchNhaCCGoiY(q, $dropdown, $input);
+        }, 200);
+    });
+
+    $('.tablethietbi tbody').on('click', '.ncc-goi-y-btn', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('.ncc-dropdown').hide();
+        const $wrapper = $(this).closest('.ncc-input-wrapper');
+        const $input = $wrapper.find('.NhaCCInput');
+        const $dropdown = $wrapper.find('.ncc-dropdown');
+        const q = ($input.val() || '').trim();
+        if ($dropdown.is(':visible')) {
+            $dropdown.hide();
+        } else {
+            fetchNhaCCGoiY(q, $dropdown, $input);
+        }
+    });
+
+    $('.tablethietbi tbody').on('click', '.ncc-dropdown .ncc-suggestion-item', function (e) {
+        e.preventDefault();
+        const value = $(this).data('value') || $(this).text();
+        const $wrapper = $(this).closest('.ncc-input-wrapper');
+        $wrapper.find('.NhaCCInput').val(value);
+        $wrapper.find('.ncc-dropdown').hide();
+    });
+
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.ncc-input-wrapper').length) {
+            $('.ncc-dropdown').hide();
+        }
     });
 
     $('.tablethietbi tbody').on('blur', '.NhaCCInput', function () {

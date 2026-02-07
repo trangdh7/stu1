@@ -9,6 +9,7 @@ using System.IO;
 using Webkho_20241021.Areas.Giamdoc.Data;
 using Webkho_20241021.Models;
 using Webkho_20241021.Services;
+using Webkho_20241021.Helpers;
 using OfficeOpenXml;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -684,9 +685,11 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 {
                     var slMoi = v.SLMoi ?? v.SL ?? 0;
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    var slThieu = Math.Max(0, slMoi - tonKho);
+                    // Thiếu = Yêu cầu - Đã xuất (khi đã xuất đủ thì thiếu = 0)
+                    var slDaXuatThucTe = !string.IsNullOrWhiteSpace(v.MaSanpham) ? YeucauUpdateHelper.TinhSoLuongDaCap(_context, MaYeucau, v.MaSanpham) : 0;
+                    var slThieu = YeucauUpdateHelper.TinhSoLuongConThieuTheoMaYeuCauCoBan(_context, MaYeucau, v.MaSanpham ?? "");
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
-                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    var slDaXuat = slDaXuatThucTe > 0 ? (int?)slDaXuatThucTe : (isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null);
                     return new
                     {
                         v.ID,
@@ -1401,6 +1404,11 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             {
                                 // Tất cả vật tư đều bị từ chối
                                 yeucau.TrangThai = "Giám đốc - Đã từ chối";
+                                _context.yeucau.Update(yeucau);
+                                _context.SaveChanges();
+                                SendRejectionEmailAsync(MaYeucau, "");
+                                // Khi Giám đốc từ chối tất cả → xóa yêu cầu khỏi database
+                                YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
                             }
                             else if (hasDangMuaHang)
                             {
@@ -1492,6 +1500,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                 var ghiChuTuChoi = vatTu.GhiChu ?? "";
                                 SendRejectionEmailAsync(MaYeucau, ghiChuTuChoi);
                             }
+                            // Khi Giám đốc từ chối tất cả → xóa yêu cầu khỏi database
+                            YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
                         }
                     }
                 }
@@ -1911,9 +1921,13 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                 {
                                     // Tất cả vật tư đều bị từ chối
                                     yeucau.TrangThai = "Giám đốc - Đã từ chối";
+                                    _context.yeucau.Update(yeucau);
+                                    _context.SaveChanges();
 
                                     // Gửi email thông báo từ chối cho người yêu cầu
                                     SendRejectionEmailAsync(MaYeucau, "");
+                                    // Khi Giám đốc từ chối tất cả → xóa yêu cầu khỏi database
+                                    YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
                                 }
                                 else
                                 {
@@ -1986,6 +2000,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
 
                             // Gửi email thông báo từ chối cho người yêu cầu
                             SendRejectionEmailAsync(MaYeucau, "");
+                            // Khi Giám đốc từ chối tất cả → xóa yêu cầu khỏi database
+                            YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
                         }
                     }
                 }
@@ -2683,6 +2699,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                             // Gửi email thông báo từ chối cho người yêu cầu
                             System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyVatTuYeucauWithCheckbox] Tất cả vật tư nhập kho bị từ chối, gửi email. MaYeucau={MaYeucau}");
                             SendRejectionEmailAsync(MaYeucau, "");
+                            // Khi Giám đốc từ chối tất cả → xóa yêu cầu khỏi database
+                            YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
                         }
                         else if (approvedVTNhap.Any())
                         {
@@ -2959,6 +2977,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                 // Gửi email thông báo từ chối cho người yêu cầu
                                 System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyVatTuYeucauWithCheckbox] Tất cả vật tư bị từ chối, gửi email. MaYeucau={MaYeucau}");
                                 SendRejectionEmailAsync(MaYeucau, "");
+                                // Khi Giám đốc từ chối tất cả → xóa yêu cầu khỏi database
+                                YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
                             }
                             else if (hasDaNhapKho)
                             {
@@ -3079,6 +3099,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                                 // Gửi email thông báo từ chối cho người yêu cầu
                                 System.Diagnostics.Debug.WriteLine($"[Giamdoc/XuLyVatTuYeucauWithCheckbox] Tất cả vật tư bị từ chối (else branch), gửi email. MaYeucau={MaYeucau}, rejectedVatTu.Count={rejectedVatTu.Count}, pendingVatTu.Count={pendingVatTu.Count}, approvedVatTu.Count={approvedVatTu.Count}");
                                 SendRejectionEmailAsync(MaYeucau, "");
+                                // Khi Giám đốc từ chối tất cả → xóa yêu cầu khỏi database
+                                YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
                             }
                         }
                     }
@@ -7088,6 +7110,11 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     }
 
                     _context.SaveChanges();
+                    // Khi Giám đốc từ chối → xóa yêu cầu khỏi database
+                    if (chucVu == "Giám đốc")
+                    {
+                        YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, Ma);
+                    }
                 }
             }
             else

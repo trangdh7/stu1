@@ -62,6 +62,7 @@
                             <td>Mã yêu cầu</td>
                             <td>Mã dự án</td>
                             <td>Người yêu cầu</td>
+                            <td>Ngày yêu cầu</td>
                             <td>Ngày mua hàng</td>
                             <td>Ngày cần</td>
                             <td>Trạng thái</td>
@@ -87,6 +88,7 @@
                                 <td>@item.MaYeucau</td>
                                 <td>@item.MaDuan</td>
                                 <td>@(string.IsNullOrEmpty(item.TenNguoiyeucau) ? item.MaNguoidung : item.TenNguoiyeucau)</td>
+                                <td>@(item.NgayYeucau?.ToString("dd/MM/yyyy HH:mm") ?? "  ")</td>
                                 <td>@item.NgayMuahang?.ToString("dd/MM/yyyy")</td>
                                 <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "  ")</td>
                                 <td>@item.TrangThai</td>

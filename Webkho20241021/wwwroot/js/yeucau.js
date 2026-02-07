@@ -158,6 +158,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                     const slTong = item.sl ?? item.SL ?? slMoi;
                     const donVi = item.donVi || item.DonVi || '';
                     const ngayCan = item.ngayCanHang || item.NgayCanHang ? formatDate(item.ngayCanHang || item.NgayCanHang) : '-';
+                    const ngayCoHang = item.ngayCoHang || item.NgayCoHang ? formatDate(item.ngayCoHang || item.NgayCoHang) : '-';
                     const trangThai = item.trangThai || item.TrangThai || '';
                     const ghiChu = item.ghiChu || item.GhiChu || '-';
                     const tonKho = item.tonKho ?? item.TonKho ?? 0;
@@ -184,6 +185,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                             <td hidden style="text-align: center;">${formatNumberOrDash(slTong)}</td>
                             <td>${donVi || '-'}</td>
                             <td>${ngayCan}</td>
+                            <td>${ngayCoHang}</td>
                             <td>${trangThai}</td>
                             <td style="color: ${ghiChuColor};">${ghiChu}</td>
                             <td>${ngayDuyet}</td>
@@ -200,6 +202,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                             <td hidden style="text-align: center;">${formatNumberOrDash(slTong)}</td>
                             <td>${donVi || '-'}</td>
                             <td>${ngayCan}</td>
+                            <td>${ngayCoHang}</td>
                             <td>${trangThai}</td>
                             <td style="color: ${ghiChuColor};">${ghiChu}</td>
                         </tr>`;

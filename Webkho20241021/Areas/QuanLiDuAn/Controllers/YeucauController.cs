@@ -6,6 +6,7 @@ using Webkho_20241021.Models;
 using Webkho_20241021.Areas.QuanLiDuAn.Data;
 using Webkho_20241021.Services;
 using Webkho_20241021.Services;
+using Webkho_20241021.Helpers;
 using System;
 using System.IO;
 using System.Linq;
@@ -254,7 +255,40 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             return View(model);
         }
 
-
+        /// <summary>
+        /// Xóa yêu cầu khi QLDA chưa duyệt hoặc đã duyệt nhưng Giám đốc chưa duyệt.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult XoaYeucau(string MaYeucau)
+        {
+            if (string.IsNullOrWhiteSpace(MaYeucau))
+            {
+                TempData["Error"] = "Mã yêu cầu không hợp lệ.";
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "QuanLiDuAn" });
+            }
+            var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+            if (yeucau == null)
+            {
+                TempData["Error"] = "Không tìm thấy yêu cầu.";
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "QuanLiDuAn" });
+            }
+            if (!YeucauDeleteHelper.CoTheXoaYeucauQLDA(yeucau))
+            {
+                TempData["Error"] = "Bạn chỉ được xóa yêu cầu khi đang chờ QLDA/Giám đốc duyệt.";
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "QuanLiDuAn" });
+            }
+            try
+            {
+                YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
+                TempData["Success"] = "Đã xóa yêu cầu thành công.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi khi xóa: " + ex.Message;
+            }
+            return RedirectToAction("Yeucau", "Yeucau", new { area = "QuanLiDuAn" });
+        }
 
         public IActionResult Phieuxuatkho(string search = "")
         {
@@ -414,9 +448,11 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 {
                     var slMoi = v.SLMoi ?? v.SL ?? 0;
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    var slThieu = Math.Max(0, slMoi - tonKho);
+                    // Thiếu = Yêu cầu - Đã xuất (khi đã xuất đủ thì thiếu = 0)
+                    var slDaXuatThucTe = !string.IsNullOrWhiteSpace(v.MaSanpham) ? YeucauUpdateHelper.TinhSoLuongDaCap(_context, MaYeucau, v.MaSanpham) : 0;
+                    var slThieu = YeucauUpdateHelper.TinhSoLuongConThieuTheoMaYeuCauCoBan(_context, MaYeucau, v.MaSanpham ?? "");
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
-                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    var slDaXuat = slDaXuatThucTe > 0 ? (int?)slDaXuatThucTe : (isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null);
                     return new
                     {
                         tt = v.TT,

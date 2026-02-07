@@ -1,6 +1,5 @@
 @model Webkho_20241021.Areas.QuanLiDuAn.Data.Yeucauviewmodel
-
-
+@using Webkho_20241021.Helpers
 @{
     ViewData["Title"] = "Yeucau";
     Layout = "~/Areas/QuanLiDuAn/Views/Layout/Layout.cshtml";
@@ -107,6 +106,7 @@
                         <td>Trạng thái</td>
                         <td>Ngày duyệt</td>
                         <td>Tên người duyệt</td>
+                        <td>Thao tác</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -154,6 +154,21 @@
                                 @if (!string.IsNullOrWhiteSpace(item.NguoiDuyet))
                                 {
                                     <span>@item.NguoiDuyet</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #999;">-</span>
+                                }
+                            </td>
+                            <td onclick="event.stopPropagation();">
+                                @if (YeucauDeleteHelper.CoTheXoaYeucauQLDA(item))
+                                {
+                                    @using (Html.BeginForm("XoaYeucau", "Yeucau", new { area = "QuanLiDuAn" }, FormMethod.Post, true, new { @class = "form-xoa-yeucau", onsubmit = "return confirm('Bạn có chắc muốn xóa yêu cầu này?');" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="MaYeucau" value="@item.MaYeucau" />
+                                        <button type="submit" class="btn-icon delete-btn" title="Xóa yêu cầu"><i class="bx bxs-trash"></i></button>
+                                    }
                                 }
                                 else
                                 {

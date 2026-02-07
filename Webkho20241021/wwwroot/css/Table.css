@@ -235,6 +235,25 @@ button {
   color: #dc3545 !important;
 }
 
+/* Nút xóa: khi dòng được chọn (highlight) luôn hiển thị icon/border màu đen, kể cả hover/focus/active */
+.table tbody tr.highlight .delete-btn,
+.table tbody tr.highlight .delete-btn:hover,
+.table tbody tr.highlight .delete-btn:focus,
+.table tbody tr.highlight .delete-btn:active {
+  color: #000000 !important;
+  border-color: #000000 !important;
+  background-color: #ffffff;
+}
+.table tbody tr.highlight .delete-btn:active {
+  background-color: #e8e8e8;
+}
+.table tbody tr.highlight .delete-btn i,
+.table tbody tr.highlight .delete-btn:hover i,
+.table tbody tr.highlight .delete-btn:focus i,
+.table tbody tr.highlight .delete-btn:active i {
+  color: #000000 !important;
+}
+
 .table tbody tr.highlight .btn-icon .bx-printer,
 .table tbody tr.highlight .btn-icon i.bx-printer,
 .table tbody tr.highlight .btn-icon .bx-download,

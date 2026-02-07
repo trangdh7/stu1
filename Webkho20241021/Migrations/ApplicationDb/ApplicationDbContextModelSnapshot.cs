@@ -121,6 +121,32 @@ namespace Webkho_20241021.Migrations.ApplicationDb
                     b.ToTable("SanPhamNhaCC");
                 });
 
+            modelBuilder.Entity("Webkho_20241021.Models.NhaCungCap", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("GhiChu")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime?>("NgayCapNhat")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("NgayTao")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("TenNhaCC")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("NhaCungCap");
+                });
+
             modelBuilder.Entity("Webkho_20241021.Models.User", b =>
                 {
                     b.Property<string>("Id")

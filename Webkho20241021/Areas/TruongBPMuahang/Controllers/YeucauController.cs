@@ -11,6 +11,7 @@ using Webkho_20241021.Areas.TruongBPMuahang.Data;
 using Webkho_20241021.Services;
 using Webkho_20241021.Models;
 using Webkho_20241021.Services;
+using Webkho_20241021.Helpers;
 using OfficeOpenXml;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -173,6 +174,43 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
             return View(model);
         }
 
+        /// <summary>
+        /// Xóa yêu cầu khi Trưởng BP chưa duyệt hoặc đã duyệt nhưng QLDA/Giám đốc chưa duyệt.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult XoaYeucau(string MaYeucau)
+        {
+            if (string.IsNullOrWhiteSpace(MaYeucau))
+            {
+                TempData["ErrorMessage"] = "Mã yêu cầu không hợp lệ.";
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPMuahang" });
+            }
+            var chucVu = HttpContext.Session.GetString("Chucvu");
+            var boPhan = HttpContext.Session.GetString("Bophan");
+            var yeucau = _context.yeucau.FirstOrDefault(y => y.MaYeucau == MaYeucau);
+            if (yeucau == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy yêu cầu.";
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPMuahang" });
+            }
+            if (!YeucauDeleteHelper.CoTheXoaYeucauTruongBP(yeucau, chucVu ?? "", boPhan ?? ""))
+            {
+                TempData["ErrorMessage"] = "Bạn chỉ được xóa yêu cầu khi chưa đến bước QLDA/Giám đốc duyệt.";
+                return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPMuahang" });
+            }
+            try
+            {
+                YeucauDeleteHelper.XoaYeucauVaPhieuLienQuan(_context, MaYeucau);
+                TempData["SuccessMessage"] = "Đã xóa yêu cầu thành công.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Lỗi khi xóa: " + ex.Message;
+            }
+            return RedirectToAction("Yeucau", "Yeucau", new { area = "TruongBPMuahang" });
+        }
+
         public IActionResult Phieuxuatkho(string search = "")
         {
             var Phieuxuatkholist = _context.phieuxuatkho
@@ -252,6 +290,10 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 .Where(v => v.NgayCanHang != null)
                 .GroupBy(v => v.VTMaYeucau)
                 .ToDictionary(g => g.Key, g => g.Min(v => v.NgayCanHang));
+            // Lấy Ngày yêu cầu từ bảng yeucau
+            var yeucauDict = _context.yeucau
+                .Where(y => y.NgayYeucau != null)
+                .ToDictionary(y => y.MaYeucau, y => y.NgayYeucau);
             foreach (var phieu in Phieumuahanglist)
             {
                 if (!string.IsNullOrEmpty(phieu.MaNguoidung) && nguoiDungDict.TryGetValue(phieu.MaNguoidung, out var ten))
@@ -262,6 +304,11 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 if (!string.IsNullOrEmpty(phieu.MaYeucau) && vtyeucauDict.TryGetValue(phieu.MaYeucau, out var ngayCanHang))
                 {
                     phieu.NgayCanHang = ngayCanHang;
+                }
+                // Gán Ngày yêu cầu từ yeucau
+                if (!string.IsNullOrEmpty(phieu.MaYeucau) && yeucauDict.TryGetValue(phieu.MaYeucau, out var ngayYeucau))
+                {
+                    phieu.NgayYeucau = ngayYeucau;
                 }
             }
 
@@ -391,9 +438,11 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 {
                     var slMoi = v.SLMoi ?? v.SL ?? 0;
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    var slThieu = Math.Max(0, slMoi - tonKho);
+                    // Thiếu = Yêu cầu - Đã xuất (khi đã xuất đủ thì thiếu = 0, không dùng tồn kho vì sau khi xuất tồn kho = 0)
+                    var slDaXuatThucTe = !string.IsNullOrWhiteSpace(v.MaSanpham) ? YeucauUpdateHelper.TinhSoLuongDaCap(_context, MaYeucau, v.MaSanpham) : 0;
+                    var slThieu = YeucauUpdateHelper.TinhSoLuongConThieuTheoMaYeuCauCoBan(_context, MaYeucau, v.MaSanpham ?? "");
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
-                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    var slDaXuat = slDaXuatThucTe > 0 ? (int?)slDaXuatThucTe : (isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null);
                     return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
                 }).ToList();
                 return Json(result);
@@ -466,9 +515,11 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 {
                     var slMoi = v.SLMoi ?? v.SL ?? 0;
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    var slThieu = Math.Max(0, slMoi - tonKho);
+                    // Thiếu = Yêu cầu - Đã xuất (khi đã xuất đủ thì thiếu = 0)
+                    var slDaXuatThucTe = !string.IsNullOrWhiteSpace(v.MaSanpham) ? YeucauUpdateHelper.TinhSoLuongDaCap(_context, MaYeucau, v.MaSanpham) : 0;
+                    var slThieu = YeucauUpdateHelper.TinhSoLuongConThieuTheoMaYeuCauCoBan(_context, MaYeucau, v.MaSanpham ?? "");
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
-                    var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
+                    var slDaXuat = slDaXuatThucTe > 0 ? (int?)slDaXuatThucTe : (isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null);
                     exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
                 }
             }
@@ -4015,10 +4066,10 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     }
                     var distinctSl = slValues.Where(s => s.HasValue).Select(s => s.Value).Distinct().ToList();
                     bool hasChenh = distinctSl.Count > 1;
-                    var referenceSl = slValues.FirstOrDefault(s => s.HasValue);
+                    // Khi có chênh: bôi màu tất cả ô SL có giá trị để dễ nhận biết
                     for (int i = 0; i < slValues.Count; i++)
                     {
-                        slChenh.Add(hasChenh && slValues[i].HasValue && slValues[i] != referenceSl);
+                        slChenh.Add(hasChenh && slValues[i].HasValue);
                     }
                     var hangSXValues = new List<string>();
                     var nhaCCValues = new List<string>();
