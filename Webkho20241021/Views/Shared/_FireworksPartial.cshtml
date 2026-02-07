@@ -1,0 +1,74 @@
+@{
+    var theme = ViewBag.LogoTheme as string ?? "Normal";
+}
+@if (theme == "Tet")
+{
+    <div id="logo-fireworks-container" class="logo-fireworks-container" aria-hidden="true"></div>
+    <script>
+        (function () {
+            var container = document.getElementById('logo-fireworks-container');
+            if (!container) return;
+            var canvas = document.createElement('canvas');
+            canvas.id = 'logo-fireworks-canvas';
+            canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+            container.appendChild(canvas);
+            var ctx = canvas.getContext('2d');
+            var w = canvas.width = window.innerWidth;
+            var h = canvas.height = window.innerHeight;
+            window.addEventListener('resize', function () {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            });
+            var particles = [];
+            var tick = 0;
+            function rand(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+            function Particle(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = rand(-1.2, 1.2);
+                this.vy = rand(-2.5, -0.5);
+                this.life = 1;
+                this.color = color;
+                this.radius = rand(1.2, 2.8);
+            }
+            Particle.prototype.update = function () {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.035;
+                this.life -= 0.006;
+                this.radius *= 0.995;
+            };
+            Particle.prototype.draw = function () {
+                if (this.life <= 0) return;
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            };
+            var colors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff9f43', '#e056fd'];
+            function burst(x, y) {
+                for (var i = 0; i < 40; i++) {
+                    particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
+                }
+            }
+            function loop() {
+                ctx.clearRect(0, 0, w, h);
+                if (tick % 220 === 0) {
+                    burst(rand(w * 0.2, w * 0.8), rand(h * 0.15, h * 0.45));
+                }
+                tick++;
+                for (var i = particles.length - 1; i >= 0; i--) {
+                    particles[i].update();
+                    particles[i].draw();
+                    if (particles[i].life <= 0) particles.splice(i, 1);
+                }
+                requestAnimationFrame(loop);
+            }
+            loop();
+        })();
+    </script>
+}

@@ -372,7 +372,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         var slThieu = Math.Max(0, slMoi - tonKho);
                         var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                         var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                        return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
+                        return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
                     }).ToList();
                 }
                 else
@@ -418,7 +418,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         {
                             var v = x;
                             var tonKho = !string.IsNullOrWhiteSpace(x.MaSanpham) && tkByMa.TryGetValue(x.MaSanpham, out var t) ? t : 0;
-                            return new { x.ID, TT = (string?)null, VTMaYeucau = MaYeucau, x.TenSanpham, x.MaSanpham, YCMakho = (string?)null, x.HangSX, x.NhaCC, SLCu = (int?)null, x.SLMoi, x.SL, x.DonVi, NgayCanHang = (DateTime?)null, x.NgayNhapkho, x.NgayBaohanh, x.ThoiGianBH, NgayDuyet = (DateTime?)null, x.TrangThai, GhiChu = (string?)null, TonKho = tonKho, SlThieu = Math.Max(0, (x.SLMoi ?? 0) - tonKho), SlDaXuat = (int?)null };
+                            return new { x.ID, TT = (string?)null, VTMaYeucau = MaYeucau, x.TenSanpham, x.MaSanpham, YCMakho = (string?)null, x.HangSX, x.NhaCC, SLCu = (int?)null, x.SLMoi, x.SL, x.DonVi, NgayCanHang = (DateTime?)null, NgayCoHang = (DateTime?)null, x.NgayNhapkho, x.NgayBaohanh, x.ThoiGianBH, NgayDuyet = (DateTime?)null, x.TrangThai, GhiChu = (string?)null, TonKho = tonKho, SlThieu = Math.Max(0, (x.SLMoi ?? 0) - tonKho), SlDaXuat = (int?)null };
                         }).ToList<object>();
                     }
                     else
@@ -436,7 +436,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                             var slThieu = Math.Max(0, slMoi - tonKho);
                             var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                             var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                            return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
+                            return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
                         }).ToList<object>();
                     }
                 }
@@ -481,7 +481,7 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                     var slThieu = Math.Max(0, slMoi - tonKho);
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                     var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                    exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
+                    exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
                 }
             }
             else
@@ -500,14 +500,14 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                         var slMoi = v.SL ?? 0;
                         var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
                         var slThieu = Math.Max(0, slMoi - tonKho);
-                        exportRows.Add(new { TT = (object)stt++, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, SLCu = (int?)null, SLMoi = v.SL, SlThieu = slThieu, SlDaXuat = (int?)null, TonKho = tonKho, v.DonVi, NgayCanHang = (DateTime?)null, v.TrangThai, GhiChu = (string?)null, NgayDuyet = (DateTime?)null });
+                        exportRows.Add(new { TT = (object)stt++, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, SLCu = (int?)null, SLMoi = v.SL, SlThieu = slThieu, SlDaXuat = (int?)null, TonKho = tonKho, v.DonVi, NgayCanHang = (DateTime?)null, NgayCoHang = (DateTime?)null, v.TrangThai, GhiChu = (string?)null, NgayDuyet = (DateTime?)null });
                     }
                 }
             }
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("Danh sách vật tư");
-                worksheet.Cells[1, 1, 1, 15].Merge = true;
+                worksheet.Cells[1, 1, 1, 16].Merge = true;
                 worksheet.Cells[1, 1].Value = $"YÊU CẦU VẬT TƯ {MaYeucau}" + (yeucau != null && !string.IsNullOrEmpty(yeucau.NguoiYeucau) ? $" - {yeucau.NguoiYeucau}" : "");
                 worksheet.Cells[1, 1].Style.Font.Bold = true;
                 worksheet.Cells[1, 1].Style.Font.Size = 14;
@@ -526,9 +526,10 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 worksheet.Cells[headerRow1, 6].Value = "SL";
                 worksheet.Cells[headerRow1, 11].Value = "ĐV";
                 worksheet.Cells[headerRow1, 12].Value = "Ngày cần";
-                worksheet.Cells[headerRow1, 13].Value = "Trạng thái";
-                worksheet.Cells[headerRow1, 14].Value = "Ghi chú";
-                worksheet.Cells[headerRow1, 15].Value = "Ngày duyệt";
+                worksheet.Cells[headerRow1, 13].Value = "Ngày có hàng";
+                worksheet.Cells[headerRow1, 14].Value = "Trạng thái";
+                worksheet.Cells[headerRow1, 15].Value = "Ghi chú";
+                worksheet.Cells[headerRow1, 16].Value = "Ngày duyệt";
                 worksheet.Cells[headerRow2, 6].Value = "Cũ";
                 worksheet.Cells[headerRow2, 7].Value = "Mới";
                 worksheet.Cells[headerRow2, 8].Value = "Thiếu";
@@ -544,9 +545,10 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                 worksheet.Cells[headerRow1, 13, headerRow2, 13].Merge = true;
                 worksheet.Cells[headerRow1, 14, headerRow2, 14].Merge = true;
                 worksheet.Cells[headerRow1, 15, headerRow2, 15].Merge = true;
+                worksheet.Cells[headerRow1, 16, headerRow2, 16].Merge = true;
                 for (int r = headerRow1; r <= headerRow2; r++)
                 {
-                    using (var range = worksheet.Cells[r, 1, r, 15]) { range.Style.Font.Bold = true; range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid; range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(173, 216, 230)); range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center; range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center; }
+                    using (var range = worksheet.Cells[r, 1, r, 16]) { range.Style.Font.Bold = true; range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid; range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(173, 216, 230)); range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center; range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center; }
                 }
                 int row = headerRow2 + 1, stt = 1;
                 foreach (var r in exportRows)
@@ -563,10 +565,11 @@ namespace Webkho_20241021.Areas.TruongBPKetoan.Controllers
                     worksheet.Cells[row, 10].Value = r.TonKho ?? 0;
                     worksheet.Cells[row, 11].Value = r.DonVi ?? "";
                     worksheet.Cells[row, 12].Value = r.NgayCanHang != null ? ((DateTime)r.NgayCanHang).ToString("dd/MM/yyyy") : "";
-                    worksheet.Cells[row, 13].Value = r.TrangThai ?? "";
-                    worksheet.Cells[row, 14].Value = r.GhiChu ?? "";
-                    worksheet.Cells[row, 15].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
-                    using (var range = worksheet.Cells[row, 1, row, 15]) { range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; }
+                    worksheet.Cells[row, 13].Value = r.NgayCoHang != null ? ((DateTime)r.NgayCoHang).ToString("dd/MM/yyyy") : "";
+                    worksheet.Cells[row, 14].Value = r.TrangThai ?? "";
+                    worksheet.Cells[row, 15].Value = r.GhiChu ?? "";
+                    worksheet.Cells[row, 16].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
+                    using (var range = worksheet.Cells[row, 1, row, 16]) { range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; }
                     row++;
                 }
                 worksheet.Cells.AutoFitColumns();

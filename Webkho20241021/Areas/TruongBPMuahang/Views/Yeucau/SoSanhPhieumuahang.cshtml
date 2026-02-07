@@ -1,0 +1,147 @@
+@{
+    ViewData["Title"] = "So sánh phiếu mua hàng";
+    Layout = "~/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml";
+    var hangSXList = Model.Rows.SelectMany(r => r.HangSXValues ?? new List<string>()).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().OrderBy(s => s).ToList();
+    var nhaCCList = Model.Rows.SelectMany(r => r.NhaCCValues ?? new List<string>()).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().OrderBy(s => s).ToList();
+    var tongTong = Model.Rows.Sum(r => (r.SlValues ?? new List<int?>()).Sum(s => s ?? 0));
+}
+@model Webkho_20241021.Areas.TruongBPMuahang.Data.SoSanhPhieumuahangViewModel
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>So sánh phiếu mua hàng</title>
+    <style>
+        .sosanh-container { padding: 15px; max-width: 100%; overflow-x: auto; }
+        .sosanh-toolbar { margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .sosanh-toolbar a.btn-excel { padding: 8px 16px; background: #0d7a3d; color: white; text-decoration: none; border-radius: 4px; font-weight: 500; }
+        .sosanh-toolbar a.btn-excel:hover { background: #0a5c2e; color: white; }
+        .sosanh-toolbar a.btn-back { padding: 8px 16px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; }
+        .sosanh-toolbar a.btn-back:hover { color: white; }
+        .sosanh-filter-bar { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .sosanh-filter-bar input[type="text"] { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px; }
+        .sosanh-filter-bar select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 140px; }
+        .sosanh-filter-bar label { font-weight: 500; color: #333; }
+        .table-sosanh { border-collapse: collapse; width: 100%; background: #fff; }
+        .table-sosanh th, .table-sosanh td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; }
+        .table-sosanh th { background: #4472c4; color: white; font-weight: 600; }
+        .table-sosanh tbody tr:nth-child(even) { background: #f9f9f9; }
+        .table-sosanh tbody tr.sosanh-row-hidden { display: none; }
+        .table-sosanh .sl-chenh { background-color: #fff3cd !important; font-weight: 600; }
+        .table-sosanh .sosanh-chenh { background-color: #fff3cd !important; font-weight: 600; }
+        .table-sosanh .col-sl { text-align: center; min-width: 70px; }
+        .table-sosanh tfoot tr { background: #e3f2fd !important; font-weight: 600; }
+        .table-sosanh tfoot td { border: 1px solid #ddd; padding: 8px 10px; }
+        .sosanh-title { font-size: 18px; margin-bottom: 10px; color: #333; }
+    </style>
+</head>
+<body>
+    <nav class="bodyyeucau">
+        <div class="sosanh-container">
+            <div class="sosanh-title">Gộp vật tư theo Tên thiết bị + Mã VT để mua hàng (số lượng chênh được tô màu)</div>
+            <div class="sosanh-toolbar">
+                <a href="@Url.Action("Phieumuahang", "Yeucau", new { area = "TruongBPMuahang" })" class="btn-back"><i class='bx bx-arrow-back'></i> Quay lại</a>
+                <a href="@Url.Action("ExportSoSanhPhieumuahangExcel", "Yeucau", new { area = "TruongBPMuahang", ids = ViewBag.IdsQuery })" class="btn-excel"><i class='bx bx-download'></i> Tải Excel</a>
+            </div>
+            <div class="sosanh-filter-bar">
+                <label>Tìm kiếm:</label>
+                <input type="text" id="sosanhSearch" placeholder="Tên thiết bị, Mã VT, Hãng SX, Nhà CC..." />
+                <label>Hãng SX:</label>
+                <select id="sosanhFilterHangSX">
+                    <option value="">Tất cả</option>
+                    @foreach (var h in hangSXList)
+                    {
+                        <option value="@h">@h</option>
+                    }
+                </select>
+                <label>Nhà CC:</label>
+                <select id="sosanhFilterNhaCC">
+                    <option value="">Tất cả</option>
+                    @foreach (var n in nhaCCList)
+                    {
+                        <option value="@n">@n</option>
+                    }
+                </select>
+            </div>
+            <table class="table-sosanh">
+                <thead>
+                    <tr>
+                        <th>TT</th>
+                        <th>Tên thiết bị/hàng hóa</th>
+                        <th>Mã VT</th>
+                        <th>Hãng SX</th>
+                        <th>Nhà CC</th>
+                        <th>ĐV</th>
+                        @foreach (var p in Model.PhieuList)
+                        {
+                            <th class="col-sl">SL (@(p.MaYeucau ?? p.MaMuahang))</th>
+                        }
+                        <th class="col-sl">Tổng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int tt = 1;
+                    }
+                    @foreach (var r in Model.Rows)
+                    {
+                        var hangsxFilter = string.Join(",", (r.HangSXValues ?? new List<string>()).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct());
+                        var nhaccFilter = string.Join(",", (r.NhaCCValues ?? new List<string>()).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct());
+                        <tr class="sosanh-data-row" data-tensp="@((r.TenSanpham ?? "").ToLower())" data-mavt="@((r.MaSanpham ?? "").ToLower())" data-hangsx="@hangsxFilter" data-nhacc="@nhaccFilter">
+                            <td class="sosanh-tt">@tt</td>
+                            <td>@(r.TenSanpham)</td>
+                            <td>@(r.MaSanpham)</td>
+                            <td class="@(r.HangSXChenh ? "sosanh-chenh" : "")">@(r.HangSX)</td>
+                            <td class="@(r.NhaCCChenh ? "sosanh-chenh" : "")">@(r.NhaCC)</td>
+                            <td>@(r.DonVi)</td>
+                            @for (int i = 0; i < r.SlValues.Count; i++)
+                            {
+                                var chenh = i < r.SlChenh.Count && r.SlChenh[i];
+                                <td class="col-sl @(chenh ? "sl-chenh" : "")">@(r.SlValues[i].HasValue ? r.SlValues[i].Value.ToString() : "")</td>
+                            }
+                            @{ var tongRow = (r.SlValues ?? new List<int?>()).Sum(s => s ?? 0); }
+                            <td class="col-sl">@tongRow</td>
+                        </tr>
+                        tt++;
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="@(6 + (Model.PhieuList?.Count ?? 0))" style="text-align: right; padding-right: 12px;">Tổng số lượng vật tư</td>
+                        <td class="col-sl">@tongTong</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </nav>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function () {
+            function applyFilter() {
+                var search = ($('#sosanhSearch').val() || '').trim().toLowerCase();
+                var hangSX = ($('#sosanhFilterHangSX').val() || '').trim();
+                var nhaCC = ($('#sosanhFilterNhaCC').val() || '').trim();
+                var idx = 0;
+                $('.table-sosanh tbody tr.sosanh-data-row').each(function () {
+                    var $tr = $(this);
+                    var matchSearch = !search || ($tr.data('tensp') && $tr.data('tensp').indexOf(search) >= 0) ||
+                        ($tr.data('mavt') && $tr.data('mavt').indexOf(search) >= 0) ||
+                        ($tr.data('hangsx') && $tr.data('hangsx').toLowerCase().indexOf(search) >= 0) ||
+                        ($tr.data('nhacc') && $tr.data('nhacc').toLowerCase().indexOf(search) >= 0);
+                    var rowHangSX = (($tr.data('hangsx') || '') + '').split(',').map(function (s) { return s.trim(); });
+                    var rowNhaCC = (($tr.data('nhacc') || '') + '').split(',').map(function (s) { return s.trim(); });
+                    var matchHangSX = !hangSX || rowHangSX.indexOf(hangSX) >= 0;
+                    var matchNhaCC = !nhaCC || rowNhaCC.indexOf(nhaCC) >= 0;
+                    var show = matchSearch && matchHangSX && matchNhaCC;
+                    $tr.toggleClass('sosanh-row-hidden', !show);
+                    if (show) { idx++; $tr.find('.sosanh-tt').text(idx); }
+                });
+            }
+            $('#sosanhSearch').on('input', applyFilter);
+            $('#sosanhFilterHangSX, #sosanhFilterNhaCC').on('change', applyFilter);
+        });
+    </script>
+</body>
+</html>

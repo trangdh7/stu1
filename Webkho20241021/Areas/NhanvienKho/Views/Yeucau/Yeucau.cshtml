@@ -200,6 +200,7 @@
                         <th hidden rowspan="2">SL</th>
                         <th rowspan="2" class="col-donvi">ĐV</th>
                         <th rowspan="2" class="col-ngaycan">Ngày cần</th>
+                        <th rowspan="2" class="col-ngaycohang">Ngày có hàng</th>
                         <th rowspan="2" class="col-trangthai">Trạng thái</th>
                         <th rowspan="2" class="col-ghichu">Ghi chú</th>
                         <th rowspan="2" class="col-ngayduyet">Ngày duyệt</th>
@@ -239,6 +240,7 @@
                             <td hidden style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td>@(item.NgayCoHang?.ToString("dd/MM/yyyy") ?? "-")</td>
                             <td>@(item.TrangThai ?? "")</td>
                             <td style="color: @(item.TrangThai?.Contains("Đã từ chối") == true ? "#f44336" : "inherit");">
                                 @(item.GhiChu ?? "-")

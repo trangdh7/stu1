@@ -1,0 +1,90 @@
+@using Webkho_20241021.Services
+@{
+    ViewBag.Title = "Cài đặt giao diện Logo";
+    Layout = "~/Areas/Admin/Views/Layout/Layout.cshtml";
+    var current = ViewBag.CurrentTheme as string ?? LogoThemeProvider.ThemeNormal;
+}
+
+<div class="email-settings-page logo-theme-page">
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+            </div>
+            <div class="header-text">
+                <h1>Cài đặt giao diện Logo</h1>
+                <p>Bật/tắt chế độ logo theo dịp: bình thường, Tết (hoa đào/ mai + pháo hoa), Quốc khánh (lá cờ)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-container">
+        <form asp-action="Index" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="settings-section">
+                <div class="section-header">
+                    <div>
+                        <h2>Chế độ hiển thị logo</h2>
+                        <p class="section-subtitle">Áp dụng cho toàn bộ giao diện (sidebar) của hệ thống</p>
+                    </div>
+                </div>
+
+                <div class="logo-theme-options">
+                    <label class="logo-theme-card @(current == LogoThemeProvider.ThemeNormal ? "selected" : "")">
+                        <input type="radio" name="theme" value="@LogoThemeProvider.ThemeNormal" @(current == LogoThemeProvider.ThemeNormal ? "checked" : "") />
+                        <span class="card-icon">📷</span>
+                        <span class="card-title">Bình thường</span>
+                        <span class="card-desc">Logo mặc định, không hiệu ứng</span>
+                    </label>
+
+                    <label class="logo-theme-card @(current == LogoThemeProvider.ThemeTet ? "selected" : "")">
+                        <input type="radio" name="theme" value="@LogoThemeProvider.ThemeTet" @(current == LogoThemeProvider.ThemeTet ? "checked" : "") />
+                        <span class="card-icon">🌸</span>
+                        <span class="card-title">Tết</span>
+                        <span class="card-desc">Hoa đào, hoa mai + hiệu ứng pháo hoa nổ</span>
+                    </label>
+
+                    <label class="logo-theme-card @(current == LogoThemeProvider.ThemeNationalDay ? "selected" : "")">
+                        <input type="radio" name="theme" value="@LogoThemeProvider.ThemeNationalDay" @(current == LogoThemeProvider.ThemeNationalDay ? "checked" : "") />
+                        <span class="card-icon">🇻🇳</span>
+                        <span class="card-title">Quốc khánh</span>
+                        <span class="card-desc">Logo kèm lá cờ Tổ quốc</span>
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Lưu cài đặt</button>
+                    <button type="submit"
+                            formaction="@Url.Action("ClearCache", "LogoTheme", new { area = "Admin" })"
+                            class="btn btn-secondary">
+                        Làm mới cache
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+    <link href="~/css/email-settings.css" rel="stylesheet" />
+    <link href="~/css/logo-theme.css" rel="stylesheet" />
+    <style>
+        .logo-theme-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+        .logo-theme-card {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            padding: 1.5rem; border: 2px solid var(--border-color, #e5e7eb); border-radius: 12px;
+            cursor: pointer; transition: all 0.2s ease; background: var(--bg-primary, #fff);
+        }
+        .logo-theme-card:hover { border-color: var(--primary-color, #3b82f6); background: var(--primary-lighter, #eff6ff); }
+        .logo-theme-card.selected { border-color: var(--primary-color); background: var(--primary-lighter); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+        .logo-theme-card input { position: absolute; opacity: 0; pointer-events: none; }
+        .logo-theme-card .card-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .logo-theme-card .card-title { font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; }
+        .logo-theme-card .card-desc { font-size: 0.8rem; color: var(--text-secondary); }
+    </style>
+}

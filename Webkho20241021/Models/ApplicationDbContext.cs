@@ -14,6 +14,7 @@ namespace Webkho_20241021.Models
 
         public DbSet<User> User { get; set; }
         public DbSet<EmailSetting> EmailSettings { get; set; }
+        public DbSet<LogoThemeSetting> LogoThemeSettings { get; set; }
         public DbSet<duans> duans { get; set; }
         public DbSet<khoduans> khoduans { get; set; }
         public DbSet<khonguoidungs> khonguoidungs { get; set; }
@@ -48,6 +49,9 @@ namespace Webkho_20241021.Models
 
             modelBuilder.Entity<EmailSetting>()
                 .ToTable("emailsettings");
+
+            modelBuilder.Entity<LogoThemeSetting>()
+                .ToTable("logothemesettings");
 
             // Cấu hình tên bảng cho ExcelFile
             modelBuilder.Entity<ExcelFile>()

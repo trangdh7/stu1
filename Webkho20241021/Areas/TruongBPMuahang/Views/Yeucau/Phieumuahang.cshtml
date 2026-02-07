@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Phieuxuatkho";
+    ViewData["Title"] = "Yêu cầu mua hàng";
     Layout = "~/Areas/TruongBPMuahang/Views/Layout/Layout.cshtml";
 }
 @model Webkho_20241021.Areas.TruongBPMuahang.Data.Phieumuahangviewmodel
@@ -56,6 +56,7 @@
                 <table class="table">
                     <thead>
                         <tr>
+                            <td style="width: 42px;"><input type="checkbox" id="chkAllPhieumuahang" title="Chọn tất cả" /></td>
                             <td>STT</td>
                             <td>Mã mua hàng</td>
                             <td>Mã yêu cầu</td>
@@ -76,6 +77,7 @@
                             string ChucvuSession = Context.Session.GetString("Chucvu");
                             string BophanSession = Context.Session.GetString("Bophan");
                             <tr class="clickable-row" data-mamuahang="@item.MaMuahang" onclick="showVTmuahang('@item.MaMuahang', '@item.TrangThai')" style="cursor: pointer;">
+                                <td onclick="event.stopPropagation();"><input type="checkbox" class="chk-phieumuahang" value="@item.MaMuahang" data-mayeucau="@item.MaYeucau" data-maduan="@(item.MaDuan ?? "")" /></td>
                                 <td>@STT</td>
                                 <td>
                                     <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTmuahang('@item.MaMuahang', '@item.TrangThai')" data-trangthai="@item.TrangThai">
@@ -108,6 +110,12 @@
                         }
                     </tbody>
                 </table>
+            </div>
+            <div class="toolbar-phieumuahang" style="margin-top: 10px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                <button type="button" id="btnXemChiTietSoSanh" class="btn-so-sanh" title="Chọn các yêu cầu cùng dự án rồi xem chi tiết gộp để mua hàng">
+                    <i class='bx bx-list-check'></i> Xem chi tiết (đã chọn)
+                </button>
+                <span id="soSanhCount" style="color: #666; font-size: 13px;">Chọn ít nhất 1 yêu cầu</span>
             </div>
         </nav>
 
@@ -294,16 +302,62 @@
             background-color: #ffe0b2 !important;
             color: #bf360c !important;
         }
+        /* Nút Xem chi tiết (đã chọn) - dưới bảng, bên phải */
+        .btn-so-sanh {
+            padding: 8px 16px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-so-sanh:hover {
+            background-color: #1565c0;
+            color: white;
+        }
+        .btn-so-sanh:active {
+            background-color: #0d47a1;
+            color: white;
+        }
         </style>
         
         <!-- Thêm query string để tránh cache, đảm bảo luôn lấy file js mới -->
-        <script src="~/js/phieumuahang.js?v=20260130"></script>
+        <script src="~/js/phieumuahang.js?v=20260206"></script>
         <script src="~/js/yeucau-table-actions.js"></script>
         <script>
             $(document).ready(function () {
                 if (typeof getThongbaoData === 'function') {
                     getThongbaoData();
                 }
+                
+                // Chọn/bỏ chọn tất cả phiếu mua hàng
+                $('#chkAllPhieumuahang').on('change', function () {
+                    var checked = $(this).prop('checked');
+                    $('.chk-phieumuahang').prop('checked', checked);
+                    updateSoSanhCount();
+                });
+                $('.chk-phieumuahang').on('change', function () { updateSoSanhCount(); });
+                function updateSoSanhCount() {
+                    var n = $('.chk-phieumuahang:checked').length;
+                    $('#soSanhCount').text(n === 0 ? 'Chọn ít nhất 1 yêu cầu' : 'Đã chọn ' + n + ' yêu cầu');
+                }
+                updateSoSanhCount();
+
+                // Xem chi tiết so sánh: mở tab mới với các mã đã chọn
+                $('#btnXemChiTietSoSanh').on('click', function (e) {
+                    e.preventDefault();
+                    var ids = $('.chk-phieumuahang:checked').map(function () { return $(this).val(); }).get();
+                    if (!ids || ids.length === 0) {
+                        alert('Vui lòng chọn ít nhất một yêu cầu mua hàng.');
+                        return;
+                    }
+                    var url = '/TruongBPMuahang/Yeucau/SoSanhPhieumuahang?ids=' + encodeURIComponent(ids.join(','));
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                });
                 
                 // Khởi tạo Flatpickr cho popup input ngày thanh toán / ngày có hàng
                 if (typeof flatpickr !== 'undefined') {

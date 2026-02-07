@@ -9,6 +9,7 @@
     <link href="~/css/kho.css" rel="stylesheet" />
     <link href="~/css/action.css" rel="stylesheet" />
     <link href="~/css/form.css" rel="stylesheet" />
+    <link href="~/css/logo-theme.css" rel="stylesheet" />
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
           rel="stylesheet" />
     @RenderSection("Styles", required: false)
@@ -18,9 +19,7 @@
     <nav class="sidebar">
         <header>
             <div class="image-text">
-                <span class="image">
-                    <img src="~/Icon/logo2.jpg" />
-                </span>
+                @await Html.PartialAsync("_LogoSection")
                 <div class="header-text">
                     <span class="name">STU</span>
                     <span class="profession">Admin</span>
@@ -68,6 +67,12 @@
                 <a href="/Admin/EmailSettings/Index">
                     <i class='bx bx-envelope'></i>
                     <span class="nav-item">Cấu hình Email</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Admin/LogoTheme/Index">
+                    <i class='bx bxs-palette'></i>
+                    <span class="nav-item">Giao diện Logo</span>
                 </a>
             </li>
             <li>
@@ -159,6 +164,7 @@
             }, 5000);
         }
     </script>
+    @await Html.PartialAsync("_FireworksPartial")
     @RenderSection("Scripts", required: false)
 </body>
 </html>

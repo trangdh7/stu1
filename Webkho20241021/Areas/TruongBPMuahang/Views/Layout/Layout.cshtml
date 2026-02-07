@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -9,6 +9,7 @@
     <link href="~/css/kho.css" rel="stylesheet" />
     <link href="~/css/action.css" rel="stylesheet" />
     <link href="~/css/form.css" rel="stylesheet" />
+    <link href="~/css/logo-theme.css" rel="stylesheet" />
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
           rel="stylesheet" />
     <title>@ViewBag.Title</title>
@@ -17,9 +18,7 @@
     <nav class="sidebar">
         <header>
             <div class="image-text">
-                <span class="image">
-                    <img src="~/Icon/logo2.jpg" />
-                </span>
+                @await Html.PartialAsync("_LogoSection")
                 <div class="header-text">
                     <span class="name">STU</span>
                     <span class="profession">Warehouse</span>
@@ -103,6 +102,7 @@
         });
     </script>
     <script src="~/js/themyeucau.js"></script>
+    @await Html.PartialAsync("_FireworksPartial")
     @RenderSection("Scripts", required: false)
 </body>
 </html>

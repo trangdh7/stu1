@@ -1,0 +1,22 @@
+@{
+    var theme = ViewBag.LogoTheme as string ?? "Normal";
+    var themeClass = theme == "Tet" ? " logo-theme-tet" : (theme == "NationalDay" ? " logo-theme-nationalday" : "");
+}
+<div class="image-text logo-section-wrap@(themeClass)">
+    @if (theme == "Tet")
+    {
+        <span class="logo-flower logo-flower-1" title="Hoa đào">🌸</span>
+        <span class="logo-flower logo-flower-2" title="Hoa đào">🌸</span>
+        <span class="logo-flower logo-flower-3" title="Hoa đào">🌸</span>
+        <span class="logo-flower logo-flower-4" title="Hoa đào">🌸</span>
+    }
+    @if (theme == "NationalDay")
+    {
+        <span class="logo-flag logo-flag-vn" title="Quốc khánh Việt Nam">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Flag_of_Vietnam.svg/120px-Flag_of_Vietnam.svg.png" alt="Cờ Việt Nam" />
+        </span>
+    }
+    <span class="image">
+        <img src="~/Icon/logo2.jpg" alt="STU" />
+    </span>
+</div>

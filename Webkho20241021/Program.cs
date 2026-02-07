@@ -10,6 +10,7 @@ using System.Security.Claims;
 using Webkho_20241021.Helpers;
 using Microsoft.AspNetCore.Http.Features;
 using Webkho_20241021.Services;
+using Webkho_20241021.Filters;
 
 // Cấu hình license cho EPPlus 8+
 ExcelPackage.License.SetNonCommercialPersonal("Webkho Management System");
@@ -31,11 +32,15 @@ builder.Services.AddDbContext<ApplicationDbContext_user>(options =>
     options.UseMySQL(builder.Configuration.GetConnectionString("MySQLConnection")));
 
 // Thêm dịch vụ vào container
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<LogoThemeFilter>();
+});
 builder.Services.AddMemoryCache();
 
 // Đăng ký EmailService và provider cấu hình email động
 builder.Services.AddScoped<IEmailSettingsProvider, EmailSettingsProvider>();
+builder.Services.AddScoped<ILogoThemeProvider, LogoThemeProvider>();
 builder.Services.AddScoped<Webkho_20241021.Services.EmailService>();
 builder.Services.AddScoped<IYeucauCodeService, YeucauCodeService>();
 builder.Services.AddScoped<IPhieuCodeService, PhieuCodeService>();

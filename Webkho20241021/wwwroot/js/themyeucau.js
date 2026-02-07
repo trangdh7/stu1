@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
         slmoi: ["slmoi", "moi", "soluongmoi", "new"],
         nhacc: ["nhacungcap", "ncc"],
         ngay: ["ngaycanhang", "ngaycan", "ngaynhan", "ngaycan"],
+        ngaycohang: ["ngaycohang", "ngaycohang", "ngaynhanhang", "deliverydate"],
         ghichu: ["ghichu", "note", "lydo", "mota", "chuthich"],
         kho: ["makho", "ykho", "ycmakho", "kho"]
     };
@@ -219,6 +220,7 @@ document.addEventListener("DOMContentLoaded", function () {
             "slcu",
             "slmoi",
             "ngay",
+            "ngaycohang",
             "nhacc",
             "ghichu"
         ];
@@ -400,6 +402,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Lưu mã kho theo từng dòng để server không bị thiếu danh sách YCMaKho
         appendHiddenInput("YCMaKho", rowData.YCMakho || "");
         appendHiddenInput("VTNgayCanHang", rowData.NgayCanHang);
+        appendHiddenInput("VTNgayCoHang", rowData.NgayCoHang || "");
         appendHiddenInput("GhiChu", rowData.GhiChu || "");
     }
 
@@ -429,6 +432,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td>${escapeHtml(row.SLCu || '')}</td>
                 <td>${escapeHtml(row.SLMoi || '')}</td>
                 <td>${escapeHtml(row.NgayCanHang)}</td>
+                <td>${escapeHtml(row.NgayCoHang || '')}</td>
                 <td>${escapeHtml(row.NhaCC)}</td>
                 <td><input type="text" class="ghichu-input" data-index="${i}" value="${escapeHtml(row.GhiChu || '')}" placeholder="Nhập ghi chú (tùy chọn)" style="width: 100%; padding: 4px;" /></td>
             `;
@@ -603,6 +607,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const dateValue = getValue("ngay");
                 const parsedDate = dateValue ? parseDateValue(dateValue) : "";
                 const ttValue = (getValue("tt") || "").toString().trim();
+                const dateCoHangValue = getValue("ngaycohang");
+                const parsedDateCoHang = dateCoHangValue ? parseDateValue(dateCoHangValue) : "";
                 let rowData = {
                     TT: ttValue || (rowIndex + 1).toString(),
                     TenSanpham: (getValue("ten") || "").toString().trim(),
@@ -613,6 +619,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     SLMoi: parseQuantity(getValue("slmoi")),
                     NhaCC: (getValue("nhacc") || "").toString().trim(),
                     NgayCanHang: parsedDate || defaultDate,
+                    NgayCoHang: parsedDateCoHang || "",
                     GhiChu: (getValue("ghichu") || "").toString().trim(),
                     YCMakho: (getValue("kho") || "").toString().trim(),
                     hasManualDate: Boolean(dateValue)
@@ -778,6 +785,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     };
                     const dateValue = getValue("ngay");
                     const parsedDate = dateValue ? parseDateValue(dateValue) : "";
+                    const dateCoHangValue = getValue("ngaycohang");
+                    const parsedDateCoHang = dateCoHangValue ? parseDateValue(dateCoHangValue) : "";
                     const ttValue = (getValue("tt") || "").toString().trim();
                     let rowData = {
                         TT: ttValue || (rowIndex + 1).toString(),
@@ -789,6 +798,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         SLMoi: parseQuantity(getValue("slmoi")),
                         NhaCC: (getValue("nhacc") || "").toString().trim(),
                         NgayCanHang: parsedDate || defaultDate,
+                        NgayCoHang: parsedDateCoHang || "",
                         GhiChu: (getValue("ghichu") || "").toString().trim(),
                         YCMakho: (getValue("kho") || "").toString().trim(),
                         hasManualDate: Boolean(dateValue)

@@ -449,7 +449,7 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     var slThieu = Math.Max(0, slMoi - tonKho);
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                     var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                    exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
+                    exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
                 }
             }
             else
@@ -468,14 +468,14 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                         var slMoi = v.SL ?? 0;
                         var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
                         var slThieu = Math.Max(0, slMoi - tonKho);
-                        exportRows.Add(new { TT = (object)stt++, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, SLCu = (int?)null, SLMoi = v.SL, SlThieu = slThieu, SlDaXuat = (int?)null, TonKho = tonKho, v.DonVi, NgayCanHang = (DateTime?)null, v.TrangThai, GhiChu = (string?)null, NgayDuyet = (DateTime?)null });
+                        exportRows.Add(new { TT = (object)stt++, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, SLCu = (int?)null, SLMoi = v.SL, SlThieu = slThieu, SlDaXuat = (int?)null, TonKho = tonKho, v.DonVi, NgayCanHang = (DateTime?)null, NgayCoHang = (DateTime?)null, v.TrangThai, GhiChu = (string?)null, NgayDuyet = (DateTime?)null });
                     }
                 }
             }
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("Danh sách vật tư");
-                worksheet.Cells[1, 1, 1, 15].Merge = true;
+                worksheet.Cells[1, 1, 1, 16].Merge = true;
                 worksheet.Cells[1, 1].Value = $"YÊU CẦU VẬT TƯ {MaYeucau}" + (yeucau != null && !string.IsNullOrEmpty(yeucau.NguoiYeucau) ? $" - {yeucau.NguoiYeucau}" : "");
                 worksheet.Cells[1, 1].Style.Font.Bold = true;
                 worksheet.Cells[1, 1].Style.Font.Size = 14;
@@ -494,9 +494,10 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                 worksheet.Cells[headerRow1, 6].Value = "SL";
                 worksheet.Cells[headerRow1, 11].Value = "ĐV";
                 worksheet.Cells[headerRow1, 12].Value = "Ngày cần";
-                worksheet.Cells[headerRow1, 13].Value = "Trạng thái";
-                worksheet.Cells[headerRow1, 14].Value = "Ghi chú";
-                worksheet.Cells[headerRow1, 15].Value = "Ngày duyệt";
+                worksheet.Cells[headerRow1, 13].Value = "Ngày có hàng";
+                worksheet.Cells[headerRow1, 14].Value = "Trạng thái";
+                worksheet.Cells[headerRow1, 15].Value = "Ghi chú";
+                worksheet.Cells[headerRow1, 16].Value = "Ngày duyệt";
                 worksheet.Cells[headerRow2, 6].Value = "Cũ";
                 worksheet.Cells[headerRow2, 7].Value = "Mới";
                 worksheet.Cells[headerRow2, 8].Value = "Thiếu";
@@ -512,9 +513,10 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                 worksheet.Cells[headerRow1, 13, headerRow2, 13].Merge = true;
                 worksheet.Cells[headerRow1, 14, headerRow2, 14].Merge = true;
                 worksheet.Cells[headerRow1, 15, headerRow2, 15].Merge = true;
+                worksheet.Cells[headerRow1, 16, headerRow2, 16].Merge = true;
                 for (int r = headerRow1; r <= headerRow2; r++)
                 {
-                    using (var range = worksheet.Cells[r, 1, r, 15]) { range.Style.Font.Bold = true; range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid; range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(173, 216, 230)); range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center; range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center; }
+                    using (var range = worksheet.Cells[r, 1, r, 16]) { range.Style.Font.Bold = true; range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid; range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(173, 216, 230)); range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center; range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center; }
                 }
                 int row = headerRow2 + 1, stt = 1;
                 foreach (var r in exportRows)
@@ -531,10 +533,11 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     worksheet.Cells[row, 10].Value = r.TonKho ?? 0;
                     worksheet.Cells[row, 11].Value = r.DonVi ?? "";
                     worksheet.Cells[row, 12].Value = r.NgayCanHang != null ? ((DateTime)r.NgayCanHang).ToString("dd/MM/yyyy") : "";
-                    worksheet.Cells[row, 13].Value = r.TrangThai ?? "";
-                    worksheet.Cells[row, 14].Value = r.GhiChu ?? "";
-                    worksheet.Cells[row, 15].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
-                    using (var range = worksheet.Cells[row, 1, row, 15]) { range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; }
+                    worksheet.Cells[row, 13].Value = r.NgayCoHang != null ? ((DateTime)r.NgayCoHang).ToString("dd/MM/yyyy") : "";
+                    worksheet.Cells[row, 14].Value = r.TrangThai ?? "";
+                    worksheet.Cells[row, 15].Value = r.GhiChu ?? "";
+                    worksheet.Cells[row, 16].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
+                    using (var range = worksheet.Cells[row, 1, row, 16]) { range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; }
                     row++;
                 }
                 worksheet.Cells.AutoFitColumns();
@@ -732,7 +735,8 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     return Json(new { success = false, message = "Không tìm thấy vật tư trong phiếu mua hàng." });
                 }
 
-                // Lưu ngày có hàng
+                // Lưu ngày có hàng vào vtphieumuahang
+                DateTime? ngayCoHangValue = null;
                 if (string.IsNullOrWhiteSpace(NgayCoHang))
                 {
                     vt.NgayCoHang = null;
@@ -742,10 +746,91 @@ namespace Webkho_20241021.Areas.NhanvienMuahang.Controllers
                     if (DateTime.TryParse(NgayCoHang, out var dt))
                     {
                         vt.NgayCoHang = dt;
+                        ngayCoHangValue = dt;
                     }
                     else
                     {
                         return Json(new { success = false, message = "Định dạng ngày có hàng không hợp lệ." });
+                    }
+                }
+
+                // Đồng bộ Ngày có hàng sang vtyeucau để hiển thị ở bảng chi tiết yêu cầu
+                if (!string.IsNullOrWhiteSpace(vt.MaYeucau))
+                {
+                    var vtyeucauList = _context.vtyeucau
+                        .Where(v => v.VTMaYeucau == vt.MaYeucau && v.MaSanpham == vt.MaSanpham)
+                        .ToList();
+                    foreach (var vty in vtyeucauList)
+                    {
+                        vty.NgayCoHang = ngayCoHangValue;
+                    }
+                }
+
+                _context.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult CapNhatNhaCCPhieumuahang(string MaMuahang, string MaSanpham, string? NhaCC)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(MaMuahang) || string.IsNullOrWhiteSpace(MaSanpham))
+                {
+                    return Json(new { success = false, message = "Thiếu mã mua hàng hoặc mã vật tư." });
+                }
+
+                // Nhân viên mua hàng cũng thuộc BP mua hàng
+                var boPhan = HttpContext.Session.GetString("Bophan");
+                if (!string.Equals(boPhan, "BP mua hàng", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền cập nhật nhà cung cấp." });
+                }
+
+                var vt = _context.vtphieumuahang
+                    .FirstOrDefault(v => v.MaMuahang == MaMuahang && v.MaSanpham == MaSanpham);
+
+                if (vt == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư trong phiếu mua hàng." });
+                }
+
+                vt.NhaCC = string.IsNullOrWhiteSpace(NhaCC) ? null : NhaCC.Trim();
+
+                // Đồng bộ NCC sang các bảng liên quan để các areas khác hiển thị ngay
+                if (!string.IsNullOrWhiteSpace(vt.MaYeucau))
+                {
+                    var maYc = vt.MaYeucau;
+                    var maSp = vt.MaSanpham;
+                    var ncc = vt.NhaCC;
+
+                    var vtyeucauList = _context.vtyeucau
+                        .Where(v => v.VTMaYeucau == maYc && v.MaSanpham == maSp)
+                        .ToList();
+                    foreach (var vty in vtyeucauList)
+                    {
+                        vty.NhaCC = ncc;
+                    }
+
+                    var vtxuatList = _context.vtphieuxuatkho
+                        .Where(v => v.MaYeucau == maYc && v.MaSanpham == maSp)
+                        .ToList();
+                    foreach (var vtx in vtxuatList)
+                    {
+                        vtx.NhaCC = ncc;
+                    }
+
+                    var vtnhapList = _context.vtphieunhapkho
+                        .Where(v => v.MaYeucau == maYc && v.MaSanpham == maSp)
+                        .ToList();
+                    foreach (var vtn in vtnhapList)
+                    {
+                        vtn.NhaCC = ncc;
                     }
                 }
 

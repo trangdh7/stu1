@@ -394,7 +394,7 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     var slThieu = Math.Max(0, slMoi - tonKho);
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                     var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                    return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
+                    return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
                 }).ToList();
                 return Json(result);
             }
@@ -469,7 +469,7 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     var slThieu = Math.Max(0, slMoi - tonKho);
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                     var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                    exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
+                    exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
                 }
             }
             else
@@ -488,14 +488,14 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                         var slMoi = v.SL ?? 0;
                         var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
                         var slThieu = Math.Max(0, slMoi - tonKho);
-                        exportRows.Add(new { TT = (object)stt++, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, SLCu = (int?)null, SLMoi = v.SL, SlThieu = slThieu, SlDaXuat = (int?)null, TonKho = tonKho, v.DonVi, NgayCanHang = (DateTime?)null, v.TrangThai, GhiChu = (string?)null, NgayDuyet = (DateTime?)null });
+                        exportRows.Add(new { TT = (object)stt++, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, SLCu = (int?)null, SLMoi = v.SL, SlThieu = slThieu, SlDaXuat = (int?)null, TonKho = tonKho, v.DonVi, NgayCanHang = (DateTime?)null, NgayCoHang = (DateTime?)null, v.TrangThai, GhiChu = (string?)null, NgayDuyet = (DateTime?)null });
                     }
                 }
             }
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("Danh sách vật tư");
-                worksheet.Cells[1, 1, 1, 15].Merge = true;
+                worksheet.Cells[1, 1, 1, 16].Merge = true;
                 worksheet.Cells[1, 1].Value = $"YÊU CẦU VẬT TƯ {MaYeucau}" + (yeucau != null && !string.IsNullOrEmpty(yeucau.NguoiYeucau) ? $" - {yeucau.NguoiYeucau}" : "");
                 worksheet.Cells[1, 1].Style.Font.Bold = true;
                 worksheet.Cells[1, 1].Style.Font.Size = 14;
@@ -514,9 +514,10 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 worksheet.Cells[headerRow1, 6].Value = "SL";
                 worksheet.Cells[headerRow1, 11].Value = "ĐV";
                 worksheet.Cells[headerRow1, 12].Value = "Ngày cần";
-                worksheet.Cells[headerRow1, 13].Value = "Trạng thái";
-                worksheet.Cells[headerRow1, 14].Value = "Ghi chú";
-                worksheet.Cells[headerRow1, 15].Value = "Ngày duyệt";
+                worksheet.Cells[headerRow1, 13].Value = "Ngày có hàng";
+                worksheet.Cells[headerRow1, 14].Value = "Trạng thái";
+                worksheet.Cells[headerRow1, 15].Value = "Ghi chú";
+                worksheet.Cells[headerRow1, 16].Value = "Ngày duyệt";
                 worksheet.Cells[headerRow2, 6].Value = "Cũ";
                 worksheet.Cells[headerRow2, 7].Value = "Mới";
                 worksheet.Cells[headerRow2, 8].Value = "Thiếu";
@@ -532,9 +533,10 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 worksheet.Cells[headerRow1, 13, headerRow2, 13].Merge = true;
                 worksheet.Cells[headerRow1, 14, headerRow2, 14].Merge = true;
                 worksheet.Cells[headerRow1, 15, headerRow2, 15].Merge = true;
+                worksheet.Cells[headerRow1, 16, headerRow2, 16].Merge = true;
                 for (int r = headerRow1; r <= headerRow2; r++)
                 {
-                    using (var range = worksheet.Cells[r, 1, r, 15]) { range.Style.Font.Bold = true; range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid; range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(173, 216, 230)); range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center; range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center; }
+                    using (var range = worksheet.Cells[r, 1, r, 16]) { range.Style.Font.Bold = true; range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid; range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(173, 216, 230)); range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center; range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center; }
                 }
                 int row = headerRow2 + 1, stt = 1;
                 foreach (var r in exportRows)
@@ -551,10 +553,11 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     worksheet.Cells[row, 10].Value = r.TonKho ?? 0;
                     worksheet.Cells[row, 11].Value = r.DonVi ?? "";
                     worksheet.Cells[row, 12].Value = r.NgayCanHang != null ? ((DateTime)r.NgayCanHang).ToString("dd/MM/yyyy") : "";
-                    worksheet.Cells[row, 13].Value = r.TrangThai ?? "";
-                    worksheet.Cells[row, 14].Value = r.GhiChu ?? "";
-                    worksheet.Cells[row, 15].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
-                    using (var range = worksheet.Cells[row, 1, row, 15]) { range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; }
+                    worksheet.Cells[row, 13].Value = r.NgayCoHang != null ? ((DateTime)r.NgayCoHang).ToString("dd/MM/yyyy") : "";
+                    worksheet.Cells[row, 14].Value = r.TrangThai ?? "";
+                    worksheet.Cells[row, 15].Value = r.GhiChu ?? "";
+                    worksheet.Cells[row, 16].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
+                    using (var range = worksheet.Cells[row, 1, row, 16]) { range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin; }
                     row++;
                 }
                 worksheet.Cells.AutoFitColumns();
@@ -2506,31 +2509,121 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     }
                 }
 
-                // Cập nhật chỉ các vật tư có giá trong dữ liệu gửi lên
+                // Cập nhật vật tư theo dữ liệu gửi lên
+                // - DonGia/ThanhTien: chỉ cập nhật khi có giá > 0 (báo giá)
+                // - Các trường BP mua hàng (NCC/Ngày/Ghi chú): cập nhật khi có giá trị (để chỉ lưu DB khi bấm "Gửi báo giá")
                 int updatedCount = 0;
                 if (model.VTphieumuahang != null)
                 {
                     foreach (var updatedVTmuahang in model.VTphieumuahang)
                     {
-                        // Chỉ cập nhật nếu có MaSanpham và có giá hợp lệ
-                        if (!string.IsNullOrEmpty(updatedVTmuahang.MaSanpham) &&
-                            updatedVTmuahang.DonGia != null && updatedVTmuahang.DonGia > 0)
+                        if (string.IsNullOrEmpty(updatedVTmuahang.MaSanpham))
                         {
-                            if (vtmuahangDict.TryGetValue(updatedVTmuahang.MaSanpham, out var VTmuahang))
+                            continue;
+                        }
+
+                        if (!vtmuahangDict.TryGetValue(updatedVTmuahang.MaSanpham, out var VTmuahang))
+                        {
+                            continue;
+                        }
+
+                        bool changed = false;
+
+                        // NCC (BP mua hàng)
+                        if (!string.IsNullOrWhiteSpace(updatedVTmuahang.NhaCC))
+                        {
+                            VTmuahang.NhaCC = updatedVTmuahang.NhaCC.Trim();
+                            changed = true;
+
+                            // Đồng bộ NCC sang các bảng phiếu liên quan để các phiếu "lấy" đúng NCC
+                            // - vtyeucau: chi tiết yêu cầu
+                            // - vtphieuxuatkho: chi tiết phiếu xuất kho
+                            // - vtphieunhapkho: chi tiết phiếu nhập kho
+                            if (!string.IsNullOrWhiteSpace(VTmuahang.MaYeucau))
                             {
-                                Console.WriteLine($"Cập nhật VTmuahang: {updatedVTmuahang.MaSanpham}");
+                                var maYc = VTmuahang.MaYeucau;
+                                var maSp = VTmuahang.MaSanpham;
+                                var ncc = VTmuahang.NhaCC;
 
-                                // Cập nhật giá trị DonGia và ThanhTien
-                                VTmuahang.DonGia = updatedVTmuahang.DonGia;
-                                VTmuahang.ThanhTien = updatedVTmuahang.ThanhTien;
+                                var vtyeucauList = _context.vtyeucau
+                                    .Where(v => v.VTMaYeucau == maYc && v.MaSanpham == maSp)
+                                    .ToList();
+                                foreach (var vty in vtyeucauList)
+                                {
+                                    vty.NhaCC = ncc;
+                                }
 
-                                Console.WriteLine($"Đơn giá là: {updatedVTmuahang.DonGia}");
-                                Console.WriteLine($"Thành tiền là: {updatedVTmuahang.ThanhTien}");
+                                var vtxuatList = _context.vtphieuxuatkho
+                                    .Where(v => v.MaYeucau == maYc && v.MaSanpham == maSp)
+                                    .ToList();
+                                foreach (var vtx in vtxuatList)
+                                {
+                                    vtx.NhaCC = ncc;
+                                }
 
-                                VTmuahang.TrangThai = "Đã báo giá";
-                                _context.vtphieumuahang.Update(VTmuahang);
-                                updatedCount++;
+                                var vtnhapList = _context.vtphieunhapkho
+                                    .Where(v => v.MaYeucau == maYc && v.MaSanpham == maSp)
+                                    .ToList();
+                                foreach (var vtn in vtnhapList)
+                                {
+                                    vtn.NhaCC = ncc;
+                                }
                             }
+                        }
+
+                        // Ghi chú (BP mua hàng)
+                        if (!string.IsNullOrWhiteSpace(updatedVTmuahang.GhiChuBPMuahang))
+                        {
+                            VTmuahang.GhiChuBPMuahang = updatedVTmuahang.GhiChuBPMuahang.Trim();
+                            changed = true;
+                        }
+
+                        // Ngày thanh toán (BP mua hàng)
+                        if (updatedVTmuahang.NgayThanhToanBPMuahang != null)
+                        {
+                            VTmuahang.NgayThanhToanBPMuahang = updatedVTmuahang.NgayThanhToanBPMuahang;
+                            changed = true;
+                        }
+
+                        // Ngày có hàng (đồng bộ sang vtyeucau như endpoint CapNhatNgayCoHang)
+                        if (updatedVTmuahang.NgayCoHang != null)
+                        {
+                            VTmuahang.NgayCoHang = updatedVTmuahang.NgayCoHang;
+                            changed = true;
+
+                            if (!string.IsNullOrWhiteSpace(VTmuahang.MaYeucau))
+                            {
+                                var vtyeucauList = _context.vtyeucau
+                                    .Where(v => v.VTMaYeucau == VTmuahang.MaYeucau && v.MaSanpham == VTmuahang.MaSanpham)
+                                    .ToList();
+
+                                foreach (var vty in vtyeucauList)
+                                {
+                                    vty.NgayCoHang = updatedVTmuahang.NgayCoHang;
+                                }
+                            }
+                        }
+
+                        // Báo giá (chỉ khi có giá hợp lệ)
+                        if (updatedVTmuahang.DonGia != null && updatedVTmuahang.DonGia > 0)
+                        {
+                            Console.WriteLine($"Cập nhật VTmuahang: {updatedVTmuahang.MaSanpham}");
+
+                            VTmuahang.DonGia = updatedVTmuahang.DonGia;
+                            VTmuahang.ThanhTien = updatedVTmuahang.ThanhTien
+                                ?? (updatedVTmuahang.DonGia.Value * (VTmuahang.SL ?? 0));
+
+                            Console.WriteLine($"Đơn giá là: {updatedVTmuahang.DonGia}");
+                            Console.WriteLine($"Thành tiền là: {VTmuahang.ThanhTien}");
+
+                            VTmuahang.TrangThai = "Đã báo giá";
+                            updatedCount++;
+                            changed = true;
+                        }
+
+                        if (changed)
+                        {
+                            _context.vtphieumuahang.Update(VTmuahang);
                         }
                     }
                 }
@@ -2708,7 +2801,8 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     return Json(new { success = false, message = "Không tìm thấy vật tư trong phiếu mua hàng." });
                 }
 
-                // Lưu ngày có hàng
+                // Lưu ngày có hàng vào vtphieumuahang
+                DateTime? ngayCoHangValue = null;
                 if (string.IsNullOrWhiteSpace(NgayCoHang))
                 {
                     vt.NgayCoHang = null;
@@ -2718,10 +2812,23 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     if (DateTime.TryParse(NgayCoHang, out var dt))
                     {
                         vt.NgayCoHang = dt;
+                        ngayCoHangValue = dt;
                     }
                     else
                     {
                         return Json(new { success = false, message = "Định dạng ngày có hàng không hợp lệ." });
+                    }
+                }
+
+                // Đồng bộ Ngày có hàng sang vtyeucau để hiển thị ở bảng chi tiết yêu cầu
+                if (!string.IsNullOrWhiteSpace(vt.MaYeucau))
+                {
+                    var vtyeucauList = _context.vtyeucau
+                        .Where(v => v.VTMaYeucau == vt.MaYeucau && v.MaSanpham == vt.MaSanpham)
+                        .ToList();
+                    foreach (var vty in vtyeucauList)
+                    {
+                        vty.NgayCoHang = ngayCoHangValue;
                     }
                 }
 
@@ -2754,6 +2861,74 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
 
                 // Lưu vào trường riêng cho BP Mua hàng
                 vt.GhiChuBPMuahang = string.IsNullOrWhiteSpace(GhiChu) ? null : GhiChu.Trim();
+
+                _context.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult CapNhatNhaCCPhieumuahang(string MaMuahang, string MaSanpham, string? NhaCC)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(MaMuahang) || string.IsNullOrWhiteSpace(MaSanpham))
+                {
+                    return Json(new { success = false, message = "Thiếu mã mua hàng hoặc mã vật tư." });
+                }
+
+                // Chỉ cho phép BP mua hàng cập nhật
+                var boPhan = HttpContext.Session.GetString("Bophan");
+                if (!string.Equals(boPhan, "BP mua hàng", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền cập nhật nhà cung cấp." });
+                }
+
+                var vt = _context.vtphieumuahang
+                    .FirstOrDefault(v => v.MaMuahang == MaMuahang && v.MaSanpham == MaSanpham);
+
+                if (vt == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy vật tư trong phiếu mua hàng." });
+                }
+
+                vt.NhaCC = string.IsNullOrWhiteSpace(NhaCC) ? null : NhaCC.Trim();
+
+                // Đồng bộ NCC sang các bảng liên quan để các areas khác hiển thị ngay
+                if (!string.IsNullOrWhiteSpace(vt.MaYeucau))
+                {
+                    var maYc = vt.MaYeucau;
+                    var maSp = vt.MaSanpham;
+                    var ncc = vt.NhaCC;
+
+                    var vtyeucauList = _context.vtyeucau
+                        .Where(v => v.VTMaYeucau == maYc && v.MaSanpham == maSp)
+                        .ToList();
+                    foreach (var vty in vtyeucauList)
+                    {
+                        vty.NhaCC = ncc;
+                    }
+
+                    var vtxuatList = _context.vtphieuxuatkho
+                        .Where(v => v.MaYeucau == maYc && v.MaSanpham == maSp)
+                        .ToList();
+                    foreach (var vtx in vtxuatList)
+                    {
+                        vtx.NhaCC = ncc;
+                    }
+
+                    var vtnhapList = _context.vtphieunhapkho
+                        .Where(v => v.MaYeucau == maYc && v.MaSanpham == maSp)
+                        .ToList();
+                    foreach (var vtn in vtnhapList)
+                    {
+                        vtn.NhaCC = ncc;
+                    }
+                }
 
                 _context.SaveChanges();
                 return Json(new { success = true });
@@ -3781,6 +3956,241 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 var excelBytes = package.GetAsByteArray();
                 var fileName = $"Phieu_mua_hang_{phieumuahang.MaMuahang}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 
+                return File(excelBytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName);
+            }
+        }
+
+        /// <summary>
+        /// Trang so sánh nhiều phiếu mua hàng: gộp theo Tên thiết bị + Mã VT, hiển thị SL theo từng yêu cầu, bôi màu ô SL chênh.
+        /// </summary>
+        [HttpGet]
+        public IActionResult SoSanhPhieumuahang(string ids)
+        {
+            if (string.IsNullOrWhiteSpace(ids))
+            {
+                return NotFound();
+            }
+            var idList = ids.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Distinct()
+                .ToList();
+            if (idList.Count == 0)
+            {
+                return NotFound();
+            }
+
+            var phieuList = _context.phieumuahang
+                .Where(p => idList.Contains(p.MaMuahang))
+                .OrderBy(p => p.MaYeucau)
+                .Select(p => new PhieuSoSanhItem { MaMuahang = p.MaMuahang, MaYeucau = p.MaYeucau ?? p.MaMuahang })
+                .ToList();
+            if (phieuList.Count == 0)
+            {
+                return NotFound();
+            }
+            var maMuahangOrder = phieuList.Select(x => x.MaMuahang).ToList();
+
+            var allVt = _context.vtphieumuahang
+                .Where(v => idList.Contains(v.MaMuahang))
+                .ToList();
+
+            // Gộp theo (TenSanpham, MaSanpham) - lấy từ dòng đầu, SL theo từng phiếu
+            var grouped = allVt
+                .GroupBy(v => new { Ten = v.TenSanpham ?? "", Ma = v.MaSanpham ?? "" })
+                .Select(g =>
+                {
+                    var first = g.First();
+                    var slByPhieu = new List<int?>();
+                    var slChenh = new List<bool>();
+                    var slValues = new List<int?>();
+                    foreach (var ma in maMuahangOrder)
+                    {
+                        var vt = g.FirstOrDefault(x => x.MaMuahang == ma);
+                        var sl = vt?.SL;
+                        slValues.Add(sl);
+                        slByPhieu.Add(sl);
+                    }
+                    var distinctSl = slValues.Where(s => s.HasValue).Select(s => s.Value).Distinct().ToList();
+                    bool hasChenh = distinctSl.Count > 1;
+                    var referenceSl = slValues.FirstOrDefault(s => s.HasValue);
+                    for (int i = 0; i < slValues.Count; i++)
+                    {
+                        slChenh.Add(hasChenh && slValues[i].HasValue && slValues[i] != referenceSl);
+                    }
+                    var hangSXValues = new List<string>();
+                    var nhaCCValues = new List<string>();
+                    foreach (var ma in maMuahangOrder)
+                    {
+                        var vt = g.FirstOrDefault(x => x.MaMuahang == ma);
+                        hangSXValues.Add(vt?.HangSX ?? "");
+                        nhaCCValues.Add(vt?.NhaCC ?? "");
+                    }
+                    var distinctHangSX = hangSXValues.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+                    var distinctNhaCC = nhaCCValues.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+                    string hangSXDisplay = distinctHangSX.Count <= 1 ? (distinctHangSX.FirstOrDefault() ?? "") : string.Join(" / ", distinctHangSX);
+                    string nhaCCDisplay = distinctNhaCC.Count <= 1 ? (distinctNhaCC.FirstOrDefault() ?? "") : string.Join(" / ", distinctNhaCC);
+                    return new SoSanhRowViewModel
+                    {
+                        TenSanpham = first.TenSanpham ?? "",
+                        MaSanpham = first.MaSanpham ?? "",
+                        HangSX = hangSXDisplay,
+                        HangSXChenh = distinctHangSX.Count > 1,
+                        NhaCC = nhaCCDisplay,
+                        NhaCCChenh = distinctNhaCC.Count > 1,
+                        HangSXValues = hangSXValues,
+                        NhaCCValues = nhaCCValues,
+                        DonVi = first.DonVi ?? "",
+                        SlValues = slValues,
+                        SlChenh = slChenh
+                    };
+                })
+                .OrderBy(r => r.TenSanpham).ThenBy(r => r.MaSanpham)
+                .ToList();
+
+            var model = new SoSanhPhieumuahangViewModel
+            {
+                PhieuList = phieuList,
+                Rows = grouped
+            };
+            ViewBag.IdsQuery = ids;
+            return View(model);
+        }
+
+        /// <summary>
+        /// Xuất Excel so sánh nhiều phiếu: gộp theo Tên TB + Mã VT, cột SL theo từng yêu cầu, tô màu ô SL chênh.
+        /// </summary>
+        [HttpGet]
+        public IActionResult ExportSoSanhPhieumuahangExcel(string ids)
+        {
+            if (string.IsNullOrWhiteSpace(ids))
+            {
+                return NotFound();
+            }
+            var idList = ids.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Distinct()
+                .ToList();
+            if (idList.Count == 0)
+            {
+                return NotFound();
+            }
+
+            var phieuList = _context.phieumuahang
+                .Where(p => idList.Contains(p.MaMuahang))
+                .OrderBy(p => p.MaYeucau)
+                .Select(p => new { p.MaMuahang, p.MaYeucau })
+                .ToList();
+            if (phieuList.Count == 0)
+            {
+                return NotFound();
+            }
+            var maMuahangOrder = phieuList.Select(x => x.MaMuahang).ToList();
+
+            var allVt = _context.vtphieumuahang
+                .Where(v => idList.Contains(v.MaMuahang))
+                .ToList();
+
+            var grouped = allVt
+                .GroupBy(v => new { Ten = v.TenSanpham ?? "", Ma = v.MaSanpham ?? "" })
+                .Select(g =>
+                {
+                    var first = g.First();
+                    var slValues = new List<int?>();
+                    var hangSXValues = new List<string>();
+                    var nhaCCValues = new List<string>();
+                    foreach (var ma in maMuahangOrder)
+                    {
+                        var vt = g.FirstOrDefault(x => x.MaMuahang == ma);
+                        slValues.Add(vt?.SL);
+                        hangSXValues.Add(vt?.HangSX ?? "");
+                        nhaCCValues.Add(vt?.NhaCC ?? "");
+                    }
+                    var distinctSl = slValues.Where(s => s.HasValue).Select(s => s.Value).Distinct().ToList();
+                    bool hasChenh = distinctSl.Count > 1;
+                    var referenceSl = slValues.FirstOrDefault(s => s.HasValue);
+                    var slChenh = slValues.Select((s, i) => hasChenh && s.HasValue && s != referenceSl).ToList();
+                    var distinctHangSX = hangSXValues.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+                    var distinctNhaCC = nhaCCValues.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+                    string hangSXDisplay = distinctHangSX.Count <= 1 ? (distinctHangSX.FirstOrDefault() ?? "") : string.Join(" / ", distinctHangSX);
+                    string nhaCCDisplay = distinctNhaCC.Count <= 1 ? (distinctNhaCC.FirstOrDefault() ?? "") : string.Join(" / ", distinctNhaCC);
+                    return new { first, slValues, slChenh, hangSXDisplay, nhaCCDisplay };
+                })
+                .OrderBy(x => x.first.TenSanpham).ThenBy(x => x.first.MaSanpham)
+                .ToList();
+
+            using (var package = new ExcelPackage())
+            {
+                var ws = package.Workbook.Worksheets.Add("So sánh phiếu mua hàng");
+                int col = 1;
+                ws.Cells[1, col].Value = "TT"; col++;
+                ws.Cells[1, col].Value = "Tên thiết bị/hàng hóa"; col++;
+                ws.Cells[1, col].Value = "Mã VT"; col++;
+                ws.Cells[1, col].Value = "Hãng SX"; col++;
+                ws.Cells[1, col].Value = "Nhà CC"; col++;
+                ws.Cells[1, col].Value = "ĐV"; col++;
+                foreach (var p in phieuList)
+                {
+                    ws.Cells[1, col].Value = "SL (" + (p.MaYeucau ?? p.MaMuahang) + ")";
+                    col++;
+                }
+                ws.Cells[1, col].Value = "Tổng";
+                col++;
+                int headerRow = 1;
+                using (var range = ws.Cells[headerRow, 1, headerRow, col - 1])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(68, 114, 196));
+                    range.Style.Font.Color.SetColor(System.Drawing.Color.White);
+                }
+
+                int row = 2;
+                int stt = 1;
+                foreach (var g in grouped)
+                {
+                    col = 1;
+                    ws.Cells[row, col].Value = stt; col++;
+                    ws.Cells[row, col].Value = g.first.TenSanpham ?? ""; col++;
+                    ws.Cells[row, col].Value = g.first.MaSanpham ?? ""; col++;
+                    ws.Cells[row, col].Value = g.hangSXDisplay; col++;
+                    ws.Cells[row, col].Value = g.nhaCCDisplay; col++;
+                    ws.Cells[row, col].Value = g.first.DonVi ?? ""; col++;
+                    for (int i = 0; i < g.slValues.Count; i++)
+                    {
+                        ws.Cells[row, col].Value = g.slValues[i] ?? (object)"";
+                        if (g.slChenh[i])
+                        {
+                            ws.Cells[row, col].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                            ws.Cells[row, col].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(255, 255, 0));
+                        }
+                        col++;
+                    }
+                    int tongRowVal = g.slValues.Sum(s => s ?? 0);
+                    ws.Cells[row, col].Value = tongRowVal;
+                    col++;
+                    row++;
+                    stt++;
+                }
+
+                int totalRow = row;
+                int totalColCount = 6 + phieuList.Count + 1;
+                ws.Cells[totalRow, 1].Value = "Tổng số lượng vật tư";
+                ws.Cells[totalRow, 1].Style.Font.Bold = true;
+                ws.Cells[totalRow, totalColCount].Value = grouped.Sum(x => x.slValues.Sum(s => s ?? 0));
+                ws.Cells[totalRow, totalColCount].Style.Font.Bold = true;
+                using (var totalRange = ws.Cells[totalRow, 1, totalRow, totalColCount])
+                {
+                    totalRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    totalRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(227, 242, 253));
+                }
+
+                ws.Cells.AutoFitColumns();
+                var excelBytes = package.GetAsByteArray();
+                var fileName = $"So_sanh_phieu_mua_hang_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
                 return File(excelBytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);

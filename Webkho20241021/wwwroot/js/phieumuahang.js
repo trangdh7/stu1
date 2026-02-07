@@ -2,17 +2,19 @@ $(document).ready(function () {
     const pathSegments = window.location.pathname.split('/');
     const area = pathSegments.length > 1 ? pathSegments[1] : '';
     
-    // Ẩn nút "Gửi báo giá" nếu không phải area mua hàng (Trưởng BP hoặc Nhân viên mua hàng)
-    if (area !== 'TruongBPMuahang' && area !== 'NhanvienMuahang') {
+    // Chỉ Trưởng BP mua hàng được phép "Gửi báo giá" (lưu DB theo nút gửi)
+    if (area !== 'TruongBPMuahang') {
         $('#submitPhieumuahang').hide();
     }
 
     const firstRow = $('.table tbody tr').first();
     if (firstRow.length > 0) {
-        const link = firstRow.find('td').eq(1).find('a');
-        const Mamuahang = link.text().trim();
+        const Mamuahang = firstRow.data('mamuahang');
+        const link = firstRow.find('td').eq(2).find('a');
         const trangThai = link.data('trangthai') || '';
-        showVTmuahang(Mamuahang, trangThai);
+        if (Mamuahang) {
+            showVTmuahang(Mamuahang, trangThai);
+        }
     }
     if (typeof getThongbaoData === 'function') {
         getThongbaoData();
@@ -22,7 +24,7 @@ $(document).ready(function () {
     // Xử lý click vào hàng
     $(document).on('click', '.clickable-row', function() {
         const MaMuahang = $(this).data('mamuahang');
-        const link = $(this).find('td').eq(1).find('a');
+        const link = $(this).find('td').eq(2).find('a');
         const trangThai = link.data('trangthai') || '';
         if (MaMuahang) {
             showVTmuahang(MaMuahang, trangThai);
@@ -32,6 +34,20 @@ $(document).ready(function () {
 
 const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
 const ROW_HIGHLIGHT_TEXT_COLOR = "#ffffff";
+
+function escapeHtml(input) {
+    if (input === null || input === undefined) return '';
+    return String(input).replace(/[&<>"']/g, function (ch) {
+        switch (ch) {
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case "'": return '&#39;';
+            default: return ch;
+        }
+    });
+}
 
 function applyPurchaseRowHighlight($row) {
     const $rows = $('.table tbody tr');
@@ -70,10 +86,11 @@ $('#submitPhieumuahang').click(function () {
             const MaSanpham = $(this).find('td').eq(2).text().trim();
             if (MaSanpham) {
                 const inputValue = priceInput.val();
-                savedInputValues[MaSanpham] = inputValue;
+                const key = makeDraftKey(selectedMamuahang, MaSanpham);
+                savedInputValues[key] = inputValue;
                 // Lưu vào biến global để restore khi rebuild table
                 if (inputValue) {
-                    savedInputValuesForRestore[MaSanpham] = inputValue;
+                    savedInputValuesForRestore[key] = inputValue;
                 }
             }
         }
@@ -81,6 +98,8 @@ $('#submitPhieumuahang').click(function () {
 
     const vtmuahangData = [];
     let itemsWithoutPrice = [];
+    let pricedItemsCount = 0;
+    let invalidDateInput = false;
     
     $('.tablethietbi tbody tr').each(function () {
         // Bỏ qua hàng tổng tiền
@@ -108,16 +127,43 @@ $('#submitPhieumuahang').click(function () {
             if (SL === 0) {
                 return;
             }
-            
-            // Chỉ thêm vào dữ liệu nếu có giá hợp lệ (cho phép báo giá một phần)
+
+            // Lấy thêm dữ liệu nhập (NCC/Ngày/Ghi chú) để chỉ lưu DB khi bấm Gửi
+            const nhaCC = ($(this).find('.NhaCCInput').val() || '').toString().trim();
+            const ngayThanhToanDisplay = ($(this).find('.NgayThanhToanInput').val() || '').toString().trim();
+            const ngayCoHangDisplay = ($(this).find('.NgayCoHangInput').val() || '').toString().trim();
+            const ghiChu = ($(this).find('.GhiChuInput').val() || '').toString();
+
+            // Validate ngày nếu người dùng nhập tay
+            let ngayThanhToan = '';
+            if (ngayThanhToanDisplay) {
+                ngayThanhToan = convertDisplayDateToServerGlobal(ngayThanhToanDisplay);
+                if (!ngayThanhToan) {
+                    alert(`Ngày thanh toán không hợp lệ ở vật tư ${TenSanpham || MaSanpham}. Vui lòng nhập theo dd/MM/yyyy.`);
+                    invalidDateInput = true;
+                    return false; // break $.each
+                }
+            }
+            let ngayCoHang = '';
+            if (ngayCoHangDisplay) {
+                ngayCoHang = convertDisplayDateToServerGlobal(ngayCoHangDisplay);
+                if (!ngayCoHang) {
+                    alert(`Ngày có hàng không hợp lệ ở vật tư ${TenSanpham || MaSanpham}. Vui lòng nhập theo dd/MM/yyyy.`);
+                    invalidDateInput = true;
+                    return false; // break $.each
+                }
+            }
+
+            const payloadItem = {
+                MaMuahang: selectedMamuahang,
+                MaSanpham: MaSanpham
+            };
+
             if (DonGia > 0 && SL > 0) {
                 const ThanhTien = SL * DonGia;
-                vtmuahangData.push({
-                    MaMuahang: selectedMamuahang,
-                    MaSanpham: MaSanpham,
-                    DonGia: DonGia,
-                    ThanhTien: ThanhTien
-                });
+                payloadItem.DonGia = DonGia;
+                payloadItem.ThanhTien = ThanhTien;
+                pricedItemsCount++;
             } else if (SL > 0) {
                 // Ghi nhận các mục chưa có giá (để thông báo)
                 itemsWithoutPrice.push({
@@ -126,11 +172,31 @@ $('#submitPhieumuahang').click(function () {
                     sl: SL
                 });
             }
+
+            if (nhaCC) payloadItem.NhaCC = nhaCC;
+            if (ngayThanhToan) payloadItem.NgayThanhToanBPMuahang = ngayThanhToan;
+            if (ngayCoHang) payloadItem.NgayCoHang = ngayCoHang;
+            if (ghiChu && ghiChu.trim()) payloadItem.GhiChuBPMuahang = ghiChu.trim();
+
+            // Chỉ gửi các dòng có dữ liệu (giá hoặc các trường khác)
+            if (
+                payloadItem.DonGia != null ||
+                payloadItem.NhaCC != null ||
+                payloadItem.NgayThanhToanBPMuahang != null ||
+                payloadItem.NgayCoHang != null ||
+                payloadItem.GhiChuBPMuahang != null
+            ) {
+                vtmuahangData.push(payloadItem);
+            }
         }
     });
+
+    if (invalidDateInput) {
+        return;
+    }
     
     // Kiểm tra nếu không có dữ liệu nào để gửi
-    if (vtmuahangData.length === 0) {
+    if (pricedItemsCount === 0) {
         alert("Vui lòng nhập ít nhất một đơn giá trước khi gửi!");
         return;
     }
@@ -188,10 +254,11 @@ $('#submitPhieumuahang').click(function () {
                     const priceInput = $(this).find('.DonGia input');
                     if (priceInput.length > 0) {
                         const MaSanpham = $(this).find('td').eq(2).text().trim();
-                        if (MaSanpham && savedInputValues[MaSanpham] !== undefined) {
-                            priceInput.val(savedInputValues[MaSanpham]);
+                        const key = makeDraftKey(selectedMamuahang, MaSanpham);
+                        if (MaSanpham && savedInputValues[key] !== undefined) {
+                            priceInput.val(savedInputValues[key]);
                             // Lưu lại vào biến global để restore khi rebuild table
-                            savedInputValuesForRestore[MaSanpham] = savedInputValues[MaSanpham];
+                            savedInputValuesForRestore[key] = savedInputValues[key];
                             // Trigger input event để cập nhật thành tiền
                             priceInput.trigger('input');
                         }
@@ -213,10 +280,11 @@ $('#submitPhieumuahang').click(function () {
                 const priceInput = $(this).find('.DonGia input');
                 if (priceInput.length > 0) {
                     const MaSanpham = $(this).find('td').eq(2).text().trim();
-                    if (MaSanpham && savedInputValues[MaSanpham] !== undefined) {
-                        priceInput.val(savedInputValues[MaSanpham]);
+                    const key = makeDraftKey(selectedMamuahang, MaSanpham);
+                    if (MaSanpham && savedInputValues[key] !== undefined) {
+                        priceInput.val(savedInputValues[key]);
                         // Lưu lại vào biến global để restore khi rebuild table
-                        savedInputValuesForRestore[MaSanpham] = savedInputValues[MaSanpham];
+                        savedInputValuesForRestore[key] = savedInputValues[key];
                         // Trigger input event để cập nhật thành tiền
                         priceInput.trigger('input');
                     }
@@ -230,6 +298,20 @@ $('#submitPhieumuahang').click(function () {
 let selectedMamuahang = "";
 // Lưu giá trị đã nhập để restore khi rebuild table
 let savedInputValuesForRestore = {};
+
+// Draft nhập liệu theo từng vật tư (chỉ dùng để giữ dữ liệu trên UI trước khi bấm "Gửi báo giá")
+// Key: `${MaMuahang}__${MaSanpham}`
+const phieuMuaHangDraft = {};
+function makeDraftKey(maMuahang, maSanpham) {
+    return `${maMuahang || ''}__${maSanpham || ''}`;
+}
+function getDraft(maMuahang, maSanpham) {
+    return phieuMuaHangDraft[makeDraftKey(maMuahang, maSanpham)] || {};
+}
+function setDraft(maMuahang, maSanpham, patch) {
+    const key = makeDraftKey(maMuahang, maSanpham);
+    phieuMuaHangDraft[key] = Object.assign({}, phieuMuaHangDraft[key] || {}, patch || {});
+}
 
 // Hiển thị vật tư theo mã mua hàng
 function showVTmuahang(Mamuahang, trangThaiPhieu) {
@@ -442,8 +524,8 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
             
             if (data && data.length > 0) {
                 // Kiểm tra xem có thể nhập đơn giá không
-                // Cho phép nhập khi: area là mua hàng (Trưởng BP hoặc Nhân viên) và (trạng thái phiếu = "Đang chờ báo giá" hoặc chứa "Đã từ chối")
-                const isPurchaseArea = (area === 'TruongBPMuahang' || area === 'NhanvienMuahang');
+                // Chỉ Trưởng BP mua hàng được nhập và gửi báo giá
+                const isPurchaseArea = (area === 'TruongBPMuahang');
                 const canInputPriceForPhieu = isPurchaseArea && 
                     (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
                 const isGiamdoc = area === 'Giamdoc';
@@ -460,17 +542,43 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
 
                 let STT = 1;
                 data.forEach(function (item) {
+                    const maSanpham = (item.maSanpham || item.MaSanpham || '').toString().trim();
+                    const draft = getDraft(Mamuahang, maSanpham);
+
                     // Cho phép nhập giá cho từng mục nếu:
                     // 1. Area là mua hàng VÀ
                     // 2. (Trạng thái phiếu = "Đang chờ báo giá" HOẶC mục này có trạng thái "Đang chờ báo giá")
                     const itemTrangThai = (item.trangThai || '').trim();
                     const canInputPriceForItem = isPurchaseArea && 
                         (canInputPriceForPhieu || itemTrangThai === 'Đang chờ báo giá');
+
+                    // BP mua hàng được nhập Nhà cung cấp (NCC) cho từng vật tư khi:
+                    // - Phiếu đang chờ báo giá / bị từ chối, hoặc
+                    // - Chính vật tư này đang chờ báo giá (trường hợp báo giá một phần)
+                    const nhaCCValueRaw = (item.nhaCC != null ? item.nhaCC : (item.NhaCC != null ? item.NhaCC : ''));
+                    const nhaCCValue =
+                        Object.prototype.hasOwnProperty.call(draft, 'nhaCC')
+                            ? (draft.nhaCC || '').toString()
+                            : (nhaCCValueRaw || '').toString();
+                    const canEditNhaCCForItem = isPurchaseArea &&
+                        (canInputPriceForPhieu || itemTrangThai === 'Đang chờ báo giá');
+                    const nhaCCCell = canEditNhaCCForItem
+                        ? `<input type="text"
+                                   class="NhaCCInput"
+                                   data-mamuahang="${escapeHtml(Mamuahang)}"
+                                   data-masanpham="${escapeHtml(maSanpham)}"
+                                   value="${escapeHtml(nhaCCValue)}"
+                                   placeholder="Nhập NCC"
+                                   style="width: 100%;" />`
+                        : (nhaCCValue ? escapeHtml(nhaCCValue) : '-');
                     
                     let donGiaCell = '';
                     // Kiểm tra xem có giá trị đã lưu không (để restore khi rebuild table)
-                    const savedValue = savedInputValuesForRestore[item.maSanpham];
-                    const displayValue = savedValue !== undefined ? savedValue : (item.donGia != null ? item.donGia : null);
+                    const savedValue = savedInputValuesForRestore[makeDraftKey(Mamuahang, maSanpham)];
+                    const displayValue =
+                        (draft.donGiaDisplay !== undefined)
+                            ? draft.donGiaDisplay
+                            : (savedValue !== undefined ? savedValue : (item.donGia != null ? item.donGia : null));
                     
                     if (canInputPriceForItem) {
                         // Cho phép nhập đơn giá
@@ -536,14 +644,17 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                                 </div>`;
                         } else if (isPurchaseArea) {
                             // BP Mua hàng: hiển thị input của mình và giá trị Giám đốc
-                            const ngayThanhToanBPMuahangValue = formatDateDisplay(ngayThanhToanBPMuahangRaw);
+                            const ngayThanhToanBPMuahangValue =
+                                (draft.ngayThanhToanDisplay !== undefined)
+                                    ? (draft.ngayThanhToanDisplay || '')
+                                    : formatDateDisplay(ngayThanhToanBPMuahangRaw);
                             const ngayThanhToanGiamdocDisplay = formatDateDisplay(ngayThanhToanGiamdocRaw);
                             ngayThanhToanCell = `
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
                                     <input type="text"
                                            class="NgayThanhToanInput"
                                            data-mamuahang="${Mamuahang}"
-                                           data-masanpham="${item.maSanpham || ''}"
+                                           data-masanpham="${maSanpham}"
                                            value="${ngayThanhToanBPMuahangValue}"
                                            placeholder="dd/MM/yyyy"
                                            style="width: 100%;" />
@@ -571,7 +682,10 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         trangThaiPhieu === 'Đã báo giá' && 
                         !trangThaiKhongChoPhepSuaGiamdocGhiChu.includes(trangThaiPhieu);
                     const canEditGhiChu = canEditGhiChuForGiamdoc || canEditGhiChuForBPMuahang;
-                    const ghiChuBPMuahangValue = item.ghiChuBPMuahang || item.GhiChuBPMuahang || '';
+                    const ghiChuBPMuahangValue =
+                        (draft.ghiChu !== undefined)
+                            ? (draft.ghiChu || '')
+                            : (item.ghiChuBPMuahang || item.GhiChuBPMuahang || '');
                     const ghiChuGiamdocValue = item.ghiChuGiamdoc || item.GhiChuGiamdoc || '';
                     // Kiểm tra nếu ghi chú BP Mua hàng chứa "Ngày 29/1 thanh toán ạ" thì dùng màu đỏ
                     const containsPaymentNote = ghiChuBPMuahangValue && ghiChuBPMuahangValue.includes('Ngày 29/1 thanh toán ạ');
@@ -599,7 +713,7 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                                     <input type="text"
                                            class="GhiChuInput"
                                            data-mamuahang="${Mamuahang}"
-                                           data-masanpham="${item.maSanpham || ''}"
+                                           data-masanpham="${maSanpham}"
                                            value="${ghiChuBPMuahangValue}"
                                            placeholder="Nhập ghi chú" 
                                            style="width: 100%;" />
@@ -627,12 +741,15 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                     let ngayCoHangCell = '';
                     if (canEditNgayCoHang) {
                         // BP Mua hàng: hiển thị input để chọn ngày
-                        const ngayCoHangValue = formatDateDisplay(ngayCoHangRaw);
+                        const ngayCoHangValue =
+                            (draft.ngayCoHangDisplay !== undefined)
+                                ? (draft.ngayCoHangDisplay || '')
+                                : formatDateDisplay(ngayCoHangRaw);
                         ngayCoHangCell = `
                             <input type="text"
                                    class="NgayCoHangInput"
                                    data-mamuahang="${Mamuahang}"
-                                   data-masanpham="${item.maSanpham || ''}"
+                                   data-masanpham="${maSanpham}"
                                    value="${ngayCoHangValue}"
                                    placeholder="dd/MM/yyyy"
                                    style="width: 100%;" />`;
@@ -648,7 +765,7 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         <td>${item.tenSanpham || 'Không xác định'}</td>
                         <td>${item.maSanpham || 'Không xác định'}</td>
                         <td>${item.hangSX || 'Không xác định'}</td>
-                        <td>${item.nhaCC || '-'}</td>
+                        <td>${nhaCCCell}</td>
                         <td>${item.sl}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
                         <td>${donGiaCell}</td>
@@ -683,13 +800,9 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                 $('#action-buttons').hide();
             }
 
-            let $rowToHighlight = $();
-            $('.table tbody tr').each(function () {
-                if ($(this).find('td').eq(1).text().trim() === Mamuahang) {
-                    $rowToHighlight = $(this);
-                    return false;
-                }
-            });
+            let $rowToHighlight = $('.table tbody tr').filter(function () {
+                return $(this).data('mamuahang') === Mamuahang;
+            }).first();
             applyPurchaseRowHighlight($rowToHighlight);
         },
         error: function (xhr, status, error) {
@@ -750,6 +863,12 @@ function attachEventHandlers() {
 
         $row.find('.ThanhTien').text(thanhTien.toLocaleString('vi-VN'));
         updateTongTien();
+
+        // Lưu draft đơn giá theo từng vật tư để không mất dữ liệu khi rebuild table
+        const maSanpham = $row.find('td').eq(2).text().trim();
+        if (selectedMamuahang && maSanpham) {
+            setDraft(selectedMamuahang, maSanpham, { donGiaDisplay: $input.val() || '' });
+        }
     });
 
     // Helper: chuyển từ dd/MM/yyyy -> yyyy-MM-dd để gửi server
@@ -774,8 +893,14 @@ function attachEventHandlers() {
             return;
         }
 
+        // Lưu draft (để chỉ lưu DB khi bấm Gửi báo giá)
+        setDraft(maMuahang, maSanpham, { ngayThanhToanDisplay: ngayThanhToanDisplay });
+
         const pathSegments = window.location.pathname.split('/');
         const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        if (area === 'TruongBPMuahang') {
+            return;
+        }
         const url = `/${area}/Yeucau/CapNhatNgayThanhToan`;
 
         $.ajax({
@@ -808,8 +933,14 @@ function attachEventHandlers() {
             return;
         }
 
+        // Lưu draft (để chỉ lưu DB khi bấm Gửi báo giá)
+        setDraft(maMuahang, maSanpham, { ghiChu: ghiChu });
+
         const pathSegments = window.location.pathname.split('/');
         const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        if (area === 'TruongBPMuahang') {
+            return;
+        }
         const url = `/${area}/Yeucau/CapNhatGhiChuPhieumuahang`;
 
         $.ajax({
@@ -831,6 +962,65 @@ function attachEventHandlers() {
         });
     });
 
+    // Cập nhật Nhà cung cấp (NCC) khi BP Mua hàng nhập
+    $('.tablethietbi tbody').on('focus', '.NhaCCInput', function () {
+        const $input = $(this);
+        $input.data('prev', ($input.val() || '').toString());
+    });
+
+    $('.tablethietbi tbody').on('blur', '.NhaCCInput', function () {
+        const $input = $(this);
+        const maMuahang = $input.data('mamuahang');
+        const maSanpham = $input.data('masanpham');
+        const nhaCC = ($input.val() || '').toString().trim();
+        const prev = ($input.data('prev') || '').toString().trim();
+
+        if (!maMuahang || !maSanpham) {
+            return;
+        }
+
+        // Không gọi API nếu không đổi
+        if (nhaCC === prev) {
+            return;
+        }
+
+        // Lưu draft (để chỉ lưu DB khi bấm Gửi báo giá)
+        setDraft(maMuahang, maSanpham, { nhaCC: nhaCC });
+
+        const pathSegments = window.location.pathname.split('/');
+        const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        if (area === 'TruongBPMuahang') {
+            // Trưởng BP mua hàng: chỉ lưu vào draft, chờ bấm "Gửi báo giá" mới lưu DB
+            // Cập nhật prev để không bị loop cảnh báo khi focus/blur lại
+            $input.data('prev', nhaCC);
+            return;
+        }
+        const url = `/${area}/Yeucau/CapNhatNhaCCPhieumuahang`;
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: {
+                MaMuahang: maMuahang,
+                MaSanpham: maSanpham,
+                NhaCC: nhaCC
+            },
+            success: function (res) {
+                if (!res || !res.success) {
+                    alert(res && res.message ? res.message : 'Cập nhật nhà cung cấp thất bại.');
+                    // Restore về giá trị cũ nếu fail
+                    $input.val(prev);
+                } else {
+                    $input.data('prev', nhaCC);
+                }
+            },
+            error: function () {
+                alert('Không thể cập nhật nhà cung cấp.');
+                $input.val(prev);
+            }
+        });
+    });
+
     // Cập nhật ngày có hàng khi BP Mua hàng chọn / nhập ngày (định dạng hiển thị dd/MM/yyyy)
     $('.tablethietbi tbody').on('change', '.NgayCoHangInput', function () {
         const $input = $(this);
@@ -843,8 +1033,14 @@ function attachEventHandlers() {
             return;
         }
 
+        // Lưu draft (để chỉ lưu DB khi bấm Gửi báo giá)
+        setDraft(maMuahang, maSanpham, { ngayCoHangDisplay: ngayCoHangDisplay });
+
         const pathSegments = window.location.pathname.split('/');
         const area = pathSegments.length > 1 ? pathSegments[1] : '';
+        if (area === 'TruongBPMuahang') {
+            return;
+        }
         const url = `/${area}/Yeucau/CapNhatNgayCoHang`;
 
         $.ajax({
@@ -1243,9 +1439,6 @@ function applyGhiChu() {
     // Cho phép ghi chú rỗng
     // Điền ghi chú cho tất cả các hàng có input ghi chú
     let count = 0;
-    const pathSegments = window.location.pathname.split('/');
-    const area = pathSegments.length > 1 ? pathSegments[1] : '';
-    
     $('.tablethietbi tbody tr').each(function() {
         if ($(this).hasClass('tong-tien-row')) {
             return;
@@ -1253,33 +1446,13 @@ function applyGhiChu() {
         
         const $input = $(this).find('.GhiChuInput');
         if ($input.length > 0) {
-            const maMuahang = $input.data('mamuahang');
-            const maSanpham = $input.data('masanpham');
-            
             // Cập nhật giá trị input
             $input.val(ghiChu);
-            
-            // Lưu vào database
-            if (maMuahang && maSanpham) {
-                const url = `/${area}/Yeucau/CapNhatGhiChuPhieumuahang`;
-                $.ajax({
-                    url: url,
-                    method: 'POST',
-                    data: {
-                        MaMuahang: maMuahang,
-                        MaSanpham: maSanpham,
-                        GhiChu: ghiChu
-                    },
-                    success: function (res) {
-                        if (!res || !res.success) {
-                            console.error('Cập nhật ghi chú thất bại:', res && res.message ? res.message : 'Unknown error');
-                        }
-                    },
-                    error: function () {
-                        console.error('Không thể cập nhật ghi chú.');
-                    }
-                });
-            }
+
+            // Dùng blur handler để:
+            // - Lưu draft (TruongBPMuahang)
+            // - Hoặc lưu DB (các area khác, nếu có)
+            $input.trigger('blur');
             
             count++;
         }

@@ -1,0 +1,95 @@
+/* Chế độ giao diện logo: Normal, Tet (Tết), NationalDay (Quốc khánh) */
+
+.logo-section-wrap {
+    min-width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.logo-section-wrap .image {
+    min-width: 60px;
+    display: flex;
+    align-items: center;
+}
+
+.logo-section-wrap .image img {
+    width: 50px;
+    border-radius: 6px;
+}
+
+/* Tết: chỉ hoa đào trang trí quanh logo */
+.logo-theme-tet .image {
+    position: relative;
+    z-index: 1;
+}
+
+.logo-flower {
+    position: absolute;
+    font-size: 18px;
+    line-height: 1;
+    animation: logo-flower-float 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.logo-flower-1 { top: -4px;  left: -6px;  animation-delay: 0s; }
+.logo-flower-2 { top: -4px;  right: -6px; animation-delay: 0.5s; }
+.logo-flower-3 { bottom: -4px; left: -6px;  animation-delay: 1s; }
+.logo-flower-4 { bottom: -4px; right: -6px; animation-delay: 1.5s; }
+
+@keyframes logo-flower-float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-4px) scale(1.08); }
+}
+
+/* Quốc khánh: lá cờ Việt Nam cạnh logo */
+.logo-theme-nationalday .image {
+    position: relative;
+    z-index: 1;
+}
+
+.logo-flag {
+    position: absolute;
+    top: 50%;
+    right: -10px;
+    transform: translateY(-50%);
+    z-index: 2;
+    animation: logo-flag-wave 2s ease-in-out infinite;
+    line-height: 0;
+    display: block;
+}
+
+.logo-flag-vn {
+    width: 24px;
+    height: auto;
+    display: block;
+}
+
+.logo-flag-vn img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+}
+
+@keyframes logo-flag-wave {
+    0%, 100% { transform: translateY(-50%) scale(1); }
+    50%      { transform: translateY(-50%) scale(1.08); }
+}
+
+/* Container pháo hoa (full màn hình, không chặn click) */
+.logo-fireworks-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9998;
+}
+
+.logo-fireworks-container canvas {
+    display: block;
+}

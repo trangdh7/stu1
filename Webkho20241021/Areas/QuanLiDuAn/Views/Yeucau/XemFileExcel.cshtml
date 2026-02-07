@@ -140,6 +140,7 @@
                             <th>SL</th>
                             <th>Nhà CC</th>
                             <th>Ngày cần</th>
+                            <th>Ngày có hàng</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,13 +158,14 @@
                                 <td>@vt.SL</td>
                                 <td>@vt.NhaCC</td>
                                 <td>@(vt.NgayCanHang?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                                <td>@(vt.NgayCoHang?.ToString("dd/MM/yyyy") ?? "-")</td>
                             </tr>
                             stt++;
                         }
                         @if (vtyeucau.Count == 0)
                         {
                             <tr>
-                                <td colspan="8">
+                                <td colspan="9">
                                     Không có vật tư nào trong file này.
                                 </td>
                             </tr>
