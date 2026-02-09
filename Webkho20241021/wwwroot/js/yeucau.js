@@ -4,8 +4,10 @@ $(document).ready(function () {
     // Gọi hàm showVTYeucau với mã yêu cầu của hàng đầu tiên (sau khi filter áp dụng)
     const firstRow = $('.table tbody tr:visible').first();
     if (firstRow.length > 0) {
-        const MaYeucau = firstRow.find('td').eq(2).find('a').text().trim() || firstRow.find('td').eq(2).text().trim();
-        const NguoiYeucau = firstRow.find('td').eq(3).text().trim();
+        const colIdx = getYeucauColumnIndexes();
+        const MaYeucau = firstRow.find('td').eq(colIdx.ma).find('a').text().trim()
+                        || firstRow.find('td').eq(colIdx.ma).text().trim();
+        const NguoiYeucau = firstRow.find('td').eq(colIdx.nguoi).text().trim();
         if (MaYeucau) {
             showVTYeucau(MaYeucau, NguoiYeucau);
         }
@@ -57,6 +59,39 @@ $(document).ready(function () {
 
 const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
 const ROW_HIGHLIGHT_TEXT_COLOR = "#ffffff";
+
+// Xác định vị trí các cột trong bảng yêu cầu dựa trên header
+function getYeucauColumnIndexes() {
+    const $headerCells = $('.Tableyeucau .table thead tr').first().children('th,td');
+    // Giá trị mặc định (cấu trúc cũ: không có cột "Chọn")
+    const indexes = {
+        chon: 0,
+        stt: 0,
+        ten: 1,
+        ma: 2,
+        nguoi: 3,
+        status: 8
+    };
+
+    $headerCells.each(function (i) {
+        const text = $(this).text().trim().toLowerCase();
+        if (text === 'stt') {
+            indexes.stt = i;
+        } else if (text === 'tên yêu cầu') {
+            indexes.ten = i;
+        } else if (text === 'mã yêu cầu') {
+            indexes.ma = i;
+        } else if (text === 'người yêu cầu') {
+            indexes.nguoi = i;
+        } else if (text === 'trạng thái') {
+            indexes.status = i;
+        } else if (text === 'chọn') {
+            indexes.chon = i;
+        }
+    });
+
+    return indexes;
+}
 
 // Sticky header (2 dòng) cho bảng vật tư: đo chiều cao dòng 1 để dòng 2 bám đúng vị trí
 function syncTableThietbiStickyHeader() {
@@ -222,7 +257,8 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
             // Highlight hàng tương ứng trong bảng
             let $rowToHighlight = $();
             $('.table tbody tr').each(function () {
-                if ($(this).find('td').eq(2).text().trim() === MaYeucau) {
+            const colIdx = getYeucauColumnIndexes();
+            if ($(this).find('td').eq(colIdx.ma).text().trim() === MaYeucau) {
                     $rowToHighlight = $(this);
                     return false;
                 }
@@ -374,10 +410,12 @@ function updateStatusFilterOptions() {
         return;
     }
 
+    const colIdx = getYeucauColumnIndexes();
+
     // Thu thập tất cả trạng thái từ các hàng đang hiển thị
     const statusSet = new Set();
     $('.table tbody tr:visible').each(function () {
-        const statusText = $(this).find('td').eq(8).text().trim();
+        const statusText = $(this).find('td').eq(colIdx.status).text().trim();
         if (statusText) {
             statusSet.add(statusText);
         }
@@ -408,10 +446,12 @@ function filterYeucauTable() {
     const statusValue = ($('#statusFilter').val() || '').toLowerCase().trim();
     let visibleCount = 0;
 
+    const colIdx = getYeucauColumnIndexes();
+
     $('.table tbody tr').each(function () {
         const $row = $(this);
         const rowText = $row.text().toLowerCase();
-        const statusText = $row.find('td').eq(8).text().toLowerCase();
+        const statusText = $row.find('td').eq(colIdx.status).text().toLowerCase();
 
         const matchesKeyword = !keyword || rowText.includes(keyword);
         const matchesStatus = !statusValue || statusText.indexOf(statusValue) !== -1;
@@ -458,7 +498,8 @@ function filterYeucauTable() {
     // Cập nhật lại số thứ tự (STT) sau khi sắp xếp
     let stt = 1;
     $tbody.find('tr').each(function() {
-        $(this).find('td').first().text(stt);
+        // Cột STT có thể không phải là cột đầu nếu có thêm cột "Chọn"
+        $(this).find('td').eq(colIdx.stt).text(stt);
         stt++;
     });
 
