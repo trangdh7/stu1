@@ -169,10 +169,17 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                 $downloadLink.attr('href', '/' + area + '/Yeucau/ExportYeucauVatTuExcel?MaYeucau=' + encodeURIComponent(MaYeucau));
             }
 
-            $('.tablethietbi tbody').empty();
+        $('.tablethietbi tbody').empty();
 
-            if (data && data.length > 0) {
-                let STT = 1;
+        if (data && data.length > 0) {
+            // Sắp xếp để các vật tư có cùng mã VT đứng gần nhau
+            data.sort(function (a, b) {
+                const maA = (a.maSanpham || a.MaSanpham || '').toString().trim();
+                const maB = (b.maSanpham || b.MaSanpham || '').toString().trim();
+                return maA.localeCompare(maB);
+            });
+
+            let STT = 1;
                 const hasTonKhoColumn = $('.tablethietbi thead td, .tablethietbi thead th').filter(function() { return $(this).text().trim() === 'Tồn kho'; }).length > 0;
                 const formatNumberOrDash = (value) => (value === null || value === undefined || value === '' ? '-' : value);
                 const formatDate = (val) => (val ? new Date(val).toLocaleDateString('vi-VN') : '-');

@@ -203,15 +203,8 @@
                 </tbody>
             </table>
         </div>
-        <div id="multiYeucauActions" style="display:none; margin-top: 8px; padding: 8px 10px; background-color: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; display:flex; justify-content:flex-end; align-items:center; gap:10px;">
-            <span id="selectedYeucauLabel" style="color:#555; font-size:13px;">
-                Đã chọn <strong id="selectedYeucauCount">0</strong> yêu cầu.
-            </span>
-            <button type="button" id="btnViewSelectedYeucau"
-                    style="padding: 6px 16px; border-radius: 4px; border: none; background-color: #1976d2; color: #fff; cursor: pointer; font-size: 13px; font-weight:500;">
-                Xem chi tiết
-            </button>
-        </div>
+        <!-- Đã bỏ chức năng xem chi tiết nhiều yêu cầu, nên ẩn toàn bộ thanh hành động -->
+        <!-- <div id="multiYeucauActions">...</div> -->
         <div id="noYeucauMessage" class="empty-yeucau-message" style="display:none;">
             Không có phiếu yêu cầu nào phù hợp với bộ lọc.
         </div>
@@ -502,15 +495,32 @@
             }
             
             // Select all checkbox for VT
-            $('#selectAllVT').on('change', function() {
+            $('#selectAllVT').on('change', function () {
                 $('.vt-checkbox').prop('checked', $(this).prop('checked'));
             });
 
             // Individual checkbox change
-            $(document).on('change', '.vt-checkbox', function() {
+            $(document).on('change', '.vt-checkbox', function () {
                 var allChecked = $('.vt-checkbox').length === $('.vt-checkbox:checked').length;
                 $('#selectAllVT').prop('checked', allChecked);
                 updateDuyetTatCaButton();
+            });
+
+            // Click từng dòng vật tư để active (bôi đậm / đổi màu)
+            $(document).on('click', '.tablethietbi tbody tr', function () {
+                $('.tablethietbi tbody tr').removeClass('active-row');
+                $(this).addClass('active-row');
+            });
+
+            // Click từng dòng yêu cầu (bảng trên) để active giống bình thường
+            // - Áp dụng cả khi click vào link Mã yêu cầu (có stopPropagation)
+            $(document).on('click', '.Tableyeucau .table tbody tr, .Tableyeucau .table tbody tr a', function () {
+                if (typeof applyTableRowHighlight !== 'function') return;
+
+                var $row = $(this).closest('tr');
+                if ($row.length) {
+                    applyTableRowHighlight($row);
+                }
             });
 
             updateDuyetTatCaButton();
@@ -519,161 +529,185 @@
             syncTableThietbiStickyHeader();
             $(window).on('resize', function () { syncTableThietbiStickyHeader(); });
 
-            // Xử lý chọn yêu cầu (checkbox ở bảng trên)
-            $(document).on('change', '.yeucau-checkbox', function () {
-                var ma = $(this).data('mayeucau');
-                if (!ma) return;
+        // Xử lý chọn yêu cầu (checkbox ở bảng trên) - chế độ chọn 1 yêu cầu, xem luôn chi tiết
+        $(document).on('change', '.yeucau-checkbox', function () {
+            var $row = $(this).closest('tr');
+            var ma = ($row.data('mayeucau') || $(this).data('mayeucau') || '').toString().trim();
+            var nguoi = ($row.data('nguoiyc') || '').toString().trim();
 
-                if ($(this).is(':checked')) {
-                    selectedYeucauSet.add(ma.toString());
-                    $(this).closest('tr').addClass('multi-selected-yeucau');
+            if (!ma) return;
+
+            if ($(this).is(':checked')) {
+                selectedYeucauSet.add(ma);
+                $row.addClass('multi-selected-yeucau');
+
+                // Nếu chỉ chọn 1 yêu cầu -> xem chi tiết 1 yêu cầu
+                if (selectedYeucauSet.size === 1) {
+                    if (typeof applyTableRowHighlight === 'function') {
+                        applyTableRowHighlight($row);
+                    }
+                    if (typeof showVTYeucau === 'function') {
+                        showVTYeucau(ma, nguoi, ma);
+                    }
                 } else {
-                    selectedYeucauSet.delete(ma.toString());
-                    $(this).closest('tr').removeClass('multi-selected-yeucau');
+                    // Chọn từ 2 yêu cầu trở lên -> xem gộp
+                    loadMultiYeucauFromSelection();
                 }
+            } else {
+                selectedYeucauSet.delete(ma);
+                $row.removeClass('multi-selected-yeucau');
 
-                updateMultiYeucauActions();
+                // Nếu sau khi bỏ chọn chỉ còn 1 yêu cầu được chọn -> quay lại xem 1 yêu cầu
+                if (selectedYeucauSet.size === 1) {
+                    var lastMa = Array.from(selectedYeucauSet)[0];
+                    var $lastRow = $('.Tableyeucau .table tbody tr').filter(function () {
+                        return (($(this).data('mayeucau') || '').toString().trim() === lastMa);
+                    }).first();
+                    var lastNguoi = ($lastRow.data('nguoiyc') || '').toString().trim();
 
-                // Khi bỏ chọn hết, đảm bảo vẫn có hàng active được highlight
-                if (selectedYeucauSet.size === 0) {
-                    clearHighlightSelectedYeucauRows();
-                    ensureActiveYeucauHighlight();
+                    if ($lastRow.length && typeof applyTableRowHighlight === 'function') {
+                        applyTableRowHighlight($lastRow);
+                    }
+                    if (typeof showVTYeucau === 'function') {
+                        showVTYeucau(lastMa, lastNguoi, lastMa);
+                    }
+                }
+            }
+        });
+
+        // Hàm dùng chung: gộp nhiều yêu cầu đang được chọn và hiển thị danh sách vật tư
+        function loadMultiYeucauFromSelection() {
+            var $checked = $('.yeucau-checkbox:checked');
+            if ($checked.length < 2) {
+                return;
+            }
+
+            // Lấy danh sách mã yêu cầu + người yêu cầu đã chọn (duy nhất)
+            var maList = [];
+            $checked.each(function () {
+                var $row = $(this).closest('tr');
+                var ma = ($row.data('mayeucau') || $(this).data('mayeucau') || '').toString().trim();
+
+                if (ma && maList.indexOf(ma) === -1) {
+                    maList.push(ma);
                 }
             });
 
-            // Nút "Xem chi tiết các yêu cầu đã chọn" - gộp danh sách vật tư của nhiều yêu cầu
-            $('#btnViewSelectedYeucau').on('click', function () {
-                var $checked = $('.yeucau-checkbox:checked');
-                if ($checked.length < 2) {
-                    alert('Vui lòng chọn ít nhất 2 yêu cầu.');
-                    return;
-                }
+            if (maList.length < 2) {
+                return;
+            }
 
-                // Lấy danh sách mã yêu cầu + người yêu cầu đã chọn (duy nhất)
-                var maList = [];
-                var descList = [];
-                $checked.each(function () {
-                    var $row = $(this).closest('tr');
-                    var ma = ($row.data('mayeucau') || $(this).data('mayeucau') || '').toString().trim();
-                    var nguoi = ($row.data('nguoiyc') || '').toString().trim();
+            // Hiển thị khu vực bảng vật tư nếu đang ẩn
+            $('.bodyyeucau-thietbi').show();
+            $('.tablethietbi').show();
+            syncTableThietbiStickyHeader();
 
-                    if (ma && maList.indexOf(ma) === -1) {
-                        maList.push(ma);
-                        // Mô tả từng yêu cầu: "MaYeucau của NguoiYeucau"
-                        var desc = ma + (nguoi ? ' của ' + nguoi : '');
-                        descList.push(desc);
+            // Cập nhật thanh thông tin yêu cầu cho chế độ xem gộp
+            // Chỉ hiển thị danh sách mã yêu cầu: "yeucau1, yeucau2"
+            $('#yeucauInfoBar').show();
+            var infoText = maList.join(', ');
+            $('#yeucauInfoText').text(infoText);
+
+            // Gọi API gộp nhiều yêu cầu
+            const pathSegments = window.location.pathname.split('/');
+            const area = pathSegments.length > 1 ? pathSegments[1] : '';
+            const url = '/' + area + '/Yeucau/GetVTYeucauMulti';
+
+            // Cập nhật link tải Excel cho chế độ gộp nhiều yêu cầu
+            var $downloadLink = $('#btnDownloadYeucauVatTu');
+            if ($downloadLink.length && maList.length) {
+                $downloadLink.attr('href', '/' + area + '/Yeucau/ExportYeucauVatTuExcelMulti?maYeucauList=' + encodeURIComponent(maList.join(',')));
+            }
+
+            $.ajax({
+                url: url,
+                method: 'GET',
+                data: { maYeucauList: maList.join(',') },
+                success: function (data) {
+                    $('#vtYeucauBody').empty();
+                    $('#selectAllVT').prop('checked', false);
+                    syncTableThietbiStickyHeader();
+
+                    if (!data || data.length === 0) {
+                        $('#vtYeucauBody').append(
+                            '<tr><td colspan="16" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>'
+                        );
+                        return;
                     }
-                });
 
-                if (maList.length < 2) {
-                    alert('Vui lòng chọn ít nhất 2 yêu cầu hợp lệ.');
-                    return;
-                }
+                    // Sắp xếp để các vật tư có cùng mã VT đứng gần nhau
+                    data.sort(function (a, b) {
+                        var maA = (a.maSanpham || a.MaSanpham || '').toString().trim();
+                        var maB = (b.maSanpham || b.MaSanpham || '').toString().trim();
+                        return maA.localeCompare(maB);
+                    });
 
-                // Hiển thị khu vực bảng vật tư nếu đang ẩn
-                $('.bodyyeucau-thietbi').show();
-                $('.tablethietbi').show();
-                syncTableThietbiStickyHeader();
+                    let STT = 1;
+                    data.forEach(function (item) {
+                        var maVatTu = item.maSanpham || item.MaSanpham || '';
+                        var hangSX = item.hangSX || item.HangSX || '';
+                        var nhaCC = item.nhaCC || item.NhaCC || '';
+                        var slCuVal = item.slCu ?? item.SLCu;
+                        var slMoiVal = item.slMoi ?? item.SLMoi ?? item.sl ?? item.SL;
+                        var tonKho = item.tonKho ?? item.TonKho ?? 0;
+                        var slThieu = item.slThieu ?? item.SlThieu ?? Math.max(0, (slMoiVal ?? 0) - tonKho);
+                        var slDaXuat = item.slDaXuat ?? item.SlDaXuat;
+                        var donViVal = item.donVi || item.DonVi || '-';
+                        var ngayCanHangVal = item.ngayCanHang || item.NgayCanHang;
+                        var ngayCanHangDisplay = formatDateOnly(ngayCanHangVal);
+                        var ngayCoHangVal = item.ngayCoHang || item.NgayCoHang;
+                        var ngayCoHangDisplay = formatDateOnly(ngayCoHangVal);
+                        var trangThai = item.trangThai || item.TrangThai || '';
+                        var ghiChu = item.ghiChu || item.GhiChu || '-';
+                        var maYc = item.vTMaYeucau || item.VTMaYeucau || '';
 
-                // Cập nhật thanh thông tin yêu cầu cho chế độ xem gộp
-                $('#yeucauInfoBar').show();
-                // Ví dụ: "Đang xem 2 yêu cầu: 251204VT... của Nguyễn Mậu Phương; 260128-01 của ..."
-                var infoText = 'Đang xem ' + maList.length + ' yêu cầu: ' + descList.join('; ');
-                $('#yeucauInfoText').text(infoText);
-
-                // Gọi API gộp nhiều yêu cầu
-                const pathSegments = window.location.pathname.split('/');
-                const area = pathSegments.length > 1 ? pathSegments[1] : '';
-                const url = '/' + area + '/Yeucau/GetVTYeucauMulti';
-
-                // Cập nhật link tải Excel cho chế độ gộp nhiều yêu cầu
-                var $downloadLink = $('#btnDownloadYeucauVatTu');
-                if ($downloadLink.length && maList.length) {
-                    $downloadLink.attr('href', '/' + area + '/Yeucau/ExportYeucauVatTuExcelMulti?maYeucauList=' + encodeURIComponent(maList.join(',')));
-                }
-
-                $.ajax({
-                    url: url,
-                    method: 'GET',
-                    data: { maYeucauList: maList.join(',') },
-                    success: function (data) {
-                        $('#vtYeucauBody').empty();
-                        $('#selectAllVT').prop('checked', false);
-                        syncTableThietbiStickyHeader();
-
-                        if (!data || data.length === 0) {
-                            $('#vtYeucauBody').append(
-                                '<tr><td colspan="16" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>'
-                            );
-                            return;
+                        var trangThaiColor = '';
+                        if (trangThai === 'Đang mua hàng') {
+                            trangThaiColor = 'color: #2196f3; font-weight: bold;';
+                        } else if (trangThai === 'Chờ xuất kho' || trangThai === 'Đã xuất kho' || trangThai === 'Đã duyệt') {
+                            trangThaiColor = 'color: #4caf50; font-weight: bold;';
+                        } else if (trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) {
+                            trangThaiColor = 'color: #8b0000; font-weight: bold;';
                         }
 
-                        let STT = 1;
-                        data.forEach(function (item) {
-                            var maVatTu = item.maSanpham || item.MaSanpham || '';
-                            var hangSX = item.hangSX || item.HangSX || '';
-                            var nhaCC = item.nhaCC || item.NhaCC || '';
-                            var slCuVal = item.slCu ?? item.SLCu;
-                            var slMoiVal = item.slMoi ?? item.SLMoi ?? item.sl ?? item.SL;
-                            var tonKho = item.tonKho ?? item.TonKho ?? 0;
-                            var slThieu = item.slThieu ?? item.SlThieu ?? Math.max(0, (slMoiVal ?? 0) - tonKho);
-                            var slDaXuat = item.slDaXuat ?? item.SlDaXuat;
-                            var donViVal = item.donVi || item.DonVi || '-';
-                            var ngayCanHangVal = item.ngayCanHang || item.NgayCanHang;
-                            var ngayCanHangDisplay = formatDateOnly(ngayCanHangVal);
-                            var ngayCoHangVal = item.ngayCoHang || item.NgayCoHang;
-                            var ngayCoHangDisplay = formatDateOnly(ngayCoHangVal);
-                            var trangThai = item.trangThai || item.TrangThai || '';
-                            var ghiChu = item.ghiChu || item.GhiChu || '-';
-                            var maYc = item.vTMaYeucau || item.VTMaYeucau || '';
+                        var row = '<tr data-mavattu="' + maVatTu + '" data-mayeucau="' + maYc + '">'
+                            + '<td></td>' // không cho duyệt hàng loạt ở chế độ gộp
+                            + '<td>' + (STT++) + '</td>'
+                            + '<td>' + (item.tenSanpham || item.TenSanpham || '') + '</td>'
+                            + '<td>' + maVatTu + '</td>'
+                            + '<td>' + (hangSX || '-') + '</td>'
+                            + '<td>' + (nhaCC || '-') + '</td>'
+                            + '<td class="col-sl col-sl-1" style="text-align:center;">' + (slCuVal ?? '-') + '</td>'
+                            + '<td class="col-sl col-sl-2" style="text-align:center;">' + (slMoiVal ?? '-') + '</td>'
+                            + '<td class="col-sl col-sl-3" style="text-align:center;">' + (slThieu ?? '-') + '</td>'
+                            + '<td class="col-sl col-sl-4" style="text-align:center;">' + (slDaXuat != null ? slDaXuat : '-') + '</td>'
+                            + '<td class="col-sl col-sl-5" style="text-align:center;">' + (tonKho ?? '-') + '</td>'
+                            + '<td hidden style="text-align:center;">' + (slMoiVal ?? '-') + '</td>'
+                            + '<td>' + donViVal + '</td>'
+                            + '<td>' + ngayCanHangDisplay + '</td>'
+                            + '<td>' + (ngayCoHangDisplay || '-') + '</td>'
+                            + '<td class="trangthai-vattu trangthai-column" style="display: table-cell;">'
+                            + '<span style="' + trangThaiColor + '">' + trangThai + '</span>'
+                            + '</td>'
+                            + '<td class="ghichu-column"><span>' + ghiChu + '</span></td>'
+                            + '<td>' + (item.ngayDuyet || item.NgayDuyet ? formatDateTime(item.ngayDuyet || item.NgayDuyet) : '<span style="color:#999;">-</span>') + '</td>'
+                            + '</tr>';
 
-                            var trangThaiColor = '';
-                            if (trangThai === 'Đang mua hàng') {
-                                trangThaiColor = 'color: #2196f3; font-weight: bold;';
-                            } else if (trangThai === 'Chờ xuất kho' || trangThai === 'Đã xuất kho' || trangThai === 'Đã duyệt') {
-                                trangThaiColor = 'color: #4caf50; font-weight: bold;';
-                            } else if (trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) {
-                                trangThaiColor = 'color: #8b0000; font-weight: bold;';
-                            }
+                        $('#vtYeucauBody').append(row);
+                    });
 
-                            var row = '<tr data-mavattu="' + maVatTu + '" data-mayeucau="' + maYc + '">'
-                                + '<td></td>' // không cho duyệt hàng loạt ở chế độ gộp
-                                + '<td>' + (STT++) + '</td>'
-                                + '<td>' + (item.tenSanpham || item.TenSanpham || '') + '</td>'
-                                + '<td>' + maVatTu + '</td>'
-                                + '<td>' + (hangSX || '-') + '</td>'
-                                + '<td>' + (nhaCC || '-') + '</td>'
-                                + '<td class="col-sl col-sl-1" style="text-align:center;">' + (slCuVal ?? '-') + '</td>'
-                                + '<td class="col-sl col-sl-2" style="text-align:center;">' + (slMoiVal ?? '-') + '</td>'
-                                + '<td class="col-sl col-sl-3" style="text-align:center;">' + (slThieu ?? '-') + '</td>'
-                                + '<td class="col-sl col-sl-4" style="text-align:center;">' + (slDaXuat != null ? slDaXuat : '-') + '</td>'
-                                + '<td class="col-sl col-sl-5" style="text-align:center;">' + (tonKho ?? '-') + '</td>'
-                                + '<td hidden style="text-align:center;">' + (slMoiVal ?? '-') + '</td>'
-                                + '<td>' + donViVal + '</td>'
-                                + '<td>' + ngayCanHangDisplay + '</td>'
-                                + '<td>' + (ngayCoHangDisplay || '-') + '</td>'
-                                + '<td class="trangthai-vattu trangthai-column" style="display: table-cell;">'
-                                + '<span style="' + trangThaiColor + '">' + trangThai + '</span>'
-                                + '</td>'
-                                + '<td class="ghichu-column"><span>' + ghiChu + '</span></td>'
-                                + '<td>' + (item.ngayDuyet || item.NgayDuyet ? formatDateTime(item.ngayDuyet || item.NgayDuyet) : '<span style="color:#999;">-</span>') + '</td>'
-                                + '</tr>';
+                    // Hiện cột trạng thái vì lúc này chắc chắn có nhiều trạng thái khác nhau
+                    $('.trangthai-column-header, .trangthai-column').css('display', 'table-cell');
 
-                            $('#vtYeucauBody').append(row);
-                        });
-
-                        // Hiện cột trạng thái vì lúc này chắc chắn có nhiều trạng thái khác nhau
-                        $('.trangthai-column-header, .trangthai-column').css('display', 'table-cell');
-
-                        // Highlight các dòng yêu cầu đã chọn ở bảng trên
-                        highlightSelectedYeucauRows();
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Lỗi lấy vật tư gộp:', error, xhr.responseText);
-                        alert('Không thể lấy dữ liệu vật tư gộp. Lỗi: ' + error);
-                    }
-                });
+                    // Highlight các dòng yêu cầu đã chọn ở bảng trên
+                    highlightSelectedYeucauRows();
+                },
+                error: function (xhr, status, error) {
+                    console.error('Lỗi lấy vật tư gộp:', error, xhr.responseText);
+                    alert('Không thể lấy dữ liệu vật tư gộp. Lỗi: ' + error);
+                }
             });
+        }
 
             // Đảm bảo khi load xong trang luôn có hàng active được highlight
             // Gọi ngay và gọi lại sau 1.5s phòng trường hợp script khác ghi đè.
@@ -775,11 +809,18 @@
                     if (data && data.length > 0) {
                         let STT = 1;
 
+                        // Sắp xếp: ưu tiên "Chờ giám đốc duyệt" lên trước, sau đó nhóm theo mã VT
                         data.sort(function (a, b) {
                             var aAwait = isAwaitingDirectorStatus(a?.trangThai);
                             var bAwait = isAwaitingDirectorStatus(b?.trangThai);
-                            if (aAwait === bAwait) return 0;
-                            return aAwait ? -1 : 1;
+
+                            if (aAwait !== bAwait) {
+                                return aAwait ? -1 : 1;
+                            }
+
+                            var maA = (a.maSanpham || a.MaSanpham || '').toString().trim();
+                            var maB = (b.maSanpham || b.MaSanpham || '').toString().trim();
+                            return maA.localeCompare(maB);
                         });
                         
                         // Kiểm tra xem có thể duyệt không
@@ -1417,6 +1458,14 @@
         .multi-selected-yeucau {
             outline: 2px solid #1976d2;
             outline-offset: -2px;
+        }
+        /* Khi chọn nhiều yêu cầu, tô nền xanh giống active cho tất cả dòng được chọn */
+        .multi-selected-yeucau td {
+            background-color: #2d9f3c !important;
+            color: #ffffff !important;
+        }
+        .multi-selected-yeucau a {
+            color: #ffffff !important;
         }
         /* Checkbox chọn yêu cầu (bảng trên cùng) */
         .yeucau-checkbox {
