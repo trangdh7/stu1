@@ -1085,6 +1085,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     v.TT,
                     v.TenSanpham,
                     v.MaSanpham,
+                    MaYeucau = maYc,
                     v.HangSX,
                     v.NhaCC,
                     v.SLCu,
@@ -1104,7 +1105,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("Danh sách vật tư");
-                worksheet.Cells[1, 1, 1, 16].Merge = true;
+                worksheet.Cells[1, 1, 1, 17].Merge = true;
                 worksheet.Cells[1, 1].Value = "DANH SÁCH VẬT TƯ - GỘP NHIỀU YÊU CẦU";
                 worksheet.Cells[1, 1].Style.Font.Bold = true;
                 worksheet.Cells[1, 1].Style.Font.Size = 14;
@@ -1118,34 +1119,36 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 worksheet.Cells[headerRow1, 1].Value = "TT";
                 worksheet.Cells[headerRow1, 2].Value = "Tên thiết bị / hàng hóa";
                 worksheet.Cells[headerRow1, 3].Value = "Mã VT";
-                worksheet.Cells[headerRow1, 4].Value = "Hãng SX";
-                worksheet.Cells[headerRow1, 5].Value = "NCC";
-                worksheet.Cells[headerRow1, 6, headerRow1, 10].Merge = true;
-                worksheet.Cells[headerRow1, 6].Value = "SL";
-                worksheet.Cells[headerRow1, 11].Value = "ĐV";
-                worksheet.Cells[headerRow1, 12].Value = "Ngày cần";
-                worksheet.Cells[headerRow1, 13].Value = "Ngày có hàng";
-                worksheet.Cells[headerRow1, 14].Value = "Trạng thái";
-                worksheet.Cells[headerRow1, 15].Value = "Ghi chú";
-                worksheet.Cells[headerRow1, 16].Value = "Ngày duyệt";
+                worksheet.Cells[headerRow1, 4].Value = "Mã yêu cầu";
+                worksheet.Cells[headerRow1, 5].Value = "Hãng SX";
+                worksheet.Cells[headerRow1, 6].Value = "NCC";
+                worksheet.Cells[headerRow1, 7, headerRow1, 11].Merge = true;
+                worksheet.Cells[headerRow1, 7].Value = "SL";
+                worksheet.Cells[headerRow1, 12].Value = "ĐV";
+                worksheet.Cells[headerRow1, 13].Value = "Ngày cần";
+                worksheet.Cells[headerRow1, 14].Value = "Ngày có hàng";
+                worksheet.Cells[headerRow1, 15].Value = "Trạng thái";
+                worksheet.Cells[headerRow1, 16].Value = "Ghi chú";
+                worksheet.Cells[headerRow1, 17].Value = "Ngày duyệt";
 
-                worksheet.Cells[headerRow2, 6].Value = "Cũ";
-                worksheet.Cells[headerRow2, 7].Value = "Mới";
-                worksheet.Cells[headerRow2, 8].Value = "Thiếu";
-                worksheet.Cells[headerRow2, 9].Value = "Đã xuất";
-                worksheet.Cells[headerRow2, 10].Value = "Tồn kho";
+                worksheet.Cells[headerRow2, 7].Value = "Cũ";
+                worksheet.Cells[headerRow2, 8].Value = "Mới";
+                worksheet.Cells[headerRow2, 9].Value = "Thiếu";
+                worksheet.Cells[headerRow2, 10].Value = "Đã xuất";
+                worksheet.Cells[headerRow2, 11].Value = "Tồn kho";
 
                 worksheet.Cells[headerRow1, 1, headerRow2, 1].Merge = true;
                 worksheet.Cells[headerRow1, 2, headerRow2, 2].Merge = true;
                 worksheet.Cells[headerRow1, 3, headerRow2, 3].Merge = true;
                 worksheet.Cells[headerRow1, 4, headerRow2, 4].Merge = true;
                 worksheet.Cells[headerRow1, 5, headerRow2, 5].Merge = true;
-                worksheet.Cells[headerRow1, 11, headerRow2, 11].Merge = true;
+                worksheet.Cells[headerRow1, 6, headerRow2, 6].Merge = true;
                 worksheet.Cells[headerRow1, 12, headerRow2, 12].Merge = true;
                 worksheet.Cells[headerRow1, 13, headerRow2, 13].Merge = true;
                 worksheet.Cells[headerRow1, 14, headerRow2, 14].Merge = true;
                 worksheet.Cells[headerRow1, 15, headerRow2, 15].Merge = true;
                 worksheet.Cells[headerRow1, 16, headerRow2, 16].Merge = true;
+                worksheet.Cells[headerRow1, 17, headerRow2, 17].Merge = true;
 
                 for (int r = headerRow1; r <= headerRow2; r++)
                 {
@@ -1166,20 +1169,21 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     worksheet.Cells[row, 1].Value = r.TT != null ? r.TT : stt++;
                     worksheet.Cells[row, 2].Value = r.TenSanpham ?? "";
                     worksheet.Cells[row, 3].Value = r.MaSanpham ?? "";
-                    worksheet.Cells[row, 4].Value = r.HangSX ?? "";
-                    worksheet.Cells[row, 5].Value = r.NhaCC ?? "";
-                    worksheet.Cells[row, 6].Value = r.SLCu ?? 0;
-                    worksheet.Cells[row, 7].Value = r.SLMoi ?? 0;
-                    worksheet.Cells[row, 8].Value = r.SlThieu ?? 0;
-                    worksheet.Cells[row, 9].Value = r.SlDaXuat != null ? r.SlDaXuat : "-";
-                    worksheet.Cells[row, 10].Value = r.TonKho ?? 0;
-                    worksheet.Cells[row, 11].Value = r.DonVi ?? "";
-                    worksheet.Cells[row, 12].Value = r.NgayCanHang != null ? ((DateTime)r.NgayCanHang).ToString("dd/MM/yyyy") : "";
-                    worksheet.Cells[row, 13].Value = r.NgayCoHang != null ? ((DateTime)r.NgayCoHang).ToString("dd/MM/yyyy") : "";
-                    worksheet.Cells[row, 14].Value = r.TrangThai ?? "";
-                    worksheet.Cells[row, 15].Value = r.GhiChu ?? "";
-                    worksheet.Cells[row, 16].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
-                    using (var range = worksheet.Cells[row, 1, row, 16])
+                    worksheet.Cells[row, 4].Value = r.MaYeucau ?? "";
+                    worksheet.Cells[row, 5].Value = r.HangSX ?? "";
+                    worksheet.Cells[row, 6].Value = r.NhaCC ?? "";
+                    worksheet.Cells[row, 7].Value = r.SLCu ?? 0;
+                    worksheet.Cells[row, 8].Value = r.SLMoi ?? 0;
+                    worksheet.Cells[row, 9].Value = r.SlThieu ?? 0;
+                    worksheet.Cells[row, 10].Value = r.SlDaXuat != null ? r.SlDaXuat : "-";
+                    worksheet.Cells[row, 11].Value = r.TonKho ?? 0;
+                    worksheet.Cells[row, 12].Value = r.DonVi ?? "";
+                    worksheet.Cells[row, 13].Value = r.NgayCanHang != null ? ((DateTime)r.NgayCanHang).ToString("dd/MM/yyyy") : "";
+                    worksheet.Cells[row, 14].Value = r.NgayCoHang != null ? ((DateTime)r.NgayCoHang).ToString("dd/MM/yyyy") : "";
+                    worksheet.Cells[row, 15].Value = r.TrangThai ?? "";
+                    worksheet.Cells[row, 16].Value = r.GhiChu ?? "";
+                    worksheet.Cells[row, 17].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
+                    using (var range = worksheet.Cells[row, 1, row, 17])
                     {
                         range.Style.Border.Bottom.Style = range.Style.Border.Top.Style = range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                     }

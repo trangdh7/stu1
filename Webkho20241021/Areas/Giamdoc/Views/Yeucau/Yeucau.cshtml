@@ -242,6 +242,7 @@
                         <th rowspan="2" class="col-pre-sl-2">TT</th>
                         <th rowspan="2" class="col-pre-sl-3">Tên thiết bị / hàng hóa</th>
                         <th rowspan="2" class="col-pre-sl-4">Mã VT</th>
+                        <th rowspan="2" class="col-mayeucau" style="display:none;">Mã yêu cầu</th>
                         <th rowspan="2" class="col-pre-sl-5">Hãng SX</th>
                         <th rowspan="2" class="col-pre-sl-6">NCC</th>
                         <th colspan="5" class="col-sl-header" style="text-align: center;">SL</th>
@@ -601,6 +602,10 @@
             $('.bodyyeucau-thietbi').show();
             $('.tablethietbi').show();
             syncTableThietbiStickyHeader();
+            // Ẩn cột "Mã yêu cầu" khi chỉ xem 1 yêu cầu
+            $('.col-mayeucau').css('display', 'none');
+            // Hiện cột "Mã yêu cầu" khi gộp nhiều yêu cầu
+            $('.col-mayeucau').css('display', 'table-cell');
 
             // Cập nhật thanh thông tin yêu cầu cho chế độ xem gộp
             // Chỉ hiển thị danh sách mã yêu cầu: "yeucau1, yeucau2"
@@ -630,7 +635,7 @@
 
                     if (!data || data.length === 0) {
                         $('#vtYeucauBody').append(
-                            '<tr><td colspan="16" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>'
+                            '<tr><td colspan="17" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>'
                         );
                         return;
                     }
@@ -675,6 +680,7 @@
                             + '<td>' + (STT++) + '</td>'
                             + '<td>' + (item.tenSanpham || item.TenSanpham || '') + '</td>'
                             + '<td>' + maVatTu + '</td>'
+                            + '<td>' + maYc + '</td>'
                             + '<td>' + (hangSX || '-') + '</td>'
                             + '<td>' + (nhaCC || '-') + '</td>'
                             + '<td class="col-sl col-sl-1" style="text-align:center;">' + (slCuVal ?? '-') + '</td>'
@@ -710,9 +716,8 @@
         }
 
             // Đảm bảo khi load xong trang luôn có hàng active được highlight
-            // Gọi ngay và gọi lại sau 1.5s phòng trường hợp script khác ghi đè.
+            // Gọi một lần khi trang load, sau đó giữ nguyên theo thao tác người dùng
             ensureActiveYeucauHighlight();
-            setTimeout(ensureActiveYeucauHighlight, 1500);
         });
 
         function updateMultiYeucauActions() {
@@ -773,6 +778,12 @@
         }
 
         function showVTYeucau(MaYeucau, NguoiYeucau, MaYeucauFull) {
+            // Nếu đang ở chế độ xem gộp (đang chọn từ 2 yêu cầu trở lên)
+            // thì không load lại chi tiết 1 yêu cầu để tránh mất danh sách mã yêu cầu đang xem
+            if (selectedYeucauSet && selectedYeucauSet.size >= 2) {
+                return;
+            }
+
             currentMaYeucau = MaYeucau;
             currentNguoiYeucau = NguoiYeucau || '';
             
@@ -970,7 +981,7 @@
                         updateActionButtons();
                     } else {
                         $('#vtYeucauBody').append(
-                            `<tr><td colspan="16" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                            `<tr><td colspan="17" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                         );
                         // Cập nhật nút hành động khi không có dữ liệu
                         updateActionButtons();
