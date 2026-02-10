@@ -19,7 +19,7 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             _context = context;
         }
 
-        public ActionResult Tongkho(int page = 1, int pageSize = 20, string q = null)
+        public ActionResult Tongkho(int page = 1, int pageSize = 20, string? q = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 20;
@@ -200,7 +200,7 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             return RedirectToAction("Tongkho", "Home", new { area = "NhanvienKetoan" });
         }
 
-        public IActionResult VatTuMoi(int page = 1, int pageSize = 20, string q = null)
+        public IActionResult VatTuMoi(int page = 1, int pageSize = 20, string? q = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 20;
@@ -241,7 +241,7 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
             return View("Tongkho", capPhatNvMoi);
         }
 
-        public IActionResult KhoDuAn(int page = 1, int pageSize = 20, string q = null, string duAn = null)
+        public IActionResult KhoDuAn(int page = 1, int pageSize = 20, string? q = null, string? duAn = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 20;
@@ -344,7 +344,7 @@ namespace Webkho_20241021.Areas.NhanvienKetoan.Controllers
         }
 
         // Export Excel tổng kho
-        public IActionResult ExportTongkho(string q = null)
+        public IActionResult ExportTongkho(string? q = null)
         {
             var query = _context.khotongs.AsQueryable();
             

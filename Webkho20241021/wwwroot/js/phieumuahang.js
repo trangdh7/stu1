@@ -805,8 +805,8 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
             
             if (data && data.length > 0) {
                 // Kiểm tra xem có thể nhập đơn giá không
-                // Chỉ Trưởng BP mua hàng được nhập và gửi báo giá
-                const isPurchaseArea = (area === 'TruongBPMuahang');
+                // Chỉ bộ phận mua hàng (Trưởng BP + Nhân viên mua hàng) được nhập dữ liệu chi tiết
+                const isPurchaseArea = (area === 'TruongBPMuahang' || area === 'NhanvienMuahang');
                 const canInputPriceForPhieu = isPurchaseArea && 
                     (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
                 const isGiamdoc = area === 'Giamdoc';
@@ -1048,8 +1048,10 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         ngayCoHangCell = ngayCoHangDisplay || '-';
                     }
 
-                    // Nút chia lô: chỉ hiện khi chưa gửi báo giá và SL > 0; khi gửi rồi thì bỏ dấu + và ô input (coi như xong)
-                    const splitBtnHtml = !isDaGuiBaoGia && (parseFloat(item.sl) || 0) > 0
+                    // Nút chia lô: CHỈ cho bộ phận mua hàng
+                    // (area = 'TruongBPMuahang' hoặc 'NhanvienMuahang'),
+                    // và chỉ hiện khi chưa gửi báo giá và SL > 0; khi gửi rồi thì bỏ dấu + và ô input (coi như xong)
+                    const splitBtnHtml = isPurchaseArea && !isDaGuiBaoGia && (parseFloat(item.sl) || 0) > 0
                         ? ` <button type="button"
                                    class="btn-split-add btn-split-add-inline"
                                    title="Chia lô theo ngày có hàng"

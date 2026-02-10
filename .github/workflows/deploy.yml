@@ -15,7 +15,7 @@ jobs:
 
       - run: dotnet restore
       - run: dotnet build --configuration Release
-      - run: dotnet publish -c Release -o ./publish
+      - run: dotnet publish ./Webkho20241021/Webkho20241021.csproj -c Release -o ./publish
 
       - name: Stop IIS AppPool
         uses: appleboy/ssh-action@v0.1.7

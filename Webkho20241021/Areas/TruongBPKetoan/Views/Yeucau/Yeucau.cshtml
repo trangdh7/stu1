@@ -675,6 +675,10 @@
                                              (selectedRole && selectedRole.includes('Trưởng BP'));
                         
                         items.forEach(function (item) {
+                            // TT hiển thị: ưu tiên TT trong Excel, nếu trống thì dùng STT tăng dần
+                            var ttExcel = (item.tt ?? item.TT ?? '').toString().trim();
+                            var displayTT = ttExcel || (STT++).toString();
+
                             var maVatTu = item.maSanpham || '';
                             var trangThai = normalizeTrangThai(item.trangThai || '');
                             

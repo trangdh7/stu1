@@ -21,7 +21,7 @@ namespace Webkho_20241021.Areas.Admin.Controllers
         }
 
         // Danh sách dự án
-        public IActionResult DanhSachDuan(int page = 1, int pageSize = 20, string q = null)
+        public IActionResult DanhSachDuan(int page = 1, int pageSize = 20, string? q = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 20;
