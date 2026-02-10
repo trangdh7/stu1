@@ -19,6 +19,12 @@ $(document).ready(function () {
         }
     });
 
+    // Excel-like column filters (list + detail)
+    if (window.ExcelTableFilter) {
+        window.ExcelTableFilter.init('.table', { excludeHeaderTexts: ['Thao tác'] });
+        window.ExcelTableFilter.init('.tablethietbi', { excludeHeaderTexts: ['Thao tác'] });
+    }
+
     // Khi submit xuất kho: đính kèm SL thực xuất (dạng JSON) vào form và xử lý AJAX
     $(document).on('submit', 'form[action*="/Yeucau/Xuliphieuxuatkho"]', function (e) {
         const pathSegments = window.location.pathname.split('/');
@@ -412,6 +418,11 @@ function loadVTData(Maxuatkho, url, area) {
                 $('.tablethietbi tbody').append(
                     `<tr><td colspan="${colCount}" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                 );
+            }
+
+            // Re-sync excel filters after AJAX rebuild
+            if (window.ExcelTableFilter) {
+                window.ExcelTableFilter.sync(document.querySelector('.tablethietbi'));
             }
 
             let $rowToHighlight = $();

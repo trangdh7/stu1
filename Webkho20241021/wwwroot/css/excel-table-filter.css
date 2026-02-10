@@ -1,0 +1,129 @@
+.excel-filter-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+}
+
+.excel-filter-btn:hover {
+    opacity: 1;
+}
+
+.excel-filter-btn.is-active {
+    background: rgba(25, 118, 210, 0.12);
+}
+
+.excel-filter-icon {
+    font-size: 14px;
+    line-height: 1;
+    color: #fff;
+}
+
+.excel-filter-popup {
+    position: absolute;
+    z-index: 20000;
+    width: 280px;
+    background: rgba(255,255,255,0.92);
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    border-radius: 8px;
+}
+
+.excel-filter-popup-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+}
+
+.excel-filter-popup-top input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid rgba(0,0,0,0.18);
+    border-radius: 6px;
+    outline: none;
+}
+
+.excel-filter-popup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.excel-filter-action {
+    padding: 6px 8px;
+    border: 1px solid rgba(0,0,0,0.14);
+    background: #fafafa;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.excel-filter-values {
+    max-height: 240px;
+    overflow: auto;
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 6px;
+    padding: 6px;
+}
+
+.excel-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.excel-filter-item:hover {
+    background: #f5f7fb;
+}
+
+.excel-filter-item input {
+    cursor: pointer;
+}
+
+.excel-filter-item-text {
+    font-size: 13px;
+    color: #222;
+    word-break: break-word;
+}
+
+.excel-filter-popup-bottom {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.excel-filter-apply,
+.excel-filter-cancel {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(0,0,0,0.14);
+    cursor: pointer;
+}
+
+.excel-filter-apply {
+    background: #1976d2;
+    color: #fff;
+    border-color: #1565c0;
+}
+
+.excel-filter-cancel {
+    background: #fff;
+    color: #333;
+}
+

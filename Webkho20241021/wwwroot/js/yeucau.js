@@ -1,6 +1,12 @@
 $(document).ready(function () {
     initializeYeucauFilters();
 
+    // Excel-like column filters (list + detail)
+    if (window.ExcelTableFilter) {
+        window.ExcelTableFilter.init('.Tableyeucau .table', { excludeHeaderTexts: ['Chọn', 'Thao tác'] });
+        window.ExcelTableFilter.init('.tablethietbi', { excludeHeaderTexts: ['Thao tác'] });
+    }
+
     // Gọi hàm showVTYeucau với mã yêu cầu của hàng đầu tiên (chỉ bảng yêu cầu .Tableyeucau)
     const firstRow = $('.Tableyeucau .table tbody tr:visible').first();
     if (firstRow.length > 0) {
@@ -270,6 +276,11 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                         <td colspan="${colSpan}" style="text-align:center;">Không có dữ liệu vật tư.</td>
                     </tr>`
                 );
+            }
+
+            // Re-sync excel filters after AJAX rebuild
+            if (window.ExcelTableFilter) {
+                window.ExcelTableFilter.sync(document.querySelector('.tablethietbi'));
             }
 
             // Highlight hàng tương ứng trong bảng

@@ -36,6 +36,12 @@ $(document).ready(function () {
             showVTmuahang(MaMuahang, trangThai);
         }
     });
+
+    // Excel-like column filters (list + detail)
+    if (window.ExcelTableFilter) {
+        window.ExcelTableFilter.init('.table', { excludeHeaderTexts: ['Thao tác'] });
+        window.ExcelTableFilter.init('.tablethietbi', { excludeHeaderTexts: ['Thao tác'] });
+    }
 });
 
 const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
@@ -1148,6 +1154,11 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                 applyFilterMavt();
                 updateTongTien();
                 attachEventHandlers();
+
+                // Re-sync excel filters after AJAX rebuild
+                if (window.ExcelTableFilter) {
+                    window.ExcelTableFilter.sync(document.querySelector('.tablethietbi'));
+                }
             } else {
                 $('.tablethietbi tbody').append(`
                     <tr>

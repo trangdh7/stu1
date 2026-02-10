@@ -28,6 +28,12 @@ $(document).ready(function () {
             showVTnhapkho(MaNhapkho);
         }
     });
+
+    // Excel-like column filters (list + detail)
+    if (window.ExcelTableFilter) {
+        window.ExcelTableFilter.init('.table', { excludeHeaderTexts: ['Thao tác'] });
+        window.ExcelTableFilter.init('.tablethietbi', { excludeHeaderTexts: ['Thao tác'] });
+    }
 });
 
 const ROW_HIGHLIGHT_COLOR = "#2d9f3c";
@@ -211,6 +217,11 @@ function showVTnhapkho(Manhapkho) {
                         <td colspan="9" style="text-align:center;">Không có dữ liệu vật tư.</td>
                     </tr>`
                 );
+            }
+
+            // Re-sync excel filters after AJAX rebuild
+            if (window.ExcelTableFilter) {
+                window.ExcelTableFilter.sync(document.querySelector('.tablethietbi'));
             }
 
             let $rowToHighlight = $();
