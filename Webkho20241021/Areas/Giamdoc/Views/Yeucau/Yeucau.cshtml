@@ -768,8 +768,26 @@
             });
         }
 
-            // Đảm bảo khi load xong trang luôn có hàng active được highlight
-            // Gọi một lần khi trang load, sau đó giữ nguyên theo thao tác người dùng
+            // Đảm bảo khi vào trang luôn có hàng đầu tiên active + checkbox được chọn
+            (function setFirstRowActiveOnLoad() {
+                if (typeof applyTableRowHighlight !== 'function') return;
+                var $first = $('.Tableyeucau .table tbody tr:visible').first();
+                if ($first.length === 0) return;
+                var ma = ($first.data('mayeucau') || '').toString().trim();
+                var nguoi = ($first.data('nguoiyc') || '').toString().trim();
+                currentMaYeucau = ma;
+                currentNguoiYeucau = nguoi;
+                applyTableRowHighlight($first);
+                var $cb = $first.find('.yeucau-checkbox');
+                if ($cb.length) {
+                    $('.yeucau-checkbox').not($cb).prop('checked', false);
+                    $cb.prop('checked', true);
+                    selectedYeucauSet.clear();
+                    if (ma) selectedYeucauSet.add(ma);
+                    $('.Tableyeucau .table tbody tr').removeClass('multi-selected-yeucau');
+                    $first.addClass('multi-selected-yeucau');
+                }
+            })();
             ensureActiveYeucauHighlight();
         });
 
@@ -1043,15 +1061,11 @@
                         updateActionButtons();
                     }
                     
-                    // Highlight hàng tương ứng trong bảng chính
-                    let $rowToHighlight = $();
-                    $('.table tbody tr').each(function () {
-                        var rowMaYeucau = $(this).find('td').eq(2).find('a').text().trim();
-                        if (rowMaYeucau === MaYeucau) {
-                            $rowToHighlight = $(this);
-                            return false;
-                        }
-                    });
+                    // Highlight hàng tương ứng trong bảng chính (tìm theo data-mayeucau)
+                    var $rowToHighlight = $('.Tableyeucau .table tbody tr').filter(function () {
+                        var ma = ($(this).data('mayeucau') || '').toString().trim();
+                        return ma === MaYeucau;
+                    }).first();
                     applyTableRowHighlight($rowToHighlight);
                 },
                 error: function (xhr, status, error) {

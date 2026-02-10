@@ -1,8 +1,8 @@
 $(document).ready(function () {
     initializeYeucauFilters();
 
-    // Gọi hàm showVTYeucau với mã yêu cầu của hàng đầu tiên (sau khi filter áp dụng)
-    const firstRow = $('.table tbody tr:visible').first();
+    // Gọi hàm showVTYeucau với mã yêu cầu của hàng đầu tiên (chỉ bảng yêu cầu .Tableyeucau)
+    const firstRow = $('.Tableyeucau .table tbody tr:visible').first();
     if (firstRow.length > 0) {
         const colIdx = getYeucauColumnIndexes();
         const MaYeucau = firstRow.find('td').eq(colIdx.ma).find('a').text().trim()
