@@ -55,6 +55,65 @@ function escapeHtml(input) {
     });
 }
 
+/** Dòng con chia lô = copy nguyên dòng gốc; SL, Đơn giá, Ngày có hàng là input (mỗi đợt có thể giá khác). readOnly = true khi đã gửi báo giá: chỉ hiển thị, không input. */
+function buildSplitRowHtml(maSanpham, opts) {
+    const ten = (opts.ten || '').toString().trim();
+    const ma = (maSanpham || '').toString().trim();
+    const hang = (opts.hang || '').toString().trim();
+    const ncc = (opts.ncc || '').toString().trim();
+    const donVi = (opts.donVi || 'Không xác định').toString().trim();
+    const slValue = (opts.slValue != null && opts.slValue !== '') ? String(opts.slValue) : '';
+    const ngayValue = (opts.ngayValue != null && opts.ngayValue !== '') ? String(opts.ngayValue) : '';
+    const ngayTTValue = (opts.ngayThanhToanValue != null && opts.ngayThanhToanValue !== '') ? String(opts.ngayThanhToanValue) : '';
+    const donGiaDisplay = (opts.donGiaValue != null && opts.donGiaValue !== '' && Number(opts.donGiaValue) > 0)
+        ? String(Number(opts.donGiaValue)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+    const thanhTienDisplay = (opts.thanhTienValue != null && opts.thanhTienValue !== '' && Number(opts.thanhTienValue) > 0)
+        ? Number(opts.thanhTienValue).toLocaleString('vi-VN') : '0';
+    const esc = escapeHtml;
+    const readOnly = !!opts.readOnly;
+    if (readOnly) {
+        return `<tr class="vt-split-row vt-split-row-readonly" data-parent="${esc(ma)}">
+            <td style="color:#666;">↳</td>
+            <td>${esc(ten)}</td>
+            <td>${esc(ma)}</td>
+            <td>${esc(hang)}</td>
+            <td>${esc(ncc) || '-'}</td>
+            <td>${esc(slValue) || '-'}</td>
+            <td>${esc(donVi)}</td>
+            <td>${esc(donGiaDisplay) || '-'}</td>
+            <td>${esc(thanhTienDisplay)}</td>
+            <td>${esc(ngayTTValue) || '-'}</td>
+            <td>${esc(ngayValue) || '-'}</td>
+            <td></td>
+            <td></td>
+        </tr>`;
+    }
+    return `<tr class="vt-split-row" data-parent="${esc(ma)}">
+        <td style="color:#666;">↳</td>
+        <td>${esc(ten)}</td>
+        <td>${esc(ma)}</td>
+        <td>${esc(hang)}</td>
+        <td>${esc(ncc) || '-'}</td>
+        <td style="white-space:nowrap;">
+            <input type="text" class="SplitSL" placeholder="SL" style="width: 56px;" value="${esc(slValue)}" />
+            <button type="button" class="btn-split-remove" title="Xóa dòng">−</button>
+        </td>
+        <td>${esc(donVi)}</td>
+        <td style="white-space:nowrap;">
+            <input type="text" class="SplitDonGia" placeholder="Nhập giá" style="width: 90px;" value="${esc(donGiaDisplay)}" />
+        </td>
+        <td class="SplitThanhTien">0</td>
+        <td style="white-space:nowrap;">
+            <input type="text" class="SplitNgayThanhToan" placeholder="dd/MM/yyyy" style="width: 100px;" value="${esc(ngayTTValue)}" />
+        </td>
+        <td style="white-space:nowrap;">
+            <input type="text" class="SplitNgay" placeholder="dd/MM/yyyy" style="width: 110px;" value="${esc(ngayValue)}" />
+        </td>
+        <td></td>
+        <td></td>
+    </tr>`;
+}
+
 function fetchNhaCCGoiY(q, $dropdown, $input) {
     $('.ncc-dropdown').hide();
     const url = '/TruongBPMuahang/NhaCungCap/GetNhaCCGoiY?q=' + encodeURIComponent(q || '');
@@ -107,6 +166,21 @@ $('#submitPhieumuahang').click(function () {
         return;
     }
 
+    // Validate chia lô trước khi submit
+    let splitInvalid = false;
+    $('.tablethietbi tbody tr.vt-data-row').each(function () {
+        const $row = $(this);
+        const ok = validateSplitForItem($row, { showAlert: false });
+        if (!ok) {
+            splitInvalid = true;
+            return false; // break
+        }
+    });
+    if (splitInvalid) {
+        alert('Có vật tư đang chia lô vượt quá số lượng gốc. Vui lòng chỉnh lại trước khi gửi.');
+        return;
+    }
+
     // Lưu lại tất cả giá trị đã nhập trước khi submit để có thể restore nếu fail
     const savedInputValues = {};
     $('.tablethietbi tbody tr').each(function () {
@@ -129,6 +203,7 @@ $('#submitPhieumuahang').click(function () {
     });
 
     const vtmuahangData = [];
+    const vtSplitsPayload = [];
     let itemsWithoutPrice = [];
     let pricedItemsCount = 0;
     let invalidDateInput = false;
@@ -136,6 +211,10 @@ $('#submitPhieumuahang').click(function () {
     $('.tablethietbi tbody tr').each(function () {
         // Bỏ qua hàng tổng tiền
         if ($(this).hasClass('tong-tien-row')) {
+            return;
+        }
+        // Bỏ qua các dòng chia lô (dòng con)
+        if ($(this).hasClass('vt-split-row')) {
             return;
         }
         
@@ -163,8 +242,59 @@ $('#submitPhieumuahang').click(function () {
             // Lấy thêm dữ liệu nhập (NCC/Ngày/Ghi chú) để chỉ lưu DB khi bấm Gửi
             const nhaCC = ($(this).find('.NhaCCInput').val() || '').toString().trim();
             const ngayThanhToanDisplay = ($(this).find('.NgayThanhToanInput').val() || '').toString().trim();
-            const ngayCoHangDisplay = ($(this).find('.NgayCoHangInput').val() || '').toString().trim();
-            const ghiChu = ($(this).find('.GhiChuInput').val() || '').toString();
+            const ngayCoHangDisplayRaw = ($(this).find('.NgayCoHangInput').val() || '').toString().trim();
+            const ghiChuRaw = ($(this).find('.GhiChuInput').val() || '').toString();
+
+            // Nếu có chia lô: build lịch giao hàng từ các dòng con
+            let ngayCoHangDisplay = ngayCoHangDisplayRaw;
+            let ghiChu = ghiChuRaw;
+            const $parentRow = $(this);
+            const splitState = getSplitStateForItem($parentRow);
+            if (splitState && splitState.maSanpham && splitState.splits && splitState.splits.length > 0) {
+                const valid = validateSplitForItem($parentRow, { showAlert: true });
+                if (!valid) {
+                    invalidDateInput = true;
+                    return false; // break
+                }
+
+                // Lọc các dòng có SL > 0 và có ngày hợp lệ (đơn giá từng đợt tùy chọn)
+                const normalized = splitState.splits
+                    .map(x => ({
+                        sl: x.sl || 0,
+                        ngay: normalizeDisplayDateStr(x.ngay),
+                        donGia: x.donGia != null && x.donGia > 0 ? x.donGia : null
+                    }))
+                    .filter(x => x.sl > 0 && x.ngay);
+
+                if (normalized.length === 0) {
+                    alert(`Bạn đã tạo chia lô cho vật tư ${TenSanpham || MaSanpham} nhưng chưa nhập đủ SL và Ngày có hàng.`);
+                    invalidDateInput = true;
+                    return false; // break
+                }
+
+                // Set Ngày có hàng = ngày sớm nhất (để server có dữ liệu 1 ngày đại diện)
+                normalized.sort((a, b) => compareDisplayDates(a.ngay, b.ngay));
+                ngayCoHangDisplay = normalized[0].ngay;
+
+                // Build payload lịch có hàng để lưu DB (mỗi đợt có thể có đơn giá riêng)
+                vtSplitsPayload.push({
+                    maSanpham: MaSanpham,
+                    lines: normalized.map(x => ({
+                        sl: x.sl,
+                        ngayCoHang: convertDisplayDateToServerGlobal(x.ngay),
+                        donGia: x.donGia
+                    }))
+                });
+            } else {
+                // Nếu trước đó đã có lịch (load từ DB) nhưng giờ user xóa hết -> gửi empty để xóa DB
+                const hadSplit = ($parentRow.data('hasSplit') || '') === '1';
+                if (hadSplit) {
+                    vtSplitsPayload.push({
+                        maSanpham: MaSanpham,
+                        lines: []
+                    });
+                }
+            }
 
             // Validate ngày nếu người dùng nhập tay
             let ngayThanhToan = '';
@@ -246,7 +376,8 @@ $('#submitPhieumuahang').click(function () {
 
     const Phieumuahangviewmodel = {
         MaMuahang: selectedMamuahang,
-        VTphieumuahang: vtmuahangData
+        VTphieumuahang: vtmuahangData,
+        VTphieumuahangSplits: vtSplitsPayload
     };
 
     const pathSegments = window.location.pathname.split('/');
@@ -350,9 +481,111 @@ function applyFilterMavt() {
     var v = ($('#filterMavt').val() || '').trim().toLowerCase();
     $('.tablethietbi tbody tr.vt-data-row').each(function () {
         var mavt = ($(this).data('mavt') || '').toString();
-        $(this).toggle(!v || mavt.indexOf(v) >= 0);
+        const show = (!v || mavt.indexOf(v) >= 0);
+        $(this).toggle(show);
+        // Toggle các dòng chia lô đi theo dòng cha
+        const maSanpham = ($(this).data('masanpham') || '').toString();
+        if (maSanpham) {
+            $(`.tablethietbi tbody tr.vt-split-row[data-parent="${CSS.escape(maSanpham)}"]`).toggle(show);
+        }
     });
     updateTongTien();
+}
+
+function parseVNNumber(input) {
+    if (input == null) return 0;
+    const raw = String(input).replace(/[^\d]/g, '');
+    return raw ? (parseInt(raw, 10) || 0) : 0;
+}
+
+function normalizeDisplayDateStr(s) {
+    // chấp nhận dd/MM/yyyy (1-2 chữ số) -> pad 2
+    if (!s) return '';
+    const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return '';
+    const dd = m[1].padStart(2, '0');
+    const mm = m[2].padStart(2, '0');
+    return `${dd}/${mm}/${m[3]}`;
+}
+
+function compareDisplayDates(a, b) {
+    // a,b: dd/MM/yyyy -> so sánh theo thời gian
+    const na = normalizeDisplayDateStr(a);
+    const nb = normalizeDisplayDateStr(b);
+    if (!na && !nb) return 0;
+    if (!na) return 1;
+    if (!nb) return -1;
+    const [d1, m1, y1] = na.split('/').map(x => parseInt(x, 10));
+    const [d2, m2, y2] = nb.split('/').map(x => parseInt(x, 10));
+    const ta = new Date(y1, m1 - 1, d1).getTime();
+    const tb = new Date(y2, m2 - 1, d2).getTime();
+    return ta - tb;
+}
+
+function getSplitStateForItem($parentRow) {
+    const maSanpham = ($parentRow.data('masanpham') || '').toString();
+    const slGoc = parseFloat($parentRow.data('sl')) || 0;
+    const splits = [];
+    if (!maSanpham) return { maSanpham: '', slGoc, splits };
+    $(`.tablethietbi tbody tr.vt-split-row[data-parent="${CSS.escape(maSanpham)}"]`).each(function () {
+        const $r = $(this);
+        const sl = parseVNNumber($r.find('.SplitSL').val());
+        const ngay = normalizeDisplayDateStr($r.find('.SplitNgay').val());
+        const donGiaRaw = ($r.find('.SplitDonGia').val() || '').toString().replace(/[^\d]/g, '');
+        const donGia = donGiaRaw ? (parseInt(donGiaRaw, 10) || null) : null;
+        splits.push({ sl, ngay, donGia });
+    });
+    return { maSanpham, slGoc, splits };
+}
+
+function validateSplitForItem($parentRow, { showAlert } = { showAlert: false }) {
+    const state = getSplitStateForItem($parentRow);
+    if (!state.maSanpham) return true;
+    if (!state.splits.length) {
+        // không chia lô -> hiện nút + để có thể thêm
+        $parentRow.find('.split-hint').remove();
+        $parentRow.find('.NgayCoHangInput').prop('disabled', false);
+        $parentRow.find('.btn-split-add').show();
+        return true;
+    }
+
+    const sum = state.splits.reduce((acc, x) => acc + (x.sl || 0), 0);
+    const ok = sum <= state.slGoc;
+
+    // Đủ rồi (sum >= slGoc) thì ẩn nút +, còn dư thì vẫn hiện
+    if (sum >= state.slGoc) {
+        $parentRow.find('.btn-split-add').hide();
+    } else {
+        $parentRow.find('.btn-split-add').show();
+    }
+
+    // hint còn lại
+    const remain = Math.max(0, state.slGoc - sum);
+    const hintText = ok
+        ? `Đã chia: ${sum}/${state.slGoc} (còn ${remain})`
+        : `Vượt SL: ${sum}/${state.slGoc}`;
+    const $slCell = $parentRow.find('td.sl-cell').length ? $parentRow.find('td.sl-cell') : $parentRow.find('td').eq(5);
+    $slCell.find('.split-hint').remove();
+    $slCell.append(`<span class="split-hint" style="${ok ? '' : 'color:#c00;font-weight:600;'}">${hintText}</span>`);
+
+    // Khi chia lô thì khóa input Ngày có hàng ở dòng cha (tránh nhập 2 nơi)
+    $parentRow.find('.NgayCoHangInput').prop('disabled', true);
+
+    if (!ok && showAlert) {
+        const ten = ($parentRow.find('td').eq(1).text() || '').trim();
+        const ma = ($parentRow.find('td').eq(2).text() || '').trim();
+        alert(`Tổng SL chia lô của "${ten || ma}" đang vượt quá SL gốc (${state.slGoc}). Vui lòng chỉnh lại.`);
+    }
+    return ok;
+}
+
+function updateSplitThanhTien($row) {
+    if (!$row || !$row.length) return;
+    const sl = parseVNNumber($row.find('.SplitSL').val());
+    const raw = ($row.find('.SplitDonGia').val() || '').toString().replace(/[^\d]/g, '');
+    const donGia = raw ? (parseInt(raw, 10) || 0) : 0;
+    const tt = (sl && donGia > 0) ? (sl * donGia) : 0;
+    $row.find('.SplitThanhTien').text(tt > 0 ? tt.toLocaleString('vi-VN') : '0');
 }
 
 // Hiển thị vật tư theo mã mua hàng
@@ -571,6 +804,8 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                 const canInputPriceForPhieu = isPurchaseArea && 
                     (trangThaiPhieu === 'Đang chờ báo giá' || (trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối')));
                 const isGiamdoc = area === 'Giamdoc';
+                // Đã gửi báo giá: ẩn nút + và dòng con chỉ hiển thị (không input)
+                const isDaGuiBaoGia = trangThaiPhieu && trangThaiPhieu !== 'Đang chờ báo giá' && !(trangThaiPhieu && trangThaiPhieu.includes('Đã từ chối'));
                 // BP Mua hàng chỉ có thể chỉnh sửa khi chưa gửi báo giá (trạng thái = "Đang chờ báo giá" hoặc "Đã từ chối")
                 // Giám đốc chỉ có thể chỉnh sửa khi trạng thái = "Đã báo giá" (chưa duyệt), sau khi duyệt (trạng thái = "Chờ thanh toán" trở đi) thì không cho sửa
                 const canEditNgayThanhToanForBPMuahang = isPurchaseArea && 
@@ -807,14 +1042,27 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         ngayCoHangCell = ngayCoHangDisplay || '-';
                     }
 
+                    // Nút chia lô: chỉ hiện khi chưa gửi báo giá và SL > 0; khi gửi rồi thì bỏ dấu + và ô input (coi như xong)
+                    const splitBtnHtml = !isDaGuiBaoGia && (parseFloat(item.sl) || 0) > 0
+                        ? ` <button type="button"
+                                   class="btn-split-add btn-split-add-inline"
+                                   title="Chia lô theo ngày có hàng"
+                                   data-masanpham="${escapeHtml(maSanpham)}"
+                                   data-sl="${escapeHtml(item.sl)}">+</button>`
+                        : '';
+
                     let row = `
-                    <tr class="vt-data-row" data-mavt="${escapeHtml((maSanpham || '').toLowerCase())}">
+                    <tr class="vt-data-row"
+                        data-mavt="${escapeHtml((maSanpham || '').toLowerCase())}"
+                        data-masanpham="${escapeHtml(maSanpham)}"
+                        data-sl="${escapeHtml(item.sl)}"
+                        data-has-split="${(item.lichCoHang && item.lichCoHang.length) ? '1' : '0'}">
                         <td>${STT++}</td>
                         <td>${item.tenSanpham || 'Không xác định'}</td>
                         <td>${item.maSanpham || 'Không xác định'}</td>
                         <td>${item.hangSX || 'Không xác định'}</td>
                         <td>${nhaCCCell}</td>
-                        <td>${item.sl}</td>
+                        <td class="sl-cell" style="white-space:nowrap;">${item.sl}${splitBtnHtml}</td>
                         <td>${item.donVi || 'Không xác định'}</td>
                         <td>${donGiaCell}</td>
                         <td>
@@ -828,12 +1076,72 @@ function showVTmuahang(Mamuahang, trangThaiPhieu) {
                         <td>${item.trangThai}</td>
                     </tr>`;
                     $('.tablethietbi tbody').append(row);
+
+                    // Nếu có lịch chia lô từ DB thì render các dòng con = copy nguyên dòng (Tên, Mã VT, Hãng, NCC, ĐV), SL + NCH input
+                    if (item.lichCoHang && Array.isArray(item.lichCoHang) && item.lichCoHang.length > 0) {
+                        const $parentRow = $('.tablethietbi tbody tr.vt-data-row').last();
+                        let $insertAfter = $parentRow;
+                        const ten = item.tenSanpham || 'Không xác định';
+                        const hang = item.hangSX || 'Không xác định';
+                        const ncc = (item.nhaCC || item.NhaCC || '').toString().trim() || '-';
+                        const donVi = item.donVi || 'Không xác định';
+                        item.lichCoHang.forEach(function (l) {
+                            const slLine = l.sl != null ? l.sl : (l.SL != null ? l.SL : 0);
+                            const ngayRaw = l.ngayCoHang || l.NgayCoHang;
+                            const ngayDisplay = (function (dateRaw) {
+                                if (!dateRaw) return '';
+                                const d = new Date(dateRaw);
+                                if (isNaN(d)) return '';
+                                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                const dd = String(d.getDate()).padStart(2, '0');
+                                const yyyy = d.getFullYear();
+                                return `${dd}/${mm}/${yyyy}`;
+                            })(ngayRaw);
+                            const donGiaVal = l.donGia != null ? l.donGia : (l.DonGia != null ? l.DonGia : '');
+                            const thanhTienVal = (slLine && donGiaVal) ? (slLine * Number(donGiaVal)) : (l.thanhTien != null ? l.thanhTien : (l.ThanhTien != null ? l.ThanhTien : ''));
+                            const ngayTTRaw = l.ngayThanhToan || l.NgayThanhToan;
+                            const ngayTTDisplay = ngayTTRaw ? (function (dateRaw) {
+                                const d = new Date(dateRaw);
+                                if (isNaN(d)) return '';
+                                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                const dd = String(d.getDate()).padStart(2, '0');
+                                return `${dd}/${mm}/${d.getFullYear()}`;
+                            })(ngayTTRaw) : '';
+
+                            const splitRowHtml = buildSplitRowHtml(maSanpham, {
+                                ten, hang, ncc, donVi,
+                                slValue: slLine, ngayValue: ngayDisplay, donGiaValue: donGiaVal,
+                                ngayThanhToanValue: ngayTTDisplay, thanhTienValue: thanhTienVal,
+                                readOnly: isDaGuiBaoGia
+                            });
+                            $insertAfter.after(splitRowHtml);
+                            $insertAfter = $insertAfter.next();
+
+                            if (!isDaGuiBaoGia && typeof flatpickr !== 'undefined') {
+                                ['SplitNgayThanhToan', 'SplitNgay'].forEach(function (cls) {
+                                    const el = $insertAfter.find('.' + cls)[0];
+                                    if (el) {
+                                        if (el._flatpickr) el._flatpickr.destroy();
+                                        flatpickr(el, {
+                                            dateFormat: "d/m/Y",
+                                            locale: "vn",
+                                            allowInput: true,
+                                            clickOpens: true,
+                                            onChange: function () { $insertAfter.find('.' + cls).trigger('change'); }
+                                        });
+                                    }
+                                });
+                            }
+                            if (!isDaGuiBaoGia) updateSplitThanhTien($insertAfter);
+                        });
+                        validateSplitForItem($parentRow);
+                    }
                 });
 
                 // Thêm hàng tổng tiền
                 $('.tablethietbi tbody').append(`
                     <tr class="tong-tien-row">
-                        <td colspan="9" style="text-align:center; font-weight:bold;">Tổng tiền:</td>
+                        <td colspan="10" style="text-align:center; font-weight:bold;">Tổng tiền:</td>
                         <td class="tong-tien" colspan="4" style="font-weight:bold;">0</td>
                     </tr>
                 `);
@@ -1152,6 +1460,97 @@ function attachEventHandlers() {
                 alert('Không thể cập nhật ngày có hàng.');
             }
         });
+    });
+
+    // ===== Chia lô (split) theo ngày có hàng =====
+    // Thêm dòng chia lô ngay dưới dòng cha
+    $('.tablethietbi tbody').off('click.splitAdd').on('click.splitAdd', '.btn-split-add', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $btn = $(this);
+        const $parentRow = $btn.closest('tr.vt-data-row');
+        const maSanpham = ($btn.data('masanpham') || $parentRow.data('masanpham') || '').toString();
+        const slGoc = parseFloat($btn.data('sl')) || (parseFloat($parentRow.data('sl')) || 0);
+        if (!maSanpham) return;
+
+        // Copy nội dung từ dòng gốc: Tên, Mã VT, Hãng, NCC, ĐV
+        const ten = $parentRow.find('td').eq(1).text().trim();
+        const hang = $parentRow.find('td').eq(3).text().trim();
+        const ncc = ($parentRow.find('.NhaCCInput').val() || $parentRow.find('td').eq(4).text() || '').toString().trim();
+        const donVi = $parentRow.find('td').eq(6).text().trim();
+
+        // Tìm dòng con cuối cùng của cùng mã (đi từ dòng gốc xuống lần lượt) để chèn ngay sau nó — bấm + nhiều lần được
+        let $after = $parentRow;
+        let $next = $parentRow.next();
+        while ($next.length && $next.hasClass('vt-split-row')) {
+            const p = ($next.attr('data-parent') || $next.data('parent') || '').toString();
+            if (p !== maSanpham) break;
+            $after = $next;
+            $next = $next.next();
+        }
+
+        const splitRowHtml = buildSplitRowHtml(maSanpham, { ten, hang, ncc, donVi, slValue: '', ngayValue: '', donGiaValue: '' });
+        $after.after(splitRowHtml);
+
+        const $newRow = $after.next();
+        if (typeof flatpickr !== 'undefined') {
+            ['SplitNgayThanhToan', 'SplitNgay'].forEach(function (cls) {
+                const el = $newRow.find('.' + cls)[0];
+                if (el) {
+                    flatpickr(el, {
+                        dateFormat: "d/m/Y",
+                        locale: "vn",
+                        allowInput: true,
+                        clickOpens: true,
+                        onChange: function () { $newRow.find('.' + cls).trigger('change'); }
+                    });
+                }
+            });
+        }
+
+        const state = getSplitStateForItem($parentRow);
+        const sum = state.splits.reduce((acc, x) => acc + (x.sl || 0), 0);
+        const remain = Math.max(0, slGoc - sum);
+        $newRow.find('.SplitSL').val(remain > 0 ? String(remain) : '');
+
+        validateSplitForItem($parentRow);
+    });
+
+    // Xóa dòng chia lô
+    $('.tablethietbi tbody').off('click.splitRemove').on('click.splitRemove', '.btn-split-remove', function (e) {
+        e.preventDefault();
+        const $row = $(this).closest('tr.vt-split-row');
+        const parent = ($row.data('parent') || '').toString();
+        $row.remove();
+        if (parent) {
+            const $parentRow = $(`.tablethietbi tbody tr.vt-data-row[data-masanpham="${CSS.escape(parent)}"]`).first();
+            if ($parentRow.length) validateSplitForItem($parentRow);
+        }
+    });
+
+    // Validate khi nhập SL / ngày; cập nhật Thành tiền khi SL hoặc Đơn giá thay đổi
+    $('.tablethietbi tbody').off('input.splitSL').on('input.splitSL', '.SplitSL', function () {
+        const $row = $(this).closest('tr.vt-split-row');
+        const v = ($(this).val() || '').toString().replace(/[^\d]/g, '');
+        $(this).val(v);
+        updateSplitThanhTien($row);
+        const parent = ($row.data('parent') || '').toString();
+        if (parent) {
+            const $parentRow = $(`.tablethietbi tbody tr.vt-data-row[data-masanpham="${CSS.escape(parent)}"]`).first();
+            if ($parentRow.length) validateSplitForItem($parentRow);
+        }
+    });
+    $('.tablethietbi tbody').off('input.splitDonGia').on('input.splitDonGia', '.SplitDonGia', function () {
+        const $row = $(this).closest('tr.vt-split-row');
+        updateSplitThanhTien($row);
+    });
+    $('.tablethietbi tbody').off('change.splitNgay').on('change.splitNgay', '.SplitNgay', function () {
+        const $row = $(this).closest('tr.vt-split-row');
+        const parent = ($row.data('parent') || '').toString();
+        if (parent) {
+            const $parentRow = $(`.tablethietbi tbody tr.vt-data-row[data-masanpham="${CSS.escape(parent)}"]`).first();
+            if ($parentRow.length) validateSplitForItem($parentRow);
+        }
     });
 
     // Khởi tạo Flatpickr cho các input ngày (định dạng dd/MM/yyyy)

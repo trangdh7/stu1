@@ -93,32 +93,28 @@ namespace Webkho_20241021.Migrations.ApplicationDb
                     b.ToTable("excelfiles", (string)null);
                 });
 
-            modelBuilder.Entity("Webkho_20241021.Models.SanPhamNhaCC", b =>
+            modelBuilder.Entity("Webkho_20241021.Models.LogoThemeSetting", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<decimal?>("DonGiaMacDinh")
-                        .HasColumnType("decimal(20,6)");
-
-                    b.Property<string>("GhiChu")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("MaSanpham")
+                    b.Property<string>("Theme")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
 
-                    b.Property<DateTime?>("NgayTao")
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("NhaCC")
+                    b.Property<string>("UpdatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.ToTable("SanPhamNhaCC");
+                    b.ToTable("logothemesettings", (string)null);
                 });
 
             modelBuilder.Entity("Webkho_20241021.Models.NhaCungCap", b =>
@@ -145,6 +141,34 @@ namespace Webkho_20241021.Migrations.ApplicationDb
                     b.HasKey("ID");
 
                     b.ToTable("NhaCungCap");
+                });
+
+            modelBuilder.Entity("Webkho_20241021.Models.SanPhamNhaCC", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("DonGiaMacDinh")
+                        .HasColumnType("decimal(20,6)");
+
+                    b.Property<string>("GhiChu")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("MaSanpham")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("NgayTao")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("NhaCC")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("SanPhamNhaCC");
                 });
 
             modelBuilder.Entity("Webkho_20241021.Models.User", b =>
@@ -735,6 +759,9 @@ namespace Webkho_20241021.Migrations.ApplicationDb
 
                     b.Property<int?>("SLMoi")
                         .HasColumnType("int");
+
+                    b.Property<string>("TT")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TenSanpham")
                         .HasColumnType("longtext");

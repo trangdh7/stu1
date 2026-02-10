@@ -918,7 +918,8 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     var slThieu = Math.Max(0, slMoi - tonKho);
                     var isDaXuatKho = (v.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                     var slDaXuat = isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null;
-                    exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.TrangThai, v.GhiChu, v.NgayDuyet });
+                    var (ngayCoHangDisplay, ghiChuConLai) = GhiChuExportHelper.ParseGhiChuForExport(v.GhiChu, v.NgayCoHang);
+                    exportRows.Add(new { v.TT, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, SlThieu = slThieu, SlDaXuat = slDaXuat, TonKho = tonKho, v.DonVi, v.NgayCanHang, v.NgayCoHang, NgayCoHangDisplay = ngayCoHangDisplay, v.TrangThai, GhiChu = ghiChuConLai, v.NgayDuyet });
                 }
             }
             else
@@ -937,7 +938,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                         var slMoi = v.SL ?? 0;
                         var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
                         var slThieu = Math.Max(0, slMoi - tonKho);
-                        exportRows.Add(new { TT = (object)stt++, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, SLCu = (int?)null, SLMoi = v.SL, SlThieu = slThieu, SlDaXuat = (int?)null, TonKho = tonKho, v.DonVi, NgayCanHang = (DateTime?)null, NgayCoHang = (DateTime?)null, v.TrangThai, GhiChu = (string?)null, NgayDuyet = (DateTime?)null });
+                        exportRows.Add(new { TT = (object)stt++, v.TenSanpham, v.MaSanpham, v.HangSX, v.NhaCC, SLCu = (int?)null, SLMoi = v.SL, SlThieu = slThieu, SlDaXuat = (int?)null, TonKho = tonKho, v.DonVi, NgayCanHang = (DateTime?)null, NgayCoHang = (DateTime?)null, NgayCoHangDisplay = "", v.TrangThai, GhiChu = (string?)null, NgayDuyet = (DateTime?)null });
                     }
                 }
             }
@@ -1002,7 +1003,10 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     worksheet.Cells[row, 10].Value = r.TonKho ?? 0;
                     worksheet.Cells[row, 11].Value = r.DonVi ?? "";
                     worksheet.Cells[row, 12].Value = r.NgayCanHang != null ? ((DateTime)r.NgayCanHang).ToString("dd/MM/yyyy") : "";
-                    worksheet.Cells[row, 13].Value = r.NgayCoHang != null ? ((DateTime)r.NgayCoHang).ToString("dd/MM/yyyy") : "";
+                    var ngayCoHangDisp = (r as dynamic)?.NgayCoHangDisplay as string;
+                    worksheet.Cells[row, 13].Value = !string.IsNullOrEmpty(ngayCoHangDisp) ? ngayCoHangDisp : (r.NgayCoHang != null ? ((DateTime)r.NgayCoHang).ToString("dd/MM/yyyy") : "");
+                    if (!string.IsNullOrEmpty(ngayCoHangDisp) && ngayCoHangDisp.Contains('\n'))
+                        worksheet.Cells[row, 13].Style.WrapText = true;
                     worksheet.Cells[row, 14].Value = r.TrangThai ?? "";
                     worksheet.Cells[row, 15].Value = r.GhiChu ?? "";
                     worksheet.Cells[row, 16].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";
@@ -1095,6 +1099,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     ? (int?)slDaXuatThucTe
                     : (isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null);
 
+                var (ngayCoHangDisplay, ghiChuConLai) = GhiChuExportHelper.ParseGhiChuForExport(v.GhiChu, v.NgayCoHang);
                 exportRows.Add(new
                 {
                     v.TT,
@@ -1111,8 +1116,9 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     v.DonVi,
                     v.NgayCanHang,
                     v.NgayCoHang,
+                    NgayCoHangDisplay = ngayCoHangDisplay,
                     v.TrangThai,
-                    v.GhiChu,
+                    GhiChu = ghiChuConLai,
                     v.NgayDuyet
                 });
             }
@@ -1194,7 +1200,10 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     worksheet.Cells[row, 11].Value = r.TonKho ?? 0;
                     worksheet.Cells[row, 12].Value = r.DonVi ?? "";
                     worksheet.Cells[row, 13].Value = r.NgayCanHang != null ? ((DateTime)r.NgayCanHang).ToString("dd/MM/yyyy") : "";
-                    worksheet.Cells[row, 14].Value = r.NgayCoHang != null ? ((DateTime)r.NgayCoHang).ToString("dd/MM/yyyy") : "";
+                    var ngayCoHangDispMulti = (r as dynamic)?.NgayCoHangDisplay as string;
+                    worksheet.Cells[row, 14].Value = !string.IsNullOrEmpty(ngayCoHangDispMulti) ? ngayCoHangDispMulti : (r.NgayCoHang != null ? ((DateTime)r.NgayCoHang).ToString("dd/MM/yyyy") : "");
+                    if (!string.IsNullOrEmpty(ngayCoHangDispMulti) && ngayCoHangDispMulti.Contains('\n'))
+                        worksheet.Cells[row, 14].Style.WrapText = true;
                     worksheet.Cells[row, 15].Value = r.TrangThai ?? "";
                     worksheet.Cells[row, 16].Value = r.GhiChu ?? "";
                     worksheet.Cells[row, 17].Value = r.NgayDuyet != null ? ((DateTime)r.NgayDuyet).ToString("dd/MM/yyyy HH:mm:ss") : "";

@@ -42,6 +42,29 @@
                 || normalized.Contains("chờ trưởng bp", System.StringComparison.OrdinalIgnoreCase)
                 || normalized.Equals("Chờ duyệt", System.StringComparison.OrdinalIgnoreCase);
         };
+        Func<string, (List<(int sl, string dateStr)> dotList, string ghiChuConLai)> parseGhiChuLichGiao = (ghiChu) =>
+        {
+            var dotList = new List<(int, string)>();
+            var ghiChuConLai = ghiChu ?? "";
+            if (string.IsNullOrWhiteSpace(ghiChu)) return (dotList, "");
+            var regex = new System.Text.RegularExpressions.Regex(@"(\d+)\s*cái\s*(\d{1,2}/\d{1,2}/\d{4})");
+            foreach (System.Text.RegularExpressions.Match m in regex.Matches(ghiChu))
+            {
+                if (m.Success && m.Groups.Count >= 3 && int.TryParse(m.Groups[1].Value, out var sl))
+                    dotList.Add((sl, m.Groups[2].Value));
+            }
+            if (ghiChu.Contains("Lịch giao:"))
+            {
+                var idx = ghiChu.IndexOf("Lịch giao:", StringComparison.OrdinalIgnoreCase);
+                var after = ghiChu.Substring(idx);
+                var endIdx = after.IndexOf(" | ", StringComparison.Ordinal);
+                var lichGiaoLen = endIdx >= 0 ? idx + endIdx + 3 : ghiChu.Length;
+                var before = (idx > 0 ? ghiChu.Substring(0, idx).Trim() : "");
+                var afterPart = lichGiaoLen < ghiChu.Length ? ghiChu.Substring(lichGiaoLen).Trim() : "";
+                ghiChuConLai = string.Join(" ", new[] { before, afterPart }.Where(s => !string.IsNullOrWhiteSpace(s))).Trim();
+            }
+            return (dotList, ghiChuConLai);
+        };
     }
     <nav class="bodyyeucau">
         <div class="menu-kho">
@@ -304,7 +327,13 @@
                             <td hidden  style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
-                            <td>@(item.NgayCoHang?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            @{ var parsed = parseGhiChuLichGiao(item.GhiChu ?? ""); var dotList = parsed.dotList; var ghiChuConLai = parsed.ghiChuConLai; }
+                            <td class="col-ngaycohang-cell">
+                                <div class="ngaycohang-dot-list">
+                                    @if (dotList.Count > 0) { var dotIndex = 1; foreach (var dot in dotList) { <div class="ngaycohang-line"><strong>Đợt @(dotIndex):</strong> @dot.dateStr @(dot.sl > 0 ? $"({dot.sl} cái)" : "")</div> dotIndex++; } }
+                                    else { <div class="ngaycohang-line"><strong>Ngày có hàng:</strong> @(item.NgayCoHang?.ToString("dd/MM/yyyy") ?? "-")</div> }
+                                </div>
+                            </td>
                             <td class="trangthai-vattu trangthai-column" style="display: none;">
                                 @{
                                     string trangThaiColor = "";
@@ -323,15 +352,17 @@
                                 }
                                 <span style="@trangThaiColor">@trangThai</span>
                             </td>
-                            <td class="ghichu-column">
-                                @if (canActOnItem)
-                                {
-                                    <input type="text" class="ghichu-input" data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau" value="@(item.GhiChu ?? "")" placeholder="Nhập ghi chú..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px;" />
-                                }
-                                else
-                                {
-                                    <span style="color: @((item.TrangThai ?? "").Contains("Đã từ chối") ? "#f44336" : "inherit");">@(item.GhiChu ?? "-")</span>
-                                }
+                            <td class="col-ghichu-cell ghichu-column">
+                                <div class="ghichu-line">
+                                    @if (canActOnItem)
+                                    {
+                                        <input type="text" class="ghichu-input" data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau" value="@(item.GhiChu ?? "")" placeholder="Nhập ghi chú..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px;" />
+                                    }
+                                    else
+                                    {
+                                        <span style="color: @((item.TrangThai ?? "").Contains("Đã từ chối") ? "#f44336" : "inherit");">@(string.IsNullOrWhiteSpace(ghiChuConLai) ? "-" : ghiChuConLai)</span>
+                                    }
+                                </div>
                             </td>
                             <td>
                                 @if (item.NgayDuyet.HasValue)
@@ -698,11 +729,32 @@
                             var ngayCanHangDisplay = formatDateOnly(ngayCanHangVal);
                             var ngayCoHangVal = item.ngayCoHang ?? item.NgayCoHang;
                             var ngayCoHangDisplay = formatDateOnly(ngayCoHangVal);
-                            var ttExcel = (item.tt ?? item.TT ?? '').toString().trim();
-                            var sttFallback = (STT++).toString();
-                            var displayTT = ttExcel || sttFallback;
-                            
-                            // Tích checkbox mặc định cho các vật tư đang chờ duyệt
+                            var ghiChuRaw = item.ghiChu || item.GhiChu || '';
+                            var dotList = [];
+                            var regexDot = /(\d+)\s*cái\s*(\d{1,2}\/\d{1,2}\/\d{4})/g;
+                            var match;
+                            while ((match = regexDot.exec(ghiChuRaw)) !== null) { dotList.push({ sl: parseInt(match[1], 10), dateStr: match[2] }); }
+                            var ghiChuConLai = ghiChuRaw;
+                            if (ghiChuRaw.toLowerCase().indexOf('lịch giao:') !== -1) {
+                                var idx = ghiChuRaw.toLowerCase().indexOf('lịch giao:');
+                                var after = ghiChuRaw.substring(idx);
+                                var endIdx = after.indexOf(' | ');
+                                var lichGiaoLen = endIdx >= 0 ? idx + endIdx + 3 : ghiChuRaw.length;
+                                var before = idx > 0 ? ghiChuRaw.substring(0, idx).trim() : '';
+                                var afterPart = lichGiaoLen < ghiChuRaw.length ? ghiChuRaw.substring(lichGiaoLen).trim() : '';
+                                ghiChuConLai = [before, afterPart].filter(function(s) { return s; }).join(' ').trim();
+                            }
+                            var ghiChuDisplay = (ghiChuConLai === '' || !ghiChuConLai) ? '-' : ghiChuConLai;
+                            var ghiChuDisplayEscaped = (ghiChuDisplay === '-' ? '-' : ghiChuDisplay).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                            var ngayCoHangHtml = '';
+                            if (dotList.length > 0) {
+                                for (var d = 0; d < dotList.length; d++) {
+                                    var dot = dotList[d];
+                                    ngayCoHangHtml += '<div class="ngaycohang-line"><strong>Đợt ' + (d + 1) + ':</strong> ' + dot.dateStr + (dot.sl > 0 ? ' (' + dot.sl + ' cái)' : '') + '</div>';
+                                }
+                            } else {
+                                ngayCoHangHtml = '<div class="ngaycohang-line"><strong>Ngày có hàng:</strong> ' + (ngayCoHangDisplay || '-') + '</div>';
+                            }
                             var checkboxChecked = canActOnItem ? ' checked' : '';
                             var row = `<tr data-mavattu="${maVatTu}" data-mayeucau="${MaYeucau}" class="clickable-vt-row" style="cursor: pointer;" onclick="showVTYeucau('${MaYeucauEscaped}', '${currentNguoiYeucau || ''}', '${MaYeucauEscaped}')">
                                 <td onclick="event.stopPropagation();">${canSelectForBulk ? '<input type="checkbox" class="vt-checkbox" value="' + maVatTuEscaped + '" data-mayeucau="' + MaYeucauEscaped + '" data-mavattu="' + maVatTuEscaped + '"' + checkboxChecked + ' />' : ''}</td>
@@ -719,9 +771,8 @@
                                 <td style="display: none; text-align: center;">${slVal ?? '-'}</td>
                                 <td>${donViVal}</td>
                                 <td>${ngayCanHangDisplay}</td>
-                                <td>${ngayCoHangDisplay || '-'}</td>`;
+                                <td class="col-ngaycohang-cell" onclick="event.stopPropagation();"><div class="ngaycohang-dot-list">${ngayCoHangHtml}</div></td>`;
                             
-                            // Thêm màu sắc cho trạng thái
                             var trangThaiColor = '';
                             if (trangThai === 'Đang mua hàng') {
                                 trangThaiColor = 'color: #2196f3; font-weight: bold;';
@@ -733,18 +784,16 @@
                             row += `<td class="trangthai-vattu trangthai-column" style="display: none;">
                                     <span style="${trangThaiColor}">${trangThai}</span>
                                 </td>
-                                <td class="ghichu-column" onclick="event.stopPropagation();">`;
+                                <td class="col-ghichu-cell ghichu-column" onclick="event.stopPropagation();"><div class="ghichu-line">`;
                             
-                            // Hiển thị input ghi chú nếu có thể thao tác
                             if (canActOnItem) {
                                 var ghiChuValue = (item.ghiChu || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                                 row += `<input type="text" class="ghichu-input" data-mavattu="${maVatTuEscaped}" data-mayeucau="${MaYeucauEscaped}" value="${ghiChuValue}" placeholder="Nhập ghi chú..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 13px;" />`;
                             } else {
                                 var ghiChuColor = (trangThai && (trangThai.indexOf('Đã từ chối') !== -1 || trangThai.indexOf('từ chối') !== -1)) ? '#f44336' : 'inherit';
-                                row += `<span style="color: ${ghiChuColor};">${item.ghiChu || '-'}</span>`;
+                                row += `<span style="color: ${ghiChuColor};">${ghiChuDisplayEscaped}</span>`;
                             }
-                            
-                            row += `</td>
+                            row += `</div></td>
                                 <td onclick="event.stopPropagation();">`;
                             
                             // Hiển thị ngày duyệt

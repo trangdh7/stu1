@@ -21,6 +21,31 @@
     {
         <div class="alert alert-danger" style="margin: 10px 15px; padding: 10px 15px; background: #f8d7da; color: #721c24; border-radius: 4px;">@TempData["ErrorMessage"]</div>
     }
+    @{
+        Func<string, (List<(int sl, string dateStr)> dotList, string ghiChuConLai)> parseGhiChuLichGiao = (ghiChu) =>
+        {
+            var dotList = new List<(int, string)>();
+            var ghiChuConLai = ghiChu ?? "";
+            if (string.IsNullOrWhiteSpace(ghiChu)) return (dotList, "");
+            var regex = new System.Text.RegularExpressions.Regex(@"(\d+)\s*cái\s*(\d{1,2}/\d{1,2}/\d{4})");
+            foreach (System.Text.RegularExpressions.Match m in regex.Matches(ghiChu))
+            {
+                if (m.Success && m.Groups.Count >= 3 && int.TryParse(m.Groups[1].Value, out var sl))
+                    dotList.Add((sl, m.Groups[2].Value));
+            }
+            if (ghiChu.Contains("Lịch giao:"))
+            {
+                var idx = ghiChu.IndexOf("Lịch giao:", StringComparison.OrdinalIgnoreCase);
+                var after = ghiChu.Substring(idx);
+                var endIdx = after.IndexOf(" | ", StringComparison.Ordinal);
+                var lichGiaoLen = endIdx >= 0 ? idx + endIdx + 3 : ghiChu.Length;
+                var before = (idx > 0 ? ghiChu.Substring(0, idx).Trim() : "");
+                var afterPart = lichGiaoLen < ghiChu.Length ? ghiChu.Substring(lichGiaoLen).Trim() : "";
+                ghiChuConLai = string.Join(" ", new[] { before, afterPart }.Where(s => !string.IsNullOrWhiteSpace(s))).Trim();
+            }
+            return (dotList, ghiChuConLai);
+        };
+    }
     <nav class="bodyyeucau">
         <div class="menu-kho">
             <ul class="timkiem">
@@ -267,10 +292,16 @@
                             <td hidden style="text-align: center;">@(item.SL?.ToString() ?? item.SLMoi?.ToString() ?? "-")</td>
                             <td>@(item.DonVi ?? "-")</td>
                             <td>@(item.NgayCanHang?.ToString("dd/MM/yyyy") ?? "-")</td>
-                            <td>@(item.NgayCoHang?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            @{ var parsed = parseGhiChuLichGiao(item.GhiChu ?? ""); var dotList = parsed.dotList; var ghiChuConLai = parsed.ghiChuConLai; }
+                            <td class="col-ngaycohang-cell">
+                                <div class="ngaycohang-dot-list">
+                                    @if (dotList.Count > 0) { var dotIndex = 1; foreach (var dot in dotList) { <div class="ngaycohang-line"><strong>Đợt @(dotIndex):</strong> @dot.dateStr @(dot.sl > 0 ? $"({dot.sl} cái)" : "")</div> dotIndex++; } }
+                                    else { <div class="ngaycohang-line"><strong>Ngày có hàng:</strong> @(item.NgayCoHang?.ToString("dd/MM/yyyy") ?? "-")</div> }
+                                </div>
+                            </td>
                             <td>@(item.TrangThai ?? "")</td>
-                            <td style="color: @(item.TrangThai?.Contains("Đã từ chối") == true ? "#f44336" : "inherit");">
-                                @(item.GhiChu ?? "-")
+                            <td class="col-ghichu-cell" style="color: @(item.TrangThai?.Contains("Đã từ chối") == true ? "#f44336" : "inherit");">
+                                @(string.IsNullOrWhiteSpace(ghiChuConLai) ? "-" : ghiChuConLai)
                             </td>
                             <td>@(item.NgayDuyet?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
                         </tr>

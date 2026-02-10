@@ -144,7 +144,13 @@ button {
 
 .tablethietbi-yeucau .col-donvi { width: 2.5%; min-width: 40px; }
 .tablethietbi-yeucau .col-ngaycan { width: 6%; }
-.tablethietbi-yeucau .col-ngaycohang { width: 6%; }
+.tablethietbi-yeucau .col-ngaycohang { width: 10%; min-width: 120px; word-wrap: break-word; }
+.tablethietbi-yeucau .col-ngaycohang-cell { width: 10%; min-width: 120px; word-wrap: break-word; }
+.tablethietbi-yeucau .col-ghichu-cell { width: 12%; word-wrap: break-word; }
+.tablethietbi-yeucau .ngaycohang-dot-list .ngaycohang-line { margin-bottom: 4px; font-size: 13px; }
+.tablethietbi-yeucau .ngaycohang-ghichu-wrap .ngaycohang-line { margin-bottom: 4px; font-size: 13px; }
+.tablethietbi-yeucau .ngaycohang-ghichu-wrap .ghichu-line,
+.tablethietbi-yeucau .ghichu-line { font-size: 13px; }
 .tablethietbi-yeucau .col-trangthai,
 .tablethietbi-yeucau .trangthai-column { width: 10%; min-width: 100px; }
 .tablethietbi-yeucau .col-ngayduyet { width: 10%; }
