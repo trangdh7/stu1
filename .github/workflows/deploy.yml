@@ -5,42 +5,43 @@ on:
     branches: ["main"]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # 1. Checkout source
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup .NET
+      # 2. Setup .NET 8
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
 
+      # 3. Restore
       - name: Restore
         run: dotnet restore
 
+      # 4. Build
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
+      # 5. Publish
       - name: Publish
         run: dotnet publish ./Webkho20241021/Webkho20241021.csproj -c Release -o ./publish --no-build
 
-      # STOP IIS
-      - name: Stop IIS
+      # 6. HARD STOP IIS (QUAN TRỌNG NHẤT)
+      - name: Stop IIS completely
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            powershell -Command "
-              Import-Module WebAdministration;
-              if ((Get-WebAppPoolState -Name 'webkho').Value -ne 'Stopped') {
-                Stop-WebAppPool -Name 'webkho'
-              }
-            "
+            iisreset /stop
 
-      # CLEAN
+      # 7. CLEAN THƯ MỤC DEPLOY
       - name: Clean old files
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -55,8 +56,8 @@ jobs:
               New-Item -ItemType Directory -Force -Path 'C:\inetpub\wwwroot\Webkho20241021'
             "
 
-      # DEPLOY
-      - name: Upload to Windows VPS
+      # 8. COPY FILE LÊN SERVER (KHÔNG rm)
+      - name: Upload publish folder to IIS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -65,7 +66,7 @@ jobs:
           source: "publish/*"
           target: "C:/inetpub/wwwroot/Webkho20241021"
 
-      # START IIS
+      # 9. START IIS LẠI
       - name: Start IIS
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -73,9 +74,4 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            powershell -Command "
-              Import-Module WebAdministration;
-              if ((Get-WebAppPoolState -Name 'webkho').Value -ne 'Started') {
-                Start-WebAppPool -Name 'webkho'
-              }
-            "
+            iisreset /start
