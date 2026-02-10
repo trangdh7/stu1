@@ -24,7 +24,12 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            powershell -Command "Import-Module WebAdministration; Stop-WebAppPool webkho"
+            powershell -Command "
+              Import-Module WebAdministration;
+              if ((Get-WebAppPoolState -Name 'webkho').Value -ne 'Stopped') {
+                Stop-WebAppPool -Name 'webkho'
+              }
+            "
 
       - name: Clean old files
         uses: appleboy/ssh-action@v0.1.7
@@ -33,7 +38,10 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            powershell -Command "Remove-Item -Recurse -Force 'C:\inetpub\wwwroot\Webkho20241021'; New-Item -ItemType Directory -Force -Path 'C:\inetpub\wwwroot\Webkho20241021'"
+            powershell -Command "
+              Remove-Item -Recurse -Force 'C:\inetpub\wwwroot\Webkho20241021';
+              New-Item -ItemType Directory -Force -Path 'C:\inetpub\wwwroot\Webkho20241021'
+            "
 
       - name: Upload to Windows VPS
         uses: appleboy/scp-action@v0.1.7
@@ -51,8 +59,9 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-
-            powershell -Command "Import-Module WebAdministration; Start-WebAppPool webkho; Write-Host '✅ IIS AppPool webkho restarted'"
-
-
-
+            powershell -Command "
+              Import-Module WebAdministration;
+              if ((Get-WebAppPoolState -Name 'webkho').Value -ne 'Started') {
+                Start-WebAppPool -Name 'webkho'
+              }
+            "
