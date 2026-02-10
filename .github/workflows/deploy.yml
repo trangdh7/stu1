@@ -1,4 +1,5 @@
 name: Deploy khostu .NET 8 to IIS
+
 on:
   push:
     branches: ["main"]
@@ -9,16 +10,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
 
-      - run: dotnet restore
-      - run: dotnet build --configuration Release
-      - run: dotnet publish ./Webkho20241021/Webkho20241021.csproj -c Release -o ./publish
+      - name: Restore
+        run: dotnet restore
 
-      - name: Stop IIS AppPool
-        uses: appleboy/ssh-action@v0.1.7
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ./Webkho20241021/Webkho20241021.csproj -c Release -o ./publish --no-build
+
+      # STOP IIS
+      - name: Stop IIS
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
@@ -31,29 +40,35 @@ jobs:
               }
             "
 
+      # CLEAN
       - name: Clean old files
-        uses: appleboy/ssh-action@v0.1.7
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             powershell -Command "
-              Remove-Item -Recurse -Force 'C:\inetpub\wwwroot\Webkho20241021';
+              if (Test-Path 'C:\inetpub\wwwroot\Webkho20241021') {
+                Remove-Item -Recurse -Force 'C:\inetpub\wwwroot\Webkho20241021'
+              }
               New-Item -ItemType Directory -Force -Path 'C:\inetpub\wwwroot\Webkho20241021'
             "
 
+      # DEPLOY
       - name: Upload to Windows VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
-          source: "./publish/*"
+          source: "publish/*"
           target: "C:/inetpub/wwwroot/Webkho20241021"
+          rm: true
 
-      - name: Start IIS AppPool
-        uses: appleboy/ssh-action@v0.1.7
+      # START IIS
+      - name: Start IIS
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
