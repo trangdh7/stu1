@@ -64,7 +64,6 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           source: "publish/*"
           target: "C:/inetpub/wwwroot/Webkho20241021"
-          rm: true
 
       # START IIS
       - name: Start IIS
