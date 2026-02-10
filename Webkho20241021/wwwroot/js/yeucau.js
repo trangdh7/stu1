@@ -10,6 +10,10 @@ $(document).ready(function () {
         const NguoiYeucau = firstRow.find('td').eq(colIdx.nguoi).text().trim();
         if (MaYeucau) {
             showVTYeucau(MaYeucau, NguoiYeucau);
+            // Đồng thời highlight luôn hàng đầu tiên để người dùng thấy đang xem yêu cầu nào
+            if (typeof applyTableRowHighlight === 'function') {
+                applyTableRowHighlight(firstRow);
+            }
         }
     }
 
@@ -110,8 +114,11 @@ function syncTableThietbiStickyHeader() {
 }
 
 function applyTableRowHighlight($row) {
-    const $rows = $('.table tbody tr');
-    $rows.removeClass('highlight');
+    // Dùng chung cho bảng yêu cầu: xóa hết highlight cũ, tô lại cho hàng được chọn
+    const $rows = $('.Tableyeucau .table tbody tr');
+
+    // Gỡ class + màu cũ
+    $rows.removeClass('active-row');
     $rows.find('td').css({
         backgroundColor: '',
         color: ''
@@ -119,7 +126,11 @@ function applyTableRowHighlight($row) {
     $rows.find('a').css('color', '');
 
     if ($row && $row.length) {
-        $row.addClass('highlight');
+        // Ghi log để debug khi cần
+        // console.log('[applyTableRowHighlight] set active for row index', $row.index());
+
+        // Gắn class + màu mới cho hàng được chọn
+        $row.addClass('active-row');
         $row.find('td').css({
             backgroundColor: ROW_HIGHLIGHT_COLOR,
             color: ROW_HIGHLIGHT_TEXT_COLOR

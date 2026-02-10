@@ -135,6 +135,7 @@ button {
 .tablethietbi-yeucau .col-pre-sl-2 { width: var(--w-pre2); padding-left: 6px; padding-right: 6px; }
 .tablethietbi-yeucau .col-pre-sl-3 { width: var(--w-pre3); word-wrap: break-word; }
 .tablethietbi-yeucau .col-pre-sl-4 { width: var(--w-pre4); word-wrap: break-word; }
+.tablethietbi-yeucau .col-mayeucau { width: 11%; min-width: 100px; word-wrap: break-word; white-space: normal; }
 .tablethietbi-yeucau .col-pre-sl-5 { width: var(--w-pre5); }
 .tablethietbi-yeucau .col-pre-sl-6 { width: var(--w-pre6); }
 
@@ -194,15 +195,15 @@ button {
   border-bottom: 2px solid var(--body-color);
 }
 
-.table tbody tr.highlight,
-.table tbody tr.highlight td {
-  background-color: #2d9f3c !important;
-  color: #ffffff;
-}
+ .table tbody tr.highlight,
+ .table tbody tr.highlight td {
+   background-color: #2d9f3c !important;
+   /* Giữ nguyên màu chữ mặc định */
+ }
 
-.table tbody tr.highlight a {
-  color: #ffffff;
-}
+ .table tbody tr.highlight a {
+   color: inherit;
+ }
 
 .table tbody tr.highlight i {
   color: #ffffff !important;
@@ -270,24 +271,27 @@ button {
   color: #000000 !important;
 }
 
-.tablethietbi tbody tr.highlight,
-.tablethietbi tbody tr.highlight td {
-  background-color: #2d9f3c !important;
-  color: #ffffff;
-}
+ .tablethietbi tbody tr.highlight,
+ .tablethietbi tbody tr.highlight td {
+   background-color: #2d9f3c !important;
+   /* Giữ nguyên màu chữ mặc định */
+ }
 
-.tablethietbi tbody tr.highlight a {
-  color: #ffffff;
-}
+ .tablethietbi tbody tr.highlight a {
+   color: inherit;
+ }
 
 .tablethietbi tbody tr.highlight i {
   color: #ffffff !important;
 }
 
-.table tbody tr.active-row {
-  font-weight: bold;
-  color: var(--body-color);
-}
+ .table tbody tr.active-row td {
+   background-color: #2d9f3c !important;
+   color: #ffffff !important;
+ }
+ .table tbody tr.active-row a {
+   color: #ffffff !important;
+ }
 
 .tablethietbi {
   width: 100%;
@@ -333,6 +337,9 @@ button {
 
 .tablethietbi tbody tr {
   border-bottom: 1px solid #ddd;
+}
+
+.tablethietbi tbody tr:hover {
   background-color: #f4f4f4;
 }
 
@@ -344,9 +351,12 @@ button {
   border-bottom: 2px solid var(--body-color);
 }
 
-.tablethietbi tbody tr.active-row {
-  font-weight: bold;
-  color: var(--body-color);
+.tablethietbi tbody tr.active-row td {
+  background-color: #2d9f3c !important;
+  color: #ffffff !important;
+}
+.tablethietbi tbody tr.active-row a {
+  color: #ffffff !important;
 }
 
 /* Style for print icon in Phieunhapkho */

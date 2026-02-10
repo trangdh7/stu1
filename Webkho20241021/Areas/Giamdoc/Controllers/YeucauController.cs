@@ -832,10 +832,17 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     StringComparer.OrdinalIgnoreCase
                 );
 
+            var yeucauByMa = _context.yeucau
+                .Where(y => y.MaYeucau != null && maList.Contains(y.MaYeucau))
+                .Select(y => new { y.MaYeucau, y.YCMaDuan })
+                .ToList()
+                .ToDictionary(x => x.MaYeucau!, x => x.YCMaDuan ?? "", StringComparer.OrdinalIgnoreCase);
+
             var processedVatTuList = vatTuList.Select(v =>
             {
                 var maYc = v.VTMaYeucau ?? string.Empty;
                 var maSp = v.MaSanpham ?? string.Empty;
+                var maDuan = yeucauByMa.TryGetValue(maYc, out var ycMaDuan) ? ycMaDuan : "";
 
                 var slMoi = v.SLMoi ?? v.SL ?? 0;
                 var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
@@ -856,6 +863,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     v.ID,
                     v.TT,
                     v.VTMaYeucau,
+                    YCMaDuan = maDuan,
                     v.TenSanpham,
                     v.MaSanpham,
                     v.YCMakho,
@@ -1059,12 +1067,19 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     StringComparer.OrdinalIgnoreCase
                 );
 
+            var yeucauByMaExport = _context.yeucau
+                .Where(y => y.MaYeucau != null && maList.Contains(y.MaYeucau))
+                .Select(y => new { y.MaYeucau, y.YCMaDuan })
+                .ToList()
+                .ToDictionary(x => x.MaYeucau!, x => x.YCMaDuan ?? "", StringComparer.OrdinalIgnoreCase);
+
             var exportRows = new List<dynamic>();
 
             foreach (var v in vatTuList)
             {
                 var maYc = v.VTMaYeucau ?? string.Empty;
                 var maSp = v.MaSanpham ?? string.Empty;
+                var maDuan = yeucauByMaExport.TryGetValue(maYc, out var ycMaDuan) ? ycMaDuan : "";
 
                 var slMoi = v.SLMoi ?? v.SL ?? 0;
                 var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
@@ -1085,7 +1100,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     v.TT,
                     v.TenSanpham,
                     v.MaSanpham,
-                    MaYeucau = maYc,
+                    MaDuan = maDuan,
                     v.HangSX,
                     v.NhaCC,
                     v.SLCu,
@@ -1119,7 +1134,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 worksheet.Cells[headerRow1, 1].Value = "TT";
                 worksheet.Cells[headerRow1, 2].Value = "Tên thiết bị / hàng hóa";
                 worksheet.Cells[headerRow1, 3].Value = "Mã VT";
-                worksheet.Cells[headerRow1, 4].Value = "Mã yêu cầu";
+                worksheet.Cells[headerRow1, 4].Value = "Mã dự án";
                 worksheet.Cells[headerRow1, 5].Value = "Hãng SX";
                 worksheet.Cells[headerRow1, 6].Value = "NCC";
                 worksheet.Cells[headerRow1, 7, headerRow1, 11].Merge = true;
@@ -1169,7 +1184,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                     worksheet.Cells[row, 1].Value = r.TT != null ? r.TT : stt++;
                     worksheet.Cells[row, 2].Value = r.TenSanpham ?? "";
                     worksheet.Cells[row, 3].Value = r.MaSanpham ?? "";
-                    worksheet.Cells[row, 4].Value = r.MaYeucau ?? "";
+                    worksheet.Cells[row, 4].Value = r.MaDuan ?? "";
                     worksheet.Cells[row, 5].Value = r.HangSX ?? "";
                     worksheet.Cells[row, 6].Value = r.NhaCC ?? "";
                     worksheet.Cells[row, 7].Value = r.SLCu ?? 0;

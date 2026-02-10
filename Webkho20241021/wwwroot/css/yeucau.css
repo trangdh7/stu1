@@ -77,3 +77,12 @@
     min-width: 200px;
 }
 
+/* Cột Mã yêu cầu: luôn hiển thị, chữ nằm ngang (width do Table.css .tablethietbi-yeucau .col-mayeucau) */
+.tablethietbi-yeucau .col-mayeucau {
+    display: table-cell;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    vertical-align: middle;
+}
+

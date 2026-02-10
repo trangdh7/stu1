@@ -167,7 +167,7 @@
                             <td>@STT</td>
                             <td>@item.TenYeucau</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="event.stopPropagation(); showVTYeucau('@item.MaYeucau', '@item.NguoiYeucau', '@item.MaYeucau')">
+                                <a href="javascript:void(0);">
                                     @item.MaYeucau
                                 </a>
                             </td>
@@ -242,7 +242,7 @@
                         <th rowspan="2" class="col-pre-sl-2">TT</th>
                         <th rowspan="2" class="col-pre-sl-3">Tên thiết bị / hàng hóa</th>
                         <th rowspan="2" class="col-pre-sl-4">Mã VT</th>
-                        <th rowspan="2" class="col-mayeucau" style="display:none;">Mã yêu cầu</th>
+                        <th rowspan="2" class="col-mayeucau">Mã yêu cầu</th>
                         <th rowspan="2" class="col-pre-sl-5">Hãng SX</th>
                         <th rowspan="2" class="col-pre-sl-6">NCC</th>
                         <th colspan="5" class="col-sl-header" style="text-align: center;">SL</th>
@@ -309,6 +309,7 @@
                             <td>@(string.IsNullOrWhiteSpace(item.TT) ? STT2.ToString() : item.TT)</td>
                             <td>@item.TenSanpham</td>
                             <td>@item.MaSanpham</td>
+                            <td class="col-mayeucau">@maYeucau</td>
                             <td>@item.HangSX</td>
                             <td>@item.NhaCC</td>
                             <td class="col-sl col-sl-1" style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
@@ -513,14 +514,42 @@
                 $(this).addClass('active-row');
             });
 
-            // Click từng dòng yêu cầu (bảng trên) để active giống bình thường
-            // - Áp dụng cả khi click vào link Mã yêu cầu (có stopPropagation)
-            $(document).on('click', '.Tableyeucau .table tbody tr, .Tableyeucau .table tbody tr a', function () {
+            // Click từng dòng yêu cầu (bảng trên) để active + load chi tiết
+            $(document).on('click', '.Tableyeucau .table tbody tr', function (e) {
+                // Bỏ qua nếu click trực tiếp vào checkbox (đã có handler riêng)
+                if ($(e.target).closest('.yeucau-checkbox').length) {
+                    return;
+                }
+
                 if (typeof applyTableRowHighlight !== 'function') return;
 
-                var $row = $(this).closest('tr');
-                if ($row.length) {
-                    applyTableRowHighlight($row);
+                var $row = $(this);
+
+                // Khi click vào bất kỳ chỗ nào trên hàng, coi như đang chọn checkbox của hàng đó:
+                //  - Bỏ chọn các checkbox khác
+                //  - Chọn (check) checkbox của hàng hiện tại để đồng bộ với logic trong handler "change"
+                var $checkbox = $row.find('.yeucau-checkbox');
+                if ($checkbox.length) {
+                    // Bỏ chọn tất cả checkbox khác
+                    $('.yeucau-checkbox').not($checkbox).prop('checked', false).trigger('change');
+                    // Chọn checkbox của hàng hiện tại nếu nó chưa được chọn
+                    if (!$checkbox.is(':checked')) {
+                        $checkbox.prop('checked', true).trigger('change');
+                    }
+                }
+
+                var ma = ($row.data('mayeucau') || '').toString().trim();
+                var nguoi = ($row.data('nguoiyc') || '').toString().trim();
+
+                // Log debug để chắc chắn handler được gọi
+                console.log('[YEUCAU ROW CLICK] click row MaYeucau=', ma, 'NguoiYeucau=', nguoi);
+
+                // Tô màu dòng đang chọn
+                applyTableRowHighlight($row);
+
+                // Đồng thời load bảng vật tư tương ứng để người dùng thấy rõ đang xem yêu cầu nào
+                if (ma && typeof showVTYeucau === 'function') {
+                    showVTYeucau(ma, nguoi, ma);
                 }
             });
 
@@ -552,6 +581,7 @@
                     }
                 } else {
                     // Chọn từ 2 yêu cầu trở lên -> xem gộp
+                    console.log('[Yeucau Multi] Checkbox change: selectedYeucauSet.size=', selectedYeucauSet.size, '-> gọi loadMultiYeucauFromSelection()');
                     loadMultiYeucauFromSelection();
                 }
             } else {
@@ -576,10 +606,26 @@
             }
         });
 
+        // === DEBUG F12: Mở F12 (Ctrl+Shift+I) → tab Console.
+        // Gõ: debugYeucauMulti() → xem is-multi và computed display của .col-mayeucau.
+        window.debugYeucauMulti = function () {
+            var $box = $('#TableyeucauThietbiBox');
+            var hasMulti = $box.hasClass('is-multi');
+            var $thMaYc = $('.col-mayeucau').first();
+            var thMaYcDisplay = $thMaYc.length ? window.getComputedStyle($thMaYc[0]).display : 'N/A';
+            console.log('[Yeucau Multi Debug]', {
+                'is-multi class': hasMulti,
+                'col-mayeucau (computed display)': thMaYcDisplay,
+                'số dòng tbody': $('#vtYeucauBody tr').length
+            });
+            return { hasMulti: hasMulti, thMaYcDisplay: thMaYcDisplay };
+        };
+
         // Hàm dùng chung: gộp nhiều yêu cầu đang được chọn và hiển thị danh sách vật tư
         function loadMultiYeucauFromSelection() {
             var $checked = $('.yeucau-checkbox:checked');
             if ($checked.length < 2) {
+                console.log('[Yeucau Multi] Bỏ qua: chọn ít hơn 2 yêu cầu, checked=', $checked.length);
                 return;
             }
 
@@ -595,17 +641,16 @@
             });
 
             if (maList.length < 2) {
+                console.log('[Yeucau Multi] Bỏ qua: maList.length < 2', maList);
                 return;
             }
+
+            console.log('[Yeucau Multi] Gọi GetVTYeucauMulti, maList=', maList);
 
             // Hiển thị khu vực bảng vật tư nếu đang ẩn
             $('.bodyyeucau-thietbi').show();
             $('.tablethietbi').show();
             syncTableThietbiStickyHeader();
-            // Ẩn cột "Mã yêu cầu" khi chỉ xem 1 yêu cầu
-            $('.col-mayeucau').css('display', 'none');
-            // Hiện cột "Mã yêu cầu" khi gộp nhiều yêu cầu
-            $('.col-mayeucau').css('display', 'table-cell');
 
             // Cập nhật thanh thông tin yêu cầu cho chế độ xem gộp
             // Chỉ hiển thị danh sách mã yêu cầu: "yeucau1, yeucau2"
@@ -629,13 +674,18 @@
                 method: 'GET',
                 data: { maYeucauList: maList.join(',') },
                 success: function (data) {
+                    console.log('[Yeucau Multi] GetVTYeucauMulti success, số dòng=', data ? data.length : 0, 'mẫu item keys:', data && data[0] ? Object.keys(data[0]) : []);
+                    if (data && data[0]) {
+                        console.log('[Yeucau Multi] Item[0] vtMaYeucau=', data[0].vtMaYeucau);
+                    }
+
                     $('#vtYeucauBody').empty();
                     $('#selectAllVT').prop('checked', false);
                     syncTableThietbiStickyHeader();
 
                     if (!data || data.length === 0) {
                         $('#vtYeucauBody').append(
-                            '<tr><td colspan="17" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>'
+                            '<tr><td colspan="18" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>'
                         );
                         return;
                     }
@@ -664,7 +714,7 @@
                         var ngayCoHangDisplay = formatDateOnly(ngayCoHangVal);
                         var trangThai = item.trangThai || item.TrangThai || '';
                         var ghiChu = item.ghiChu || item.GhiChu || '-';
-                        var maYc = item.vTMaYeucau || item.VTMaYeucau || '';
+                        var maYc = (item.vtMaYeucau || item['vtMaYeucau'] || item.vTMaYeucau || item.VTMaYeucau || item['VTMaYeucau'] || '').toString().trim();
 
                         var trangThaiColor = '';
                         if (trangThai === 'Đang mua hàng') {
@@ -680,7 +730,7 @@
                             + '<td>' + (STT++) + '</td>'
                             + '<td>' + (item.tenSanpham || item.TenSanpham || '') + '</td>'
                             + '<td>' + maVatTu + '</td>'
-                            + '<td>' + maYc + '</td>'
+                            + '<td class="col-mayeucau">' + maYc + '</td>'
                             + '<td>' + (hangSX || '-') + '</td>'
                             + '<td>' + (nhaCC || '-') + '</td>'
                             + '<td class="col-sl col-sl-1" style="text-align:center;">' + (slCuVal ?? '-') + '</td>'
@@ -704,6 +754,9 @@
 
                     // Hiện cột trạng thái vì lúc này chắc chắn có nhiều trạng thái khác nhau
                     $('.trangthai-column-header, .trangthai-column').css('display', 'table-cell');
+
+                    // Bật chế độ multi để CSS hiện cột Mã yêu cầu
+                    $('#TableyeucauThietbiBox').addClass('is-multi');
 
                     // Highlight các dòng yêu cầu đã chọn ở bảng trên
                     highlightSelectedYeucauRows();
@@ -794,6 +847,8 @@
             $('.bodyyeucau-thietbi').show();
             $('.tablethietbi').show();
             syncTableThietbiStickyHeader();
+            // Tắt chế độ multi để ẩn cột Mã yêu cầu
+            $('#TableyeucauThietbiBox').removeClass('is-multi');
 
             // Hiển thị thông tin yêu cầu và thanh nút
             if (currentNguoiYeucau) {
@@ -916,6 +971,7 @@
                                 <td>${displayTT}</td>
                                 <td>${item.tenSanpham || item.TenSanpham || ''}</td>
                                 <td>${maVatTu}</td>
+                                <td class="col-mayeucau"></td>
                                 <td>${hangSX || '-'}</td>
                                 <td>${nhaCC || '-'}</td>
                                 <td class="col-sl col-sl-1" style="text-align: center;">${slCuVal ?? '-'}</td>
@@ -981,7 +1037,7 @@
                         updateActionButtons();
                     } else {
                         $('#vtYeucauBody').append(
-                            `<tr><td colspan="17" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
+                            `<tr><td colspan="18" style="text-align:center;">Không có dữ liệu vật tư.</td></tr>`
                         );
                         // Cập nhật nút hành động khi không có dữ liệu
                         updateActionButtons();
@@ -1470,13 +1526,20 @@
             outline: 2px solid #1976d2;
             outline-offset: -2px;
         }
-        /* Khi chọn nhiều yêu cầu, tô nền xanh giống active cho tất cả dòng được chọn */
-        .multi-selected-yeucau td {
+        /* Dòng đang xem (active) trong bảng yêu cầu trên */
+        .Tableyeucau .table tbody tr.active-row td {
             background-color: #2d9f3c !important;
             color: #ffffff !important;
         }
-        .multi-selected-yeucau a {
+        .Tableyeucau .table tbody tr.active-row a {
             color: #ffffff !important;
+        }
+        /* Khi chọn nhiều yêu cầu, chỉ đổi màu nền, không đổi màu chữ */
+        .multi-selected-yeucau td {
+            background-color: #2d9f3c !important;
+        }
+        .multi-selected-yeucau a {
+            color: inherit !important;
         }
         /* Checkbox chọn yêu cầu (bảng trên cùng) */
         .yeucau-checkbox {
