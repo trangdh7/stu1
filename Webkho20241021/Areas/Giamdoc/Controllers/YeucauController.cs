@@ -654,7 +654,9 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetVTYeucau(string MaYeucau)
+        public IActionResult GetVTYeucau(string MaYeucau,
+            int? slCuMin, int? slCuMax, int? slMoiMin, int? slMoiMax, int? slMin, int? slMax,
+            int? tonKhoMin, int? tonKhoMax, int? slThieuMin, int? slThieuMax, int? slDaXuatMin, int? slDaXuatMax)
         {
             System.Diagnostics.Debug.WriteLine($"[Giamdoc/GetVTYeucau] MaYeucau={MaYeucau}");
 
@@ -662,6 +664,16 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             {
                 return Json(new List<object>());
             }
+
+            var quantityFilter = new VtyeucauQuantityFilter
+            {
+                SLCuMin = slCuMin, SLCuMax = slCuMax,
+                SLMoiMin = slMoiMin, SLMoiMax = slMoiMax,
+                SLMin = slMin, SLMax = slMax,
+                TonKhoMin = tonKhoMin, TonKhoMax = tonKhoMax,
+                SlThieuMin = slThieuMin, SlThieuMax = slThieuMax,
+                SlDaXuatMin = slDaXuatMin, SlDaXuatMax = slDaXuatMax
+            };
 
             // Nếu yêu cầu đã có dòng chi tiết trong vtyeucau
             // thì luôn ưu tiên hiển thị danh sách đó (yêu cầu vật tư gốc),
@@ -674,6 +686,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                 var vatTuList = _context.vtyeucau
                     .Where(v => v.VTMaYeucau == MaYeucau)
                     .ToList();
+                vatTuList = DataFilterService.FilterVtyeucauByQuantity(vatTuList, quantityFilter);
                 System.Diagnostics.Debug.WriteLine($"[Giamdoc/GetVTYeucau] vtyeucau rows={vatTuList.Count}");
 
                 var maSanphamList = vatTuList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
@@ -721,6 +734,13 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
                         SlDaXuat = slDaXuat
                     };
                 }).ToList();
+
+                if (!quantityFilter.IsEmpty)
+                {
+                    processedVatTuList = processedVatTuList
+                        .Where(x => DataFilterService.PassesQuantityFilter(quantityFilter, x.SLCu, x.SLMoi, x.SL, x.TonKho, x.SlThieu, x.SlDaXuat))
+                        .ToList();
+                }
 
                 return Json(processedVatTuList);
             }
@@ -783,12 +803,24 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
         /// Dùng cho màn Giám đốc khi chọn nhiều yêu cầu và xem chung một danh sách.
         /// </summary>
         [HttpGet]
-        public IActionResult GetVTYeucauMulti(string maYeucauList)
+        public IActionResult GetVTYeucauMulti(string maYeucauList,
+            int? slCuMin, int? slCuMax, int? slMoiMin, int? slMoiMax, int? slMin, int? slMax,
+            int? tonKhoMin, int? tonKhoMax, int? slThieuMin, int? slThieuMax, int? slDaXuatMin, int? slDaXuatMax)
         {
             if (string.IsNullOrWhiteSpace(maYeucauList))
             {
                 return Json(new List<object>());
             }
+
+            var quantityFilter = new VtyeucauQuantityFilter
+            {
+                SLCuMin = slCuMin, SLCuMax = slCuMax,
+                SLMoiMin = slMoiMin, SLMoiMax = slMoiMax,
+                SLMin = slMin, SLMax = slMax,
+                TonKhoMin = tonKhoMin, TonKhoMax = tonKhoMax,
+                SlThieuMin = slThieuMin, SlThieuMax = slThieuMax,
+                SlDaXuatMin = slDaXuatMin, SlDaXuatMax = slDaXuatMax
+            };
 
             var maList = maYeucauList
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -806,6 +838,7 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             var vatTuList = _context.vtyeucau
                 .Where(v => v.VTMaYeucau != null && maList.Contains(v.VTMaYeucau))
                 .ToList();
+            vatTuList = DataFilterService.FilterVtyeucauByQuantity(vatTuList, quantityFilter);
 
             if (!vatTuList.Any())
             {
@@ -893,6 +926,13 @@ namespace Webkho_20241021.Areas.Giamdoc.Controllers
             .OrderBy(x => x.VTMaYeucau)
             .ThenBy(x => x.TT)
             .ToList();
+
+            if (!quantityFilter.IsEmpty)
+            {
+                processedVatTuList = processedVatTuList
+                    .Where(x => DataFilterService.PassesQuantityFilter(quantityFilter, x.SLCu, x.SLMoi, x.SL, x.TonKho, x.SlThieu, x.SlDaXuat))
+                    .ToList();
+            }
 
             return Json(processedVatTuList);
         }

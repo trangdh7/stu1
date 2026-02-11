@@ -412,12 +412,24 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetVTYeucau(string MaYeucau)
+        public IActionResult GetVTYeucau(string MaYeucau,
+            int? slCuMin, int? slCuMax, int? slMoiMin, int? slMoiMax, int? slMin, int? slMax,
+            int? tonKhoMin, int? tonKhoMax, int? slThieuMin, int? slThieuMax, int? slDaXuatMin, int? slDaXuatMax)
         {
             if (string.IsNullOrWhiteSpace(MaYeucau))
             {
                 return Json(new List<object>());
             }
+
+            var quantityFilter = new VtyeucauQuantityFilter
+            {
+                SLCuMin = slCuMin, SLCuMax = slCuMax,
+                SLMoiMin = slMoiMin, SLMoiMax = slMoiMax,
+                SLMin = slMin, SLMax = slMax,
+                TonKhoMin = tonKhoMin, TonKhoMax = tonKhoMax,
+                SlThieuMin = slThieuMin, SlThieuMax = slThieuMax,
+                SlDaXuatMin = slDaXuatMin, SlDaXuatMax = slDaXuatMax
+            };
 
             // Nếu yêu cầu có dòng chi tiết trong vtyeucau thì ưu tiên hiển thị
             // danh sách đó (yêu cầu vật tư gốc), kể cả khi đã có phiếu nhập kho.
@@ -427,6 +439,7 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
             if (hasVatTuYeuCau)
             {
                 var vatTuList = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                vatTuList = DataFilterService.FilterVtyeucauByQuantity(vatTuList, quantityFilter);
                 var maSanphamList = vatTuList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
                 var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
@@ -443,6 +456,10 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                     var slDaXuat = slDaXuatThucTe > 0 ? (int?)slDaXuatThucTe : (isDaXuatKho ? (v.SL ?? v.SLMoi) : (int?)null);
                     return new { v.ID, v.TT, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayCoHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = slDaXuat };
                 }).ToList();
+                if (!quantityFilter.IsEmpty)
+                {
+                    result = result.Where(x => DataFilterService.PassesQuantityFilter(quantityFilter, x.SLCu, x.SLMoi, x.SL, x.TonKho, x.SlThieu, x.SlDaXuat)).ToList();
+                }
                 return Json(result);
             }
 
@@ -487,8 +504,13 @@ namespace Webkho_20241021.Areas.TruongBPMuahang.Controllers
                 var result2 = vatTuList.Select(v =>
                 {
                     var tonKho = !string.IsNullOrWhiteSpace(v.MaSanpham) && tonKhoByMaSanpham2.TryGetValue(v.MaSanpham, out var tk) ? tk : 0;
-                    return new { v.ID, TT = (string?)null, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = Math.Max(0, (v.SLMoi ?? v.SL ?? 0) - tonKho), SlDaXuat = (int?)null };
+                    var slThieu = Math.Max(0, (v.SLMoi ?? v.SL ?? 0) - tonKho);
+                    return new { v.ID, TT = (string?)null, v.VTMaYeucau, v.TenSanpham, v.MaSanpham, v.YCMakho, v.HangSX, v.NhaCC, v.SLCu, v.SLMoi, v.SL, v.DonVi, v.NgayCanHang, v.NgayNhapkho, v.NgayBaohanh, v.ThoiGianBH, v.NgayDuyet, v.TrangThai, v.GhiChu, TonKho = tonKho, SlThieu = slThieu, SlDaXuat = (int?)null };
                 }).ToList();
+                if (!quantityFilter.IsEmpty)
+                {
+                    result2 = result2.Where(x => DataFilterService.PassesQuantityFilter(quantityFilter, x.SLCu, x.SLMoi, x.SL, x.TonKho, x.SlThieu, x.SlDaXuat)).ToList();
+                }
                 return Json(result2);
             }
 

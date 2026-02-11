@@ -839,7 +839,7 @@
             });
         }
 
-            // Đảm bảo khi vào trang luôn có hàng đầu tiên active + checkbox được chọn
+            // Đảm bảo khi vào trang luôn có hàng đầu tiên active + checkbox được chọn + load bảng chi tiết
             (function setFirstRowActiveOnLoad() {
                 if (typeof applyTableRowHighlight !== 'function') return;
                 var $first = $('.Tableyeucau .table tbody tr:visible').first();
@@ -857,6 +857,10 @@
                     if (ma) selectedYeucauSet.add(ma);
                     $('.Tableyeucau .table tbody tr').removeClass('multi-selected-yeucau');
                     $first.addClass('multi-selected-yeucau');
+                }
+                // Load bảng chi tiết vật tư cho yêu cầu đầu tiên ngay khi vào trang (không cần F5)
+                if (ma && typeof showVTYeucau === 'function') {
+                    showVTYeucau(ma, nguoi, ma);
                 }
             })();
             ensureActiveYeucauHighlight();
@@ -954,7 +958,7 @@
             $.ajax({
                 url: url, 
                 method: 'GET',
-                data: { MaYeucau: MaYeucau }, 
+                data: { MaYeucau: MaYeucau },
                 success: function (data) {
                     $('#vtYeucauBody').empty();
                     $('#selectAllVT').prop('checked', false);
@@ -1522,6 +1526,7 @@
             background: inherit; /* giữ màu header đang có */
             border: 1px solid #000000;
         }
+        .tablethietbi thead th.col-sl { padding-right: 28px; }
         .tablethietbi thead tr:first-child th.col-sl-header {
             top: 0;
             z-index: 220; /* ưu tiên cell 'SL' (colspan=5) */

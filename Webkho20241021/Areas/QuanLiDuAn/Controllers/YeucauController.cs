@@ -423,12 +423,24 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetVTYeucau(string MaYeucau)
+        public IActionResult GetVTYeucau(string MaYeucau,
+            int? slCuMin, int? slCuMax, int? slMoiMin, int? slMoiMax, int? slMin, int? slMax,
+            int? tonKhoMin, int? tonKhoMax, int? slThieuMin, int? slThieuMax, int? slDaXuatMin, int? slDaXuatMax)
         {
             if (string.IsNullOrWhiteSpace(MaYeucau))
             {
                 return Json(new List<object>());
             }
+
+            var quantityFilter = new VtyeucauQuantityFilter
+            {
+                SLCuMin = slCuMin, SLCuMax = slCuMax,
+                SLMoiMin = slMoiMin, SLMoiMax = slMoiMax,
+                SLMin = slMin, SLMax = slMax,
+                TonKhoMin = tonKhoMin, TonKhoMax = tonKhoMax,
+                SlThieuMin = slThieuMin, SlThieuMax = slThieuMax,
+                SlDaXuatMin = slDaXuatMin, SlDaXuatMax = slDaXuatMax
+            };
 
             // Nếu yêu cầu có dòng chi tiết trong vtyeucau thì ưu tiên hiển thị
             // danh sách đó (yêu cầu vật tư gốc), kể cả khi đã có phiếu nhập kho.
@@ -438,6 +450,7 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
             if (hasVatTuYeuCau)
             {
                 var rawList = _context.vtyeucau.Where(v => v.VTMaYeucau == MaYeucau).ToList();
+                rawList = DataFilterService.FilterVtyeucauByQuantity(rawList, quantityFilter);
                 var maSanphamList = rawList.Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham)).Select(v => v.MaSanpham!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 var maSanphamSet = new HashSet<string>(maSanphamList, StringComparer.OrdinalIgnoreCase);
                 var tonKhoByMaSanpham = _context.khotongs.Where(k => k.MaSanpham != null).Select(k => new { k.MaSanpham, k.SL }).ToList()
@@ -478,6 +491,10 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                         slDaXuat = slDaXuat
                     };
                 }).ToList();
+                if (!quantityFilter.IsEmpty)
+                {
+                    vatTuList = vatTuList.Where(x => DataFilterService.PassesQuantityFilter(quantityFilter, x.slCu, x.slMoi, x.sl, x.tonKho, x.slThieu, x.slDaXuat)).ToList();
+                }
                 return Json(vatTuList);
             }
 
@@ -523,8 +540,13 @@ namespace Webkho_20241021.Areas.QuanLiDuAn.Controllers
                 var result2 = vatTuList.Select(v =>
                 {
                     var tonKho = !string.IsNullOrWhiteSpace(v.maSanpham) && tonKhoByMaSanpham2.TryGetValue(v.maSanpham, out var tk) ? tk : 0;
-                    return new { v.id, v.vtMaYeucau, v.tenSanpham, v.maSanpham, v.hangSX, v.nhaCC, v.slCu, v.slMoi, v.sl, v.donVi, v.ngayCanHang, v.ngayCoHang, v.ngayNhapkho, v.ngayBaohanh, v.thoiGianBH, v.ngayDuyet, v.trangThai, v.ghiChu, tonKho = tonKho, slThieu = Math.Max(0, (v.slMoi ?? v.sl ?? 0) - tonKho), slDaXuat = (int?)null };
+                    var slThieu = Math.Max(0, (v.slMoi ?? v.sl ?? 0) - tonKho);
+                    return new { v.id, v.vtMaYeucau, v.tenSanpham, v.maSanpham, v.hangSX, v.nhaCC, v.slCu, v.slMoi, v.sl, v.donVi, v.ngayCanHang, v.ngayCoHang, v.ngayNhapkho, v.ngayBaohanh, v.thoiGianBH, v.ngayDuyet, v.trangThai, v.ghiChu, tonKho = tonKho, slThieu = slThieu, slDaXuat = (int?)null };
                 }).ToList();
+                if (!quantityFilter.IsEmpty)
+                {
+                    result2 = result2.Where(x => DataFilterService.PassesQuantityFilter(quantityFilter, x.slCu, x.slMoi, x.sl, x.tonKho, x.slThieu, x.slDaXuat)).ToList();
+                }
                 return Json(result2);
             }
 

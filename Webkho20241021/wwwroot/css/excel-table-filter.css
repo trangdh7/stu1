@@ -24,6 +24,10 @@
     background: rgba(25, 118, 210, 0.12);
 }
 
+.excel-filter-cell-trigger.is-active {
+    background: rgba(25, 118, 210, 0.12);
+}
+
 .excel-filter-icon {
     font-size: 14px;
     line-height: 1;

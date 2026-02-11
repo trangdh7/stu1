@@ -201,6 +201,38 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                 const formatNumberOrDash = (value) => (value === null || value === undefined || value === '' ? '-' : value);
                 const formatDate = (val) => (val ? new Date(val).toLocaleDateString('vi-VN') : '-');
                 const formatDateTime = (val) => (val ? new Date(val).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-');
+                // Parse "X cái DD/MM/YYYY" từ GhiChu để hiển thị Ngày có hàng đợt 1, 2, n (giống TruongBPKythuat)
+                function buildNgayCoHangHtml(ghiChuRaw, ngayCoHangVal, formatDateFn) {
+                    var ghiChu = (ghiChuRaw || '').toString();
+                    var dotList = [];
+                    var regexDot = /(\d+)\s*cái\s*(\d{1,2}\/\d{1,2}\/\d{4})/g;
+                    var match;
+                    while ((match = regexDot.exec(ghiChu)) !== null) {
+                        dotList.push({ sl: parseInt(match[1], 10), dateStr: match[2] });
+                    }
+                    if (dotList.length > 0) {
+                        var html = '';
+                        for (var d = 0; d < dotList.length; d++) {
+                            var dot = dotList[d];
+                            html += '<div class="ngaycohang-line"><strong>Đợt ' + (d + 1) + ':</strong> ' + dot.dateStr + (dot.sl > 0 ? ' (' + dot.sl + ' cái)' : '') + '</div>';
+                        }
+                        return '<div class="ngaycohang-dot-list">' + html + '</div>';
+                    }
+                    var singleDate = ngayCoHangVal ? formatDateFn(ngayCoHangVal) : '-';
+                    return '<div class="ngaycohang-dot-list"><div class="ngaycohang-line"><strong>Ngày có hàng:</strong> ' + singleDate + '</div></div>';
+                }
+                // Bỏ phần "Lịch giao: ..." khỏi Ghi chú để cột Ghi chú chỉ hiển thị nội dung còn lại
+                function getGhiChuConLai(ghiChuRaw) {
+                    var ghiChu = (ghiChuRaw || '').toString();
+                    if (ghiChu.toLowerCase().indexOf('lịch giao:') === -1) return ghiChu;
+                    var idx = ghiChu.toLowerCase().indexOf('lịch giao:');
+                    var after = ghiChu.substring(idx);
+                    var endIdx = after.indexOf(' | ');
+                    var lichGiaoLen = endIdx >= 0 ? idx + endIdx + 3 : ghiChu.length;
+                    var before = idx > 0 ? ghiChu.substring(0, idx).trim() : '';
+                    var afterPart = lichGiaoLen < ghiChu.length ? ghiChu.substring(lichGiaoLen).trim() : '';
+                    return [before, afterPart].filter(function(s) { return s; }).join(' ').trim();
+                }
 
                 data.forEach(function (item) {
                     var isRejected = (item.trangThai && (item.trangThai.toLowerCase().indexOf('từ chối') !== -1)) || (item.TrangThai && (item.TrangThai.toLowerCase().indexOf('từ chối') !== -1));
@@ -217,9 +249,11 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                     const slTong = item.sl ?? item.SL ?? slMoi;
                     const donVi = item.donVi || item.DonVi || '';
                     const ngayCan = item.ngayCanHang || item.NgayCanHang ? formatDate(item.ngayCanHang || item.NgayCanHang) : '-';
-                    const ngayCoHang = item.ngayCoHang || item.NgayCoHang ? formatDate(item.ngayCoHang || item.NgayCoHang) : '-';
+                    const ghiChuRaw = item.ghiChu || item.GhiChu || '';
+                    const ngayCoHangHtml = buildNgayCoHangHtml(ghiChuRaw, item.ngayCoHang || item.NgayCoHang, formatDate);
                     const trangThai = item.trangThai || item.TrangThai || '';
-                    const ghiChu = item.ghiChu || item.GhiChu || '-';
+                    var ghiChuConLai = getGhiChuConLai(ghiChuRaw);
+                    const ghiChu = (ghiChuConLai === '' || !ghiChuConLai) ? '-' : String(ghiChuConLai).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                     const tonKho = item.tonKho ?? item.TonKho ?? 0;
                     const rawSlThieu = item.slThieu ?? item.SlThieu;
                     const slThieu = rawSlThieu != null
@@ -244,7 +278,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                             <td hidden style="text-align: center;">${formatNumberOrDash(slTong)}</td>
                             <td>${donVi || '-'}</td>
                             <td>${ngayCan}</td>
-                            <td>${ngayCoHang}</td>
+                            <td class="col-ngaycohang-cell">${ngayCoHangHtml}</td>
                             <td>${trangThai}</td>
                             <td style="color: ${ghiChuColor};">${ghiChu}</td>
                             <td>${ngayDuyet}</td>
@@ -261,7 +295,7 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                             <td hidden style="text-align: center;">${formatNumberOrDash(slTong)}</td>
                             <td>${donVi || '-'}</td>
                             <td>${ngayCan}</td>
-                            <td>${ngayCoHang}</td>
+                            <td class="col-ngaycohang-cell">${ngayCoHangHtml}</td>
                             <td>${trangThai}</td>
                             <td style="color: ${ghiChuColor};">${ghiChu}</td>
                         </tr>`;

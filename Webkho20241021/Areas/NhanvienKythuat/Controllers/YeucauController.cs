@@ -368,12 +368,24 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetVTYeucau(string MaYeucau)
+        public IActionResult GetVTYeucau(string MaYeucau,
+            int? slCuMin, int? slCuMax, int? slMoiMin, int? slMoiMax, int? slMin, int? slMax,
+            int? tonKhoMin, int? tonKhoMax, int? slThieuMin, int? slThieuMax, int? slDaXuatMin, int? slDaXuatMax)
         {
             if (string.IsNullOrWhiteSpace(MaYeucau))
             {
                 return Json(new List<object>());
             }
+
+            var quantityFilter = new VtyeucauQuantityFilter
+            {
+                SLCuMin = slCuMin, SLCuMax = slCuMax,
+                SLMoiMin = slMoiMin, SLMoiMax = slMoiMax,
+                SLMin = slMin, SLMax = slMax,
+                TonKhoMin = tonKhoMin, TonKhoMax = tonKhoMax,
+                SlThieuMin = slThieuMin, SlThieuMax = slThieuMax,
+                SlDaXuatMin = slDaXuatMin, SlDaXuatMax = slDaXuatMax
+            };
 
             // Nếu yêu cầu đã có dòng chi tiết trong vtyeucau
             // thì luôn ưu tiên hiển thị danh sách đó (yêu cầu vật tư gốc),
@@ -386,6 +398,7 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                 var vatTuList = _context.vtyeucau
                     .Where(v => v.VTMaYeucau == MaYeucau)
                     .ToList();
+                vatTuList = DataFilterService.FilterVtyeucauByQuantity(vatTuList, quantityFilter);
                 // Tính tồn kho theo MaSanpham để trả về cho bảng chi tiết (AJAX)
                 var maSanphamList = vatTuList
                     .Where(v => !string.IsNullOrWhiteSpace(v.MaSanpham))
@@ -436,6 +449,10 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         SlDaXuat = slDaXuat
                     };
                 }).ToList();
+                if (!quantityFilter.IsEmpty)
+                {
+                    result = result.Where(x => DataFilterService.PassesQuantityFilter(quantityFilter, x.SLCu, x.SLMoi, x.SL, x.TonKho, x.SlThieu, x.SlDaXuat)).ToList();
+                }
                 return Json(result);
             }
 
@@ -505,6 +522,10 @@ namespace Webkho_20241021.Areas.NhanvienKythuat.Controllers
                         SlDaXuat = (int?)null
                     };
                 }).ToList();
+                if (!quantityFilter.IsEmpty)
+                {
+                    result = result.Where(x => DataFilterService.PassesQuantityFilter(quantityFilter, x.SLCu, x.SLMoi, x.SL, x.TonKho, x.SlThieu, x.SlDaXuat)).ToList();
+                }
                 return Json(result);
             }
 

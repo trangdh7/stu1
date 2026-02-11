@@ -129,13 +129,19 @@
 
     function updateHeaderIndicators(table) {
         const state = ensureState(table);
-        const $headers = getHeaderCells(table);
-        $headers.each(function (i) {
-            const $h = $(this);
-            const $btn = $h.find('.excel-filter-btn');
-            if ($btn.length === 0) return;
-            const isActive = state.filters[i] && state.filters[i].size > 0;
+        $(table).find('thead .excel-filter-btn').each(function () {
+            const $btn = $(this);
+            const colIdx = parseInt($btn.attr('data-col-idx'), 10);
+            if (isNaN(colIdx)) return;
+            const isActive = state.filters[colIdx] && state.filters[colIdx].size > 0;
             $btn.toggleClass('is-active', !!isActive);
+        });
+        $(table).find('thead .excel-filter-cell-trigger').each(function () {
+            const $cell = $(this);
+            const colIdx = parseInt($cell.attr('data-col-idx'), 10);
+            if (isNaN(colIdx)) return;
+            const isActive = state.filters[colIdx] && state.filters[colIdx].size > 0;
+            $cell.toggleClass('is-active', !!isActive);
         });
     }
 
@@ -194,8 +200,8 @@
 
     function renderPopupForColumn(table, colIdx, anchorEl) {
         const state = ensureState(table);
-        const $headers = getHeaderCells(table);
-        const headerText = normText($headers.eq(colIdx).text());
+        const $anchorCell = anchorEl ? $(anchorEl).closest('th, td') : $();
+        const headerText = normText($anchorCell.length ? $anchorCell.text() : getHeaderCells(table).eq(colIdx).text());
         if (isExcludedColumn(state, headerText, colIdx)) return;
 
         // Rebuild values cache for this column
@@ -301,39 +307,78 @@
         });
     }
 
-    function addButtons(table) {
-        const state = ensureState(table);
-        const $headers = getHeaderCells(table);
-        $headers.each(function (i) {
-            const $h = $(this);
-            const headerText = normText($h.text());
-            if (isExcludedColumn(state, headerText, i)) return;
+    // Cột hẹp: so khớp không phân biệt hoa thường và không phân biệt dấu (Vietnamese)
+    const NARROW_HEADERS_NORMALIZED = ['cu', 'moi', 'thieu', 'da xuat', 'ton kho'];
 
-            // Avoid double insert
-            if ($h.find('.excel-filter-btn').length) return;
+    function normHeaderForMatch(s) {
+        const t = (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
+        return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+    }
 
-            // Ensure header cell has positioning context
-            if ($h.css('position') === 'static') {
-                $h.css('position', 'relative');
-            }
-
-            const $btn = $(`
-                <button type="button" class="excel-filter-btn" title="Lọc cột">
-                  <span class="excel-filter-icon">▾</span>
-                </button>
-            `);
-            $btn.on('click', function (e) {
+    function addButtonToHeaderCell(table, $h, colIdx, state) {
+        const headerText = normText($h.text());
+        if (isExcludedColumn(state, headerText, colIdx)) return;
+        if ($h.find('.excel-filter-btn').length || $h.hasClass('excel-filter-cell-trigger')) return;
+        if ($h.css('position') === 'static') {
+            $h.css('position', 'relative');
+        }
+        const isNarrow = NARROW_HEADERS_NORMALIZED.indexOf(normHeaderForMatch(headerText)) !== -1;
+        if (isNarrow) {
+            $h.attr('data-col-idx', colIdx).attr('title', 'Lọc cột').addClass('excel-filter-cell-trigger').css('cursor', 'pointer');
+            $h.on('click.excel-filter', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 const st = ensureState(table);
-                // toggle same column
-                if (st.$popup && st.$popup.is(':visible') && st.openCol === i) {
+                if (st.$popup && st.$popup.is(':visible') && st.openCol === colIdx) {
                     closePopup(st);
                     return;
                 }
-                renderPopupForColumn(table, i, this);
+                renderPopupForColumn(table, colIdx, this);
             });
-            $h.append($btn);
+            return;
+        }
+        const $btn = $(`
+            <button type="button" class="excel-filter-btn" title="Lọc cột" data-col-idx="${colIdx}">
+              <span class="excel-filter-icon">▾</span>
+            </button>
+        `);
+        $btn.on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const st = ensureState(table);
+            if (st.$popup && st.$popup.is(':visible') && st.openCol === colIdx) {
+                closePopup(st);
+                return;
+            }
+            renderPopupForColumn(table, colIdx, this);
+        });
+        $h.append($btn);
+    }
+
+    function addButtons(table) {
+        const state = ensureState(table);
+        const $t = $(table);
+        const $row1 = $t.find('thead tr').first();
+        const $cells1 = $row1.children('th,td');
+        const $row2 = $t.find('thead tr').eq(1);
+        const $cells2 = $row2.length ? $row2.children('th,td') : $();
+        let colIdx = 0;
+        let row2CellIdx = 0;
+
+        $cells1.each(function (i) {
+            const $h = $(this);
+            const span = $h[0].colSpan || 1;
+            if (span > 1 && $cells2.length >= row2CellIdx + span) {
+                for (let j = 0; j < span; j++) {
+                    const $target = $cells2.eq(row2CellIdx + j);
+                    addButtonToHeaderCell(table, $target, colIdx + j, state);
+                }
+                row2CellIdx += span;
+                colIdx += span;
+            } else {
+                addButtonToHeaderCell(table, $h, colIdx, state);
+                colIdx += 1;
+            }
         });
         updateHeaderIndicators(table);
     }
