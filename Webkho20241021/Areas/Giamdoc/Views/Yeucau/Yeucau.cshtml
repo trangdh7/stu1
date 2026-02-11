@@ -328,6 +328,7 @@
                         var slThieu = Math.Max(0, slMoi - tonKho);
                         var isDaXuatKho = (item.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                         var slDaXuat = isDaXuatKho ? (item.SL ?? item.SLMoi) : (int?)null;
+                        var slChenh = (item.SLCu != null || item.SLMoi != null || item.SL != null) && (item.SLCu ?? 0) != (item.SLMoi ?? item.SL ?? 0);
                         <tr data-mavattu="@item.MaSanpham" data-mayeucau="@maYeucau" class="@rowClass">
                             <td>@if (canSelectForBulk) { <input type="checkbox" class="vt-checkbox" value="@item.MaSanpham" data-mayeucau="@maYeucau" data-mavattu="@item.MaSanpham" /> }</td>
                             <td>@(string.IsNullOrWhiteSpace(item.TT) ? STT2.ToString() : item.TT)</td>
@@ -336,8 +337,8 @@
                             <td class="col-mayeucau">@maYeucau</td>
                             <td>@item.HangSX</td>
                             <td>@item.NhaCC</td>
-                            <td class="col-sl col-sl-1" style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
-                            <td class="col-sl col-sl-2" style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
+                            <td class="col-sl col-sl-1 @(slChenh ? "sl-chenh-lech" : "")" style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
+                            <td class="col-sl col-sl-2 @(slChenh ? "sl-chenh-lech" : "")" style="text-align: center;">@(item.SLMoi?.ToString() ?? "-")</td>
                             <td class="col-sl col-sl-3" style="text-align: center;">@slThieu</td>
                             <td class="col-sl col-sl-4" style="text-align: center;">@(slDaXuat.HasValue ? slDaXuat.Value.ToString() : "-")</td>
                             <td class="col-sl col-sl-5" style="text-align: center;">@tonKho</td>
@@ -787,6 +788,9 @@
                             ngayCoHangHtml = '<div class="ngaycohang-line"><strong>Ngày có hàng:</strong> ' + (ngayCoHangDisplay || '-') + '</div>';
                         }
 
+                        var slChenh = (slCuVal != null && slCuVal !== undefined && slCuVal !== '' && slCuVal !== '-') || (slMoiVal != null && slMoiVal !== undefined && slMoiVal !== '' && slMoiVal !== '-')
+                            ? (parseInt(slCuVal, 10) || 0) !== (parseInt(slMoiVal, 10) || 0) : false;
+
                         var trangThaiColor = '';
                         if (trangThai === 'Đang mua hàng') {
                             trangThaiColor = 'color: #2196f3; font-weight: bold;';
@@ -804,8 +808,8 @@
                             + '<td class="col-mayeucau">' + maYc + '</td>'
                             + '<td>' + (hangSX || '-') + '</td>'
                             + '<td>' + (nhaCC || '-') + '</td>'
-                            + '<td class="col-sl col-sl-1" style="text-align:center;">' + (slCuVal ?? '-') + '</td>'
-                            + '<td class="col-sl col-sl-2" style="text-align:center;">' + (slMoiVal ?? '-') + '</td>'
+                            + '<td class="col-sl col-sl-1' + (slChenh ? ' sl-chenh-lech' : '') + '" style="text-align:center;">' + (slCuVal ?? '-') + '</td>'
+                            + '<td class="col-sl col-sl-2' + (slChenh ? ' sl-chenh-lech' : '') + '" style="text-align:center;">' + (slMoiVal ?? '-') + '</td>'
                             + '<td class="col-sl col-sl-3" style="text-align:center;">' + (slThieu ?? '-') + '</td>'
                             + '<td class="col-sl col-sl-4" style="text-align:center;">' + (slDaXuat != null ? slDaXuat : '-') + '</td>'
                             + '<td class="col-sl col-sl-5" style="text-align:center;">' + (tonKho ?? '-') + '</td>'
@@ -1047,7 +1051,7 @@
                                 slVal = slMoiVal != null && slMoiVal !== undefined ? slMoiVal : slCuVal;
                             }
 
-                            var donViVal = item.donVi ?? item.DonVi ?? '-';
+                        var donViVal = item.donVi ?? item.DonVi ?? '-';
                             var ngayCanHangVal = item.ngayCanHang ?? item.NgayCanHang;
                             var ngayCanHangDisplay = formatDateOnly(ngayCanHangVal);
                             var ngayCoHangVal = item.ngayCoHang ?? item.NgayCoHang;
@@ -1069,6 +1073,9 @@
                             }
                             var ghiChuDisplay = (ghiChuConLai === '' || !ghiChuConLai) ? '-' : ghiChuConLai;
                             var ghiChuDisplayEscaped = (ghiChuDisplay === '-' ? '-' : ghiChuDisplay).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+                            var slChenh = (slCuVal != null && slCuVal !== undefined && slCuVal !== '' && slCuVal !== '-') || (slMoiVal != null && slMoiVal !== undefined && slMoiVal !== '' && slMoiVal !== '-')
+                                ? (parseInt(slCuVal, 10) || 0) !== (parseInt(slMoiVal, 10) || 0) : false;
                             var ngayCoHangHtml = '';
                             if (dotList.length > 0) {
                                 for (var d = 0; d < dotList.length; d++) {
@@ -1093,8 +1100,8 @@
                                 <td class="col-mayeucau"></td>
                                 <td>${hangSX || '-'}</td>
                                 <td>${nhaCC || '-'}</td>
-                                <td class="col-sl col-sl-1" style="text-align: center;">${slCuVal ?? '-'}</td>
-                                <td class="col-sl col-sl-2" style="text-align: center;">${slMoiVal ?? '-'}</td>
+                                <td class="col-sl col-sl-1${slChenh ? ' sl-chenh-lech' : ''}" style="text-align: center;">${slCuVal ?? '-'}</td>
+                                <td class="col-sl col-sl-2${slChenh ? ' sl-chenh-lech' : ''}" style="text-align: center;">${slMoiVal ?? '-'}</td>
                                 <td class="col-sl col-sl-3" style="text-align: center;">${slThieu ?? '-'}</td>
                                 <td class="col-sl col-sl-4" style="text-align: center;">${slDaXuat != null ? slDaXuat : '-'}</td>
                                 <td class="col-sl col-sl-5" style="text-align: center;">${tonKho ?? '-'}</td>

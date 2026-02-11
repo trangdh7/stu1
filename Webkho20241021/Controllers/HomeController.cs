@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Webkho_20241021.Services;
+using System;
 
 namespace Webkho_20241021.Controllers
 {
@@ -632,6 +634,67 @@ namespace Webkho_20241021.Controllers
             };
 
             return Json(debugInfo, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+
+        // Tổng kho (không area) - dùng chung filter như các area
+        public ActionResult Tongkho(int page = 1, int pageSize = 20, string q = null, string hangSX = null, string nhaCC = null)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 20;
+
+            var query = _context.khotongs
+                .Where(k => !string.Equals(k.Makho, "VT mới", StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(k.MaSanpham, "VT-MOI", StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var keyword = q.Trim();
+                query = query.Where(k =>
+                    (k.TenSanpham ?? "").Contains(keyword) ||
+                    (k.MaSanpham ?? "").Contains(keyword) ||
+                    (k.Makho ?? "").Contains(keyword) ||
+                    (k.HangSX ?? "").Contains(keyword) ||
+                    (k.NhaCC ?? "").Contains(keyword) ||
+                    (k.DuAn ?? "").Contains(keyword)
+                );
+            }
+
+            // Áp dụng bộ lọc tổng kho (Hãng SX, Nhà CC)
+            var filter = new KhotongFilter
+            {
+                HangSX = hangSX,
+                NhaCC = nhaCC
+            };
+            query = DataFilterService.FilterKhotongs(query, filter);
+
+            var total = query.Count();
+            var items = query
+                .OrderByDescending(k => k.NgayNhapkho)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(total / (double)pageSize);
+            ViewBag.Q = q;
+            ViewBag.HangSX = hangSX;
+            ViewBag.NhaCC = nhaCC;
+
+            ViewBag.HangSXList = _context.khotongs
+                .Select(k => k.HangSX)
+                .Where(h => !string.IsNullOrWhiteSpace(h))
+                .Distinct()
+                .OrderBy(h => h)
+                .ToList();
+
+            ViewBag.NhaCCList = _context.khotongs
+                .Select(k => k.NhaCC)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList();
+
+            return View("Tongkho", items);
         }
 
         public IActionResult DanhSachDoNhanVien()

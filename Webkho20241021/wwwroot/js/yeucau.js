@@ -262,6 +262,11 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                     const slDaXuat = item.slDaXuat ?? item.SlDaXuat;
                     const ngayDuyet = item.ngayDuyet || item.NgayDuyet ? formatDateTime(item.ngayDuyet || item.NgayDuyet) : '-';
 
+                    // Xác định chênh lệch SL giữa Cũ và Mới để tô chữ đỏ (class sl-chenh-lech)
+                    const baseCu = Number(slCu || 0);
+                    const baseMoi = Number(slMoi != null ? slMoi : (slTong != null ? slTong : slCu || 0));
+                    const slChenh = (slCu != null || slMoi != null || slTong != null) && baseCu !== baseMoi;
+
                     let row;
                     if (hasTonKhoColumn) {
                         row = `<tr class="${isRejected ? 'rejected-row' : ''}">
@@ -270,11 +275,11 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                             <td>${maSanpham}</td>
                             <td>${hangSX}</td>
                             <td>${nhaCC}</td>
-                            <td style="text-align: center;">${formatNumberOrDash(slCu)}</td>
-                            <td style="text-align: center;">${formatNumberOrDash(slMoi)}</td>
-                            <td style="text-align: center;">${formatNumberOrDash(slThieu)}</td>
-                            <td style="text-align: center;">${slDaXuat != null ? slDaXuat : '-'}</td>
-                            <td style="text-align: center;">${formatNumberOrDash(tonKho)}</td>
+                            <td class="col-sl col-sl-1${slChenh ? ' sl-chenh-lech' : ''}" style="text-align: center;">${formatNumberOrDash(slCu)}</td>
+                            <td class="col-sl col-sl-2${slChenh ? ' sl-chenh-lech' : ''}" style="text-align: center;">${formatNumberOrDash(slMoi)}</td>
+                            <td class="col-sl col-sl-3" style="text-align: center;">${formatNumberOrDash(slThieu)}</td>
+                            <td class="col-sl col-sl-4" style="text-align: center;">${slDaXuat != null ? slDaXuat : '-'}</td>
+                            <td class="col-sl col-sl-5" style="text-align: center;">${formatNumberOrDash(tonKho)}</td>
                             <td hidden style="text-align: center;">${formatNumberOrDash(slTong)}</td>
                             <td>${donVi || '-'}</td>
                             <td>${ngayCan}</td>
@@ -290,8 +295,8 @@ function showVTYeucau(MaYeucau, NguoiYeucau) {
                             <td>${maSanpham}</td>
                             <td>${hangSX}</td>
                             <td>${nhaCC}</td>
-                            <td style="text-align: center;">${formatNumberOrDash(slCu)}</td>
-                            <td style="text-align: center;">${formatNumberOrDash(slMoi)}</td>
+                            <td class="col-sl col-sl-1${slChenh ? ' sl-chenh-lech' : ''}" style="text-align: center;">${formatNumberOrDash(slCu)}</td>
+                            <td class="col-sl col-sl-2${slChenh ? ' sl-chenh-lech' : ''}" style="text-align: center;">${formatNumberOrDash(slMoi)}</td>
                             <td hidden style="text-align: center;">${formatNumberOrDash(slTong)}</td>
                             <td>${donVi || '-'}</td>
                             <td>${ngayCan}</td>

@@ -11,6 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>yeucau</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="~/css/yeucau.css" />
 </head>
 <body>
     @if (TempData["SuccessMessage"] != null)
@@ -271,6 +272,7 @@
                         var slThieu = Math.Max(0, slMoi - tonKho);
                         var isDaXuatKho = (item.TrangThai ?? "").IndexOf("Đã xuất kho", StringComparison.OrdinalIgnoreCase) >= 0;
                         var slDaXuat = isDaXuatKho ? (item.SL ?? item.SLMoi) : (int?)null;
+                        var slChenh = (item.SLCu != null || item.SLMoi != null || item.SL != null) && (item.SLCu ?? 0) != (item.SLMoi ?? item.SL ?? 0);
                         <tr>
                             <td>@(string.IsNullOrWhiteSpace(item.TT) ? STT2.ToString() : item.TT)</td>
                             <td>@item.TenSanpham</td>
@@ -284,8 +286,8 @@
                                 @hangDisplay
                             </td>
                             <td>@item.NhaCC</td>
-                            <td class="col-sl col-sl-1" style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
-                            <td class="col-sl col-sl-2" style="text-align: center;">@((item.SLMoi ?? item.SL)?.ToString() ?? "-")</td>
+                            <td class="col-sl col-sl-1 @(slChenh ? "sl-chenh-lech" : "")" style="text-align: center;">@(item.SLCu?.ToString() ?? "-")</td>
+                            <td class="col-sl col-sl-2 @(slChenh ? "sl-chenh-lech" : "")" style="text-align: center;">@((item.SLMoi ?? item.SL)?.ToString() ?? "-")</td>
                             <td class="col-sl col-sl-3" style="text-align: center;">@slThieu</td>
                             <td class="col-sl col-sl-4" style="text-align: center;">@(slDaXuat.HasValue ? slDaXuat.Value.ToString() : "-")</td>
                             <td class="col-sl col-sl-5" style="text-align: center;">@tonKho</td>

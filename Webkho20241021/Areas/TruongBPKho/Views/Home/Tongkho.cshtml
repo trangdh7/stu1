@@ -49,6 +49,9 @@
                 <form method="get" action="/TruongBPKho/Home/Tongkho" style="display:flex; align-items:center; gap:8px;">
                     <i class='bx bx-search'></i>
                     <input type="text" name="q" value="@ViewBag.Q" placeholder="Tìm kiếm vật tư..." />
+                    @* Giữ nguyên bộ lọc Hãng SX / Nhà CC khi tìm kiếm *@
+                    <input type="hidden" name="hangSX" value="@ViewBag.HangSX" />
+                    <input type="hidden" name="nhaCC" value="@ViewBag.NhaCC" />
                     <button type="submit" class="btn btn-primary">Tìm</button>
                 </form>
             </div>
@@ -110,20 +113,32 @@
                 <div class="table-header">
                     <h2>Danh sách vật tư tổng kho</h2>
                     <div class="table-filter">
-                        <select id="hangsx-filter" class="filter-select">
-                            <option value="">Tất cả hãng SX</option>
-                            @foreach (var item in (Model ?? new List<Webkho_20241021.Models.khotongs>()).Select(m => m.HangSX).Where(h => !string.IsNullOrWhiteSpace(h)).Distinct())
-                            {
-                                <option value="@item">@item</option>
-                            }
-                        </select>
-                        <select id="nhacc-filter" class="filter-select">
-                            <option value="">Tất cả nhà cung cấp</option>
-                            @foreach (var item in (Model ?? new List<Webkho_20241021.Models.khotongs>()).Select(m => m.NhaCC).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct())
-                            {
-                                <option value="@item">@item</option>
-                            }
-                        </select>
+                        @* Filter giống Excel: chọn Hãng SX / Nhà cung cấp, submit về server *@
+                        <form method="get" action="/TruongBPKho/Home/Tongkho" style="display:flex; gap:8px; align-items:center;">
+                            <input type="hidden" name="q" value="@ViewBag.Q" />
+                            <select id="hangsx-filter" name="hangSX" class="filter-select" onchange="this.form.submit()">
+                                <option value="">Tất cả hãng SX</option>
+                                @{
+                                    var hangSXSelected = (string)ViewBag.HangSX;
+                                    var hangSXList = ViewBag.HangSXList as IEnumerable<string> ?? new List<string>();
+                                }
+                                @foreach (var item in hangSXList)
+                                {
+                                    <option value="@item" @(item == hangSXSelected ? "selected" : "")>@item</option>
+                                }
+                            </select>
+                            <select id="nhacc-filter" name="nhaCC" class="filter-select" onchange="this.form.submit()">
+                                <option value="">Tất cả nhà cung cấp</option>
+                                @{
+                                    var nhaCCSelected = (string)ViewBag.NhaCC;
+                                    var nhaCCList = ViewBag.NhaCCList as IEnumerable<string> ?? new List<string>();
+                                }
+                                @foreach (var item in nhaCCList)
+                                {
+                                    <option value="@item" @(item == nhaCCSelected ? "selected" : "")>@item</option>
+                                }
+                            </select>
+                        </form>
                     </div>
                 </div>
                 <div class="table-wrapper">
@@ -180,7 +195,16 @@
                         </tbody>
                     </table>
                     <div class="pagination">
-                        @{ int totalPage = (int)(ViewBag.TotalPages ?? 1); int curr = (int)(ViewBag.Page ?? 1); var _q = (string)(ViewBag.Q ?? ""); var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q); }
+                        @{
+                            int totalPage = (int)(ViewBag.TotalPages ?? 1);
+                            int curr = (int)(ViewBag.Page ?? 1);
+                            var _q = (string)(ViewBag.Q ?? "");
+                            var _qParam = string.IsNullOrEmpty(_q) ? "" : "&q=" + System.Net.WebUtility.UrlEncode(_q);
+                            var _hangSX = (string)(ViewBag.HangSX ?? "");
+                            var _hangSXParam = string.IsNullOrEmpty(_hangSX) ? "" : "&hangSX=" + System.Net.WebUtility.UrlEncode(_hangSX);
+                            var _nhaCC = (string)(ViewBag.NhaCC ?? "");
+                            var _nhaCCParam = string.IsNullOrEmpty(_nhaCC) ? "" : "&nhaCC=" + System.Net.WebUtility.UrlEncode(_nhaCC);
+                        }
                         @if (totalPage > 1)
                         {
                             for (int i = 1; i <= totalPage; i++)
@@ -188,7 +212,7 @@
                                 if (i == curr)
                                 { <span class="active">@i</span> }
                                 else
-                                { <a href="?page=@i@Html.Raw(_qParam)">@i</a> }
+                                { <a href="?page=@i@Html.Raw(_qParam + _hangSXParam + _nhaCCParam)">@i</a> }
                             }
                         }
                     </div>

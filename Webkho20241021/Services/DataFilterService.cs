@@ -59,6 +59,28 @@ namespace Webkho_20241021.Services
         }
 
         /// <summary>
+        /// Lọc danh sách tổng kho theo bộ lọc KhotongFilter.
+        /// Dùng chung cho các màn hình Tổng kho (Admin, Trưởng BP kho, Nhân viên, ...).
+        /// </summary>
+        public static IQueryable<khotongs> FilterKhotongs(IQueryable<khotongs> query, KhotongFilter filter)
+        {
+            if (filter == null || filter.IsEmpty)
+                return query;
+
+            if (!string.IsNullOrWhiteSpace(filter.HangSX))
+            {
+                query = query.Where(k => k.HangSX == filter.HangSX);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.NhaCC))
+            {
+                query = query.Where(k => k.NhaCC == filter.NhaCC);
+            }
+
+            return query;
+        }
+
+        /// <summary>
         /// Lọc danh sách vtyeucau theo các cột số lượng: Cũ (SLCu), Mới (SLMoi), SL.
         /// </summary>
         public static List<vtyeucau> FilterVtyeucauByQuantity(IEnumerable<vtyeucau> list, VtyeucauQuantityFilter filter)

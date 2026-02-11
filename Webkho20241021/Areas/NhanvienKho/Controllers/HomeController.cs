@@ -22,7 +22,7 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
             _context = context;
         }
 
-        public ActionResult Tongkho(int page = 1, int pageSize = 20, string q = null)
+        public ActionResult Tongkho(int page = 1, int pageSize = 20, string q = null, string hangSX = null, string nhaCC = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 20;
@@ -43,6 +43,14 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                 );
             }
 
+            // Áp dụng bộ lọc tổng kho (Hãng SX, Nhà CC)
+            var filter = new KhotongFilter
+            {
+                HangSX = hangSX,
+                NhaCC = nhaCC
+            };
+            query = DataFilterService.FilterKhotongs(query, filter);
+
             var total = query.Count();
             var items = query
                 .OrderByDescending(k => k.NgayNhapkho)
@@ -53,6 +61,22 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
             ViewBag.Page = page;
             ViewBag.TotalPages = (int)Math.Ceiling(total / (double)pageSize);
             ViewBag.Q = q;
+            ViewBag.HangSX = hangSX;
+            ViewBag.NhaCC = nhaCC;
+
+            ViewBag.HangSXList = _context.khotongs
+                .Select(k => k.HangSX)
+                .Where(h => !string.IsNullOrWhiteSpace(h))
+                .Distinct()
+                .OrderBy(h => h)
+                .ToList();
+
+            ViewBag.NhaCCList = _context.khotongs
+                .Select(k => k.NhaCC)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList();
             return View(items);
         }
 
@@ -444,7 +468,7 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
         }
 
         // Export Excel tổng kho
-        public IActionResult ExportTongkho(string q = null)
+        public IActionResult ExportTongkho(string q = null, string hangSX = null, string nhaCC = null)
         {
             var query = _context.khotongs.AsQueryable();
             
@@ -460,6 +484,14 @@ namespace Webkho_20241021.Areas.NhanvienKho.Controllers
                     (k.DuAn ?? "").Contains(keyword)
                 );
             }
+
+            // Áp dụng bộ lọc giống màn hình Tổng kho
+            var filter = new KhotongFilter
+            {
+                HangSX = hangSX,
+                NhaCC = nhaCC
+            };
+            query = DataFilterService.FilterKhotongs(query, filter);
 
             var items = query.OrderByDescending(k => k.NgayNhapkho).ToList();
 

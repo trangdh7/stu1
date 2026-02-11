@@ -1,8 +1,7 @@
-/* Ô Cũ/Mới chênh lệch: chữ đỏ đậm + nền nhạt */
+/* Ô Cũ/Mới chênh lệch: chữ đỏ đậm (không tô nền) */
 .sl-chenh-lech {
-    color: #8b0000 !important;
+    color: #f50505 !important;
     font-weight: bold !important;
-    background-color: rgba(139, 0, 0, 0.12) !important;
 }
 
  .awaiting-director {
