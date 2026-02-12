@@ -299,6 +299,25 @@ button {
    color: #ffffff !important;
  }
 
+/* Nút xóa trong dòng đang chọn (active-row): luôn icon màu đen, kể cả hover/active */
+.table tbody tr.active-row .delete-btn,
+.table tbody tr.active-row .delete-btn:hover,
+.table tbody tr.active-row .delete-btn:focus,
+.table tbody tr.active-row .delete-btn:active {
+  color: #000000 !important;
+  border-color: #000000 !important;
+  background-color: #ffffff;
+}
+.table tbody tr.active-row .delete-btn:active {
+  background-color: #e8e8e8;
+}
+.table tbody tr.active-row .delete-btn i,
+.table tbody tr.active-row .delete-btn:hover i,
+.table tbody tr.active-row .delete-btn:focus i,
+.table tbody tr.active-row .delete-btn:active i {
+  color: #000000 !important;
+}
+
 .tablethietbi {
   width: 100%;
   border-collapse: collapse;
